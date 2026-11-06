@@ -196,3 +196,56 @@ test('GS1 com etiqueta de balança embutida no GTIN: extrai código 6019 e peso 
   assert.deepStrictEqual(a.erros, []);
   await a.fechar();
 });
+
+test('OCR preenche descrição e lote (SIF) ao escanear a etiqueta', { skip: pular }, async () => {
+  const OCRTEXT = 'PERNIL FRACIONADO\\nSEARA RESERVA ks\\nCARNE RESFRIADA DE SUINO SEM OSSO - PERNIL\\nDATA: 05/11/26 VALIDADE: 08/11/26\\nLOTE: 876-040326\\n';
+  const a = await abrir({ dados: { aj: { dig: 5, valor: 'preco', ocr: true }, pere: { itens: {}, regs: [] } },
+    antes: p => p.addInitScript(`
+      window.BarcodeDetector = class {
+        static getSupportedFormats(){ return Promise.resolve(['data_matrix']); }
+        detect(){ return Promise.resolve([{ rawValue: '0102031950017263'+'17261108'+'3103000864', format: 'data_matrix' }]); }
+      };
+      window.Tesseract = {
+        createWorker: async () => ({
+          setParameters: async () => {},
+          recognize: async () => ({ data: { text: "${OCRTEXT}" } }),
+          terminate: async () => {},
+        }),
+      };
+    `) });
+  await a.p.click('nav button[data-v="pere"]');
+  await a.p.click('#bEscanearBal');
+  await a.p.waitForSelector('#cardPe', { state: 'visible' });
+  // código e peso vêm do QR; descrição e lote vêm do OCR (assíncrono)
+  assert.ok((await a.p.textContent('#peCod')).includes('3195'), 'código 3195 do QR');
+  assert.strictEqual(await a.p.inputValue('#pePeso'), '0.864');
+  await a.p.waitForFunction(() => document.getElementById('peDesc').value === 'Pernil Fracionado');
+  await a.p.waitForFunction(() => document.getElementById('peSif').value === '876-040326');
+  await a.p.click('#bSalvarPe');
+  await a.p.waitForFunction(() => document.getElementById('cardPe').style.display === 'none');
+  const d = await a.salvo();
+  assert.strictEqual(d.pere.itens['3195'].desc, 'Pernil Fracionado');
+  assert.strictEqual(d.pere.regs[0].sif, '876-040326');
+  assert.strictEqual(d.pere.regs[0].peso, 0.864);
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
+
+test('OCR desligado: não mexe na descrição nem no SIF', { skip: pular }, async () => {
+  const a = await abrir({ dados: { aj: { dig: 5, valor: 'preco', ocr: false }, pere: { itens: {}, regs: [] } },
+    antes: p => p.addInitScript(`
+      window.BarcodeDetector = class {
+        static getSupportedFormats(){ return Promise.resolve(['data_matrix']); }
+        detect(){ return Promise.resolve([{ rawValue: '0102031950017263'+'17261108'+'3103000864', format: 'data_matrix' }]); }
+      };
+      window.Tesseract = { createWorker: async () => { throw new Error('não deveria ser chamado'); } };
+    `) });
+  await a.p.click('nav button[data-v="pere"]');
+  await a.p.click('#bEscanearBal');
+  await a.p.waitForSelector('#cardPe', { state: 'visible' });
+  await a.p.waitForTimeout(300);
+  assert.strictEqual(await a.p.inputValue('#peDesc'), '');
+  assert.strictEqual(await a.p.inputValue('#peSif'), '');
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});

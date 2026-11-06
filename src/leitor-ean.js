@@ -140,3 +140,20 @@ var LeitorGS1=(function(){
   }
   return {ler:ler};
 })();
+
+/* Extrai descrição e lote do texto que o OCR leu da etiqueta.
+   parseEtiquetaOCR(texto) → {desc:'Pernil Fracionado', lote:'876-040326'} */
+var parseEtiquetaOCR=(function(){
+  var PULA=/^(DATA|VALIDADE|VALID|HORA|LOTE|OPER|TARA|PESO|PRE[CÇ]O|R\$|RS\b|RS\/|TOTAL|SIF|INGRED|CONSERV|MANTER|N[AÃ]O|SEARA|PRODUTO|VALOR|CARNE\s+RESF)/i;
+  function tituloCaso(s){return String(s||'').toLowerCase().replace(/(^|[\s\-/])([a-zà-ÿ])/g,function(_,a,b){return a+b.toUpperCase();}).trim();}
+  return function(texto){
+    var t=String(texto==null?'':texto).replace(/\r/g,'');
+    var linhas=t.split('\n').map(function(s){return s.replace(/[|_]+/g,' ').replace(/\s+/g,' ').trim();});
+    var desc='';
+    for(var i=0;i<linhas.length;i++){var L=linhas[i];var letras=(L.match(/[A-Za-zÀ-ÿ]/g)||[]).length;
+      if(letras>=4&&(L.match(/[^A-Za-zÀ-ÿ ]/g)||[]).length<=letras&&!PULA.test(L)){desc=L;break;}}
+    var lote='';var m=t.match(/LOTE[\s:._\-]*([0-9A-Za-z][0-9A-Za-z][0-9A-Za-z.\-\/ ]*)/i);
+    if(m)lote=m[1].replace(/[^0-9A-Za-z\-\/]/g,'');
+    return {desc:tituloCaso(desc),lote:lote};
+  };
+})();

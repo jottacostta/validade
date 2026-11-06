@@ -3,6 +3,7 @@
 Sistema de **controle de validade** para supermercado: escaneia o código de barras, busca o nome do produto,
 controla lotes, quantidades e validades, e tem uma área de **perecíveis** (código de balança, SIF e peso).
 Na área de perecíveis também lê as etiquetas 2D (QR/DataMatrix GS1) das balanças, que já trazem peso e validade.
+E, se o OCR estiver ligado, lê por foto a **descrição** do produto e o **lote** (que vai para o SIF) do texto da etiqueta.
 
 Nasceu como o modelo pronto **📅 Controle de validade** do [ApkForja](https://github.com/jottacostta/APKFORJA)
 (modelo v3, ApkForja V41) e agora evolui neste repositório próprio.

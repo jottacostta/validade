@@ -62,3 +62,18 @@ abre em **Perecíveis** já com peso e validade preenchidos; só com GTIN, abre 
 O `BarcodeDetector` nativo precisa suportar `data_matrix`/`qr_code` (Android em geral suporta). O leitor
 próprio, por foto, só decodifica os códigos de barras 1D — a leitura das etiquetas 2D depende do leitor nativo.
 Para não confundir, o GS1 só é tratado quando o formato lido é 2D; EAN/UPC 1D seguem o caminho normal.
+
+## OCR da etiqueta (descrição e lote)
+
+A descrição e o lote **não estão no QR** — só no texto impresso. Com o OCR ligado (Ajustes), ao escanear
+um perecível o app também lê a imagem e tenta preencher:
+
+- **Descrição**: primeira linha de texto do topo (ex.: "PERNIL FRACIONADO"), só se ainda estava vazia.
+- **Lote → SIF**: o número depois de "LOTE:" (ex.: "876-040326") vai para o campo SIF.
+
+Como funciona: binariza a imagem (limiar de Otsu), reduz para ~1600px e roda o **Tesseract.js** (idioma `por`,
+modo de segmentação psm 4). `parseEtiquetaOCR(texto)` (em `src/leitor-ean.js`) extrai descrição e lote do texto lido.
+
+O Tesseract é baixado da web (CDN jsdelivr) sob demanda, na primeira vez, e fica em cache do navegador — depois
+funciona offline. Se não carregar (sem internet na 1ª vez) ou falhar, o OCR é ignorado em silêncio e o preenchimento
+segue manual. Precisa do leitor nativo só para o QR; o OCR roda no próprio celular, sem enviar a foto para fora.
