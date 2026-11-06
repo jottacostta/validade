@@ -1,0 +1,75 @@
+{
+ "campos": [
+  {
+   "id": "nome",
+   "rotulo": "Nome da loja / setor",
+   "valor": "Controle de Validade"
+  },
+  {
+   "id": "slogan",
+   "rotulo": "Frase da tela de abertura",
+   "valor": "Lotes, validades e perecíveis"
+  },
+  {
+   "id": "dias",
+   "rotulo": "Avisar quando faltar quantos dias para vencer",
+   "valor": "30",
+   "tipo": "tel"
+  },
+  {
+   "id": "dig",
+   "rotulo": "Etiqueta da balança — dígitos do código do produto",
+   "tipo": "sel",
+   "valor": "4",
+   "opcoes": [
+    [
+     "4",
+     "4 dígitos (2 CCCC 00 VVVVV D)"
+    ],
+    [
+     "5",
+     "5 dígitos (2 CCCCC 0 VVVVV D)"
+    ],
+    [
+     "6",
+     "6 dígitos (2 CCCCCC VVVVV D)"
+    ]
+   ]
+  },
+  {
+   "id": "valor",
+   "rotulo": "Etiqueta da balança — o valor impresso é",
+   "tipo": "sel",
+   "valor": "peso",
+   "opcoes": [
+    [
+     "peso",
+     "Peso (em gramas)"
+    ],
+    [
+     "preco",
+     "Preço (em centavos)"
+    ]
+   ]
+  },
+  {
+   "id": "whatsapp",
+   "rotulo": "WhatsApp para relatórios (opcional, com DDD)",
+   "valor": "",
+   "tipo": "tel"
+  },
+  {
+   "id": "cosmos",
+   "rotulo": "Token do Cosmos — busca de produtos brasileiros (opcional; conta grátis em cosmos.bluesoft.com.br)",
+   "valor": ""
+  }
+ ],
+ "permissoes": [
+  "android.permission.CAMERA",
+  "android.permission.RECEIVE_BOOT_COMPLETED",
+  "android.permission.POST_NOTIFICATIONS",
+  "android.permission.INTERNET"
+ ],
+ "cor": "#0B6E4F",
+ "versao": 3
+}
