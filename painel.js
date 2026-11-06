@@ -80,11 +80,11 @@ function gerarHTML() {
 <title>Validade — Painel do projeto</title>
 <meta name="description" content="Painel de status do projeto Validade: o que foi construído, testes, formatos de etiqueta e deploy.">
 <style>
-:root{--c:#D71920;--c2:#FDECEC;--cod:#A3141A;--am:#FFC20E;--bg:#F4F7FA;--sf:#fff;--bd:#E0E7EE;--ink:#17212B;--mu:#657586;--ok:#16803C;--okl:#E3F4EA;--tr:#EEF2F6}
-@media(prefers-color-scheme:dark){:root{--c2:#2A1A1C;--cod:#F2A6A2;--bg:#0E151C;--sf:#17212B;--bd:#2A3643;--ink:#EDF2F7;--mu:#98A8B7;--okl:#12301F;--tr:#1E2A36}}
+:root{--c:#083d81;--c2:#E7EEF7;--cod:#083d81;--am:#faf400;--barra:#083d81;--bg:#F4F7FA;--sf:#fff;--bd:#E0E7EE;--ink:#17212B;--mu:#657586;--ok:#16803C;--okl:#E3F4EA;--tr:#EEF2F6}
+@media(prefers-color-scheme:dark){:root{--c2:#15233B;--cod:#9CC2F0;--barra:#3B82D6;--bg:#0E151C;--sf:#17212B;--bd:#2A3643;--ink:#EDF2F7;--mu:#98A8B7;--okl:#12301F;--tr:#1E2A36}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Roboto,Arial,sans-serif;padding-bottom:40px}
-header{background:linear-gradient(135deg,#D71920,#B3141A);color:#fff;padding:28px 16px;border-bottom:5px solid var(--am)}
+header{background:linear-gradient(135deg,#083d81,#0a4e9e);color:#fff;padding:28px 16px;border-bottom:5px solid var(--am)}
 header .in{max-width:900px;margin:0 auto}
 header h1{margin:0;font-size:24px}header p{margin:6px 0 0;opacity:.9;font-size:14px}
 main{max-width:900px;margin:0 auto;padding:16px}
@@ -102,7 +102,7 @@ main{max-width:900px;margin:0 auto;padding:16px}
 .barlinha{display:grid;grid-template-columns:120px 1fr 32px;align-items:center;gap:10px;margin:8px 0}
 .barnome{font-size:13px;color:var(--mu)}
 .bartrilho{background:var(--tr);border-radius:6px;height:14px;overflow:hidden}
-.barra{height:100%;background:var(--c);border-radius:6px}
+.barra{height:100%;background:var(--barra);border-radius:6px}
 .barval{font-weight:700;font-size:14px;text-align:right}
 table{width:100%;border-collapse:collapse;font-size:13.5px}
 th{text-align:left;font-size:11px;color:var(--mu);text-transform:uppercase;letter-spacing:.04em;padding:7px 6px;border-bottom:1px solid var(--bd)}

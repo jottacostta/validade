@@ -1,11 +1,11 @@
 {
   "nome": "Controle de Validade",
   "slogan": "Lotes, validades e perecíveis",
-  "cor": "#D71920",
+  "cor": "#083d81",
   "dias": 30,
   "dig": 5,
   "valor": "preco",
   "whatsapp": "",
   "cosmos": "",
-  "acento": "#FFC20E"
+  "acento": "#faf400"
 }
