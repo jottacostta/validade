@@ -4,6 +4,10 @@ const path = require('path'), fs = require('fs'), os = require('os');
 let chromium = null;
 try { ({ chromium } = require('playwright')); } catch (e) { }
 const URL_APP = 'file://' + path.join(__dirname, '../dist/validade.html');
+const { montar } = require('../build');
+const SUPA_FILE = path.join(os.tmpdir(), 'validade-supa.html');
+try { fs.writeFileSync(SUPA_FILE, montar({ nome: 'Controle de Validade', slogan: 'x', cor: '#083d81', dig: 5, valor: 'preco', dias: 30, supaUrl: 'https://test.supabase.co', supaKey: 'anon-test', loginDom: 'loja.validade' }).html); } catch (e) {}
+const URL_SUPA = 'file://' + SUPA_FILE;
 const pular = chromium ? false : 'Playwright não instalado';
 
 let navegador;
@@ -20,7 +24,7 @@ test.before(async () => { if (chromium) navegador = await chromium.launch({ args
 test.after(async () => { if (navegador) await navegador.close(); });
 
 /* abre o app; `dados` vai para o localStorage antes de carregar; `respostas` responde prompts/confirms em ordem */
-async function abrir({ dados, chave = 'validade_dados', respostas = [], opcoes = {}, antes } = {}) {
+async function abrir({ dados, chave = 'validade_dados', respostas = [], opcoes = {}, antes, url } = {}) {
   const ctx = await navegador.newContext({ acceptDownloads: true, ...opcoes });
   const p = await ctx.newPage(), erros = [], dialogos = [];
   p.on('pageerror', e => erros.push(e.message));
@@ -29,7 +33,7 @@ async function abrir({ dados, chave = 'validade_dados', respostas = [], opcoes =
   await p.addInitScript(() => { window.__ag = []; window.__ca = [];
     window.Android = { agendarLembrete: id => window.__ag.push(id), cancelarLembrete: id => window.__ca.push(id) }; });
   if (antes) await antes(p);
-  await p.goto(URL_APP);
+  await p.goto(url || URL_APP);
   if (dados !== undefined) { await p.evaluate(([k, v]) => { localStorage.clear(); localStorage.setItem(k, JSON.stringify(v)); }, [chave, dados]); await p.reload(); }
   const salvo = () => p.evaluate(() => JSON.parse(localStorage.getItem('validade_dados')));
   return { p, ctx, erros, dialogos, respostas, salvo, fechar: () => ctx.close() };
@@ -256,5 +260,53 @@ tflaky('OCR desligado: não mexe na descrição nem no SIF', { skip: pular }, as
   assert.strictEqual(await a.p.inputValue('#peDesc'), '');
   assert.strictEqual(await a.p.inputValue('#peSif'), '');
   assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
+
+tflaky('conta: entra (usuário→e-mail interno), lista e escolhe a loja', { skip: pular }, async () => {
+  const a = await abrir({ url: URL_SUPA, chave: 'validade_sessao', dados: null });
+  let authBody = null;
+  await a.p.route('**/auth/v1/token*', async r => { try { authBody = r.request().postDataJSON(); } catch (e) {}
+    await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ access_token: 'tok', refresh_token: 'ref', expires_in: 3600, user: { id: 'u1', email: 'joao@loja.validade' } }) }); });
+  await a.p.route('**/rest/v1/lojas*', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ id: 'L1', nome: 'Bangu' }, { id: 'L2', nome: 'Campo Grande' }]) }));
+  await a.p.click('nav button[data-v="aj"]');
+  await a.p.waitForSelector('#cardConta', { state: 'visible' });
+  await a.p.click('#bEntrarAj');
+  await a.p.waitForSelector('#conta', { state: 'visible' });
+  await a.p.fill('#cUser', 'joao'); await a.p.fill('#cPass', '1234');
+  await a.p.click('#bEntrar');
+  await a.p.waitForFunction(() => document.querySelectorAll('#listaLojas .loja').length === 2);
+  assert.strictEqual(authBody && authBody.email, 'joao@loja.validade'); // usuário vira e-mail interno
+  await a.p.click('#listaLojas .loja[data-id="L2"]');
+  await a.p.waitForFunction(() => !document.getElementById('conta').classList.contains('on'));
+  const sess = await a.p.evaluate(() => JSON.parse(localStorage.getItem('validade_sessao')));
+  assert.strictEqual(sess.access_token, 'tok');
+  assert.strictEqual(sess.usuario, 'joao');
+  assert.strictEqual(sess.lojaId, 'L2');
+  assert.strictEqual(sess.lojaNome, 'Campo Grande');
+  assert.ok((await a.p.textContent('#contaInfo')).includes('Campo Grande'));
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
+
+tflaky('conta: senha errada mostra mensagem de erro', { skip: pular }, async () => {
+  const a = await abrir({ url: URL_SUPA });
+  await a.p.route('**/auth/v1/token*', r => r.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error_description: 'Invalid login credentials' }) }));
+  await a.p.click('nav button[data-v="aj"]');
+  await a.p.click('#bEntrarAj');
+  await a.p.fill('#cUser', 'joao'); await a.p.fill('#cPass', 'errada');
+  await a.p.click('#bEntrar');
+  await a.p.waitForSelector('#cErro', { state: 'visible' });
+  assert.ok((await a.p.textContent('#cErro')).toLowerCase().includes('invalid'));
+  const sess = await a.p.evaluate(() => localStorage.getItem('validade_sessao'));
+  assert.strictEqual(sess, null); // não cria sessão
+  await a.fechar();
+});
+
+tflaky('sem Supabase configurado: card de conta fica oculto', { skip: pular }, async () => {
+  const a = await abrir(); // dist padrão (supaUrl vazio)
+  await a.p.click('nav button[data-v="aj"]');
+  await a.p.waitForSelector('#v-aj.on');
+  assert.strictEqual(await a.p.isVisible('#cardConta'), false);
   await a.fechar();
 });

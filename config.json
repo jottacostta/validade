@@ -7,5 +7,8 @@
   "valor": "preco",
   "whatsapp": "",
   "cosmos": "",
-  "acento": "#faf400"
+  "acento": "#faf400",
+  "supaUrl": "",
+  "supaKey": "",
+  "loginDom": "loja.validade"
 }
