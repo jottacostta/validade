@@ -313,3 +313,59 @@ tflaky('sem Supabase configurado: card de conta fica oculto', { skip: pular }, a
   assert.strictEqual(await a.p.isVisible('#cardConta'), false);
   await a.fechar();
 });
+
+/* abre o app já logado (sessão posta via evaluate + reload, como os demais testes);
+   setupRotas registra as rotas ANTES do reload, para o pull inicial ser interceptado */
+async function abrirLogado(setupRotas) {
+  const a = await abrir({ url: URL_SUPA });
+  if (setupRotas) await setupRotas(a.p);
+  await a.p.evaluate(() => localStorage.setItem('validade_sessao', JSON.stringify({ access_token: 'tok', refresh_token: 'ref', expira: Date.now() + 3600000, usuario: 'teste', email: 'teste@loja.validade', uid: 'u1', lojaId: 'L1', lojaNome: 'Loja Teste' })));
+  await a.p.reload();
+  return a;
+}
+const R_PULL = /\/catalogo\?updated_at=gt/, R_LOOK = /\/catalogo\?ean=eq\./, R_PUSH = /\/catalogo\?on_conflict=ean/, R_OFF = /openfoodfacts\.org/;
+
+tflaky('catálogo: usa o nome do catálogo compartilhado (antes das fontes externas)', { skip: pular }, async () => {
+  const a = await abrirLogado(async p => {
+    await p.route(R_PULL, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.route(R_LOOK, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ nome: 'Café Pilão 500g', marca: 'Pilão', img: '' }]) }));
+    await p.route(R_PUSH, r => r.fulfill({ status: 201, body: '' }));
+    await p.route(R_OFF, r => r.fulfill({ status: 200, body: '{"status":0}' }));
+  });
+  await a.p.fill('#tCodigo', '7891000315507'); await a.p.click('#bBuscar');
+  await a.p.waitForFunction(() => document.getElementById('pNome').value === 'Café Pilão 500g');
+  assert.ok((await a.p.textContent('#pStatus')).includes('catálogo'));
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
+
+tflaky('catálogo: não achou local, acha no Open Food Facts e envia para o catálogo', { skip: pular }, async () => {
+  let pushBody = null;
+  const a = await abrirLogado(async p => {
+    await p.route(R_PULL, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.route(R_LOOK, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.route(R_PUSH, async r => { try { pushBody = r.request().postDataJSON(); } catch (e) {} await r.fulfill({ status: 201, body: '' }); });
+    await p.route(R_OFF, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 1, product: { product_name: 'Biscoito X', brands: 'MarcaY', image_front_small_url: '' } }) }));
+  });
+  await a.p.fill('#tCodigo', '7899999999999'); await a.p.click('#bBuscar');
+  await a.p.waitForFunction(() => document.getElementById('pNome').value === 'Biscoito X');
+  await a.p.waitForTimeout(300);
+  assert.ok(pushBody && pushBody[0] && pushBody[0].nome === 'Biscoito X', 'enviou o nome ao catálogo');
+  assert.ok((await a.p.textContent('#pStatus')).includes('Open Food Facts'));
+  await a.fechar();
+});
+
+tflaky('catálogo: pull junta os produtos do servidor no cache local', { skip: pular }, async () => {
+  const a = await abrirLogado(async p => {
+    await p.route(R_PULL, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+      { ean: '111', nome: 'Arroz', marca: '', img: '', updated_at: '2026-11-06T10:00:00Z' },
+      { ean: '222', nome: 'Feijão', marca: '', img: '', updated_at: '2026-11-06T11:00:00Z' }]) }));
+  });
+  await a.p.waitForFunction(() => { try { const d = JSON.parse(localStorage.getItem('validade_dados')); return !!(d && d.cat && d.cat['111'] && d.cat['222']); } catch (e) { return false; } });
+  const d = await a.p.evaluate(() => JSON.parse(localStorage.getItem('validade_dados')));
+  assert.strictEqual(d.cat['111'].nome, 'Arroz');
+  assert.strictEqual(d.cat['222'].nome, 'Feijão');
+  const sync = await a.p.evaluate(() => JSON.parse(localStorage.getItem('validade_sync')));
+  assert.strictEqual(sync.catalogo, '2026-11-06T11:00:00Z');
+  await a.fechar();
+});

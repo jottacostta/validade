@@ -198,7 +198,7 @@ if(CFG.slogan)$('slogan').textContent=CFG.slogan;
 var K='validade_dados', D={};
 try{var s=localStorage.getItem(K);
   if(s===null){var ant='validade_'+CFG.nome;s=localStorage.getItem(ant);
-    if(s===null){var cs=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('validade_')===0&&k!==K)cs.push(k);}
+    if(s===null){var cs=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('validade_')===0&&k!==K&&k!=='validade_sessao'&&k!=='validade_sync')cs.push(k);}
       if(cs.length===1){ant=cs[0];s=localStorage.getItem(ant);}}
     if(s!==null){localStorage.setItem(K,s);localStorage.removeItem(ant);}}
   if(s)D=JSON.parse(s);}catch(e){}
@@ -324,11 +324,12 @@ function buscarNome(ean){
       var p=j&&j.status===1&&j.product,n=p&&(p.product_name_pt||p.product_name||p.generic_name_pt);
       return n?{nome:(n+(p.quantity&&n.indexOf(p.quantity)<0?' '+p.quantity:'')).trim(),marca:(p.brands||'').split(',')[0].trim(),img:p.image_front_small_url||''}:null;}});});
   var i=0;
-  return new Promise(function(ok){(function prox(){if(i>=fontes.length)return ok({erros:erros});var f=fontes[i++];
+  function chain(){return new Promise(function(ok){(function prox(){if(i>=fontes.length)return ok({erros:erros});var f=fontes[i++];
     http(f.url,f.cab).then(function(r){var res=null;try{res=f.ler(r.dados());}catch(e){}
       if(res){res.fonte=f.nome;return ok(res);}
       if(r.status===401||r.status===403)erros.push(f.nome+': token inválido');else if(r.status===429)erros.push(f.nome+': limite de consultas');
       prox();}).catch(function(e){erros.push(f.nome+': '+(e&&e.message||'falha'));prox();});})();});}
+  return catalogoBuscar(ean).then(function(c){if(c&&c.nome){c.fonte='catálogo';return c;}return chain();},function(){return chain();});}
 function pesquisarWeb(ean){var u='https://www.google.com/search?q='+encodeURIComponent(ean);
   if(window.Android&&Android.abrirLink)Android.abrirLink(u);else window.open(u,'_blank');}
 function abrirProduto(ean){
@@ -340,7 +341,7 @@ function abrirProduto(ean){
   if(conhecido){$('pStatus').textContent=(conhecido.marca?conhecido.marca+' • ':'')+'já cadastrado';}
   else{$('pStatus').innerHTML='<span class="gira"></span> buscando o nome na internet…';
     buscarNome(ean).then(function(r){if(atual!==ean)return;
-      if(r&&r.nome){D.cat[ean]={nome:r.nome,marca:r.marca,img:r.img};salvar();if(!$('pNome').value)$('pNome').value=r.nome;$('pStatus').textContent=(r.marca?r.marca+' • ':'')+'encontrado no '+r.fonte+' ✔';mostrarImg(r.img);}
+      if(r&&r.nome){catalogar(ean,{nome:r.nome,marca:r.marca,img:r.img});if(!$('pNome').value)$('pNome').value=r.nome;$('pStatus').textContent=(r.marca?r.marca+' • ':'')+'encontrado no '+r.fonte+' ✔';mostrarImg(r.img);}
       else{var motivo=navigator.onLine===false?'sem internet':'não encontrado nas bases';
         $('pStatus').innerHTML=motivo+' — digite o nome (fica salvo) <button class="btn sec" id="bWeb" style="padding:6px 10px;font-size:12px;margin-top:6px">🔎 Pesquisar na web</button>'
           +(r&&r.erros&&r.erros.length?'<div style="font-size:11px;margin-top:4px;opacity:.75">'+esc(r.erros.slice(0,3).join(' • '))+'</div>':'')
@@ -354,7 +355,7 @@ $('tCodigo').onkeydown=function(e){if(e.key==='Enter')$('bBuscar').click();};
 $('bSalvarLote').onclick=function(){if(!atual)return;var nome=$('pNome').value.trim(),lote=$('pLote').value.trim().toUpperCase(),qtd=num($('pQtd').value),val=$('pVal').value;
   if(!nome){toast('Digite o nome do produto');$('pNome').focus();return;}if(!val){toast('Informe a validade');$('pVal').focus();return;}
   var p=D.prod[atual]||(D.prod[atual]={nome:nome,marca:'',img:'',lotes:[]});p.nome=nome;var c=D.cat[atual];if(c){p.marca=p.marca||c.marca;p.img=p.img||c.img;}
-  D.cat[atual]=Object.assign({},c||{},{nome:nome});
+  catalogar(atual,{nome:nome});
   var ex=null;p.lotes.forEach(function(l){if(l.lote===lote&&l.val===val)ex=l;});
   if(ex){var q=prompt('O lote '+(lote||'sem número')+' (validade '+fdata(val)+') já tem '+ex.qtd+' un. e você informou '+qtd+'.\n\nQuantidade final do lote — já vem somada; troque se quiser substituir:',ex.qtd+qtd);
     if(q===null){toast('Nada alterado');return;}ex.qtd=num(q);ex.atualizado=Date.now();toast('Lote com '+ex.qtd+' un. ✔');}else{ex={id:uid(),lote:lote,qtd:qtd,val:val,criado:Date.now()};p.lotes.push(ex);toast('Lote salvo ✔');}
@@ -533,13 +534,31 @@ function logado(){return !!(SESS&&SESS.access_token);}
 function sbReq(path,opt){opt=opt||{};var h={apikey:CFG.supaKey,'Content-Type':'application/json'};
   if(opt.auth!==false&&logado())h.Authorization='Bearer '+SESS.access_token;
   if(opt.headers)for(var k in opt.headers)h[k]=opt.headers[k];
-  return fetch(CFG.supaUrl+path,{method:opt.method||'GET',headers:h,body:opt.body?JSON.stringify(opt.body):undefined})
-    .then(function(r){return r.text().then(function(t){var j=null;try{j=t?JSON.parse(t):null;}catch(e){}return {status:r.status,ok:r.ok,dados:j};});});}
+  var ctl=window.AbortController?new AbortController():null,tm=setTimeout(function(){ctl&&ctl.abort();},12000);
+  return fetch(CFG.supaUrl+path,{method:opt.method||'GET',headers:h,body:opt.body?JSON.stringify(opt.body):undefined,signal:ctl?ctl.signal:undefined})
+    .then(function(r){clearTimeout(tm);return r.text().then(function(t){var j=null;try{j=t?JSON.parse(t):null;}catch(e){}return {status:r.status,ok:r.ok,dados:j};});},function(e){clearTimeout(tm);throw e;});}
 function sbLogin(user,pass){return sbReq('/auth/v1/token?grant_type=password',{method:'POST',auth:false,body:{email:user+'@'+DOM_LOGIN,password:pass}})
   .then(function(r){if(!r.ok||!r.dados||!r.dados.access_token)throw new Error((r.dados&&(r.dados.error_description||r.dados.msg||r.dados.error))||'Usuário ou senha inválidos');
     var u=r.dados.user||{};SESS={access_token:r.dados.access_token,refresh_token:r.dados.refresh_token,expira:Date.now()+((r.dados.expires_in||3600)*1000),usuario:user,email:u.email,uid:u.id,lojaId:null,lojaNome:null};salvarSess();return SESS;});}
 function sbLogout(){SESS=null;salvarSess();}
 function sbLojas(){return sbReq('/rest/v1/lojas?select=id,nome&order=nome.asc').then(function(r){if(!r.ok)throw new Error('falha');return Array.isArray(r.dados)?r.dados:[];});}
+/* ───── catálogo compartilhado (EAN → nome), entre todas as lojas ───── */
+var SYNC={};try{SYNC=JSON.parse(localStorage.getItem('validade_sync')||'{}')||{};}catch(e){}
+function salvarSync(){try{localStorage.setItem('validade_sync',JSON.stringify(SYNC));}catch(e){}}
+function catalogoBuscar(ean){if(!sbOn()||!logado())return Promise.resolve(null);
+  return sbReq('/rest/v1/catalogo?ean=eq.'+encodeURIComponent(ean)+'&select=nome,marca,img&limit=1')
+    .then(function(r){var d=r.ok&&Array.isArray(r.dados)&&r.dados[0];return d&&d.nome?{nome:d.nome,marca:d.marca||'',img:d.img||''}:null;},function(){return null;});}
+function catalogoSalvar(ean,d){if(!sbOn()||!logado()||!d||!d.nome)return;
+  sbReq('/rest/v1/catalogo?on_conflict=ean',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:[{ean:String(ean),nome:d.nome,marca:d.marca||'',img:d.img||''}]}).catch(function(){});}
+/* grava o nome no cache local E manda para o catálogo compartilhado */
+function catalogar(ean,dados){D.cat[ean]=Object.assign({},D.cat[ean]||{},dados);salvar();catalogoSalvar(ean,D.cat[ean]);}
+/* puxa o que mudou no catálogo desde a última vez e junta no cache local */
+function catalogoPull(){if(!sbOn()||!logado())return Promise.resolve(0);
+  var desde=SYNC.catalogo||'1970-01-01T00:00:00Z';
+  return sbReq('/rest/v1/catalogo?updated_at=gt.'+encodeURIComponent(desde)+'&select=ean,nome,marca,img,updated_at&order=updated_at.asc&limit=5000')
+    .then(function(r){if(!r.ok||!Array.isArray(r.dados))return 0;var n=0,maxu=desde;
+      r.dados.forEach(function(row){if(row.ean&&row.nome){D.cat[row.ean]=Object.assign({},D.cat[row.ean]||{},{nome:row.nome,marca:row.marca||'',img:row.img||''});n++;}if(row.updated_at&&row.updated_at>maxu)maxu=row.updated_at;});
+      if(maxu>desde){SYNC.catalogo=maxu;salvarSync();}if(n)salvar();return n;},function(){return 0;});}
 function abrirConta(){if(!sbOn()){toast('Sincronização não configurada');return;}$('conta').classList.add('on');if(logado())mostrarLojas();else mostrarLoginForm();}
 function fecharConta(){$('conta').classList.remove('on');}
 function mostrarLoginForm(){$('conta-login').style.display='';$('conta-lojas').style.display='none';$('cErro').style.display='none';$('cPass').value='';setTimeout(function(){$('cUser').focus();},120);}
@@ -548,7 +567,7 @@ function mostrarLojas(){$('conta-login').style.display='none';$('conta-lojas').s
     $('listaLojas').innerHTML=ls.map(function(l){return '<button class="btn sec big loja" data-id="'+esc(l.id)+'" data-nome="'+esc(l.nome)+'" style="margin-bottom:8px;justify-content:flex-start">🏬 '+esc(l.nome)+'</button>';}).join('');
   },function(){$('listaLojas').innerHTML='<div class="vazio">Não consegui carregar as lojas. Verifique a internet e tente de novo.</div>';});}
 $('conta').addEventListener('click',function(e){if(e.target===$('conta'))fecharConta();});
-$('listaLojas').onclick=function(e){var b=e.target.closest('.loja');if(!b||!SESS)return;SESS.lojaId=b.dataset.id;SESS.lojaNome=b.dataset.nome;salvarSess();fecharConta();toast('Loja: '+SESS.lojaNome);var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='aj')contaCard();};
+$('listaLojas').onclick=function(e){var b=e.target.closest('.loja');if(!b||!SESS)return;SESS.lojaId=b.dataset.id;SESS.lojaNome=b.dataset.nome;salvarSess();fecharConta();toast('Loja: '+SESS.lojaNome);catalogoPull().then(function(n){if(n)toast('Catálogo: +'+n+' produto'+(n>1?'s':''));});var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='aj')contaCard();};
 $('bEntrar').onclick=function(){var u=$('cUser').value.trim(),pw=$('cPass').value;if(!u||!pw){$('cErro').textContent='Preencha usuário e senha.';$('cErro').style.display='';return;}
   $('cErro').style.display='none';$('bEntrar').disabled=true;$('bEntrar').textContent='Entrando…';
   sbLogin(u,pw).then(function(){$('bEntrar').disabled=false;$('bEntrar').textContent='Entrar';mostrarLojas();},
@@ -561,6 +580,7 @@ function contaCard(){if(!sbOn()){$('cardConta').style.display='none';return;}$('
     $('bTrocarLoja').onclick=abrirConta;$('bSair2').onclick=function(){sbLogout();contaCard();toast('Você saiu');};}
   else{$('contaInfo').innerHTML='<p style="margin:0 0 10px;font-size:13px;color:var(--mu)">Entre para sincronizar os dados entre aparelhos e lojas.</p><button class="btn big" id="bEntrarAj">Entrar</button>';$('bEntrarAj').onclick=abrirConta;}}
 
+if(logado()&&SESS.lojaId)catalogoPull();
 listaProdutos();
 })();
 </script>
