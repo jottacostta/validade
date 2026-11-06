@@ -26,5 +26,9 @@ Permissões no APK: câmera, internet, notificações e reinício do aparelho (p
 
 ## Armazenamento
 
-`localStorage`, chave `'validade_' + nome`. ⚠️ Trocar o `nome` muda a chave e o app abre vazio —
-primeira melhoria planejada: chave fixa com migração automática dos dados antigos.
+`localStorage`, chave fixa `'validade_dados'` (trocar o `nome` não perde mais os dados).
+Na primeira abertura, se a chave fixa não existir, o app migra a chave antiga `'validade_' + nome`
+(ou, se houver só uma chave `validade_*`, essa) e apaga a antiga.
+
+Ao abrir e ao importar backup, `completar()` preenche o que faltar (`prod`, `cat`, `pere`, `aj`) e
+padroniza os códigos: UPC-E → UPC-A e UPC-A (12 dígitos) → EAN-13 com `0` na frente, juntando lotes duplicados.
