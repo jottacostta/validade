@@ -20,6 +20,7 @@ create extension if not exists pgcrypto;  -- gen_random_uuid()
 create or replace function public.set_updated_at()
 returns trigger language plpgsql as $$
 begin new.updated_at = now(); return new; end; $$;
+alter function public.set_updated_at() set search_path = '';
 
 -- ───────────────────────── lojas e vínculos ─────────────────────────────────
 create table if not exists public.lojas (

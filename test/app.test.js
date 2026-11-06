@@ -8,6 +8,9 @@ const { montar } = require('../build');
 const SUPA_FILE = path.join(os.tmpdir(), 'validade-supa.html');
 try { fs.writeFileSync(SUPA_FILE, montar({ nome: 'Controle de Validade', slogan: 'x', cor: '#083d81', dig: 5, valor: 'preco', dias: 30, supaUrl: 'https://test.supabase.co', supaKey: 'anon-test', loginDom: 'loja.validade' }).html); } catch (e) {}
 const URL_SUPA = 'file://' + SUPA_FILE;
+const NOSUPA_FILE = path.join(os.tmpdir(), 'validade-nosupa.html');
+try { fs.writeFileSync(NOSUPA_FILE, montar({ nome: 'Controle de Validade', slogan: 'x', cor: '#083d81', dig: 5, valor: 'preco', dias: 30 }).html); } catch (e) {}
+const URL_NOSUPA = 'file://' + NOSUPA_FILE;
 const pular = chromium ? false : 'Playwright não instalado';
 
 let navegador;
@@ -304,7 +307,7 @@ tflaky('conta: senha errada mostra mensagem de erro', { skip: pular }, async () 
 });
 
 tflaky('sem Supabase configurado: card de conta fica oculto', { skip: pular }, async () => {
-  const a = await abrir(); // dist padrão (supaUrl vazio)
+  const a = await abrir({ url: URL_NOSUPA });
   await a.p.click('nav button[data-v="aj"]');
   await a.p.waitForSelector('#v-aj.on');
   assert.strictEqual(await a.p.isVisible('#cardConta'), false);

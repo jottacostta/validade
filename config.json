@@ -8,7 +8,7 @@
   "whatsapp": "",
   "cosmos": "",
   "acento": "#faf400",
-  "supaUrl": "",
-  "supaKey": "",
+  "supaUrl": "https://khgtwbegrxhajgdzfxyv.supabase.co",
+  "supaKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoZ3R3YmVncnhoYWpnZHpmeHl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM5OTY0NzYsImV4cCI6MjEwOTU3MjQ3Nn0.y-qv_6z0GXv2J_dkGLqCjJTTaG_qqzIhNw8VABbGyZo",
   "loginDom": "loja.validade"
 }
