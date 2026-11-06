@@ -255,6 +255,59 @@ var LeitorEAN=(function(){
 })();
 
 
+/* Leitor de GS1 (DataMatrix / QR / GS1-128) das etiquetas de balança 2D.
+   LeitorGS1.ler(texto) → {gtin,val:'AAAA-MM-DD'|null,peso:Number|null,preco:Number|null,lote:'',ais:{}} ou null.
+   Entende as duas formas que os leitores devolvem: string de elementos (AIs grudados, com FNC1/GS
+   separando os de tamanho variável) e a forma legível com parênteses "(01)...(17)...". */
+var LeitorGS1=(function(){
+  /* AIs de tamanho fixo que usamos (comprimento do VALOR, sem o AI) */
+  var FIX={'00':18,'01':14,'02':14,'03':14,'11':6,'12':6,'13':6,'15':6,'16':6,'17':6,'19':6,'20':2};
+  function soDig(t){return String(t||'').replace(/\D/g,'');}
+  function data(s){s=soDig(s);if(s.length!==6)return null;var a=2000+ +s.substr(0,2),m=+s.substr(2,2),d=+s.substr(4,2);
+    if(m<1||m>12)return null;if(d===0)d=new Date(a,m,0).getDate();/* GS1: DD=00 → último dia do mês */
+    var dt=new Date(a,m-1,d);if(dt.getMonth()!==m-1)return null;
+    return a+'-'+('0'+m).slice(-2)+'-'+('0'+d).slice(-2);}
+  function dec(v,n){var x=parseInt(soDig(v),10);return isNaN(x)?null:x/Math.pow(10,n||0);}
+  function montar(ais){
+    var g={ais:ais,gtin:'',val:null,peso:null,preco:null,lote:ais['10']||''};
+    var gt=soDig(ais['01']||ais['02']||'');if(gt.length===14)g.gtin=gt;/* AI (01) é sempre 14 dígitos */
+    var dv=ais['17']||ais['15'];if(dv)g.val=data(dv);
+    for(var ai in ais){
+      if(/^310\d$/.test(ai)){var p=dec(ais[ai],+ai.charAt(3));if(p!=null)g.peso=p;}            /* 310n: peso líquido em kg */
+      else if(/^392\d$/.test(ai)){var v=dec(ais[ai],+ai.charAt(3));if(v!=null)g.preco=v;}        /* 392n: valor a pagar */
+      else if(/^393\d$/.test(ai)){var s=soDig(ais[ai]);if(s.length>3){var w=dec(s.substr(3),+ai.charAt(3));if(w!=null)g.preco=w;}} /* 393n: moeda(3)+valor */
+    }
+    return (g.gtin||g.peso!=null||g.val)?g:null;
+  }
+  function porParenteses(s){var ais={},re=/\((\d{2,4})\)([^(]*)/g,m;
+    while((m=re.exec(s))){if(ais[m[1]]==null)ais[m[1]]=m[2];}return montar(ais);}
+  function ler(txt){
+    if(txt==null)return null;var s=String(txt);
+    if(s.indexOf('(')>=0)return porParenteses(s);
+    s=s.replace(/^\][A-Za-z0-9]{2}/,'');                 /* identificador de simbologia: ]d2 ]Q3 ]C1 ]e0 … */
+    function sep(ch){return ch===29||ch===232;}          /* GS (29) ou FNC1 (232) */
+    while(s.length&&sep(s.charCodeAt(0)))s=s.slice(1);
+    if(!/^\d/.test(s))return null;
+    var ais={},i=0,L=s.length;
+    while(i<L){
+      if(sep(s.charCodeAt(i))){i++;continue;}
+      var ai=null,len=null;
+      for(var n=2;n<=4;n++){var c=s.substr(i,n);if(!/^\d+$/.test(c))break;
+        if(n===2&&FIX[c]!=null){ai=c;len=FIX[c];break;}
+        if(n===4&&/^3[1-6]\d\d$/.test(c)){ai=c;len=6;break;}   /* medidas (peso, volume…): valor de 6 dígitos */
+        if(n===4&&/^39\d\d$/.test(c)){ai=c;len=-1;break;}      /* valores monetários: tamanho variável */
+      }
+      if(ai==null){ai=s.substr(i,2);if(!/^\d\d$/.test(ai))break;len=-1;} /* AI desconhecido: variável até o separador */
+      i+=ai.length;var val;
+      if(len===-1){var j=i;while(j<L&&!sep(s.charCodeAt(j)))j++;val=s.substring(i,j);i=j;}
+      else{val=s.substr(i,len);i+=len;}
+      if(ais[ai]==null)ais[ai]=val;
+    }
+    return montar(ais);
+  }
+  return {ler:ler};
+})();
+
 </script>
 <script>
 (function(){
@@ -318,7 +371,7 @@ window.aoVoltarAndroid=function(){if($('scanner').classList.contains('on')){fech
 
 /* ───── scanner (BarcodeDetector nativo ou leitor próprio) ───── */
 var fluxo=null,loop=null,alvoScan=null,ultimo='',repet=0,luz=false,detector=null;
-try{if('BarcodeDetector' in window)detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','itf']});}catch(e){detector=null;}
+try{if('BarcodeDetector' in window)detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','itf','data_matrix','qr_code']});}catch(e){detector=null;}
 function abrirScanner(alvo){alvoScan=alvo;ultimo='';repet=0;nQuadro=0;
   $('scanTxt').textContent=alvo==='bal'?'Aponte para a etiqueta da balança':'Aponte para o código de barras';
   $('scanner').classList.add('on');
@@ -343,7 +396,9 @@ function lerProprio(fonte,soFaixa){var cv=$('cv'),W=fonte.videoWidth||fonte.natu
   var c=LeitorEAN.ler(g.getImageData(0,0,w,cv.height));
   if(!c&&!soFaixa){cv.height=h;g.drawImage(fonte,0,0,W,H,0,0,w,h);c=LeitorEAN.ler(g.getImageData(0,0,w,h));}
   if(c&&fonte.tagName==='VIDEO')achou(c,false);return c;}
-function achou(c,confiavel,fmt){c=String(c).replace(/\D/g,'');if(!c)return;
+function achou(c,confiavel,fmt){
+  var g=(fmt==='data_matrix'||fmt==='qr_code')?LeitorGS1.ler(c):null;if(g&&(g.peso!=null||g.gtin)){vib(80);fecharScanner();tratarGS1(g,alvoScan);return;}
+  c=String(c).replace(/\D/g,'');if(!c)return;
   if(!confiavel){if(c===ultimo)repet++;else{ultimo=c;repet=1;}if(repet<2)return;}
   vib(80);fecharScanner();tratarCodigo(c,alvoScan,fmt);}
 $('bFechar').onclick=fecharScanner;
@@ -352,13 +407,16 @@ $('bLuz').onclick=function(){luz=!luz;var ok=false;
   if(!ok&&fluxo){try{fluxo.getVideoTracks()[0].applyConstraints({advanced:[{torch:luz}]});ok=true;}catch(e){}}
   $('bLuz').textContent=luz?'🔦 Apagar':'🔦 Luz';};
 $('fFoto').onchange=function(e){var f=e.target.files[0];if(!f)return;e.target.value='';var img=new Image();
-  img.onload=function(){var fim=function(c,fmt){if(c){vib(80);fecharScanner();tratarCodigo(c,alvoScan,fmt);}else toast('Não consegui ler — aproxime e tente de novo, ou digite o código');};
+  img.onload=function(){var fim=function(c,fmt){if(!c){toast('Não consegui ler — aproxime e tente de novo, ou digite o código');return;}var g=(fmt==='data_matrix'||fmt==='qr_code')?LeitorGS1.ler(c):null;vib(80);fecharScanner();if(g&&(g.peso!=null||g.gtin))tratarGS1(g,alvoScan);else tratarCodigo(String(c).replace(/\D/g,''),alvoScan,fmt);};
     if(detector){detector.detect(img).then(function(r){r&&r.length?fim(r[0].rawValue,r[0].format):fim(lerProprio(img));},function(){fim(lerProprio(img));});}else fim(lerProprio(img));};
   img.src=URL.createObjectURL(f);};
 $('bEscanear').onclick=function(){abrirScanner('prod');};
 $('bEscanearBal').onclick=function(){abrirScanner('bal');};
 
 function ehBalanca(c){return c.length===13&&c.charAt(0)==='2';}
+/* etiqueta 2D (GS1): com peso vai para perecíveis; só com código vai para produtos */
+function tratarGS1(g,alvo){if(g.peso!=null){ir('pere');subPere('reg');abrirPerecivelGS1(g);return;}
+  if(alvo==='bal')toast('Etiqueta sem peso — tratando como produto');ir('reg');abrirProduto(norm(g.gtin));}
 function tratarCodigo(c,alvo,fmt){c=normEAN(c,fmt);if(ehBalanca(c)){ir('pere');subPere('reg');abrirPerecivel(c);return;}
   if(alvo==='bal'){toast('Esse não parece ser um código de balança (começa com 2)');}
   ir('reg');abrirProduto(c);}
@@ -457,6 +515,17 @@ function abrirPerecivel(c){var info=ehBalanca(c)?lerEtiqueta(c):{cod:norm(c),pes
   $('peInfo').innerHTML=it?'':'<div class="aviso wa">Código ainda não cadastrado — preencha a descrição e o SIF: ele fica salvo para as próximas etiquetas.</div>';
   if(info.preco)$('peInfo').innerHTML+='<div class="aviso ok">Preço na etiqueta: '+info.preco.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' — informe o peso.</div>';
   setTimeout(function(){(it?(info.peso?$('peVal'):$('pePeso')):$('peDesc')).focus();},200);}
+function abrirPerecivelGS1(g){var cod=norm(g.gtin);if(!cod){toast('Etiqueta sem código de produto');return;}
+  peAtual=cod;var it=D.pere.itens[cod];$('cardPe').style.display='block';
+  $('peCod').textContent='Produto '+(g.gtin||cod)+(g.lote?' • lote '+g.lote:'');
+  $('peDesc').value=it?it.desc:'';$('peSif').value=it?it.sif||'':'';
+  $('pePeso').value=g.peso!=null?g.peso.toFixed(3):'';$('peVal').value=g.val||'';
+  var a=it?'':'<div class="aviso wa">Produto ainda não cadastrado — preencha a descrição e o SIF: fica salvo para as próximas etiquetas.</div>';
+  if(g.val)a+='<div class="aviso ok">Validade lida da etiqueta: '+fdata(g.val)+'.</div>';
+  if(g.preco!=null)a+='<div class="aviso ok">Preço na etiqueta: '+g.preco.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+'.</div>';
+  $('peInfo').innerHTML=a;
+  setTimeout(function(){(it?(g.val?$('bSalvarPe'):$('peVal')):$('peDesc')).focus();},200);
+  $('cardPe').scrollIntoView({behavior:'smooth',block:'start'});}
 $('bBuscarBal').onclick=function(){var c=$('tCodBal').value.replace(/\D/g,'');if(c){$('tCodBal').value='';abrirPerecivel(c);}};
 $('tCodBal').onkeydown=function(e){if(e.key==='Enter')$('bBuscarBal').click();};
 $('bSalvarPe').onclick=function(){if(!peAtual)return;var desc=$('peDesc').value.trim(),sif=$('peSif').value.trim(),peso=num($('pePeso').value),val=$('peVal').value;

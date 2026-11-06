@@ -2,6 +2,7 @@
 
 Sistema de **controle de validade** para supermercado: escaneia o código de barras, busca o nome do produto,
 controla lotes, quantidades e validades, e tem uma área de **perecíveis** (código de balança, SIF e peso).
+Na área de perecíveis também lê as etiquetas 2D (QR/DataMatrix GS1) das balanças, que já trazem peso e validade.
 
 Nasceu como o modelo pronto **📅 Controle de validade** do [ApkForja](https://github.com/jottacostta/APKFORJA)
 (modelo v3, ApkForja V41) e agora evolui neste repositório próprio.
@@ -10,7 +11,7 @@ Nasceu como o modelo pronto **📅 Controle de validade** do [ApkForja](https://
 
 ```
 src/app.html         o app (HTML + CSS + JS) com marcadores de configuração
-src/leitor-ean.js    leitor de código de barras EAN-13 / EAN-8 / UPC-A em JavaScript puro
+src/leitor-ean.js    leitor de código de barras (EAN-13/8, UPC) e de etiquetas 2D GS1 (QR/DataMatrix), em JavaScript puro
 config.json          configuração da loja (nome, cor, dias de aviso, etiqueta da balança…)
 build.js             monta o app final a partir do template + config
 test/                testes (leitor, build e o app no navegador)

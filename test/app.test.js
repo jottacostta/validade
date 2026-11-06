@@ -7,7 +7,7 @@ const URL_APP = 'file://' + path.join(__dirname, '../dist/validade.html');
 const pular = chromium ? false : 'Playwright não instalado';
 
 let navegador;
-test.before(async () => { if (chromium) navegador = await chromium.launch(); });
+test.before(async () => { if (chromium) navegador = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] }); });
 test.after(async () => { if (navegador) await navegador.close(); });
 
 /* abre o app; `dados` vai para o localStorage antes de carregar; `respostas` responde prompts/confirms em ordem */
@@ -131,5 +131,38 @@ test('slogan da configuração aparece no cabeçalho', { skip: pular }, async ()
   const a = await abrir();
   const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, '../config.json'), 'utf8'));
   assert.strictEqual(await a.p.textContent('#slogan'), cfg.slogan);
+  await a.fechar();
+});
+
+test('lê etiqueta GS1 (DataMatrix) e preenche os perecíveis', { skip: pular }, async () => {
+  // simula o leitor nativo devolvendo o conteúdo do DataMatrix da etiqueta (peso 0,576 kg, validade 08/11/26)
+  const a = await abrir({ dados: { pere: { itens: {}, regs: [] } }, antes: p => p.addInitScript(() => {
+    window.BarcodeDetector = class {
+      static getSupportedFormats() { return Promise.resolve(['data_matrix', 'ean_13']); }
+      detect() { return Promise.resolve([{ rawValue: '010789123456789517261108' + '3103000576', format: 'data_matrix' }]); }
+    };
+  }) });
+  await a.p.click('nav button[data-v="pere"]');
+  await a.p.click('#bEscanearBal');
+  await a.p.waitForSelector('#cardPe', { state: 'visible' });
+  await a.p.waitForFunction(() => document.getElementById('pePeso').value !== '');
+  assert.strictEqual(await a.p.inputValue('#pePeso'), '0.576');
+  assert.strictEqual(await a.p.inputValue('#peVal'), '2026-11-08');
+  assert.ok((await a.p.textContent('#peCod')).includes('07891234567895'));
+  assert.ok((await a.p.textContent('#peInfo')).includes('08/11/2026'));
+  // cadastra a descrição e salva o registro
+  await a.p.fill('#peDesc', 'Picanha Suína Fracionada');
+  await a.p.fill('#peSif', '01259');
+  await a.p.click('#bSalvarPe');
+  await a.p.waitForFunction(() => document.getElementById('cardPe').style.display === 'none');
+  const d = await a.salvo();
+  const reg = d.pere.regs[0];
+  assert.strictEqual(reg.peso, 0.576);
+  assert.strictEqual(reg.val, '2026-11-08');
+  assert.strictEqual(d.pere.itens[reg.cod].desc, 'Picanha Suína Fracionada');
+  // ao reler a mesma etiqueta, a descrição já vem preenchida
+  await a.p.click('#bEscanearBal');
+  await a.p.waitForFunction(() => document.getElementById('peDesc').value === 'Picanha Suína Fracionada');
+  assert.deepStrictEqual(a.erros, []);
   await a.fechar();
 });

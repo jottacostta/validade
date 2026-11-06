@@ -87,3 +87,56 @@ var LeitorEAN=(function(){
   return {ler:ler,checa13:checa13,checa8:checa8};
 })();
 
+
+/* Leitor de GS1 (DataMatrix / QR / GS1-128) das etiquetas de balança 2D.
+   LeitorGS1.ler(texto) → {gtin,val:'AAAA-MM-DD'|null,peso:Number|null,preco:Number|null,lote:'',ais:{}} ou null.
+   Entende as duas formas que os leitores devolvem: string de elementos (AIs grudados, com FNC1/GS
+   separando os de tamanho variável) e a forma legível com parênteses "(01)...(17)...". */
+var LeitorGS1=(function(){
+  /* AIs de tamanho fixo que usamos (comprimento do VALOR, sem o AI) */
+  var FIX={'00':18,'01':14,'02':14,'03':14,'11':6,'12':6,'13':6,'15':6,'16':6,'17':6,'19':6,'20':2};
+  function soDig(t){return String(t||'').replace(/\D/g,'');}
+  function data(s){s=soDig(s);if(s.length!==6)return null;var a=2000+ +s.substr(0,2),m=+s.substr(2,2),d=+s.substr(4,2);
+    if(m<1||m>12)return null;if(d===0)d=new Date(a,m,0).getDate();/* GS1: DD=00 → último dia do mês */
+    var dt=new Date(a,m-1,d);if(dt.getMonth()!==m-1)return null;
+    return a+'-'+('0'+m).slice(-2)+'-'+('0'+d).slice(-2);}
+  function dec(v,n){var x=parseInt(soDig(v),10);return isNaN(x)?null:x/Math.pow(10,n||0);}
+  function montar(ais){
+    var g={ais:ais,gtin:'',val:null,peso:null,preco:null,lote:ais['10']||''};
+    var gt=soDig(ais['01']||ais['02']||'');if(gt.length===14)g.gtin=gt;/* AI (01) é sempre 14 dígitos */
+    var dv=ais['17']||ais['15'];if(dv)g.val=data(dv);
+    for(var ai in ais){
+      if(/^310\d$/.test(ai)){var p=dec(ais[ai],+ai.charAt(3));if(p!=null)g.peso=p;}            /* 310n: peso líquido em kg */
+      else if(/^392\d$/.test(ai)){var v=dec(ais[ai],+ai.charAt(3));if(v!=null)g.preco=v;}        /* 392n: valor a pagar */
+      else if(/^393\d$/.test(ai)){var s=soDig(ais[ai]);if(s.length>3){var w=dec(s.substr(3),+ai.charAt(3));if(w!=null)g.preco=w;}} /* 393n: moeda(3)+valor */
+    }
+    return (g.gtin||g.peso!=null||g.val)?g:null;
+  }
+  function porParenteses(s){var ais={},re=/\((\d{2,4})\)([^(]*)/g,m;
+    while((m=re.exec(s))){if(ais[m[1]]==null)ais[m[1]]=m[2];}return montar(ais);}
+  function ler(txt){
+    if(txt==null)return null;var s=String(txt);
+    if(s.indexOf('(')>=0)return porParenteses(s);
+    s=s.replace(/^\][A-Za-z0-9]{2}/,'');                 /* identificador de simbologia: ]d2 ]Q3 ]C1 ]e0 … */
+    function sep(ch){return ch===29||ch===232;}          /* GS (29) ou FNC1 (232) */
+    while(s.length&&sep(s.charCodeAt(0)))s=s.slice(1);
+    if(!/^\d/.test(s))return null;
+    var ais={},i=0,L=s.length;
+    while(i<L){
+      if(sep(s.charCodeAt(i))){i++;continue;}
+      var ai=null,len=null;
+      for(var n=2;n<=4;n++){var c=s.substr(i,n);if(!/^\d+$/.test(c))break;
+        if(n===2&&FIX[c]!=null){ai=c;len=FIX[c];break;}
+        if(n===4&&/^3[1-6]\d\d$/.test(c)){ai=c;len=6;break;}   /* medidas (peso, volume…): valor de 6 dígitos */
+        if(n===4&&/^39\d\d$/.test(c)){ai=c;len=-1;break;}      /* valores monetários: tamanho variável */
+      }
+      if(ai==null){ai=s.substr(i,2);if(!/^\d\d$/.test(ai))break;len=-1;} /* AI desconhecido: variável até o separador */
+      i+=ai.length;var val;
+      if(len===-1){var j=i;while(j<L&&!sep(s.charCodeAt(j)))j++;val=s.substring(i,j);i=j;}
+      else{val=s.substr(i,len);i+=len;}
+      if(ais[ai]==null)ais[ai]=val;
+    }
+    return montar(ais);
+  }
+  return {ler:ler};
+})();

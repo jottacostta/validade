@@ -41,3 +41,24 @@ Sem o nativo, ele lê a faixa do meio em todo quadro e a imagem inteira a cada 3
 ## Slogan
 
 `CFG.slogan` troca o texto do cabeçalho. Se o ApkForja não mandar `slogan` no CFG, fica o texto padrão do HTML.
+
+## Etiquetas 2D (GS1 — QR/DataMatrix)
+
+Além do EAN-13 de balança (começa com 2), a área de perecíveis lê as etiquetas 2D no padrão **GS1**
+(como as da Casas Guanabara), que trazem os dados em campos AI:
+
+| AI | Campo |
+|---|---|
+| `(01)` | GTIN (14 dígitos) — usado como código do produto |
+| `(17)` | Validade (AAMMDD; dia `00` = fim do mês) |
+| `(310n)` | Peso líquido em kg (n = casas decimais) |
+| `(10)` | Lote |
+| `(392n)` / `(393n)` | Preço (valor a pagar) |
+
+`LeitorGS1.ler(texto)` (em `src/leitor-ean.js`) entende as duas formas que os leitores devolvem:
+os campos grudados com separador FNC1/GS, e a forma legível `(01)...(17)...`. Com peso, a etiqueta
+abre em **Perecíveis** já com peso e validade preenchidos; só com GTIN, abre em **Produtos**.
+
+O `BarcodeDetector` nativo precisa suportar `data_matrix`/`qr_code` (Android em geral suporta). O leitor
+próprio, por foto, só decodifica os códigos de barras 1D — a leitura das etiquetas 2D depende do leitor nativo.
+Para não confundir, o GS1 só é tratado quando o formato lido é 2D; EAN/UPC 1D seguem o caminho normal.

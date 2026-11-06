@@ -229,7 +229,7 @@ window.aoVoltarAndroid=function(){if($('scanner').classList.contains('on')){fech
 
 /* ───── scanner (BarcodeDetector nativo ou leitor próprio) ───── */
 var fluxo=null,loop=null,alvoScan=null,ultimo='',repet=0,luz=false,detector=null;
-try{if('BarcodeDetector' in window)detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','itf']});}catch(e){detector=null;}
+try{if('BarcodeDetector' in window)detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','itf','data_matrix','qr_code']});}catch(e){detector=null;}
 function abrirScanner(alvo){alvoScan=alvo;ultimo='';repet=0;nQuadro=0;
   $('scanTxt').textContent=alvo==='bal'?'Aponte para a etiqueta da balança':'Aponte para o código de barras';
   $('scanner').classList.add('on');
@@ -254,7 +254,9 @@ function lerProprio(fonte,soFaixa){var cv=$('cv'),W=fonte.videoWidth||fonte.natu
   var c=LeitorEAN.ler(g.getImageData(0,0,w,cv.height));
   if(!c&&!soFaixa){cv.height=h;g.drawImage(fonte,0,0,W,H,0,0,w,h);c=LeitorEAN.ler(g.getImageData(0,0,w,h));}
   if(c&&fonte.tagName==='VIDEO')achou(c,false);return c;}
-function achou(c,confiavel,fmt){c=String(c).replace(/\D/g,'');if(!c)return;
+function achou(c,confiavel,fmt){
+  var g=(fmt==='data_matrix'||fmt==='qr_code')?LeitorGS1.ler(c):null;if(g&&(g.peso!=null||g.gtin)){vib(80);fecharScanner();tratarGS1(g,alvoScan);return;}
+  c=String(c).replace(/\D/g,'');if(!c)return;
   if(!confiavel){if(c===ultimo)repet++;else{ultimo=c;repet=1;}if(repet<2)return;}
   vib(80);fecharScanner();tratarCodigo(c,alvoScan,fmt);}
 $('bFechar').onclick=fecharScanner;
@@ -263,13 +265,16 @@ $('bLuz').onclick=function(){luz=!luz;var ok=false;
   if(!ok&&fluxo){try{fluxo.getVideoTracks()[0].applyConstraints({advanced:[{torch:luz}]});ok=true;}catch(e){}}
   $('bLuz').textContent=luz?'🔦 Apagar':'🔦 Luz';};
 $('fFoto').onchange=function(e){var f=e.target.files[0];if(!f)return;e.target.value='';var img=new Image();
-  img.onload=function(){var fim=function(c,fmt){if(c){vib(80);fecharScanner();tratarCodigo(c,alvoScan,fmt);}else toast('Não consegui ler — aproxime e tente de novo, ou digite o código');};
+  img.onload=function(){var fim=function(c,fmt){if(!c){toast('Não consegui ler — aproxime e tente de novo, ou digite o código');return;}var g=(fmt==='data_matrix'||fmt==='qr_code')?LeitorGS1.ler(c):null;vib(80);fecharScanner();if(g&&(g.peso!=null||g.gtin))tratarGS1(g,alvoScan);else tratarCodigo(String(c).replace(/\D/g,''),alvoScan,fmt);};
     if(detector){detector.detect(img).then(function(r){r&&r.length?fim(r[0].rawValue,r[0].format):fim(lerProprio(img));},function(){fim(lerProprio(img));});}else fim(lerProprio(img));};
   img.src=URL.createObjectURL(f);};
 $('bEscanear').onclick=function(){abrirScanner('prod');};
 $('bEscanearBal').onclick=function(){abrirScanner('bal');};
 
 function ehBalanca(c){return c.length===13&&c.charAt(0)==='2';}
+/* etiqueta 2D (GS1): com peso vai para perecíveis; só com código vai para produtos */
+function tratarGS1(g,alvo){if(g.peso!=null){ir('pere');subPere('reg');abrirPerecivelGS1(g);return;}
+  if(alvo==='bal')toast('Etiqueta sem peso — tratando como produto');ir('reg');abrirProduto(norm(g.gtin));}
 function tratarCodigo(c,alvo,fmt){c=normEAN(c,fmt);if(ehBalanca(c)){ir('pere');subPere('reg');abrirPerecivel(c);return;}
   if(alvo==='bal'){toast('Esse não parece ser um código de balança (começa com 2)');}
   ir('reg');abrirProduto(c);}
@@ -368,6 +373,17 @@ function abrirPerecivel(c){var info=ehBalanca(c)?lerEtiqueta(c):{cod:norm(c),pes
   $('peInfo').innerHTML=it?'':'<div class="aviso wa">Código ainda não cadastrado — preencha a descrição e o SIF: ele fica salvo para as próximas etiquetas.</div>';
   if(info.preco)$('peInfo').innerHTML+='<div class="aviso ok">Preço na etiqueta: '+info.preco.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' — informe o peso.</div>';
   setTimeout(function(){(it?(info.peso?$('peVal'):$('pePeso')):$('peDesc')).focus();},200);}
+function abrirPerecivelGS1(g){var cod=norm(g.gtin);if(!cod){toast('Etiqueta sem código de produto');return;}
+  peAtual=cod;var it=D.pere.itens[cod];$('cardPe').style.display='block';
+  $('peCod').textContent='Produto '+(g.gtin||cod)+(g.lote?' • lote '+g.lote:'');
+  $('peDesc').value=it?it.desc:'';$('peSif').value=it?it.sif||'':'';
+  $('pePeso').value=g.peso!=null?g.peso.toFixed(3):'';$('peVal').value=g.val||'';
+  var a=it?'':'<div class="aviso wa">Produto ainda não cadastrado — preencha a descrição e o SIF: fica salvo para as próximas etiquetas.</div>';
+  if(g.val)a+='<div class="aviso ok">Validade lida da etiqueta: '+fdata(g.val)+'.</div>';
+  if(g.preco!=null)a+='<div class="aviso ok">Preço na etiqueta: '+g.preco.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+'.</div>';
+  $('peInfo').innerHTML=a;
+  setTimeout(function(){(it?(g.val?$('bSalvarPe'):$('peVal')):$('peDesc')).focus();},200);
+  $('cardPe').scrollIntoView({behavior:'smooth',block:'start'});}
 $('bBuscarBal').onclick=function(){var c=$('tCodBal').value.replace(/\D/g,'');if(c){$('tCodBal').value='';abrirPerecivel(c);}};
 $('tCodBal').onkeydown=function(e){if(e.key==='Enter')$('bBuscarBal').click();};
 $('bSalvarPe').onclick=function(){if(!peAtual)return;var desc=$('peDesc').value.trim(),sif=$('peSif').value.trim(),peso=num($('pePeso').value),val=$('peVal').value;
