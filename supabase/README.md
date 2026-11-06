@@ -4,48 +4,64 @@ Hoje os dados ficam só no aparelho (`localStorage`) e o nome do produto vem do 
 Com o Supabase, tudo passa a **sincronizar** entre aparelhos e lojas, e vocês têm um
 **catálogo próprio** de produtos — que complementa o Cosmos (não substitui).
 
-## Arquitetura
+## Como funciona o acesso
 
-- **Cada loja é uma conta** (login por **nome de usuário** + senha), compartilhada pelos operadores.
-  O Supabase usa e-mail por baixo; o app monta `<usuario>@<domínio-interno>` automaticamente, então
-  o operador só vê usuário e senha. Os dados da loja ficam isolados por `loja_id` (RLS).
-- **Tabelas por loja:** `produtos`, `lotes`, `pere_itens`, `pere_regs`, `ajustes`.
-- **Catálogo compartilhado:** `catalogo` (EAN → nome, marca). O nome do produto é igual
-  em qualquer loja, então ele é comum a todas — o que uma loja cadastra ajuda as outras.
-- **Offline-first:** o `localStorage` continua sendo a cópia de trabalho; o app sincroniza
-  com o Supabase quando há internet. Sem rede, tudo funciona igual.
-- **Sincronização:** cada linha tem `updated_at` (puxa "o que mudou depois da última vez")
-  e `deleted_at` (exclusão suave, para apagar também sincronizar). Conflito = quem salvou
-  por último vence (`updated_at`).
-- **Busca do nome:** passa a ser **catálogo Supabase → Cosmos → Open Food Facts → digitar**.
+- **Operador** faz login com **usuário + senha** (o app usa `<usuario>@loja.validade` por baixo;
+  o operador só vê usuário e senha).
+- Depois, **escolhe a loja** onde está atuando. Aparecem só as lojas às quais ele tem acesso.
+  Um operador pode ter acesso a mais de uma loja.
+- **Isolamento:** cada loja só enxerga os próprios dados (garantido por RLS, pelo vínculo
+  operador↔loja). O **catálogo** (EAN → nome) é compartilhado entre todas as lojas.
+
+## Tabelas
+
+| Tabela | O que guarda |
+|---|---|
+| `lojas` | as lojas (nome) |
+| `loja_membros` | vínculo: quais operadores acessam quais lojas |
+| `catalogo` | EAN → nome/marca (compartilhado entre todas as lojas) |
+| `produtos` / `lotes` | produtos e lotes, por loja |
+| `pere_itens` / `pere_regs` | códigos de balança e registros de perecíveis, por loja |
+| `ajustes` | configuração da loja (dígitos, valor, dias, OCR, token do Cosmos…) |
+
+Cada linha tem `updated_at` (puxa "o que mudou depois da última vez") e `deleted_at`
+(exclusão suave, para apagar também sincronizar). Conflito = quem salvou por último vence.
+
+Offline-first: o `localStorage` continua sendo a cópia de trabalho; o app sincroniza quando
+há internet. Sem rede, tudo funciona igual. Busca do nome: **catálogo → Cosmos → Open Food Facts → digitar**.
 
 ## Passo a passo (você faz uma vez)
 
-1. Crie uma conta e um projeto em https://supabase.com (plano grátis serve para começar).
-2. **Authentication → Providers → Email:** deixe o e-mail ligado. Para loja, é prático
-   **desligar "Confirm email"** (Authentication → Providers → Email → Confirm email = off),
-   assim a conta da loja já entra sem precisar confirmar e-mail.
-3. **SQL Editor → New query:** cole o conteúdo de [`schema.sql`](./schema.sql) e clique **Run**.
-   Isso cria as tabelas, os índices e as regras de segurança (RLS).
-4. **Crie uma conta por loja (login por nome de usuário):** Authentication → Users → Add user.
-   O Supabase usa e-mail por baixo, então combine um **domínio interno fixo** (ex.: `loja.validade`)
-   e cadastre o e-mail como `<usuario>@loja.validade` (ex.: usuário `bangu` → `bangu@loja.validade`)
-   com uma senha. Não precisa ser e-mail real (o "Confirm email" está desligado). No app, o operador
-   digita só **usuário** e **senha** — o app junta o `@loja.validade` sozinho.
-5. Pegue as credenciais em **Project Settings → API**:
-   - **Project URL** (ex.: `https://xxxx.supabase.co`)
-   - **anon public key** (pode ficar no app; é pública — a segurança vem do RLS)
+1. Crie conta e projeto em https://supabase.com (plano **Free** serve). Região: **South America (São Paulo)**.
+2. **Authentication → Providers → Email:** deixe **Enabled** e **desligue "Confirm email"**.
+3. **SQL Editor → New query:** cole o conteúdo de [`schema.sql`](./schema.sql) e clique **Run**
+   (deve aparecer *Success*; se der erro em vermelho, me mande o texto).
+4. **Crie as lojas** (SQL Editor):
+   ```sql
+   insert into public.lojas (nome) values ('Bangu'), ('Campo Grande');
+   select id, nome from public.lojas;   -- anote os id de cada loja
+   ```
+5. **Crie os operadores:** Authentication → Users → **Add user** → e-mail `usuario@loja.validade`
+   (ex.: `joao@loja.validade`) + senha. Anote o **UID** de cada usuário (aparece na lista de Users).
+6. **Vincule operador ↔ loja** (SQL Editor), um insert por acesso:
+   ```sql
+   insert into public.loja_membros (loja_id, user_id)
+   values ('<id-da-loja>', '<uid-do-usuario>');
+   ```
+7. **Project Settings → API:** copie a **Project URL** e a **chave pública** (**anon**/**publishable**).
 
-Me passe a **Project URL** e a **anon key** (a anon pode ser compartilhada; a `service_role`
-**nunca** — essa é secreta). Com elas eu ligo a sincronização no app e testo.
+Me passe a **Project URL** e a **chave pública**. ⚠️ A `service_role`/`secret` **nunca** — é privada.
 
 ## Segurança (resumo)
 
-- Só a chave **anon** (pública) vai no app. A `service_role` fica só no painel do Supabase.
-- **RLS ligado** em todas as tabelas: cada loja só acessa as próprias linhas; o catálogo é
-  compartilhado entre lojas logadas. Sem login, não acessa nada.
+- Só a chave **pública** (anon/publishable) vai no app. A `service_role` fica só no painel.
+- **RLS ligado** em todas as tabelas: cada operador só acessa as lojas em que tem vínculo;
+  o catálogo é compartilhado entre operadores logados. Sem login, não acessa nada.
+- Criar lojas/usuários/vínculos é feito por você no painel (role de serviço). O app só lê/grava
+  dados das lojas a que o operador tem acesso.
 
-## O que falta (próximo passo, depois do projeto criado)
+## Próximo passo (depois do projeto criado)
 
-A camada de sincronização dentro do app (login da loja, enviar/receber mudanças, resolver
-conflitos por `updated_at`). Faço assim que vocês tiverem o projeto e me passarem URL + anon key.
+A camada no app: tela de **login (usuário + senha)**, tela de **escolher a loja**, e a
+**sincronização** (enviar/receber mudanças, conflito por `updated_at`). Faço assim que você me
+passar a **Project URL** + a **chave pública**, testando por partes.
