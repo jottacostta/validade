@@ -29,7 +29,7 @@ input:focus,select:focus{outline:2px solid var(--c);border-color:transparent}
 .st{display:inline-block;font:800 11px system-ui;padding:3px 8px;border-radius:999px;white-space:nowrap}
 .st.ok{background:var(--okl);color:var(--ok)}.st.wa{background:var(--wal);color:var(--wa)}.st.da{background:var(--dal);color:var(--da)}
 table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}th{text-align:left;font-size:11px;color:var(--mu);text-transform:uppercase;letter-spacing:.04em;padding:6px 4px;border-bottom:1px solid var(--bd)}
-td{padding:9px 4px;border-bottom:1px solid var(--bd)}tr:last-child td{border-bottom:0}tr[data-id]{cursor:pointer}
+td{padding:9px 4px;border-bottom:1px solid var(--bd)}tr:last-child td{border-bottom:0}tr[data-id],tr[data-pe]{cursor:pointer}
 .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px}.chip{flex:none;border:1px solid var(--bd);background:var(--sf);color:var(--ink);border-radius:999px;padding:8px 13px;font:700 12.5px system-ui;cursor:pointer}
 .chip.on{background:var(--c);color:#fff;border-color:var(--c)}
 .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}.tile{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:10px 6px;text-align:center}
@@ -57,7 +57,7 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
 </style>
 </head>
 <body>
-<header><h1>Controle de Validade</h1><p>Controle de validade • lotes e perecíveis</p></header>
+<header><h1>Controle de Validade</h1><p id="slogan">Lotes, validades e perecíveis</p></header>
 <main>
 
 <!-- ═════════ REGISTRAR ═════════ -->
@@ -122,6 +122,7 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
   <div id="pe-lista" style="display:none">
     <input id="qPe" type="search" placeholder="🔎 Buscar descrição, código ou SIF" style="margin-bottom:10px">
     <div id="listaPe"></div>
+    <p style="margin:0 0 10px;font-size:12px;color:var(--mu);text-align:center">Toque num registro para corrigir peso, validade ou SIF.</p>
     <div class="row"><button class="btn sec" id="bCsvPe">📊 Planilha (CSV)</button><button class="btn sec" id="bRelPe">📤 Relatório</button></div>
   </div>
 </section>
@@ -257,8 +258,9 @@ var LeitorEAN=(function(){
 </script>
 <script>
 (function(){
-var CFG={"cosmos":"","nome":"Controle de Validade","zap":"","dias":30,"dig":4,"valor":"peso"};
+var CFG={"cosmos":"","nome":"Controle de Validade","slogan":"Lotes, validades e perecíveis","zap":"","dias":30,"dig":4,"valor":"peso"};
 var $=function(id){return document.getElementById(id);};
+if(CFG.slogan)$('slogan').textContent=CFG.slogan;
 /* chave fixa: trocar o nome da loja não perde os dados (versões antigas usavam 'validade_'+nome) */
 var K='validade_dados', D={};
 try{var s=localStorage.getItem(K);
@@ -317,7 +319,7 @@ window.aoVoltarAndroid=function(){if($('scanner').classList.contains('on')){fech
 /* ───── scanner (BarcodeDetector nativo ou leitor próprio) ───── */
 var fluxo=null,loop=null,alvoScan=null,ultimo='',repet=0,luz=false,detector=null;
 try{if('BarcodeDetector' in window)detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','itf']});}catch(e){detector=null;}
-function abrirScanner(alvo){alvoScan=alvo;ultimo='';repet=0;
+function abrirScanner(alvo){alvoScan=alvo;ultimo='';repet=0;nQuadro=0;
   $('scanTxt').textContent=alvo==='bal'?'Aponte para a etiqueta da balança':'Aponte para o código de barras';
   $('scanner').classList.add('on');
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){$('scanTxt').textContent='Câmera ao vivo indisponível — use 📸 Foto';return;}
@@ -329,15 +331,17 @@ function abrirScanner(alvo){alvoScan=alvo;ultimo='';repet=0;
 function fecharScanner(){clearInterval(loop);loop=null;if(fluxo){fluxo.getTracks().forEach(function(t){t.stop();});fluxo=null;}
   if(luz){luz=false;try{window.Android&&Android.lanterna&&Android.lanterna(false);}catch(e){}}
   $('scanner').classList.remove('on');}
-var ocupado=false;
-function quadro(){var v=$('video');if(ocupado||!v.videoWidth)return;ocupado=true;
-  if(detector){detector.detect(v).then(function(r){ocupado=false;if(r&&r.length)achou(r[0].rawValue,true,r[0].format);else lerProprio(v);},function(){ocupado=false;detector=null;});return;}
-  lerProprio(v);ocupado=false;}
-function lerProprio(fonte){var cv=$('cv'),W=fonte.videoWidth||fonte.naturalWidth||fonte.width,H=fonte.videoHeight||fonte.naturalHeight||fonte.height;if(!W)return null;
+/* o leitor próprio pesa no celular: com o leitor nativo ele só reforça a cada 4 quadros;
+   sem o nativo, lê a faixa do meio em todo quadro e a imagem inteira a cada 3 */
+var ocupado=false,nQuadro=0;
+function quadro(){var v=$('video');if(ocupado||!v.videoWidth||document.hidden)return;ocupado=true;nQuadro++;
+  if(detector){detector.detect(v).then(function(r){ocupado=false;if(r&&r.length)achou(r[0].rawValue,true,r[0].format);else if(nQuadro%4===0)lerProprio(v,nQuadro%8!==0);},function(){ocupado=false;detector=null;});return;}
+  lerProprio(v,nQuadro%3!==0);ocupado=false;}
+function lerProprio(fonte,soFaixa){var cv=$('cv'),W=fonte.videoWidth||fonte.naturalWidth||fonte.width,H=fonte.videoHeight||fonte.naturalHeight||fonte.height;if(!W)return null;
   var esc2=Math.min(1,900/W),w=Math.round(W*esc2),h=Math.round(H*esc2);cv.width=w;cv.height=Math.round(h*0.5);
   var g=cv.getContext('2d',{willReadFrequently:true});g.drawImage(fonte,0,H*0.25,W,H*0.5,0,0,w,cv.height);
   var c=LeitorEAN.ler(g.getImageData(0,0,w,cv.height));
-  if(!c){cv.height=h;g.drawImage(fonte,0,0,W,H,0,0,w,h);c=LeitorEAN.ler(g.getImageData(0,0,w,h));}
+  if(!c&&!soFaixa){cv.height=h;g.drawImage(fonte,0,0,W,H,0,0,w,h);c=LeitorEAN.ler(g.getImageData(0,0,w,h));}
   if(c&&fonte.tagName==='VIDEO')achou(c,false);return c;}
 function achou(c,confiavel,fmt){c=String(c).replace(/\D/g,'');if(!c)return;
   if(!confiavel){if(c===ultimo)repet++;else{ultimo=c;repet=1;}if(repet<2)return;}
@@ -411,7 +415,8 @@ $('bSalvarLote').onclick=function(){if(!atual)return;var nome=$('pNome').value.t
   var p=D.prod[atual]||(D.prod[atual]={nome:nome,marca:'',img:'',lotes:[]});p.nome=nome;var c=D.cat[atual];if(c){p.marca=p.marca||c.marca;p.img=p.img||c.img;}
   D.cat[atual]=Object.assign({},c||{},{nome:nome});
   var ex=null;p.lotes.forEach(function(l){if(l.lote===lote&&l.val===val)ex=l;});
-  if(ex){ex.qtd=qtd;ex.atualizado=Date.now();toast('Lote atualizado ✔');}else{ex={id:uid(),lote:lote,qtd:qtd,val:val,criado:Date.now()};p.lotes.push(ex);toast('Lote salvo ✔');}
+  if(ex){var q=prompt('O lote '+(lote||'sem número')+' (validade '+fdata(val)+') já tem '+ex.qtd+' un. e você informou '+qtd+'.\n\nQuantidade final do lote — já vem somada; troque se quiser substituir:',ex.qtd+qtd);
+    if(q===null){toast('Nada alterado');return;}ex.qtd=num(q);ex.atualizado=Date.now();toast('Lote com '+ex.qtd+' un. ✔');}else{ex={id:uid(),lote:lote,qtd:qtd,val:val,criado:Date.now()};p.lotes.push(ex);toast('Lote salvo ✔');}
   salvar();lembrete(ex,nome);vib(40);$('pLote').value='';$('pQtd').value='';$('pVal').value='';lotesDoAtual();$('pLote').focus();};
 function lotesDoAtual(){var p=D.prod[atual];if(!p||!p.lotes.length){$('pLotes').innerHTML='';return;}
   $('pLotes').innerHTML='<table><tr><th>Lote</th><th>Qtd</th><th>Validade</th><th></th></tr>'+ordenar(p.lotes).map(function(l){return '<tr data-id="'+l.id+'" data-ean="'+atual+'"><td><b>'+esc(l.lote||'—')+'</b></td><td>'+l.qtd+'</td><td>'+fdata(l.val)+'</td><td style="text-align:right">'+status(l.val)+'</td></tr>';}).join('')+'</table>';}
@@ -475,7 +480,17 @@ function listaPere(){var q=$('qPe').value.toLowerCase(),grupos={};
     return '<div class="card"><b>'+esc(g.it.desc)+'</b><div class="ean">código '+g.cod+' • '+g.regs.length+' registro(s) • '+kg(tot)+' kg</div><table><tr><th>SIF</th><th>Peso</th><th>Validade</th><th></th></tr>'
       +g.regs.map(function(r){return '<tr data-pe="'+r.id+'"><td>'+esc(r.sif||'—')+'</td><td>'+kg(r.peso)+' kg</td><td>'+fdata(r.val)+'</td><td style="text-align:right">'+status(r.val)+'</td></tr>';}).join('')+'</table></div>';}).join('')||'<div class="vazio">Nenhum registro de perecíveis.</div>';}
 $('listaPe').onclick=function(e){var tr=e.target.closest('tr[data-pe]');if(!tr)return;var r=D.pere.regs.filter(function(x){return x.id===tr.dataset.pe;})[0];if(!r)return;
-  if(confirm('Apagar o registro de '+kg(r.peso)+' kg (validade '+fdata(r.val)+')?')){D.pere.regs=D.pere.regs.filter(function(x){return x!==r;});cancelarLembrete(r.id);salvar();listaPere();}};
+  var it=D.pere.itens[r.cod]||{},nome=it.desc||('código '+r.cod);
+  var p=prompt(nome+' • '+kg(r.peso)+' kg • validade '+fdata(r.val)+'\n\nPeso em kg (0 para apagar o registro):',String(r.peso).replace('.',','));if(p===null)return;
+  var peso=num(p);if(peso<=0){if(confirm('Apagar o registro de '+kg(r.peso)+' kg (validade '+fdata(r.val)+')?')){D.pere.regs=D.pere.regs.filter(function(x){return x!==r;});cancelarLembrete(r.id);salvar();listaPere();}return;}
+  var v=prompt('Validade (dd/mm/aaaa):',fdata(r.val));if(v===null)return;var val=lerData(v);if(!val){toast('Data inválida — nada alterado');return;}
+  var sif=prompt('SIF:',r.sif||'');if(sif===null)return;
+  r.peso=peso;r.val=val;r.sif=sif.trim();r.atualizado=Date.now();salvar();cancelarLembrete(r.id);lembrete(r,nome);listaPere();toast('Registro atualizado ✔');};
+/* dd/mm/aaaa, dd/mm/aa ou aaaa-mm-dd → 'aaaa-mm-dd' (null se a data não existir) */
+function lerData(t){t=String(t||'').trim();var m=/^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t),a,me,di;
+  if(m){a=+m[1];me=+m[2];di=+m[3];}else{m=/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2}|\d{4})$/.exec(t);if(!m)return null;di=+m[1];me=+m[2];a=+m[3];if(a<100)a+=2000;}
+  var d=new Date(a,me-1,di);if(d.getFullYear()!==a||d.getMonth()!==me-1||d.getDate()!==di)return null;
+  return a+'-'+('0'+me).slice(-2)+'-'+('0'+di).slice(-2);}
 
 /* ───── lembretes de vencimento (app com Ponte 2.2+ e permissão de lembretes) ───── */
 function lembrete(reg,nome){if(!D.aj.notif||!window.Android||!Android.agendarLembrete||!reg.val)return;var p=reg.val.split('-'),n=D.aj.dias;
@@ -494,7 +509,7 @@ function reagendarTodos(){todosRegistros().forEach(function(x){cancelarLembrete(
 /* ───── exportar / relatórios ───── */
 function baixar(nome,txt,tipo){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:tipo}));a.download=nome;document.body.appendChild(a);a.click();setTimeout(function(){a.remove();},1500);}
 function csv(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"';}
-var dt=function(){return new Date().toISOString().slice(0,10);};
+var dt=function(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}; /* data local (toISOString é UTC: depois das 21h dava o dia seguinte) */
 $('bCsvProd').onclick=function(){var l=['Código;Produto;Marca;Lote;Quantidade;Validade;Dias;Situação'];
   Object.keys(D.prod).forEach(function(e){var p=D.prod[e];ordenar(p.lotes).forEach(function(x){var n=dias(x.val);l.push([csv(e),csv(p.nome),csv(p.marca),csv(x.lote),x.qtd,fdata(x.val),n,n<0?'Vencido':n<=D.aj.dias?'A vencer':'OK'].join(';'));});});
   baixar('validade_produtos_'+dt()+'.csv','\ufeff'+l.join('\n'),'text/csv');};

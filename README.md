@@ -13,6 +13,7 @@ src/app.html         o app (HTML + CSS + JS) com marcadores de configuração
 src/leitor-ean.js    leitor de código de barras EAN-13 / EAN-8 / UPC-A em JavaScript puro
 config.json          configuração da loja (nome, cor, dias de aviso, etiqueta da balança…)
 build.js             monta o app final a partir do template + config
+test/                testes (leitor, build e o app no navegador)
 dist/validade.html   app pronto
 dist/APP_VALIDADE.js template no formato que o ApkForja embute
 docs/                notas técnicas
@@ -27,11 +28,23 @@ node build.js loja2.json   # outra loja
 
 Abra `dist/validade.html` no navegador para testar, ou carregue no ApkForja (etapa **Arquivos**) para virar APK.
 
+## Testes
+
+```bash
+npm install                      # só o Playwright, para os testes no navegador
+npx playwright install chromium
+npm test
+```
+
+Sem o Playwright, os testes do app no navegador são pulados e os do leitor e do build rodam assim mesmo.
+O GitHub Actions roda tudo a cada push e confere se o `dist/` foi gerado de novo depois de mexer em `src/`.
+
 ## Configuração (`config.json`)
 
 | Campo | O que é |
 |---|---|
 | `nome` | Nome da loja ou setor (título do app) |
+| `slogan` | Frase abaixo do nome no cabeçalho (opcional) |
 | `cor` | Cor principal (`#RRGGBB`) |
 | `dias` | Avisar quando faltar quantos dias para vencer |
 | `dig` | Etiqueta da balança: dígitos do código do produto (4, 5 ou 6) |

@@ -8,7 +8,7 @@
 | `/*COR2*/` | cor clara (88%) |
 | `/*COR3*/` | cor média (30%) |
 | `/*NOME_HTML*/` | nome da loja (escapado) |
-| `/*CFG*/` | objeto de configuração `{cosmos,nome,zap,dias,dig,valor}` |
+| `/*CFG*/` | objeto de configuração `{cosmos,nome,slogan,zap,dias,dig,valor}` |
 | `/*LEITOR*/` | conteúdo de `src/leitor-ean.js` |
 
 ## Ponte Android usada (molde do ApkForja)
@@ -32,3 +32,12 @@ Na primeira abertura, se a chave fixa não existir, o app migra a chave antiga `
 
 Ao abrir e ao importar backup, `completar()` preenche o que faltar (`prod`, `cat`, `pere`, `aj`) e
 padroniza os códigos: UPC-E → UPC-A e UPC-A (12 dígitos) → EAN-13 com `0` na frente, juntando lotes duplicados.
+
+## Leitura pela câmera
+
+Com o `BarcodeDetector` nativo, o leitor próprio só reforça a cada 4 quadros (a imagem inteira a cada 8).
+Sem o nativo, ele lê a faixa do meio em todo quadro e a imagem inteira a cada 3. Nada roda com o app em segundo plano.
+
+## Slogan
+
+`CFG.slogan` troca o texto do cabeçalho. Se o ApkForja não mandar `slogan` no CFG, fica o texto padrão do HTML.
