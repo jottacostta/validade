@@ -88,6 +88,8 @@ test('lote repetido: pergunta a quantidade final, já somada', { skip: pular }, 
   const a = await abrir({ dados: { prod: { '7891000315507': { nome: 'Café', lotes: [lote('x', '2031-01-01', 5, 'L1')] } } } });
   const salvarLote = async qtd => {
     await a.p.fill('#tCodigo', '7891000315507'); await a.p.click('#bBuscar');
+    await a.p.waitForSelector('#cardProd', { state: 'visible' });
+    await a.p.waitForFunction(() => document.getElementById('pNome').value !== '');
     await a.p.fill('#pLote', 'l1'); await a.p.fill('#pQtd', String(qtd)); await a.p.fill('#pVal', '2031-01-01');
     await a.p.click('#bSalvarLote');
   };

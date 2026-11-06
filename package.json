@@ -5,7 +5,7 @@
   "description": "Controle de validade para supermercado (modelo do ApkForja)",
   "scripts": {
     "build": "node build.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test --test-concurrency=1 test/*.test.js"
   },
   "engines": {
     "node": ">=20"
