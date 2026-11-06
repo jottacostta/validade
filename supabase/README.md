@@ -6,8 +6,9 @@ Com o Supabase, tudo passa a **sincronizar** entre aparelhos e lojas, e vocês t
 
 ## Arquitetura
 
-- **Cada loja é uma conta** (login por e-mail/senha), compartilhada pelos operadores.
-  Os dados da loja ficam isolados por `loja_id` (RLS garante que uma loja não vê a outra).
+- **Cada loja é uma conta** (login por **nome de usuário** + senha), compartilhada pelos operadores.
+  O Supabase usa e-mail por baixo; o app monta `<usuario>@<domínio-interno>` automaticamente, então
+  o operador só vê usuário e senha. Os dados da loja ficam isolados por `loja_id` (RLS).
 - **Tabelas por loja:** `produtos`, `lotes`, `pere_itens`, `pere_regs`, `ajustes`.
 - **Catálogo compartilhado:** `catalogo` (EAN → nome, marca). O nome do produto é igual
   em qualquer loja, então ele é comum a todas — o que uma loja cadastra ajuda as outras.
@@ -26,7 +27,11 @@ Com o Supabase, tudo passa a **sincronizar** entre aparelhos e lojas, e vocês t
    assim a conta da loja já entra sem precisar confirmar e-mail.
 3. **SQL Editor → New query:** cole o conteúdo de [`schema.sql`](./schema.sql) e clique **Run**.
    Isso cria as tabelas, os índices e as regras de segurança (RLS).
-4. **Crie uma conta por loja:** Authentication → Users → Add user (e-mail + senha da loja).
+4. **Crie uma conta por loja (login por nome de usuário):** Authentication → Users → Add user.
+   O Supabase usa e-mail por baixo, então combine um **domínio interno fixo** (ex.: `guanabara.local`)
+   e cadastre o e-mail como `<usuario>@guanabara.local` (ex.: usuário `bangu` → `bangu@guanabara.local`)
+   com uma senha. Não precisa ser e-mail real (o "Confirm email" está desligado). No app, o operador
+   digita só **usuário** e **senha** — o app junta o `@guanabara.local` sozinho.
 5. Pegue as credenciais em **Project Settings → API**:
    - **Project URL** (ex.: `https://xxxx.supabase.co`)
    - **anon public key** (pode ficar no app; é pública — a segurança vem do RLS)
