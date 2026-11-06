@@ -273,8 +273,10 @@ $('bEscanearBal').onclick=function(){abrirScanner('bal');};
 
 function ehBalanca(c){return c.length===13&&c.charAt(0)==='2';}
 /* etiqueta 2D (GS1): com peso vai para perecíveis; só com código vai para produtos */
-function tratarGS1(g,alvo){if(g.peso!=null){ir('pere');subPere('reg');abrirPerecivelGS1(g);return;}
-  if(alvo==='bal')toast('Etiqueta sem peso — tratando como produto');ir('reg');abrirProduto(norm(g.gtin));}
+function tratarGS1(g,alvo){var gt=g.gtin||'',ean=gt.length===14?gt.slice(1):(gt.length===13?gt:'');
+  if(ean&&ehBalanca(ean)){ir('pere');subPere('reg');abrirPerecivel(ean,{peso:g.peso,val:g.val,preco:g.preco});return;}
+  if(g.peso!=null){ir('pere');subPere('reg');abrirPerecivelGS1(g);return;}
+  if(alvo==='bal')toast('Etiqueta sem peso — tratando como produto');ir('reg');abrirProduto(norm(gt));}
 function tratarCodigo(c,alvo,fmt){c=normEAN(c,fmt);if(ehBalanca(c)){ir('pere');subPere('reg');abrirPerecivel(c);return;}
   if(alvo==='bal'){toast('Esse não parece ser um código de balança (começa com 2)');}
   ir('reg');abrirProduto(c);}
@@ -365,14 +367,16 @@ $('subPere').onclick=function(e){var b=e.target.closest('button');if(b)subPere(b
 function norm(c){return String(c||'').replace(/\D/g,'').replace(/^0+(?=\d)/,'');}
 function lerEtiqueta(c){var n=+D.aj.dig||4,cod=c.substr(1,n),v=parseInt(c.substr(7,5),10)||0;
   return {cod:norm(cod),peso:D.aj.valor==='peso'?v/1000:null,preco:D.aj.valor==='preco'?v/100:null};}
-function abrirPerecivel(c){var info=ehBalanca(c)?lerEtiqueta(c):{cod:norm(c),peso:null,preco:null};
+function abrirPerecivel(c,ov){ov=ov||{};var info=ehBalanca(c)?lerEtiqueta(c):{cod:norm(c),peso:null,preco:null};
+  if(ov.peso!=null)info.peso=ov.peso;if(ov.preco!=null)info.preco=ov.preco;
   if(!info.cod){toast('Código inválido');return;}
   peAtual=info.cod;var it=D.pere.itens[peAtual];$('cardPe').style.display='block';
   $('peCod').textContent='Código de balança '+peAtual+(ehBalanca(c)?' • etiqueta '+c:'');
-  $('peDesc').value=it?it.desc:'';$('peSif').value=it?it.sif||'':'';$('pePeso').value=info.peso?info.peso.toFixed(3):'';$('peVal').value='';
+  $('peDesc').value=it?it.desc:'';$('peSif').value=it?it.sif||'':'';$('pePeso').value=info.peso!=null?(+info.peso).toFixed(3):'';$('peVal').value=ov.val||'';
   $('peInfo').innerHTML=it?'':'<div class="aviso wa">Código ainda não cadastrado — preencha a descrição e o SIF: ele fica salvo para as próximas etiquetas.</div>';
-  if(info.preco)$('peInfo').innerHTML+='<div class="aviso ok">Preço na etiqueta: '+info.preco.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' — informe o peso.</div>';
-  setTimeout(function(){(it?(info.peso?$('peVal'):$('pePeso')):$('peDesc')).focus();},200);}
+  if(ov.val)$('peInfo').innerHTML+='<div class="aviso ok">Validade lida da etiqueta: '+fdata(ov.val)+'.</div>';
+  if(info.preco)$('peInfo').innerHTML+='<div class="aviso ok">Preço na etiqueta: '+info.preco.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+'.</div>';
+  setTimeout(function(){(it?(info.peso!=null?$('peVal'):$('pePeso')):$('peDesc')).focus();},200);}
 function abrirPerecivelGS1(g){var cod=norm(g.gtin);if(!cod){toast('Etiqueta sem código de produto');return;}
   peAtual=cod;var it=D.pere.itens[cod];$('cardPe').style.display='block';
   $('peCod').textContent='Produto '+(g.gtin||cod)+(g.lote?' • lote '+g.lote:'');

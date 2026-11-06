@@ -166,3 +166,30 @@ test('lê etiqueta GS1 (DataMatrix) e preenche os perecíveis', { skip: pular },
   assert.deepStrictEqual(a.erros, []);
   await a.fechar();
 });
+
+test('GS1 com etiqueta de balança embutida no GTIN: extrai código 6019 e peso do (3103)', { skip: pular }, async () => {
+  // etiqueta do lombo: (01)02060190009984 (17)261108 (3103)000312 ; loja usa dig=5
+  const a = await abrir({ dados: { aj: { dig: 5, valor: 'peso' }, pere: { itens: {}, regs: [] } },
+    antes: p => p.addInitScript(() => {
+      window.BarcodeDetector = class {
+        static getSupportedFormats() { return Promise.resolve(['data_matrix']); }
+        detect() { return Promise.resolve([{ rawValue: '0102060190009984' + '17261108' + '3103000312', format: 'data_matrix' }]); }
+      };
+    }) });
+  await a.p.click('nav button[data-v="pere"]');
+  await a.p.click('#bEscanearBal');
+  await a.p.waitForSelector('#cardPe', { state: 'visible' });
+  await a.p.waitForFunction(() => document.getElementById('pePeso').value !== '');
+  assert.ok((await a.p.textContent('#peCod')).includes('6019'), 'peCod deve mostrar 6019');
+  assert.strictEqual(await a.p.inputValue('#pePeso'), '0.312');       // peso do (3103), não do valor embutido
+  assert.strictEqual(await a.p.inputValue('#peVal'), '2026-11-08');   // validade do (17)
+  await a.p.fill('#peDesc', 'Lombo Fracionado Bife');
+  await a.p.click('#bSalvarPe');
+  await a.p.waitForFunction(() => document.getElementById('cardPe').style.display === 'none');
+  const d = await a.salvo();
+  assert.strictEqual(d.pere.regs[0].cod, '6019');
+  assert.strictEqual(d.pere.regs[0].peso, 0.312);
+  assert.strictEqual(d.pere.itens['6019'].desc, 'Lombo Fracionado Bife');
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
