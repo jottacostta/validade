@@ -40,4 +40,5 @@ if (require.main === module) {
   fs.writeFileSync(path.join(raiz, 'dist/validade.html'), html);
   fs.writeFileSync(path.join(raiz, 'dist/APP_VALIDADE.js'), js);
   console.log('✅ dist/validade.html (' + html.length + ' bytes) e dist/APP_VALIDADE.js');
+  try { require('./painel').gerar(); console.log('✅ dist/painel.html'); } catch (e) { console.log('painel não gerado: ' + e.message); }
 }
