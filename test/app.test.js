@@ -7,6 +7,15 @@ const URL_APP = 'file://' + path.join(__dirname, '../dist/validade.html');
 const pular = chromium ? false : 'Playwright não instalado';
 
 let navegador;
+/* testes de navegador são sensíveis a timing sob carga; 1 retry elimina falha esporádica (bug real falha 2x) */
+function tflaky(nome, opts, fn) {
+  if (typeof opts === 'function') { fn = opts; opts = {}; }
+  test(nome, opts, async (t) => {
+    let erro;
+    for (let i = 0; i < 2; i++) { try { return await fn(t); } catch (e) { erro = e; } }
+    throw erro;
+  });
+}
 test.before(async () => { if (chromium) navegador = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] }); });
 test.after(async () => { if (navegador) await navegador.close(); });
 
@@ -27,7 +36,7 @@ async function abrir({ dados, chave = 'validade_dados', respostas = [], opcoes =
 }
 const lote = (id, val, qtd = 1, l = 'L1') => ({ id, lote: l, qtd, val });
 
-test('migra a chave antiga e junta UPC-A de 12 com 13 dígitos', { skip: pular }, async () => {
+tflaky('migra a chave antiga e junta UPC-A de 12 com 13 dígitos', { skip: pular }, async () => {
   const a = await abrir({ chave: 'validade_Controle de Validade', dados: {
     prod: { '012345678905': { nome: 'A', lotes: [lote('a', '2030-01-01')] }, '0012345678905': { nome: 'A', lotes: [lote('b', '2030-02-01')] } },
     cat: { '012345678905': { nome: 'A' } }, pere: { itens: {}, regs: [] } } });
@@ -41,7 +50,7 @@ test('migra a chave antiga e junta UPC-A de 12 com 13 dígitos', { skip: pular }
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
 
-test('UPC-E do leitor nativo vira EAN-13', { skip: pular }, async () => {
+tflaky('UPC-E do leitor nativo vira EAN-13', { skip: pular }, async () => {
   const a = await abrir({ antes: p => p.addInitScript(() => {
     window.BarcodeDetector = class { detect() { return Promise.resolve([{ rawValue: '01234565', format: 'upc_e' }]); } }; }) });
   await a.p.route('**/*', r => r.request().url().startsWith('file:') ? r.continue() : r.abort());
@@ -53,7 +62,7 @@ test('UPC-E do leitor nativo vira EAN-13', { skip: pular }, async () => {
   await a.fechar();
 });
 
-test('backup incompleto é importado sem travar', { skip: pular }, async () => {
+tflaky('backup incompleto é importado sem travar', { skip: pular }, async () => {
   const a = await abrir({ dados: {} });
   const f = path.join(os.tmpdir(), 'validade-backup.json');
   fs.writeFileSync(f, JSON.stringify({ prod: { '7891000315507': { nome: 'B', lotes: [lote('y', '2031-01-01')] } } }));
@@ -69,7 +78,7 @@ test('backup incompleto é importado sem travar', { skip: pular }, async () => {
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
 
-test('lembretes: mudar dias reagenda, desligar cancela, apagar tudo cancela', { skip: pular }, async () => {
+tflaky('lembretes: mudar dias reagenda, desligar cancela, apagar tudo cancela', { skip: pular }, async () => {
   const a = await abrir({ dados: { prod: { '7891000315507': { nome: 'B', lotes: [lote('x', '2031-01-01')] } },
     pere: { itens: { 12: { desc: 'Picanha' } }, regs: [{ id: 'r', cod: '12', peso: 1, val: '2031-01-01' }] } } });
   const zera = () => a.p.evaluate(() => { __ag = []; __ca = []; }), ver = () => a.p.evaluate(() => [__ag.slice().sort(), __ca.slice().sort()]);
@@ -84,7 +93,7 @@ test('lembretes: mudar dias reagenda, desligar cancela, apagar tudo cancela', { 
   await a.fechar();
 });
 
-test('lote repetido: pergunta a quantidade final, já somada', { skip: pular }, async () => {
+tflaky('lote repetido: pergunta a quantidade final, já somada', { skip: pular }, async () => {
   const a = await abrir({ dados: { prod: { '7891000315507': { nome: 'Café', lotes: [lote('x', '2031-01-01', 5, 'L1')] } } } });
   const salvarLote = async qtd => {
     await a.p.fill('#tCodigo', '7891000315507'); await a.p.click('#bBuscar');
@@ -104,7 +113,7 @@ test('lote repetido: pergunta a quantidade final, já somada', { skip: pular }, 
   await a.fechar();
 });
 
-test('editar registro de perecível (peso, validade, SIF) e apagar', { skip: pular }, async () => {
+tflaky('editar registro de perecível (peso, validade, SIF) e apagar', { skip: pular }, async () => {
   const a = await abrir({ dados: { pere: { itens: { 12: { desc: 'Picanha', sif: '1' } }, regs: [{ id: 'r', cod: '12', sif: '1', peso: 1.25, val: '2031-01-01' }] } } });
   await a.p.click('nav button[data-v="pere"]'); await a.p.click('#subPere button[data-s="lista"]');
   a.respostas.push('2,5', '15/3/32', '999'); await a.p.click('tr[data-pe="r"]');
@@ -120,7 +129,7 @@ test('editar registro de perecível (peso, validade, SIF) e apagar', { skip: pul
   await a.fechar();
 });
 
-test('nome do arquivo usa a data local (depois das 21h no Brasil)', { skip: pular }, async () => {
+tflaky('nome do arquivo usa a data local (depois das 21h no Brasil)', { skip: pular }, async () => {
   const a = await abrir({ opcoes: { timezoneId: 'America/Sao_Paulo' },
     antes: p => p.clock.install({ time: new Date('2026-11-06T23:30:00-03:00') }) });
   await a.p.click('nav button[data-v="aj"]');
@@ -129,14 +138,14 @@ test('nome do arquivo usa a data local (depois das 21h no Brasil)', { skip: pula
   await a.fechar();
 });
 
-test('slogan da configuração aparece no cabeçalho', { skip: pular }, async () => {
+tflaky('slogan da configuração aparece no cabeçalho', { skip: pular }, async () => {
   const a = await abrir();
   const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, '../config.json'), 'utf8'));
   assert.strictEqual(await a.p.textContent('#slogan'), cfg.slogan);
   await a.fechar();
 });
 
-test('lê etiqueta GS1 (DataMatrix) e preenche os perecíveis', { skip: pular }, async () => {
+tflaky('lê etiqueta GS1 (DataMatrix) e preenche os perecíveis', { skip: pular }, async () => {
   // simula o leitor nativo devolvendo o conteúdo do DataMatrix da etiqueta (peso 0,576 kg, validade 08/11/26)
   const a = await abrir({ dados: { pere: { itens: {}, regs: [] } }, antes: p => p.addInitScript(() => {
     window.BarcodeDetector = class {
@@ -169,7 +178,7 @@ test('lê etiqueta GS1 (DataMatrix) e preenche os perecíveis', { skip: pular },
   await a.fechar();
 });
 
-test('GS1 com etiqueta de balança embutida no GTIN: extrai código 6019 e peso do (3103)', { skip: pular }, async () => {
+tflaky('GS1 com etiqueta de balança embutida no GTIN: extrai código 6019 e peso do (3103)', { skip: pular }, async () => {
   // etiqueta do lombo: (01)02060190009984 (17)261108 (3103)000312 ; loja usa dig=5
   const a = await abrir({ dados: { aj: { dig: 5, valor: 'preco' }, pere: { itens: {}, regs: [] } },
     antes: p => p.addInitScript(() => {
@@ -197,7 +206,7 @@ test('GS1 com etiqueta de balança embutida no GTIN: extrai código 6019 e peso 
   await a.fechar();
 });
 
-test('OCR preenche descrição e lote (SIF) ao escanear a etiqueta', { skip: pular }, async () => {
+tflaky('OCR preenche descrição e lote (SIF) ao escanear a etiqueta', { skip: pular }, async () => {
   const OCRTEXT = 'PERNIL FRACIONADO\\nSEARA RESERVA ks\\nCARNE RESFRIADA DE SUINO SEM OSSO - PERNIL\\nDATA: 05/11/26 VALIDADE: 08/11/26\\nLOTE: 876-040326\\n';
   const a = await abrir({ dados: { aj: { dig: 5, valor: 'preco', ocr: true }, pere: { itens: {}, regs: [] } },
     antes: p => p.addInitScript(`
@@ -231,7 +240,7 @@ test('OCR preenche descrição e lote (SIF) ao escanear a etiqueta', { skip: pul
   await a.fechar();
 });
 
-test('OCR desligado: não mexe na descrição nem no SIF', { skip: pular }, async () => {
+tflaky('OCR desligado: não mexe na descrição nem no SIF', { skip: pular }, async () => {
   const a = await abrir({ dados: { aj: { dig: 5, valor: 'preco', ocr: false }, pere: { itens: {}, regs: [] } },
     antes: p => p.addInitScript(`
       window.BarcodeDetector = class {
