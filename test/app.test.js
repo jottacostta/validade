@@ -276,9 +276,10 @@ tflaky('conta: entra (usuário→e-mail interno), lista e escolhe a loja', { ski
   await a.p.waitForSelector('#conta', { state: 'visible' });
   await a.p.fill('#cUser', 'joao'); await a.p.fill('#cPass', '1234');
   await a.p.click('#bEntrar');
-  await a.p.waitForFunction(() => document.querySelectorAll('#listaLojas .loja').length === 2);
+  await a.p.waitForFunction(() => document.querySelectorAll('#selectLoja option').length === 3);
   assert.strictEqual(authBody && authBody.email, 'joao@loja.validade'); // usuário vira e-mail interno
-  await a.p.click('#listaLojas .loja[data-id="L2"]');
+  await a.p.selectOption('#selectLoja', 'L2');
+  await a.p.click('#bSelecionarLoja');
   await a.p.waitForFunction(() => !document.getElementById('conta').classList.contains('on'));
   const sess = await a.p.evaluate(() => JSON.parse(localStorage.getItem('validade_sessao')));
   assert.strictEqual(sess.access_token, 'tok');
@@ -299,7 +300,7 @@ tflaky('conta: senha errada mostra mensagem de erro', { skip: pular }, async () 
   await a.p.fill('#cUser', 'joao'); await a.p.fill('#cPass', 'errada');
   await a.p.click('#bEntrar');
   await a.p.waitForSelector('#cErro', { state: 'visible' });
-  assert.ok((await a.p.textContent('#cErro')).toLowerCase().includes('invalid'));
+  assert.match((await a.p.textContent('#cErro')).toLowerCase(), /inválid|invalid/);
   const sess = await a.p.evaluate(() => localStorage.getItem('validade_sessao'));
   assert.strictEqual(sess, null); // não cria sessão
   await a.fechar();
