@@ -40,8 +40,9 @@ Deno.serve(async (req) => {
   const { data: udata, error: uerr } = await admin.auth.getUser(jwt);
   if (uerr || !udata?.user) return json({ error: "Sessão inválida" }, 401);
   const caller = udata.user;
-  const { data: perfilCaller } = await admin.from("perfis").select("papel").eq("id", caller.id).single();
-  const papelCaller = perfilCaller?.papel || "operador";
+  const { data: perfilCaller, error: perfilCallerErr } = await admin.from("perfis").select("papel").eq("id", caller.id).single();
+  if (perfilCallerErr || !perfilCaller) return json({ error: "Perfil do usuário não encontrado." }, 403);
+  const papelCaller = perfilCaller.papel || "operador";
   const ehAdmin = papelCaller === "admin";
   const podeCriar = ["assistente", "analista", "admin"].includes(papelCaller);
   const podeEditar = ["analista", "admin"].includes(papelCaller);
@@ -49,7 +50,8 @@ Deno.serve(async (req) => {
   let body: Record<string, unknown> = {};
   try { body = await req.json(); } catch { return json({ error: "Requisição inválida" }, 400); }
   const acao = String(body.acao || "");
-  const dominio = String(body.dominio || "loja.validade").trim();
+  // Domínio fixo: não confiar em configuração enviada pelo cliente.
+  const dominio = "loja.validade";
 
   const audit = async (ac: string, detalhe: unknown) => {
     try {
@@ -71,21 +73,27 @@ Deno.serve(async (req) => {
   try {
     if (acao === "listar") {
       if (!podeCriar) return json({ error: "Sem permissão" }, 403);
-      const { data: perfis } = await admin.from("perfis").select("id, nome, papel");
-      const { data: lista } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      const { data: perfis, error: perfisErr } = await admin.from("perfis").select("id, nome, papel");
+      if (perfisErr) return json({ error: "Não foi possível consultar perfis." }, 500);
+      const { data: lista, error: listaErr } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      if (listaErr) return json({ error: "Não foi possível consultar usuários." }, 500);
       const emailPorId: Record<string, string> = {};
       for (const u of (lista?.users || [])) emailPorId[u.id] = u.email || "";
-      const { data: membros } = await admin.from("loja_membros").select("user_id, loja_id");
-      const { data: lojas } = await admin.from("lojas").select("id, nome").order("nome");
+      const { data: membros, error: membrosErr } = await admin.from("loja_membros").select("user_id, loja_id");
+      const { data: lojas, error: lojasErr } = await admin.from("lojas").select("id, nome").order("nome");
+      if (membrosErr || lojasErr) return json({ error: "Falha ao consultar lojas e vínculos." }, 500);
+      const permitidas = await lojasPermitidas();
+      const perfisVisiveis = ehAdmin || papelCaller === "analista" ? (perfis || []) : (perfis || []).filter((p: { id: string }) => (membros || []).some((m: { user_id: string; loja_id: string }) => m.user_id === p.id && permitidas.has(m.loja_id)));
       const nomeLoja: Record<string, string> = {};
       for (const l of (lojas || [])) nomeLoja[l.id] = l.nome;
       const porUser: Record<string, { id: string; nome: string }[]> = {};
       for (const m of (membros || [])) (porUser[m.user_id] = porUser[m.user_id] || []).push({ id: m.loja_id, nome: nomeLoja[m.loja_id] || "" });
-      const usuarios = (perfis || []).map((p: { id: string; nome: string; papel: string }) => ({
+      const usuarios = perfisVisiveis.map((p: { id: string; nome: string; papel: string }) => ({
         id: p.id, nome: p.nome || "", papel: p.papel,
-        usuario: (emailPorId[p.id] || "").split("@")[0], lojas: porUser[p.id] || [],
+        usuario: (emailPorId[p.id] || "").split("@")[0],
+        lojas: (porUser[p.id] || []).filter((l) => ehAdmin || papelCaller === "analista" || permitidas.has(l.id)),
       })).sort((a, b) => (a.usuario || "").localeCompare(b.usuario || ""));
-      return json({ usuarios, lojas: lojas || [], euPapel: papelCaller });
+      return json({ usuarios, lojas: (lojas || []).filter((l: { id: string }) => permitidas.has(l.id)), euPapel: papelCaller });
     }
 
     if (acao === "criar") {
@@ -101,8 +109,9 @@ Deno.serve(async (req) => {
       if (!PAPEIS.includes(papel)) return json({ error: "Papel inválido." }, 400);
       if (papel !== "operador" && !ehAdmin) return json({ error: "Somente admin define papéis diferentes de Operador." }, 403);
       const permit = await lojasPermitidas();
-      lojas = [...new Set(lojas)].filter((id) => permit.has(id));
-      if (!lojas.length) return json({ error: "Escolha pelo menos uma loja (dentre as que você pode atribuir)." }, 400);
+      lojas = [...new Set(lojas)];
+      if (!lojas.length) return json({ error: "Escolha pelo menos uma loja." }, 400);
+      if (lojas.some((id) => !permit.has(id))) return json({ error: "Você tentou atribuir loja sem permissão." }, 403);
       const email = usuario + "@" + dominio;
       const { data: novo, error: cerr } = await admin.auth.admin.createUser({ email, password: senha, email_confirm: true, user_metadata: { nome } });
       if (cerr || !novo?.user) {
@@ -110,8 +119,10 @@ Deno.serve(async (req) => {
         return json({ error: dup ? "Já existe um usuário com esse nome." : ("Não foi possível criar o usuário. " + (cerr?.message || "")) }, 400);
       }
       const uid = novo.user.id;
-      await admin.from("perfis").upsert({ id: uid, nome, papel }, { onConflict: "id" });
-      await admin.from("loja_membros").insert(lojas.map((lid) => ({ user_id: uid, loja_id: lid })));
+      const { error: perfilErr } = await admin.from("perfis").upsert({ id: uid, nome, papel }, { onConflict: "id" });
+      if (perfilErr) { await admin.auth.admin.deleteUser(uid); return json({ error: "Falha ao criar perfil." }, 500); }
+      const { error: membroErr } = await admin.from("loja_membros").insert(lojas.map((lid) => ({ user_id: uid, loja_id: lid })));
+      if (membroErr) { await admin.auth.admin.deleteUser(uid); return json({ error: "Falha ao vincular usuário às lojas." }, 500); }
       await audit("criou_usuario", { usuario, papel, lojas: lojas.length });
       return json({ ok: true, id: uid });
     }
@@ -120,8 +131,8 @@ Deno.serve(async (req) => {
       if (!podeEditar) return json({ error: "Sem permissão para editar usuários" }, 403);
       const id = String(body.id || "");
       if (!id) return json({ error: "Usuário não informado." }, 400);
-      const { data: alvo } = await admin.from("perfis").select("papel, nome").eq("id", id).single();
-      if (!alvo) return json({ error: "Usuário não encontrado." }, 404);
+      const { data: alvo, error: alvoErr } = await admin.from("perfis").select("papel, nome").eq("id", id).single();
+      if (alvoErr || !alvo) return json({ error: "Usuário não encontrado." }, 404);
       const usuarioEmail = (await admin.auth.admin.getUserById(id)).data?.user?.email || "";
       const usuarioNome = usuarioEmail.split("@")[0];
       const nome = body.nome != null ? String(body.nome).trim() : null;
@@ -151,8 +162,13 @@ Deno.serve(async (req) => {
       }
       if (lojas != null) {
         const uniq = [...new Set(lojas)];
-        await admin.from("loja_membros").delete().eq("user_id", id);
-        if (uniq.length) await admin.from("loja_membros").insert(uniq.map((lid) => ({ user_id: id, loja_id: lid })));
+        if (!uniq.length) return json({ error: "O usuário precisa ter ao menos uma loja." }, 400);
+        const permit = await lojasPermitidas();
+        if (uniq.some((lid) => !permit.has(lid))) return json({ error: "Loja inválida ou sem permissão." }, 400);
+        const { error: delErr } = await admin.from("loja_membros").delete().eq("user_id", id);
+        if (delErr) return json({ error: "Falha ao remover vínculos anteriores." }, 500);
+        const { error: insErr } = await admin.from("loja_membros").insert(uniq.map((lid) => ({ user_id: id, loja_id: lid })));
+        if (insErr) return json({ error: "Falha ao salvar vínculos." }, 500);
       }
       await audit("editou_usuario", { alvo: usuarioNome, trocou_senha: senha != null, papel: papel || undefined });
       return json({ ok: true });
@@ -163,7 +179,8 @@ Deno.serve(async (req) => {
       const id = String(body.id || "");
       if (!id) return json({ error: "Usuário não informado." }, 400);
       if (id === caller.id) return json({ error: "Você não pode excluir a própria conta." }, 400);
-      const { data: alvo } = await admin.from("perfis").select("papel").eq("id", id).single();
+      const { data: alvo, error: alvoErr } = await admin.from("perfis").select("papel").eq("id", id).single();
+      if (alvoErr || !alvo) return json({ error: "Usuário não encontrado." }, 404);
       if (alvo?.papel === "admin") {
         const { count } = await admin.from("perfis").select("id", { count: "exact", head: true }).eq("papel", "admin");
         if ((count || 0) <= 1) return json({ error: "Não é possível excluir o último admin." }, 400);
@@ -177,6 +194,7 @@ Deno.serve(async (req) => {
 
     return json({ error: "Ação desconhecida." }, 400);
   } catch (e) {
-    return json({ error: "Erro interno: " + (e instanceof Error ? e.message : String(e)) }, 500);
+    console.error("gerir-usuarios error", e);
+    return json({ error: "Erro interno. Consulte os logs da função." }, 500);
   }
 });
