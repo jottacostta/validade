@@ -33,6 +33,7 @@ async function abrir({ dados, chave = 'validade_dados', respostas = [], opcoes =
   p.on('pageerror', e => erros.push(e.message));
   p.on('dialog', d => { dialogos.push({ msg: d.message(), padrao: d.defaultValue() }); const r = respostas.shift();
     if (r === null || r === false) d.dismiss(); else d.accept(r === true || r === undefined ? (d.type() === 'prompt' ? d.defaultValue() : undefined) : String(r)); });
+  await p.addInitScript(() => { window.__noSplash = 1; });
   await p.addInitScript(() => { window.__ag = []; window.__ca = [];
     window.Android = { agendarLembrete: id => window.__ag.push(id), cancelarLembrete: id => window.__ca.push(id) }; });
   if (antes) await antes(p);
