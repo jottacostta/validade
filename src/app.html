@@ -667,7 +667,7 @@ function aplicarPapel(){var reg=pode('registrar'),ed=pode('editar'),aj=pode('aju
   if(!reg){var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='reg')ir('prod');}}
 function carregarPapel(){if(!sbOn()||!logado())return Promise.resolve();
   carregarPrefs();
-  return sbReq('/rest/v1/perfis?select=papel,nome&limit=1').then(function(r){var d=r.ok&&Array.isArray(r.dados)&&r.dados[0];if(d){SESS.papel=d.papel;SESS.nome=d.nome;salvarSess();}aplicarPapel();return d;},function(){aplicarPapel();});}
+  return sbReq('/rest/v1/perfis?select=papel,nome&limit=1').then(function(r){var d=r.ok&&Array.isArray(r.dados)&&r.dados[0];if(d){SESS.papel=d.papel;SESS.nome=d.nome;salvarSess();}aplicarPapel();if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();return d;},function(){aplicarPapel();if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();});}
 /* ── token do Cosmos por usuário ──
    Com Supabase: cada usuário guarda o seu token em public.preferencias (RLS: só a própria linha),
    então ele vale em qualquer aparelho. Sem Supabase (modo local), usa D.aj.cosmos. */
@@ -702,7 +702,7 @@ function contaCard(){if(!sbOn()){$('cardConta').style.display='none';return;}$('
 
 
 // ── Gestão de usuários via Edge Function ──
-(function(){
+function iniciarGestaoUsuarios(){
   var card=$('cardUsuarios');if(!card)return;
   var p=papelAtual(),vis=sbOn()&&logado()&&['assistente','analista','admin'].includes(p);
   card.style.display=vis?'':'none';if(!vis)return;
@@ -732,7 +732,9 @@ function contaCard(){if(!sbOn()){$('cardConta').style.display='none';return;}$('
     callGestao(payload).then(function(){toast('Cadastro atualizado.');carregar();}).catch(function(e){toast(e.message);});}
   function excluir(id){var u=cache.users.find(function(x){return x.id===id;});if(!u||!confirm('Excluir definitivamente o usuário '+u.usuario+'? Esta ação não pode ser desfeita.'))return;callGestao({acao:'excluir',id:id}).then(function(){toast('Usuário excluído.');carregar();}).catch(function(e){toast(e.message);});}
   $('bUsuarioCriar').onclick=criar;$('bUsuarioRefresh').onclick=carregar;carregar();
-})();
+}
+window.__initGestaoUsuarios=iniciarGestaoUsuarios;
+iniciarGestaoUsuarios();
 
 if(sbOn()){aplicarPapel();atualizarGate();if(logado())carregarPapel();}if(logado()&&SESS.lojaId){catalogoPull();backupNuvem();}
 (function(){var sp=$('splash');if(!sp)return;if(window.__noSplash){sp.style.display='none';return;}if(CFG.logo){var im=$('splashLogo');im.src=CFG.logo;im.style.display='';$('splashIni').style.display='none';}
