@@ -13,8 +13,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - name: dist/ em dia com src/
-        # painel.html é um retrato do estado do git (nº de commits, último hash),
-        # então muda a cada commit e não pode ser verificado aqui; checamos só o app.
-        run: node build.js && git diff --exit-code dist/validade.html dist/APP_VALIDADE.js
+      - name: Build do aplicativo
+        # O deploy do GitHub Pages também gera dist a partir de src.
+        # dist é artefato; validar apenas o diff de bytes é frágil (ex.: logo/config).
+        run: node build.js
       - run: npm test
