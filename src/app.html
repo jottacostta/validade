@@ -100,7 +100,7 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
 #editarLojas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:38vh;overflow:auto;padding:4px}
 #editarLojas label{display:flex;align-items:center;gap:8px;padding:9px;border:1px solid var(--bd);border-radius:9px;min-width:0}
 #editarLojas label span{overflow-wrap:anywhere}
-#editarLojas input{width:18px;height:18px;flex:none}
+#editarLojas input{width:18px;height:18px;flex:none}#editarLojasBusca{width:100%;margin:6px 0 8px}#editarLojasAcoes{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 8px}#editarLojasAcoes button{flex:1;min-width:120px}#editarLojasResumo{font-size:12px;color:var(--mu);margin:4px 0 8px}
 @media(max-width:420px){#editarLojas{grid-template-columns:1fr}}
 </style>
 </head>
@@ -232,7 +232,10 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
     <label class="f" for="editarNome">Nome completo</label><input id="editarNome" autocomplete="name">
     <label class="f" for="editarSenha">Nova senha (deixe em branco para manter)</label><input id="editarSenha" type="password" autocomplete="new-password">
     <div id="editarPapelWrap"><label class="f" for="editarPapel">Papel</label><select id="editarPapel"><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="admin">Administrador</option></select></div>
-    <div id="editarLojasWrap"><div class="f">Lojas vinculadas</div><div id="editarLojas"></div></div>
+    <div id="editarLojasWrap"><div class="f">Lojas vinculadas</div>
+      <input id="editarLojasBusca" type="search" placeholder="Buscar loja (FL01, DEP99…)" aria-label="Buscar loja">
+      <div id="editarLojasAcoes"><button type="button" class="btn sec" id="editarMarcarVisiveis">Marcar lojas visíveis</button><button type="button" class="btn sec" id="editarDesmarcarVisiveis">Desmarcar visíveis</button></div>
+      <div id="editarLojasResumo"></div><div id="editarLojas"></div></div>
     <div class="row" style="margin-top:14px"><button class="btn sec" id="cancelarEditarUsuario">Cancelar</button><button class="btn" id="salvarEditarUsuario">Salvar alterações</button></div>
   </div>
 </div>
@@ -824,18 +827,28 @@ function iniciarGestaoUsuarios(){
     if(!/^[a-z0-9._-]{3,30}$/.test(usuario)){toast('Login: 3–30 caracteres minúsculos, números, . _ -');return;}
     if(!nome){toast('Informe o nome completo.');return;}var err=strongPass(senha,usuario);if(err){toast(err);return;}if(!lojas.length){toast('Selecione ao menos uma loja.');return;}
     $('bUsuarioCriar').disabled=true;callGestao({acao:'criar',usuario:usuario,nome:nome,senha:senha,papel:papel,lojas:lojas,exigir_troca_senha:$('uTrocaSenha').checked}).then(function(){toast('Usuário criado.');$('uUsuario').value='';$('uNome').value='';$('uSenha').value='';$('uTrocaSenha').checked=false;carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('bUsuarioCriar').disabled=false;});}
-  var usuarioEditando=null;
+  var usuarioEditando=null,lojasSelecionadasEdicao=[];
+  function atualizarResumoLojas(){var marcadas=lojasSelecionadasEdicao.length,total=cache.lojas.length;$('editarLojasResumo').textContent=marcadas+' loja(s) selecionada(s) de '+total+' disponíveis';}
+  function renderLojasEdicao(){var busca=$('editarLojasBusca').value.trim().toLowerCase(),visiveis=cache.lojas.filter(function(l){return String(l.nome||'').toLowerCase().includes(busca);});
+    $('editarLojas').innerHTML=lojaChecks(visiveis,lojasSelecionadasEdicao).replace(/class="uLoja"/g,'class="uLojaEdit"');
+    document.querySelectorAll('#editarLojas .uLojaEdit').forEach(function(c){c.onchange=function(){if(c.checked){if(!lojasSelecionadasEdicao.includes(c.value))lojasSelecionadasEdicao.push(c.value);}else{lojasSelecionadasEdicao=lojasSelecionadasEdicao.filter(function(id){return id!==c.value;});}atualizarResumoLojas();};});
+    atualizarResumoLojas();
+  }
   function editar(id){var u=cache.users.find(function(x){return x.id===id;});if(!u)return;usuarioEditando=u;
-    $('editarNome').value=u.nome||'';$('editarSenha').value='';$('editarPapel').value=u.papel||'operador';
+    $('editarNome').value=u.nome||'';$('editarSenha').value='';$('editarPapel').value=u.papel||'operador';$('editarLojasBusca').value='';
+    lojasSelecionadasEdicao=(u.lojas||[]).map(function(l){return l.id;});
     $('editarPapelWrap').style.display=p==='admin'?'':'none';$('editarLojasWrap').style.display=p==='admin'?'':'none';
-    if(p==='admin')$('editarLojas').innerHTML=lojaChecks(cache.lojas,(u.lojas||[]).map(function(l){return l.id;})).replace(/class="uLoja"/g,'class="uLojaEdit"');
+    if(p==='admin')renderLojasEdicao();
     $('modalEditarUsuario').classList.add('on');$('editarNome').focus();
   }
+  $('editarLojasBusca').oninput=renderLojasEdicao;
+  $('editarMarcarVisiveis').onclick=function(){var busca=$('editarLojasBusca').value.trim().toLowerCase();cache.lojas.filter(function(l){return String(l.nome||'').toLowerCase().includes(busca);}).forEach(function(l){if(!lojasSelecionadasEdicao.includes(l.id))lojasSelecionadasEdicao.push(l.id);});renderLojasEdicao();};
+  $('editarDesmarcarVisiveis').onclick=function(){var busca=$('editarLojasBusca').value.trim().toLowerCase();lojasSelecionadasEdicao=lojasSelecionadasEdicao.filter(function(id){var loja=cache.lojas.find(function(l){return l.id===id;});return loja&&!String(loja.nome||'').toLowerCase().includes(busca);});renderLojasEdicao();};
   function fecharEdicao(){usuarioEditando=null;$('modalEditarUsuario').classList.remove('on');}
   function salvarEdicao(){if(!usuarioEditando)return;var nome=$('editarNome').value.trim(),senha=$('editarSenha').value,payload={acao:'editar',id:usuarioEditando.id,nome:nome};
     if(!nome){toast('Informe o nome completo.');$('editarNome').focus();return;}
     if(senha){var er=strongPass(senha,usuarioEditando.usuario);if(er){toast(er);return;}payload.senha=senha;}
-    if(p==='admin'){var papel=$('editarPapel').value;if(!['operador','assistente','analista','admin'].includes(papel)){toast('Papel inválido.');return;}payload.papel=papel;payload.lojas=Array.from(document.querySelectorAll('#editarLojas .uLojaEdit:checked')).map(function(e){return e.value;});}
+    if(p==='admin'){var papel=$('editarPapel').value;if(!['operador','assistente','analista','admin'].includes(papel)){toast('Papel inválido.');return;}payload.papel=papel;payload.lojas=lojasSelecionadasEdicao.slice();if(!payload.lojas.length){toast('Selecione pelo menos uma loja.');return;}}
     $('salvarEditarUsuario').disabled=true;callGestao(payload).then(function(){toast('Cadastro atualizado.');fecharEdicao();carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('salvarEditarUsuario').disabled=false;});
   }
   $('cancelarEditarUsuario').onclick=fecharEdicao;$('salvarEditarUsuario').onclick=salvarEdicao;
