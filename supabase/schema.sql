@@ -193,16 +193,22 @@ create table if not exists public.perfis (
 );
 alter table public.perfis enable row level security;
 
-create or replace function public.meu_papel()
+-- Funções auxiliares de RLS ficam num schema NÃO exposto pela API (private), para que
+-- não possam ser chamadas via /rest/v1/rpc. O authenticated ainda as executa dentro das
+-- políticas (precisa de usage no schema + execute na função); o anon não tem acesso.
+create schema if not exists private;
+grant usage on schema private to authenticated;
+
+create or replace function private.meu_papel()
 returns text language sql security definer set search_path = '' stable as $$
   select papel from public.perfis where id = auth.uid();
 $$;
-create or replace function public.membro_da(loja uuid)
+create or replace function private.membro_da(loja uuid)
 returns boolean language sql security definer set search_path = '' stable as $$
   select exists(select 1 from public.loja_membros m where m.loja_id = loja and m.user_id = auth.uid());
 $$;
-revoke execute on function public.meu_papel() from public;      grant execute on function public.meu_papel() to authenticated;
-revoke execute on function public.membro_da(uuid) from public;  grant execute on function public.membro_da(uuid) to authenticated;
+revoke all on function private.meu_papel() from public;      grant execute on function private.meu_papel() to authenticated;
+revoke all on function private.membro_da(uuid) from public;  grant execute on function private.membro_da(uuid) to authenticated;
 
 create or replace function public.ao_criar_usuario()
 returns trigger language plpgsql security definer set search_path = '' as $$
@@ -212,46 +218,59 @@ begin
     on conflict (id) do nothing;
   return new;
 end; $$;
-revoke execute on function public.ao_criar_usuario() from public;
+revoke all on function public.ao_criar_usuario() from anon, authenticated, public;
 drop trigger if exists ao_criar_usuario_trg on auth.users;
 create trigger ao_criar_usuario_trg after insert on auth.users for each row execute function public.ao_criar_usuario();
 insert into public.perfis (id, nome) select u.id, split_part(u.email,'@',1) from auth.users u on conflict (id) do nothing;
 
+-- Só admin pode alterar o papel de um usuário (defesa no servidor, além do RLS)
+create or replace function public.protege_papel()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  if new.papel is distinct from old.papel and private.meu_papel() <> 'admin' then
+    raise exception 'Somente admin pode alterar o papel do usuario';
+  end if;
+  return new;
+end; $$;
+revoke all on function public.protege_papel() from anon, authenticated, public;
+drop trigger if exists protege_papel_trg on public.perfis;
+create trigger protege_papel_trg before update on public.perfis for each row execute function public.protege_papel();
+
 drop policy if exists perfis_sel on public.perfis;
-create policy perfis_sel on public.perfis for select to authenticated using (id = (select auth.uid()) or public.meu_papel() = 'admin');
+create policy perfis_sel on public.perfis for select to authenticated using (id = (select auth.uid()) or private.meu_papel() = any (array['assistente','analista','admin']));
 drop policy if exists perfis_upd on public.perfis;
-create policy perfis_upd on public.perfis for update to authenticated using (public.meu_papel()='admin') with check (public.meu_papel()='admin');
+create policy perfis_upd on public.perfis for update to authenticated using (private.meu_papel() = any (array['analista','admin'])) with check (private.meu_papel() = any (array['analista','admin']));
 drop policy if exists perfis_ins on public.perfis;
-create policy perfis_ins on public.perfis for insert to authenticated with check (public.meu_papel()='admin');
+create policy perfis_ins on public.perfis for insert to authenticated with check (private.meu_papel()='admin');
 drop policy if exists perfis_del on public.perfis;
-create policy perfis_del on public.perfis for delete to authenticated using (public.meu_papel()='admin');
+create policy perfis_del on public.perfis for delete to authenticated using (private.meu_papel()='admin');
 grant select, insert, update, delete on public.perfis to authenticated;
 
 -- regras por papel (recriadas por tabela): registrar=operador+; editar/apagar=assistente+; analista/admin leem tudo
 do $$
 declare t text;
-declare cm text := 'public.membro_da(loja_id)';
+declare cm text := 'private.membro_da(loja_id)';
 begin
   foreach t in array array['produtos','lotes','pere_itens','pere_regs'] loop
-    execute format('alter policy %I_sel on public.%I using (public.meu_papel() in (''analista'',''admin'') or %s)', t, t, cm);
-    execute format('alter policy %I_ins on public.%I with check (public.meu_papel()=''admin'' or (public.meu_papel() in (''operador'',''assistente'') and %s))', t, t, cm);
-    execute format('alter policy %I_upd on public.%I using (public.meu_papel()=''admin'' or (public.meu_papel()=''assistente'' and %s)) with check (public.meu_papel()=''admin'' or (public.meu_papel()=''assistente'' and %s))', t, t, cm, cm);
-    execute format('alter policy %I_del on public.%I using (public.meu_papel()=''admin'' or (public.meu_papel()=''assistente'' and %s))', t, t, cm);
+    execute format('alter policy %I_sel on public.%I using (private.meu_papel() in (''analista'',''admin'') or %s)', t, t, cm);
+    execute format('alter policy %I_ins on public.%I with check (private.meu_papel()=''admin'' or (private.meu_papel() in (''operador'',''assistente'') and %s))', t, t, cm);
+    execute format('alter policy %I_upd on public.%I using (private.meu_papel()=''admin'' or (private.meu_papel()=''assistente'' and %s)) with check (private.meu_papel()=''admin'' or (private.meu_papel()=''assistente'' and %s))', t, t, cm, cm);
+    execute format('alter policy %I_del on public.%I using (private.meu_papel()=''admin'' or (private.meu_papel()=''assistente'' and %s))', t, t, cm);
   end loop;
 end $$;
-alter policy ajustes_sel on public.ajustes using (public.meu_papel() in ('analista','admin') or public.membro_da(loja_id));
-alter policy ajustes_ins on public.ajustes with check (public.meu_papel()='admin' or (public.meu_papel()='assistente' and public.membro_da(loja_id)));
-alter policy ajustes_upd on public.ajustes using (public.meu_papel()='admin' or (public.meu_papel()='assistente' and public.membro_da(loja_id))) with check (public.meu_papel()='admin' or (public.meu_papel()='assistente' and public.membro_da(loja_id)));
-alter policy ajustes_del on public.ajustes using (public.meu_papel()='admin');
+alter policy ajustes_sel on public.ajustes using (private.meu_papel() in ('analista','admin') or private.membro_da(loja_id));
+alter policy ajustes_ins on public.ajustes with check (private.meu_papel()='admin' or (private.meu_papel()='assistente' and private.membro_da(loja_id)));
+alter policy ajustes_upd on public.ajustes using (private.meu_papel()='admin' or (private.meu_papel()='assistente' and private.membro_da(loja_id))) with check (private.meu_papel()='admin' or (private.meu_papel()='assistente' and private.membro_da(loja_id)));
+alter policy ajustes_del on public.ajustes using (private.meu_papel()='admin');
 
-alter policy lojas_sel on public.lojas using (public.meu_papel() in ('analista','admin') or public.membro_da(id));
-drop policy if exists lojas_ins on public.lojas; create policy lojas_ins on public.lojas for insert to authenticated with check (public.meu_papel()='admin');
-drop policy if exists lojas_upd on public.lojas; create policy lojas_upd on public.lojas for update to authenticated using (public.meu_papel()='admin') with check (public.meu_papel()='admin');
-drop policy if exists lojas_del on public.lojas; create policy lojas_del on public.lojas for delete to authenticated using (public.meu_papel()='admin');
-alter policy loja_membros_sel on public.loja_membros using (user_id = (select auth.uid()) or public.meu_papel()='admin');
-drop policy if exists loja_membros_ins on public.loja_membros; create policy loja_membros_ins on public.loja_membros for insert to authenticated with check (public.meu_papel()='admin');
-drop policy if exists loja_membros_upd on public.loja_membros; create policy loja_membros_upd on public.loja_membros for update to authenticated using (public.meu_papel()='admin') with check (public.meu_papel()='admin');
-drop policy if exists loja_membros_del on public.loja_membros; create policy loja_membros_del on public.loja_membros for delete to authenticated using (public.meu_papel()='admin');
+alter policy lojas_sel on public.lojas using (private.meu_papel() in ('analista','admin') or private.membro_da(id));
+drop policy if exists lojas_ins on public.lojas; create policy lojas_ins on public.lojas for insert to authenticated with check (private.meu_papel()='admin');
+drop policy if exists lojas_upd on public.lojas; create policy lojas_upd on public.lojas for update to authenticated using (private.meu_papel()='admin') with check (private.meu_papel()='admin');
+drop policy if exists lojas_del on public.lojas; create policy lojas_del on public.lojas for delete to authenticated using (private.meu_papel()='admin');
+alter policy loja_membros_sel on public.loja_membros using (user_id = (select auth.uid()) or private.meu_papel()='admin');
+drop policy if exists loja_membros_ins on public.loja_membros; create policy loja_membros_ins on public.loja_membros for insert to authenticated with check (private.meu_papel()='admin');
+drop policy if exists loja_membros_upd on public.loja_membros; create policy loja_membros_upd on public.loja_membros for update to authenticated using (private.meu_papel()='admin') with check (private.meu_papel()='admin');
+drop policy if exists loja_membros_del on public.loja_membros; create policy loja_membros_del on public.loja_membros for delete to authenticated using (private.meu_papel()='admin');
 grant insert, update, delete on public.lojas, public.loja_membros to authenticated;
 
 -- preferências pessoais por usuário: cada um guarda o seu próprio token do Cosmos.
