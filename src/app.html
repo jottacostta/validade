@@ -184,6 +184,20 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
   </div>
   <div class="card" id="cardConta" style="display:none"><h2>Conta e sincronização</h2><div id="contaInfo"></div></div>
   <div class="card" id="cardAuditoria" style="display:none"><h2>Auditoria <span class="ean">(somente admin)</span></h2><div id="listaAud"></div><button class="btn sec" id="bAudRefresh" style="margin-top:10px">🔄 Atualizar</button></div>
+  <div class="card" id="cardUsuarios" style="display:none">
+    <h2>Gestão de usuários <span class="ean">(assistente, analista e admin)</span></h2>
+    <p style="font-size:13px;color:var(--mu)">Contas de acesso ao sistema. As permissões são validadas no servidor.</p>
+    <div id="usuariosForm">
+      <label class="f" for="uUsuario">Usuário (login)</label><input id="uUsuario" autocomplete="off" autocapitalize="none" placeholder="ex.: joao.silva">
+      <label class="f" for="uNome">Nome completo</label><input id="uNome" autocomplete="name">
+      <label class="f" for="uSenha">Senha inicial</label><input id="uSenha" type="password" autocomplete="new-password">
+      <label class="f" for="uPapel">Papel</label><select id="uPapel"><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="admin">Administrador</option></select>
+      <div class="f">Lojas vinculadas</div><div id="uLojas" class="row" style="flex-wrap:wrap"></div>
+      <button class="btn big" id="bUsuarioCriar" style="margin-top:12px">Criar usuário</button>
+    </div>
+    <div class="row" style="margin-top:12px"><button class="btn sec" id="bUsuarioRefresh">Atualizar lista</button></div>
+    <div id="listaUsuarios" style="margin-top:12px"><div class="vazio">Carregue a lista para começar.</div></div>
+  </div>
   <div class="card"><h2>Backup</h2>
     <div class="row"><button class="btn sec" id="bExp">💾 Exportar backup</button><label class="btn sec" for="fImp">📥 Importar backup</label></div>
     <input type="file" id="fImp" accept=".json,application/json" style="display:none">
@@ -685,6 +699,40 @@ function contaCard(){if(!sbOn()){$('cardConta').style.display='none';return;}$('
   if(logado()){$('contaInfo').innerHTML='<div style="font-size:14px">Operador: <b>'+esc(SESS.usuario||SESS.email||'')+'</b>'+(SESS.papel?' <span class="st ok">'+esc(PAPEIS[SESS.papel]||SESS.papel)+'</span>':'')+'</div>'+(SESS.lojaNome?'<div style="font-size:14px;margin-top:4px">Loja atual: <b>'+esc(SESS.lojaNome)+'</b></div>':'<div class="aviso wa" style="margin-top:8px">Escolha a loja onde está atuando.</div>')+'<div class="row" style="margin-top:12px"><button class="btn sec" id="bTrocarLoja">'+(SESS.lojaNome?'Trocar loja':'Escolher loja')+'</button><button class="btn sec" id="bSair2">Sair</button></div>'+(SESS.lojaNome?'<p style="margin:10px 0 0;font-size:12px;color:var(--mu)">Backup na nuvem: '+(SYNC.backup?'último '+fdataHora(SYNC.backup):'enviando…')+'</p>':'');
     $('bTrocarLoja').onclick=abrirConta;$('bSair2').onclick=function(){sbLogout();contaCard();toast('Você saiu');};}
   else{$('contaInfo').innerHTML='<p style="margin:0 0 10px;font-size:13px;color:var(--mu)">Entre para sincronizar os dados entre aparelhos e lojas.</p><button class="btn big" id="bEntrarAj">Entrar</button>';$('bEntrarAj').onclick=abrirConta;}}
+
+
+// ── Gestão de usuários via Edge Function ──
+(function(){
+  var card=$('cardUsuarios');if(!card)return;
+  var p=papelAtual(),vis=sbOn()&&logado()&&['assistente','analista','admin'].includes(p);
+  card.style.display=vis?'':'none';if(!vis)return;
+  var endpoint='/functions/v1/gerir-usuarios';
+  function callGestao(body){return sbReq(endpoint,{method:'POST',body:body}).then(function(r){if(!r.ok)throw new Error(r.dados&&r.dados.error||'Falha na gestão de usuários (HTTP '+r.status+').');return r.dados||{};});}
+  function lojaChecks(lojas,selecionadas){return (lojas||[]).map(function(l){return '<label style="display:inline-flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid var(--bd);border-radius:8px"><input type="checkbox" class="uLoja" value="'+esc(l.id)+'" '+(selecionadas&&selecionadas.includes(l.id)?'checked':'')+'>'+esc(l.nome)+'</label>';}).join('');}
+  function selectedStores(){return Array.from(document.querySelectorAll('#uLojas .uLoja:checked')).map(function(e){return e.value;});}
+  function strongPass(s,u){var common=['123456','1234567','12345678','123456789','senha','password','qwerty','111111','000000','abc123','admin123','guanabara'];if(!s||s.length<6)return 'A senha precisa de pelo menos 6 caracteres.';if(common.includes(s.toLowerCase()))return 'Essa senha é muito comum.';if(s.toLowerCase()===u.toLowerCase())return 'A senha não pode ser igual ao usuário.';return '';}
+  var cache={users:[],lojas:[]};
+  function render(){var admin=p==='admin',analista=p==='analista'||admin;
+    $('uPapel').disabled=!admin;if(!admin)$('uPapel').value='operador';
+    $('usuariosForm').style.display='';
+    $('listaUsuarios').innerHTML=cache.users.map(function(u){var stores=(u.lojas||[]).map(function(l){return esc(l.nome);}).join(', ')||'—';
+      return '<div class="card" style="padding:12px;margin:8px 0"><div style="font-weight:700">'+esc(u.nome||u.usuario)+'</div><div class="ean">@'+esc(u.usuario)+' · '+esc(PAPEIS[u.papel]||u.papel)+'</div><div style="font-size:12px;margin:5px 0">'+stores+'</div>'+(analista?'<div class="row"><button class="btn sec uEdit" data-id="'+esc(u.id)+'">Editar</button>'+(admin?'<button class="btn perigo uDelete" data-id="'+esc(u.id)+'">Excluir</button>':'')+'</div>':'')+'</div>';
+    }).join('')||'<div class="vazio">Nenhum usuário encontrado.</div>';
+    document.querySelectorAll('.uEdit').forEach(function(b){b.onclick=function(){editar(b.dataset.id);};});
+    document.querySelectorAll('.uDelete').forEach(function(b){b.onclick=function(){excluir(b.dataset.id);};});
+  }
+  function carregar(){ $('listaUsuarios').innerHTML='<div class="vazio"><span class="gira"></span> carregando usuários…</div>';
+    callGestao({acao:'listar'}).then(function(r){cache.users=r.usuarios||[];cache.lojas=r.lojas||[];$('uLojas').innerHTML=lojaChecks(cache.lojas);render();}).catch(function(e){$('listaUsuarios').innerHTML='<div class="aviso wa">'+esc(e.message)+'</div>';});}
+  function criar(){var usuario=$('uUsuario').value.trim().toLowerCase(),nome=$('uNome').value.trim(),senha=$('uSenha').value,papel=p==='admin'?$('uPapel').value:'operador',lojas=selectedStores();
+    if(!/^[a-z0-9._-]{3,30}$/.test(usuario)){toast('Login: 3–30 caracteres minúsculos, números, . _ -');return;}
+    if(!nome){toast('Informe o nome completo.');return;}var err=strongPass(senha,usuario);if(err){toast(err);return;}if(!lojas.length){toast('Selecione ao menos uma loja.');return;}
+    $('bUsuarioCriar').disabled=true;callGestao({acao:'criar',usuario:usuario,nome:nome,senha:senha,papel:papel,lojas:lojas}).then(function(){toast('Usuário criado.');$('uUsuario').value='';$('uNome').value='';$('uSenha').value='';carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('bUsuarioCriar').disabled=false;});}
+  function editar(id){var u=cache.users.find(function(x){return x.id===id;});if(!u)return;var nome=prompt('Nome completo:',u.nome||'');if(nome===null)return;var senha=prompt('Nova senha (deixe em branco para manter):','');if(senha===null)return;var payload={acao:'editar',id:id,nome:nome};if(senha){var er=strongPass(senha,u.usuario);if(er){toast(er);return;}payload.senha=senha;}
+    if(p==='admin'){var papel=prompt('Papel: operador, assistente, analista ou admin',u.papel);if(papel===null)return;if(!['operador','assistente','analista','admin'].includes(papel)){toast('Papel inválido.');return;}payload.papel=papel;var lojaIds=cache.lojas.map(function(l,i){return (i+1)+'. '+l.nome+' ['+l.id+']';}).join('\n');var resposta=prompt('IDs das lojas separados por vírgula (vazio = sem lojas):\n'+lojaIds,(u.lojas||[]).map(function(l){return l.id;}).join(','));if(resposta===null)return;payload.lojas=resposta.split(',').map(function(x){return x.trim();}).filter(Boolean);}
+    callGestao(payload).then(function(){toast('Cadastro atualizado.');carregar();}).catch(function(e){toast(e.message);});}
+  function excluir(id){var u=cache.users.find(function(x){return x.id===id;});if(!u||!confirm('Excluir definitivamente o usuário '+u.usuario+'? Esta ação não pode ser desfeita.'))return;callGestao({acao:'excluir',id:id}).then(function(){toast('Usuário excluído.');carregar();}).catch(function(e){toast(e.message);});}
+  $('bUsuarioCriar').onclick=criar;$('bUsuarioRefresh').onclick=carregar;carregar();
+})();
 
 if(sbOn()){aplicarPapel();atualizarGate();if(logado())carregarPapel();}if(logado()&&SESS.lojaId){catalogoPull();backupNuvem();}
 (function(){var sp=$('splash');if(!sp)return;if(window.__noSplash){sp.style.display='none';return;}if(CFG.logo){var im=$('splashLogo');im.src=CFG.logo;im.style.display='';$('splashIni').style.display='none';}
