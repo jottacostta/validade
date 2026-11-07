@@ -253,3 +253,20 @@ drop policy if exists loja_membros_ins on public.loja_membros; create policy loj
 drop policy if exists loja_membros_upd on public.loja_membros; create policy loja_membros_upd on public.loja_membros for update to authenticated using (public.meu_papel()='admin') with check (public.meu_papel()='admin');
 drop policy if exists loja_membros_del on public.loja_membros; create policy loja_membros_del on public.loja_membros for delete to authenticated using (public.meu_papel()='admin');
 grant insert, update, delete on public.lojas, public.loja_membros to authenticated;
+
+-- preferências pessoais por usuário: cada um guarda o seu próprio token do Cosmos.
+-- RLS deixa cada usuário ver/editar só a própria linha (a tabela só tem o token, então
+-- não há risco de escalonamento — ao contrário de guardar isso em perfis, que tem o papel).
+create table if not exists public.preferencias (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  cosmos_token text not null default '',
+  atualizado timestamptz not null default now()
+);
+alter table public.preferencias enable row level security;
+drop policy if exists prefs_sel on public.preferencias;
+create policy prefs_sel on public.preferencias for select to authenticated using (user_id = (select auth.uid()));
+drop policy if exists prefs_ins on public.preferencias;
+create policy prefs_ins on public.preferencias for insert to authenticated with check (user_id = (select auth.uid()));
+drop policy if exists prefs_upd on public.preferencias;
+create policy prefs_upd on public.preferencias for update to authenticated using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
+grant select, insert, update on public.preferencias to authenticated;

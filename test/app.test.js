@@ -429,3 +429,24 @@ tflaky('papel operador: Registrar visível; códigos (cadastro) escondido', { sk
   assert.strictEqual(await a.p.isVisible('#subPere button[data-s="cad"]'), false);
   await a.fechar();
 });
+
+tflaky('cosmos: cada usuário carrega e salva o seu próprio token (perfil pessoal)', { skip: pular }, async () => {
+  let salvo = null;
+  const a = await abrirLogado(async p => {
+    await rotasBase(p, 'operador');
+    await p.route(/\/rest\/v1\/preferencias\?select/, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ cosmos_token: 'TKN-123' }]) }));
+    await p.route(/\/rest\/v1\/preferencias\?on_conflict/, async r => { try { salvo = r.request().postDataJSON(); } catch (e) {} await r.fulfill({ status: 201, body: '' }); });
+  });
+  // o token do usuário chega na sessão
+  await a.p.waitForFunction(() => { try { return JSON.parse(localStorage.getItem('validade_sessao')).cosmos === 'TKN-123'; } catch (e) { return false; } });
+  await a.p.click('nav button[data-v="aj"]');
+  // operador (sem permissão de ajustes) ainda edita o PRÓPRIO token
+  assert.strictEqual(await a.p.getAttribute('#aCosmos', 'disabled'), null);
+  assert.strictEqual(await a.p.inputValue('#aCosmos'), 'TKN-123');
+  // troca o token → faz upsert em preferencias com o uid do usuário
+  await a.p.fill('#aCosmos', 'NOVO-999');
+  await a.p.dispatchEvent('#aCosmos', 'change');
+  await a.p.waitForFunction(() => { try { return JSON.parse(localStorage.getItem('validade_sessao')).cosmos === 'NOVO-999'; } catch (e) { return false; } });
+  assert.ok(salvo && salvo[0] && salvo[0].user_id === 'u1' && salvo[0].cosmos_token === 'NOVO-999', 'upsert com uid e token do usuário');
+  await a.fechar();
+});
