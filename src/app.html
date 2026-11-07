@@ -12,6 +12,7 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Roboto,Arial,sans-serif;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 header{background:linear-gradient(135deg,var(--c),var(--c3));color:#fff;padding:calc(18px + env(safe-area-inset-top)) 16px 18px;border-bottom:5px solid var(--am)}
 header h1{margin:0;font-size:20px}header p{margin:3px 0 0;opacity:.85;font-size:13px}
+.hdr-in{display:flex;align-items:center;gap:12px}.hdr-logo{width:46px;height:46px;border-radius:10px;background:#fff;padding:3px;object-fit:contain;flex:none}
 main{max-width:760px;margin:0 auto;padding:14px 12px}
 .vista{display:none}.vista.on{display:block;animation:e .2s}@keyframes e{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
 .card{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
@@ -68,7 +69,7 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
 </head>
 <body>
 <div id="splash"><div class="sp-logo"><img id="splashLogo" alt="" style="display:none"><span id="splashIni">📅</span></div><div class="sp-nome">/*NOME_HTML*/</div><div class="sp-sub">Controle de validade e perecíveis</div><span class="gira"></span><div class="barra-am"></div></div>
-<header><h1>/*NOME_HTML*/</h1><p id="slogan">Lotes, validades e perecíveis</p></header>
+<header><div class="hdr-in"><img id="hdrLogo" alt="" class="hdr-logo" style="display:none"><div style="min-width:0"><h1>/*NOME_HTML*/</h1><p id="slogan">Lotes, validades e perecíveis</p></div></div></header>
 <main>
 
 <!-- ═════════ REGISTRAR ═════════ -->
@@ -202,6 +203,7 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
 var CFG=/*CFG*/;
 var $=function(id){return document.getElementById(id);};
 if(CFG.slogan)$('slogan').textContent=CFG.slogan;
+if(CFG.logo){var hl=$('hdrLogo');if(hl){hl.src=CFG.logo;hl.style.display='';}}
 /* chave fixa: trocar o nome da loja não perde os dados (versões antigas usavam 'validade_'+nome) */
 var K='validade_dados', D={};
 try{var s=localStorage.getItem(K);
