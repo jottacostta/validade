@@ -12,7 +12,7 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Roboto,Arial,sans-serif;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 header{background:linear-gradient(135deg,var(--c),var(--c3));color:#fff;padding:calc(18px + env(safe-area-inset-top)) 16px 18px;border-bottom:5px solid var(--am)}
 header h1{margin:0;font-size:20px}header p{margin:3px 0 0;opacity:.85;font-size:13px}
-.hdr-in{display:flex;align-items:center;gap:12px}.hdr-logo{width:46px;height:46px;border-radius:10px;background:#fff;padding:3px;object-fit:contain;flex:none}
+.hdr-in{display:flex;align-items:center;gap:12px}.hdr-logo{width:46px;height:46px;border-radius:10px;object-fit:cover;flex:none}
 main{max-width:760px;margin:0 auto;padding:14px 12px}
 .vista{display:none}.vista.on{display:block;animation:e .2s}@keyframes e{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
 .card{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
@@ -57,8 +57,9 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
 .gira{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:g 0.8s linear infinite;vertical-align:-2px}@keyframes g{to{transform:rotate(360deg)}}
 #splash{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:linear-gradient(160deg,var(--c),#07254c);color:#fff;transition:opacity .45s}
 #splash.sai{opacity:0}
-#splash .sp-logo{width:104px;height:104px;border-radius:26px;background:var(--am);color:var(--c);display:flex;align-items:center;justify-content:center;font-size:54px;font-weight:800;box-shadow:0 8px 24px rgba(0,0,0,.35);overflow:hidden}
-#splash .sp-logo img{max-width:72px;max-height:72px;width:auto;height:auto;object-fit:contain;background:#fff;image-rendering:auto}
+#splash .sp-logo{display:flex;align-items:center;justify-content:center}
+#splash .sp-logo img{max-width:190px;max-height:190px;width:auto;height:auto;border-radius:22px;box-shadow:0 10px 28px rgba(0,0,0,.4)}
+#splash .sp-logo #splashIni{width:104px;height:104px;border-radius:26px;background:var(--am);color:var(--c);display:flex;align-items:center;justify-content:center;font-size:54px;font-weight:800;box-shadow:0 8px 24px rgba(0,0,0,.35)}
 #splash .sp-nome{font-size:22px;font-weight:800}#splash .sp-sub{font-size:13px;opacity:.85}
 #splash .barra-am{position:absolute;bottom:0;left:0;right:0;height:5px;background:var(--am)}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:70;display:none;align-items:center;justify-content:center;padding:16px}

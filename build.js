@@ -18,7 +18,10 @@ const MARCADORES = ['/*COR*/', '/*COR2*/', '/*COR3*/', '/*CORDARK*/', '/*ACENTO*
 
 /* logo: usa config.logo (URL/dataURI) ou embute src/logo.png como data URI */
 function logoDataURI() {
-  try { const f = path.join(raiz, 'src/logo.png'); if (fs.existsSync(f)) return 'data:image/png;base64,' + fs.readFileSync(f).toString('base64'); } catch (e) {}
+  try {
+    const j = path.join(raiz, 'src/logo.jpg'); if (fs.existsSync(j)) return 'data:image/jpeg;base64,' + fs.readFileSync(j).toString('base64');
+    const p = path.join(raiz, 'src/logo.png'); if (fs.existsSync(p)) return 'data:image/png;base64,' + fs.readFileSync(p).toString('base64');
+  } catch (e) {}
   return '';
 }
 
