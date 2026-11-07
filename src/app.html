@@ -224,7 +224,7 @@ function upcE(c){var s=c[0],d=c.substr(1,6),u=d[5],m;
   if(u<'3')m=d[0]+d[1]+u+'0000'+d[2]+d[3]+d[4];else if(u==='3')m=d[0]+d[1]+d[2]+'00000'+d[3]+d[4];
   else if(u==='4')m=d[0]+d[1]+d[2]+d[3]+'00000'+d[4];else m=d.substr(0,5)+'0000'+u;
   return s+m+c[7];}
-function salvar(){try{localStorage.setItem(K,JSON.stringify(D));}catch(e){toast('⚠️ Não foi possível salvar');}}
+function salvar(){try{localStorage.setItem(K,JSON.stringify(D));}catch(e){toast('⚠️ Não foi possível salvar');}agendarBackup();}
 function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 var tt;function toast(m){var t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(function(){t.classList.remove('on');},2200);}
 function vib(ms){try{navigator.vibrate&&navigator.vibrate(ms||40);}catch(e){}}
@@ -559,6 +559,22 @@ function catalogoPull(){if(!sbOn()||!logado())return Promise.resolve(0);
     .then(function(r){if(!r.ok||!Array.isArray(r.dados))return 0;var n=0,maxu=desde;
       r.dados.forEach(function(row){if(row.ean&&row.nome){D.cat[row.ean]=Object.assign({},D.cat[row.ean]||{},{nome:row.nome,marca:row.marca||'',img:row.img||''});n++;}if(row.updated_at&&row.updated_at>maxu)maxu=row.updated_at;});
       if(maxu>desde){SYNC.catalogo=maxu;salvarSync();}if(n)salvar();return n;},function(){return 0;});}
+/* ───── backup do estoque da loja na nuvem (envio; a volta vem depois) ───── */
+function linhasLocais(loja){var pr=[],lo=[],pi=[],pg=[];
+  Object.keys(D.prod).forEach(function(ean){var p=D.prod[ean];pr.push({loja_id:loja,ean:String(ean),nome:p.nome||'',marca:p.marca||'',img:p.img||''});
+    (p.lotes||[]).forEach(function(l){lo.push({id:l.id,loja_id:loja,ean:String(ean),lote:l.lote||'',qtd:+l.qtd||0,val:l.val||null,criado:l.criado||null});});});
+  Object.keys(D.pere.itens).forEach(function(cod){var it=D.pere.itens[cod];pi.push({loja_id:loja,cod:String(cod),descricao:it.desc||'',sif:it.sif||''});});
+  (D.pere.regs||[]).forEach(function(r){pg.push({id:r.id,loja_id:loja,cod:String(r.cod),sif:r.sif||'',peso:+r.peso||0,val:r.val||null,criado:r.criado||null});});
+  return {produtos:pr,lotes:lo,pere_itens:pi,pere_regs:pg};}
+var tBackup=null,backupEmAndamento=false;
+function agendarBackup(){if(!sbOn()||!logado()||!SESS.lojaId)return;clearTimeout(tBackup);tBackup=setTimeout(backupNuvem,5000);}
+function backupNuvem(){if(!sbOn()||!logado()||!SESS.lojaId||backupEmAndamento)return Promise.resolve(0);
+  backupEmAndamento=true;var L=linhasLocais(SESS.lojaId);
+  function up(tabela,conflito,rows){if(!rows.length)return Promise.resolve();
+    return sbReq('/rest/v1/'+tabela+'?on_conflict='+conflito,{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:rows});}
+  return Promise.all([up('produtos','loja_id,ean',L.produtos),up('lotes','id',L.lotes),up('pere_itens','loja_id,cod',L.pere_itens),up('pere_regs','id',L.pere_regs)])
+    .then(function(){SYNC.backup=Date.now();salvarSync();var n=L.produtos.length+L.lotes.length+L.pere_itens.length+L.pere_regs.length;if(document.querySelector('#abas button.on')&&document.querySelector('#abas button.on').dataset.v==='aj')contaCard();return n;})
+    .catch(function(){return -1;}).then(function(x){backupEmAndamento=false;return x;});}
 function abrirConta(){if(!sbOn()){toast('Sincronização não configurada');return;}$('conta').classList.add('on');if(logado())mostrarLojas();else mostrarLoginForm();}
 function fecharConta(){$('conta').classList.remove('on');}
 function mostrarLoginForm(){$('conta-login').style.display='';$('conta-lojas').style.display='none';$('cErro').style.display='none';$('cPass').value='';setTimeout(function(){$('cUser').focus();},120);}
@@ -567,7 +583,7 @@ function mostrarLojas(){$('conta-login').style.display='none';$('conta-lojas').s
     $('listaLojas').innerHTML=ls.map(function(l){return '<button class="btn sec big loja" data-id="'+esc(l.id)+'" data-nome="'+esc(l.nome)+'" style="margin-bottom:8px;justify-content:flex-start">🏬 '+esc(l.nome)+'</button>';}).join('');
   },function(){$('listaLojas').innerHTML='<div class="vazio">Não consegui carregar as lojas. Verifique a internet e tente de novo.</div>';});}
 $('conta').addEventListener('click',function(e){if(e.target===$('conta'))fecharConta();});
-$('listaLojas').onclick=function(e){var b=e.target.closest('.loja');if(!b||!SESS)return;SESS.lojaId=b.dataset.id;SESS.lojaNome=b.dataset.nome;salvarSess();fecharConta();toast('Loja: '+SESS.lojaNome);catalogoPull().then(function(n){if(n)toast('Catálogo: +'+n+' produto'+(n>1?'s':''));});var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='aj')contaCard();};
+$('listaLojas').onclick=function(e){var b=e.target.closest('.loja');if(!b||!SESS)return;SESS.lojaId=b.dataset.id;SESS.lojaNome=b.dataset.nome;salvarSess();fecharConta();toast('Loja: '+SESS.lojaNome);catalogoPull().then(function(n){if(n)toast('Catálogo: +'+n+' produto'+(n>1?'s':''));});backupNuvem();var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='aj')contaCard();};
 $('bEntrar').onclick=function(){var u=$('cUser').value.trim(),pw=$('cPass').value;if(!u||!pw){$('cErro').textContent='Preencha usuário e senha.';$('cErro').style.display='';return;}
   $('cErro').style.display='none';$('bEntrar').disabled=true;$('bEntrar').textContent='Entrando…';
   sbLogin(u,pw).then(function(){$('bEntrar').disabled=false;$('bEntrar').textContent='Entrar';mostrarLojas();},
@@ -575,12 +591,13 @@ $('bEntrar').onclick=function(){var u=$('cUser').value.trim(),pw=$('cPass').valu
 $('cPass').onkeydown=function(e){if(e.key==='Enter')$('bEntrar').click();};
 $('bCancelaConta').onclick=fecharConta;
 $('bSairConta').onclick=function(){sbLogout();fecharConta();toast('Você saiu');contaCard();};
+function fdataHora(ms){try{var d=new Date(ms);return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
 function contaCard(){if(!sbOn()){$('cardConta').style.display='none';return;}$('cardConta').style.display='';
-  if(logado()){$('contaInfo').innerHTML='<div style="font-size:14px">Operador: <b>'+esc(SESS.usuario||SESS.email||'')+'</b></div>'+(SESS.lojaNome?'<div style="font-size:14px;margin-top:4px">Loja atual: <b>'+esc(SESS.lojaNome)+'</b></div>':'<div class="aviso wa" style="margin-top:8px">Escolha a loja onde está atuando.</div>')+'<div class="row" style="margin-top:12px"><button class="btn sec" id="bTrocarLoja">'+(SESS.lojaNome?'Trocar loja':'Escolher loja')+'</button><button class="btn sec" id="bSair2">Sair</button></div>';
+  if(logado()){$('contaInfo').innerHTML='<div style="font-size:14px">Operador: <b>'+esc(SESS.usuario||SESS.email||'')+'</b></div>'+(SESS.lojaNome?'<div style="font-size:14px;margin-top:4px">Loja atual: <b>'+esc(SESS.lojaNome)+'</b></div>':'<div class="aviso wa" style="margin-top:8px">Escolha a loja onde está atuando.</div>')+'<div class="row" style="margin-top:12px"><button class="btn sec" id="bTrocarLoja">'+(SESS.lojaNome?'Trocar loja':'Escolher loja')+'</button><button class="btn sec" id="bSair2">Sair</button></div>'+(SESS.lojaNome?'<p style="margin:10px 0 0;font-size:12px;color:var(--mu)">Backup na nuvem: '+(SYNC.backup?'último '+fdataHora(SYNC.backup):'enviando…')+'</p>':'');
     $('bTrocarLoja').onclick=abrirConta;$('bSair2').onclick=function(){sbLogout();contaCard();toast('Você saiu');};}
   else{$('contaInfo').innerHTML='<p style="margin:0 0 10px;font-size:13px;color:var(--mu)">Entre para sincronizar os dados entre aparelhos e lojas.</p><button class="btn big" id="bEntrarAj">Entrar</button>';$('bEntrarAj').onclick=abrirConta;}}
 
-if(logado()&&SESS.lojaId)catalogoPull();
+if(logado()&&SESS.lojaId){catalogoPull();backupNuvem();}
 listaProdutos();
 })();
 </script>

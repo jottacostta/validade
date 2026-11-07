@@ -316,10 +316,10 @@ tflaky('sem Supabase configurado: card de conta fica oculto', { skip: pular }, a
 
 /* abre o app já logado (sessão posta via evaluate + reload, como os demais testes);
    setupRotas registra as rotas ANTES do reload, para o pull inicial ser interceptado */
-async function abrirLogado(setupRotas) {
+async function abrirLogado(setupRotas, dados) {
   const a = await abrir({ url: URL_SUPA });
   if (setupRotas) await setupRotas(a.p);
-  await a.p.evaluate(() => localStorage.setItem('validade_sessao', JSON.stringify({ access_token: 'tok', refresh_token: 'ref', expira: Date.now() + 3600000, usuario: 'teste', email: 'teste@loja.validade', uid: 'u1', lojaId: 'L1', lojaNome: 'Loja Teste' })));
+  await a.p.evaluate((d) => { localStorage.setItem('validade_sessao', JSON.stringify({ access_token: 'tok', refresh_token: 'ref', expira: Date.now() + 3600000, usuario: 'teste', email: 'teste@loja.validade', uid: 'u1', lojaId: 'L1', lojaNome: 'Loja Teste' })); if (d) localStorage.setItem('validade_dados', JSON.stringify(d)); }, dados);
   await a.p.reload();
   return a;
 }
@@ -367,5 +367,31 @@ tflaky('catálogo: pull junta os produtos do servidor no cache local', { skip: p
   assert.strictEqual(d.cat['222'].nome, 'Feijão');
   const sync = await a.p.evaluate(() => JSON.parse(localStorage.getItem('validade_sync')));
   assert.strictEqual(sync.catalogo, '2026-11-06T11:00:00Z');
+  await a.fechar();
+});
+
+tflaky('backup: envia produtos, lotes e perecíveis da loja para a nuvem ao abrir', { skip: pular }, async () => {
+  const bodies = {};
+  const dados = {
+    prod: { '789': { nome: 'Café', marca: '', img: '', lotes: [{ id: 'l1', lote: 'L1', qtd: 3, val: '2027-01-01', criado: 1 }] } },
+    cat: {},
+    pere: { itens: { '6019': { desc: 'Pernil', sif: '876' } }, regs: [{ id: 'r1', cod: '6019', sif: '876', peso: 0.8, val: '2026-12-01', criado: 2 }] },
+    aj: { dig: 5, valor: 'preco', dias: 30, notif: true, ocr: true, cosmos: '' }
+  };
+  const a = await abrirLogado(async p => {
+    await p.route(R_PULL, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    for (const t of ['produtos', 'lotes', 'pere_itens', 'pere_regs']) {
+      await p.route(new RegExp('/rest/v1/' + t + '\\?on_conflict'), async r => {
+        try { (bodies[t] = bodies[t] || []).push(...r.request().postDataJSON()); } catch (e) {}
+        await r.fulfill({ status: 201, body: '' });
+      });
+    }
+  }, dados);
+  await a.p.waitForFunction(() => { try { return !!JSON.parse(localStorage.getItem('validade_sync') || '{}').backup; } catch (e) { return false; } });
+  assert.ok(bodies.produtos.some(r => r.ean === '789' && r.nome === 'Café' && r.loja_id === 'L1'), 'produto enviado');
+  assert.ok(bodies.lotes.some(r => r.id === 'l1' && r.ean === '789' && r.qtd === 3 && r.loja_id === 'L1'), 'lote enviado');
+  assert.ok(bodies.pere_itens.some(r => r.cod === '6019' && r.descricao === 'Pernil' && r.loja_id === 'L1'), 'código enviado');
+  assert.ok(bodies.pere_regs.some(r => r.id === 'r1' && r.peso === 0.8 && r.loja_id === 'L1'), 'registro enviado');
+  assert.deepStrictEqual(a.erros, []);
   await a.fechar();
 });
