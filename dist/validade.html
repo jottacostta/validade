@@ -91,7 +91,6 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
 #conta .vazio{color:rgba(255,255,255,.7)}
 #conta #cErro{color:#ffd9d9}
 </style>
-<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 </head>
 <body>
 <div id="splash"><div class="sp-logo"><img id="splashLogo" alt="" style="display:none"><span id="splashIni">📅</span></div><div class="sp-nome">Controle de Validade</div><div class="sp-sub">Controle de validade e perecíveis</div><span class="gira"></span><div class="barra-am"></div></div>
@@ -231,7 +230,6 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
       <input id="cPass" type="password" autocomplete="current-password" aria-label="Senha" placeholder="Senha">
       <button type="button" class="gate-eye" id="cEye" aria-label="Mostrar senha"><svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
     </div>
-    <div class="h-captcha" data-sitekey="609ad606-d9b4-48aa-9eae-17b22416e760" data-callback="validadeCaptchaVerify" data-expired-callback="validadeCaptchaExpired" data-error-callback="validadeCaptchaError" style="margin:12px 0;display:flex;justify-content:center"></div>
     <div id="cErro" class="aviso da" style="display:none;margin-top:4px;margin-bottom:12px"></div>
     <button class="btn big" id="bEntrar">Entrar</button>
   </div>
@@ -758,14 +756,9 @@ function sbReq(path,opt){opt=opt||{};var h={apikey:CFG.supaKey,'Content-Type':'a
   var ctl=window.AbortController?new AbortController():null,tm=setTimeout(function(){ctl&&ctl.abort();},12000);
   return fetch(CFG.supaUrl+path,{method:opt.method||'GET',headers:h,body:opt.body?JSON.stringify(opt.body):undefined,signal:ctl?ctl.signal:undefined})
     .then(function(r){clearTimeout(tm);return r.text().then(function(t){var j=null;try{j=t?JSON.parse(t):null;}catch(e){}return {status:r.status,ok:r.ok,dados:j};});},function(e){clearTimeout(tm);throw e;});}
-var CAPTCHA_TOKEN=null;
-window.validadeCaptchaVerify=function(token){CAPTCHA_TOKEN=token||null;};
-window.validadeCaptchaExpired=function(){CAPTCHA_TOKEN=null;};
-window.validadeCaptchaError=function(){CAPTCHA_TOKEN=null;};
-function resetCaptcha(){CAPTCHA_TOKEN=null;try{if(window.hcaptcha)window.hcaptcha.reset();}catch(e){}}
-function sbLogin(user,pass){if(!CAPTCHA_TOKEN) return Promise.reject(new Error('Faça a verificação hCaptcha antes de entrar.'));var captcha=CAPTCHA_TOKEN;return sbReq('/auth/v1/token?grant_type=password',{method:'POST',auth:false,body:{email:user+'@'+DOM_LOGIN,password:pass,gotrue_meta_security:{captcha_token:captcha}}})
+function sbLogin(user,pass){return sbReq('/auth/v1/token?grant_type=password',{method:'POST',auth:false,body:{email:user+'@'+DOM_LOGIN,password:pass}})
   .then(function(r){if(!r.ok||!r.dados||!r.dados.access_token)throw new Error((r.dados&&(r.dados.error_description||r.dados.msg||r.dados.error))||'Usuário ou senha inválidos');
-    resetCaptcha();var u=r.dados.user||{};SESS={access_token:r.dados.access_token,refresh_token:r.dados.refresh_token,expira:Date.now()+((r.dados.expires_in||3600)*1000),usuario:user,email:u.email,uid:u.id,lojaId:null,lojaNome:null};salvarSess();return SESS;});}
+    var u=r.dados.user||{};SESS={access_token:r.dados.access_token,refresh_token:r.dados.refresh_token,expira:Date.now()+((r.dados.expires_in||3600)*1000),usuario:user,email:u.email,uid:u.id,lojaId:null,lojaNome:null};salvarSess();return SESS;});}
 function sbLogout(){SESS=null;salvarSess();}
 function sbLojas(){return sbReq('/rest/v1/lojas?select=id,nome&order=nome.asc').then(function(r){if(!r.ok)throw new Error('falha');return Array.isArray(r.dados)?r.dados:[];});}
 /* ───── catálogo compartilhado (EAN → nome), entre todas as lojas ───── */
@@ -813,7 +806,7 @@ $('listaLojas').onclick=function(e){var b=e.target.closest('.loja');if(!b||!SESS
 $('bEntrar').onclick=function(){var u=$('cUser').value.trim(),pw=$('cPass').value;if(!u||!pw){$('cErro').textContent='Preencha usuário e senha.';$('cErro').style.display='';return;}
   $('cErro').style.display='none';$('bEntrar').disabled=true;$('bEntrar').textContent='Entrando…';
   sbLogin(u,pw).then(function(){$('bEntrar').disabled=false;$('bEntrar').textContent='Entrar';mostrarLojas();},
-    function(err){resetCaptcha();$('bEntrar').disabled=false;$('bEntrar').textContent='Entrar';$('cErro').textContent=err.message||'Erro ao entrar';$('cErro').style.display='';});};
+    function(err){$('bEntrar').disabled=false;$('bEntrar').textContent='Entrar';$('cErro').textContent=err.message||'Erro ao entrar';$('cErro').style.display='';});};
 $('cPass').onkeydown=function(e){if(e.key==='Enter')$('bEntrar').click();};
 $('cEye').onclick=function(){var p=$('cPass'),vis=p.type==='text';p.type=vis?'password':'text';this.classList.toggle('off',vis);this.setAttribute('aria-label',vis?'Mostrar senha':'Ocultar senha');};
 $('bVoltarLoja').onclick=fecharConta;
