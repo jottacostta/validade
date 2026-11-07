@@ -87,6 +87,9 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
 #conta #bEntrar:disabled{opacity:.6}
 #conta #conta-lojas h2{font-size:22px}
 #conta .loja{border-radius:26px!important;background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.28)!important;color:#fff!important;min-height:52px}
+#conta #selectLoja{width:100%;min-height:58px;border-radius:16px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;padding:12px 14px;font:700 16px system-ui;margin:8px 0 12px}
+#conta #selectLoja option{background:#102b57;color:#fff}
+#conta #bSelecionarLoja{margin-bottom:8px}
 #conta #bVoltarLoja,#conta #bSairConta{border-radius:26px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.28);color:#fff}
 #conta .vazio{color:rgba(255,255,255,.7)}
 #conta #cErro{color:#ffd9d9}
@@ -235,7 +238,10 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
   </div>
   <div id="conta-lojas" style="display:none">
     <h2>Escolha a loja</h2>
-    <div id="listaLojas"></div>
+    <label class="f" for="selectLoja" style="color:rgba(255,255,255,.8)">Selecione uma unidade na lista</label>
+    <select id="selectLoja" aria-label="Selecionar loja" disabled><option value="">Carregando lojas…</option></select>
+    <button class="btn big" id="bSelecionarLoja" disabled>🏬 Acessar loja selecionada</button>
+    <div id="listaLojas" style="display:none"></div>
     <button class="btn sec big" id="bVoltarLoja" style="margin-top:12px;display:none">Voltar</button>
     <button class="btn sec big" id="bSairConta" style="margin-top:8px">Sair</button>
   </div>
@@ -798,12 +804,16 @@ function abrirConta(){if(!sbOn()){toast('Sincronização não configurada');retu
 function fecharConta(){if(precisaLogin())return;$('conta').classList.remove('on');}
 function captchaErro(msg){var e=$('cErro');e.textContent=msg;e.style.display='';}
 function mostrarLoginForm(){$('conta-login').style.display='';$('conta-lojas').style.display='none';$('cErro').style.display='none';$('cPass').value='';$('cPass').type='password';$('cEye').classList.remove('off');setTimeout(function(){$('cUser').focus();},120);}
-function mostrarLojas(){$('conta-login').style.display='none';$('conta-lojas').style.display='';$('bVoltarLoja').style.display=(SESS&&SESS.lojaId)?'':'none';$('listaLojas').innerHTML='<div class="vazio"><span class="gira"></span> carregando lojas…</div>';
-  sbLojas().then(function(ls){if(!ls.length){$('listaLojas').innerHTML='<div class="vazio">Nenhuma loja vinculada a este usuário.<br>Peça para vincular no Supabase.</div>';return;}
-    $('listaLojas').innerHTML=ls.map(function(l){return '<button class="btn sec big loja" data-id="'+esc(l.id)+'" data-nome="'+esc(l.nome)+'" style="margin-bottom:8px;justify-content:flex-start">🏬 '+esc(l.nome)+'</button>';}).join('');
-  },function(){$('listaLojas').innerHTML='<div class="vazio">Não consegui carregar as lojas. Verifique a internet e tente de novo.</div>';});}
+function mostrarLojas(){$('conta-login').style.display='none';$('conta-lojas').style.display='';$('bVoltarLoja').style.display=(SESS&&SESS.lojaId)?'':'none';var sel=$('selectLoja'),btn=$('bSelecionarLoja');sel.disabled=true;btn.disabled=true;sel.innerHTML='<option value="">Carregando lojas…</option>';
+  sbLojas().then(function(ls){if(!ls.length){sel.innerHTML='<option value="">Nenhuma loja vinculada</option>';return;}
+    sel.innerHTML='<option value="">Selecione uma loja…</option>'+ls.map(function(l){return '<option value="'+esc(l.id)+'">'+esc(l.nome)+'</option>';}).join('');
+    if(SESS&&SESS.lojaId){var atual=ls.find(function(l){return String(l.id)===String(SESS.lojaId);});if(atual)sel.value=String(atual.id);}
+    sel.disabled=false;btn.disabled=!sel.value;
+  },function(){sel.innerHTML='<option value="">Falha ao carregar lojas</option>';});
+  sel.onchange=function(){btn.disabled=!sel.value;};}
+function entrarLojaSelecionada(){var sel=$('selectLoja'),id=sel.value,l=sel.options[sel.selectedIndex];if(!id||!l||!SESS)return;SESS.lojaId=id;SESS.lojaNome=l.textContent;salvarSess();carregarPapel();fecharConta();toast('Loja: '+SESS.lojaNome);catalogoPull().then(function(n){if(n)toast('Catálogo: +'+n+' produto'+(n>1?'s':''));});backupNuvem();auditar('entrou_na_loja');var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='aj')contaCard();}
+$('bSelecionarLoja').onclick=entrarLojaSelecionada;
 $('conta').addEventListener('click',function(e){if(e.target===$('conta'))fecharConta();});
-$('listaLojas').onclick=function(e){var b=e.target.closest('.loja');if(!b||!SESS)return;SESS.lojaId=b.dataset.id;SESS.lojaNome=b.dataset.nome;salvarSess();carregarPapel();fecharConta();toast('Loja: '+SESS.lojaNome);catalogoPull().then(function(n){if(n)toast('Catálogo: +'+n+' produto'+(n>1?'s':''));});backupNuvem();auditar('entrou_na_loja');var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='aj')contaCard();};
 $('bEntrar').onclick=function(){var u=$('cUser').value.trim(),pw=$('cPass').value;if(!u||!pw){captchaErro('Preencha usuário e senha.');return;}
   $('cErro').style.display='none';$('bEntrar').disabled=true;$('bEntrar').textContent='Entrando…';
   sbLogin(u,pw).then(function(){$('bEntrar').disabled=false;$('bEntrar').textContent='Entrar';mostrarLojas();},function(err){$('bEntrar').disabled=false;$('bEntrar').textContent='Entrar';var msg=(err&&err.message)||'Falha ao entrar';if(/invalid login credentials/i.test(msg))msg='Usuário ou senha inválidos.';else if(/network|fetch/i.test(msg))msg='Falha de conexão. Verifique sua internet e tente novamente.';captchaErro(msg);});};
