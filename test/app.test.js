@@ -450,7 +450,7 @@ tflaky('gestão de usuários: assistente visualiza card, cria operador e envia p
   await a.p.fill('#uSenha','Guanabara2026!');
   await a.p.check('#uLojas input[value="L1"]');
   await a.p.click('#bUsuarioCriar');
-  await a.p.waitForFunction(()=>!!window.__testPayloadGestao);
+  await a.p.waitForFunction(()=>document.getElementById('uUsuario').value==='');
   assert.strictEqual(payloadCriar.usuario,'operador.novo');
   assert.strictEqual(payloadCriar.papel,'operador');
   assert.deepStrictEqual(payloadCriar.lojas,['L1']);
