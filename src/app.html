@@ -91,7 +91,6 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
 #conta .vazio{color:rgba(255,255,255,.7)}
 #conta #cErro{color:#ffd9d9}
 </style>
-<script src="https://js.hcaptcha.com/1/api.js?onload=onHCaptchaLoaded&render=explicit" async defer></script>
 </head>
 <body>
 <div id="splash"><div class="sp-logo"><img id="splashLogo" alt="" style="display:none"><span id="splashIni">📅</span></div><div class="sp-nome">/*NOME_HTML*/</div><div class="sp-sub">Controle de validade e perecíveis</div><span class="gira"></span><div class="barra-am"></div></div>
@@ -643,6 +642,7 @@ var HCAPTCHA_SITEKEY='609ad606-d9b4-48aa-9eae-17b22416e760';
 var hCaptchaWidgetId=null,hCaptchaToken='';
 function onHCaptchaLoaded(){try{if(hCaptchaWidgetId===null&&$('hcaptchaContainer'))hCaptchaWidgetId=window.hcaptcha.render('hcaptchaContainer',{sitekey:HCAPTCHA_SITEKEY,callback:function(token){hCaptchaToken=token;},'expired-callback':function(){hCaptchaToken='';},'error-callback':function(){hCaptchaToken='';captchaErro('Falha ao carregar a verificação. Tente novamente.');}});}catch(e){captchaErro('Não foi possível carregar a verificação de segurança.');}}
 window.onHCaptchaLoaded=onHCaptchaLoaded;
+(function(){var hc=document.createElement('script');hc.src='https://js.hcaptcha.com/1/api.js?onload=onHCaptchaLoaded&render=explicit';hc.async=true;hc.defer=true;hc.onerror=function(){captchaErro('Não foi possível carregar o hCaptcha. Verifique a conexão.');};document.head.appendChild(hc);})();
 function captchaErro(msg){var e=$('cErro');e.textContent=msg;e.style.display='';}
 function resetHCaptcha(){hCaptchaToken='';try{if(window.hcaptcha&&hCaptchaWidgetId!==null)window.hcaptcha.reset(hCaptchaWidgetId);}catch(e){}}
 function mostrarLoginForm(){$('conta-login').style.display='';$('conta-lojas').style.display='none';$('cErro').style.display='none';$('cPass').value='';$('cPass').type='password';$('cEye').classList.remove('off');if(window.hcaptcha&&hCaptchaWidgetId===null)onHCaptchaLoaded();setTimeout(function(){$('cUser').focus();},120);}
