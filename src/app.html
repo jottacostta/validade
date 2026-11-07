@@ -95,6 +95,13 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
 #conta #bVoltarLoja,#conta #bSairConta{border-radius:26px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.28);color:#fff}
 #conta .vazio{color:rgba(255,255,255,.7)}
 #conta #cErro{color:#ffd9d9}
+/* Modal de edição de usuário */
+#modalEditarUsuario .box{max-width:520px}
+#editarLojas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:38vh;overflow:auto;padding:4px}
+#editarLojas label{display:flex;align-items:center;gap:8px;padding:9px;border:1px solid var(--bd);border-radius:9px;min-width:0}
+#editarLojas label span{overflow-wrap:anywhere}
+#editarLojas input{width:18px;height:18px;flex:none}
+@media(max-width:420px){#editarLojas{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -218,6 +225,16 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
   <button data-v="aj"><span>⚙️</span>Ajustes</button>
 </nav>
 
+<div id="modalEditarUsuario" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloEditarUsuario">
+  <div class="box">
+    <h2 id="tituloEditarUsuario">Editar usuário</h2>
+    <label class="f" for="editarNome">Nome completo</label><input id="editarNome" autocomplete="name">
+    <label class="f" for="editarSenha">Nova senha (deixe em branco para manter)</label><input id="editarSenha" type="password" autocomplete="new-password">
+    <div id="editarPapelWrap"><label class="f" for="editarPapel">Papel</label><select id="editarPapel"><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="admin">Administrador</option></select></div>
+    <div id="editarLojasWrap"><div class="f">Lojas vinculadas</div><div id="editarLojas"></div></div>
+    <div class="row" style="margin-top:14px"><button class="btn sec" id="cancelarEditarUsuario">Cancelar</button><button class="btn" id="salvarEditarUsuario">Salvar alterações</button></div>
+  </div>
+</div>
 <div id="scanner"><video id="video" playsinline muted></video><div class="mira"></div>
   <div class="topo" id="scanTxt">Aponte para o código de barras</div>
   <div class="base"><button class="btn" id="bLuz">🔦 Luz</button><label class="btn" for="fFoto">📸 Foto</label><button class="btn" id="bFechar">✕ Cancelar</button></div>
@@ -795,9 +812,22 @@ function iniciarGestaoUsuarios(){
     if(!/^[a-z0-9._-]{3,30}$/.test(usuario)){toast('Login: 3–30 caracteres minúsculos, números, . _ -');return;}
     if(!nome){toast('Informe o nome completo.');return;}var err=strongPass(senha,usuario);if(err){toast(err);return;}if(!lojas.length){toast('Selecione ao menos uma loja.');return;}
     $('bUsuarioCriar').disabled=true;callGestao({acao:'criar',usuario:usuario,nome:nome,senha:senha,papel:papel,lojas:lojas}).then(function(){toast('Usuário criado.');$('uUsuario').value='';$('uNome').value='';$('uSenha').value='';carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('bUsuarioCriar').disabled=false;});}
-  function editar(id){var u=cache.users.find(function(x){return x.id===id;});if(!u)return;var nome=prompt('Nome completo:',u.nome||'');if(nome===null)return;var senha=prompt('Nova senha (deixe em branco para manter):','');if(senha===null)return;var payload={acao:'editar',id:id,nome:nome};if(senha){var er=strongPass(senha,u.usuario);if(er){toast(er);return;}payload.senha=senha;}
-    if(p==='admin'){var papel=prompt('Papel: operador, assistente, analista ou admin',u.papel);if(papel===null)return;if(!['operador','assistente','analista','admin'].includes(papel)){toast('Papel inválido.');return;}payload.papel=papel;var lojaIds=cache.lojas.map(function(l,i){return (i+1)+'. '+l.nome+' ['+l.id+']';}).join('\n');var resposta=prompt('IDs das lojas separados por vírgula (vazio = sem lojas):\n'+lojaIds,(u.lojas||[]).map(function(l){return l.id;}).join(','));if(resposta===null)return;payload.lojas=resposta.split(',').map(function(x){return x.trim();}).filter(Boolean);}
-    callGestao(payload).then(function(){toast('Cadastro atualizado.');carregar();}).catch(function(e){toast(e.message);});}
+  var usuarioEditando=null;
+  function editar(id){var u=cache.users.find(function(x){return x.id===id;});if(!u)return;usuarioEditando=u;
+    $('editarNome').value=u.nome||'';$('editarSenha').value='';$('editarPapel').value=u.papel||'operador';
+    $('editarPapelWrap').style.display=p==='admin'?'':'none';$('editarLojasWrap').style.display=p==='admin'?'':'none';
+    if(p==='admin')$('editarLojas').innerHTML=lojaChecks(cache.lojas,(u.lojas||[]).map(function(l){return l.id;})).replace(/class="uLoja"/g,'class="uLojaEdit"');
+    $('modalEditarUsuario').classList.add('on');$('editarNome').focus();
+  }
+  function fecharEdicao(){usuarioEditando=null;$('modalEditarUsuario').classList.remove('on');}
+  function salvarEdicao(){if(!usuarioEditando)return;var nome=$('editarNome').value.trim(),senha=$('editarSenha').value,payload={acao:'editar',id:usuarioEditando.id,nome:nome};
+    if(!nome){toast('Informe o nome completo.');$('editarNome').focus();return;}
+    if(senha){var er=strongPass(senha,usuarioEditando.usuario);if(er){toast(er);return;}payload.senha=senha;}
+    if(p==='admin'){var papel=$('editarPapel').value;if(!['operador','assistente','analista','admin'].includes(papel)){toast('Papel inválido.');return;}payload.papel=papel;payload.lojas=Array.from(document.querySelectorAll('#editarLojas .uLojaEdit:checked')).map(function(e){return e.value;});}
+    $('salvarEditarUsuario').disabled=true;callGestao(payload).then(function(){toast('Cadastro atualizado.');fecharEdicao();carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('salvarEditarUsuario').disabled=false;});
+  }
+  $('cancelarEditarUsuario').onclick=fecharEdicao;$('salvarEditarUsuario').onclick=salvarEdicao;
+  $('modalEditarUsuario').addEventListener('click',function(e){if(e.target===this)fecharEdicao();});
   function excluir(id){var u=cache.users.find(function(x){return x.id===id;});if(!u||!confirm('Excluir definitivamente o usuário '+u.usuario+'? Esta ação não pode ser desfeita.'))return;callGestao({acao:'excluir',id:id}).then(function(){toast('Usuário excluído.');carregar();}).catch(function(e){toast(e.message);});}
   $('bUsuarioCriar').onclick=criar;$('bUsuarioRefresh').onclick=carregar;carregar();
 }
