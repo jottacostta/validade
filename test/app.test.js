@@ -402,10 +402,14 @@ async function rotasBase(p, papel) {
   for (const t of ['produtos', 'lotes', 'pere_itens', 'pere_regs']) await p.route(new RegExp('/rest/v1/' + t + '\\?on_conflict'), r => r.fulfill({ status: 201, body: '' }));
 }
 
-tflaky('gate: sem sessão, exige login ao abrir (cancelar escondido)', { skip: pular }, async () => {
+tflaky('gate: sem sessão, exige login ao abrir (tela de login bloqueia o sistema)', { skip: pular }, async () => {
   const a = await abrir({ url: URL_SUPA });
   await a.p.waitForSelector('#conta', { state: 'visible' });
-  assert.strictEqual(await a.p.isVisible('#bCancelaConta'), false);
+  // tela de login visível e bloqueando o acesso
+  assert.strictEqual(await a.p.isVisible('#conta-login'), true);
+  assert.strictEqual(await a.p.isVisible('#bEntrar'), true);
+  // não há botão de cancelar/voltar enquanto não logado
+  assert.strictEqual(await a.p.$('#bCancelaConta'), null);
   await a.fechar();
 });
 
