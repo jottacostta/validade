@@ -289,3 +289,45 @@ create policy prefs_ins on public.preferencias for insert to authenticated with 
 drop policy if exists prefs_upd on public.preferencias;
 create policy prefs_upd on public.preferencias for update to authenticated using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 grant select, insert, update on public.preferencias to authenticated;
+
+
+-- Cadastro inicial das unidades atualmente existentes no Guanabara.
+-- Filiais FL21, FL22 e FL24 ficam de fora até eventual inauguração.
+insert into public.lojas (nome)
+select unidades.nome
+from (values
+  ('FL01'),
+  ('FL02'),
+  ('FL03'),
+  ('FL04'),
+  ('FL05'),
+  ('FL06'),
+  ('FL07'),
+  ('FL08'),
+  ('FL09'),
+  ('FL10'),
+  ('FL11'),
+  ('FL12'),
+  ('FL13'),
+  ('FL14'),
+  ('FL15'),
+  ('FL16'),
+  ('FL17'),
+  ('FL18'),
+  ('FL19'),
+  ('FL20'),
+  ('FL23'),
+  ('FL25'),
+  ('FL26'),
+  ('FL27'),
+  ('FL28'),
+  ('FL29'),
+  ('FL30'),
+  ('FL31'),
+  ('DEP99'),
+  ('DEP999'),
+  ('DEP96')
+) as unidades(nome)
+where not exists (
+  select 1 from public.lojas l where upper(trim(l.nome)) = unidades.nome
+);
