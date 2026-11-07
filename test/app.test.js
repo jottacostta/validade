@@ -430,6 +430,34 @@ tflaky('papel operador: Registrar visível; códigos (cadastro) escondido', { sk
   await a.fechar();
 });
 
+tflaky('gestão de usuários: assistente visualiza card, cria operador e envia payload ao endpoint', { skip: pular }, async () => {
+  let payloadCriar=null;
+  const a=await abrirLogado(async p=>{
+    await rotasBase(p,'assistente');
+    await p.route(/\/functions\/v1\/gerir-usuarios/,async r=>{
+      const req=r.request();let body={};try{body=req.postDataJSON();}catch(e){}
+      if(body.acao==='listar')return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({usuarios:[],lojas:[{id:'L1',nome:'Loja Teste'}],euPapel:'assistente'})});
+      if(body.acao==='criar'){payloadCriar=body;return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,id:'new-user'})});}
+      return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true})});
+    });
+  });
+  await a.p.waitForFunction(()=>document.getElementById('cardUsuarios').style.display!=='none');
+  await a.p.click('nav button[data-v="aj"]');
+  assert.strictEqual(await a.p.isVisible('#cardUsuarios'),true);
+  assert.strictEqual(await a.p.isDisabled('#uPapel'),true);
+  await a.p.fill('#uUsuario','operador.novo');
+  await a.p.fill('#uNome','Operador Novo');
+  await a.p.fill('#uSenha','Guanabara2026!');
+  await a.p.check('#uLojas input[value="L1"]');
+  await a.p.click('#bUsuarioCriar');
+  await a.p.waitForFunction(()=>!!window.__testPayloadGestao);
+  assert.strictEqual(payloadCriar.usuario,'operador.novo');
+  assert.strictEqual(payloadCriar.papel,'operador');
+  assert.deepStrictEqual(payloadCriar.lojas,['L1']);
+  assert.deepStrictEqual(a.erros,[]);
+  await a.fechar();
+});
+
 tflaky('cosmos: cada usuário carrega e salva o seu próprio token (perfil pessoal)', { skip: pular }, async () => {
   let salvo = null;
   const a = await abrirLogado(async p => {
