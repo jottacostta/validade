@@ -36,7 +36,7 @@ async function abrir({ dados, chave = 'validade_dados', respostas = [], opcoes =
   await p.addInitScript(() => { window.__ag = []; window.__ca = [];
     window.Android = { agendarLembrete: id => window.__ag.push(id), cancelarLembrete: id => window.__ca.push(id) }; });
   if (antes) await antes(p);
-  await p.goto(url || URL_APP);
+  await p.goto(url || URL_NOSUPA);
   if (dados !== undefined) { await p.evaluate(([k, v]) => { localStorage.clear(); localStorage.setItem(k, JSON.stringify(v)); }, [chave, dados]); await p.reload(); }
   const salvo = () => p.evaluate(() => JSON.parse(localStorage.getItem('validade_dados')));
   return { p, ctx, erros, dialogos, respostas, salvo, fechar: () => ctx.close() };
@@ -146,7 +146,7 @@ tflaky('nome do arquivo usa a data local (depois das 21h no Brasil)', { skip: pu
 });
 
 tflaky('slogan da configuração aparece no cabeçalho', { skip: pular }, async () => {
-  const a = await abrir();
+  const a = await abrir({ url: URL_APP });
   const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, '../config.json'), 'utf8'));
   assert.strictEqual(await a.p.textContent('#slogan'), cfg.slogan);
   await a.fechar();
@@ -272,9 +272,6 @@ tflaky('conta: entra (usuário→e-mail interno), lista e escolhe a loja', { ski
   await a.p.route('**/auth/v1/token*', async r => { try { authBody = r.request().postDataJSON(); } catch (e) {}
     await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ access_token: 'tok', refresh_token: 'ref', expires_in: 3600, user: { id: 'u1', email: 'joao@loja.validade' } }) }); });
   await a.p.route('**/rest/v1/lojas*', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ id: 'L1', nome: 'Bangu' }, { id: 'L2', nome: 'Campo Grande' }]) }));
-  await a.p.click('nav button[data-v="aj"]');
-  await a.p.waitForSelector('#cardConta', { state: 'visible' });
-  await a.p.click('#bEntrarAj');
   await a.p.waitForSelector('#conta', { state: 'visible' });
   await a.p.fill('#cUser', 'joao'); await a.p.fill('#cPass', '1234');
   await a.p.click('#bEntrar');
@@ -287,6 +284,8 @@ tflaky('conta: entra (usuário→e-mail interno), lista e escolhe a loja', { ski
   assert.strictEqual(sess.usuario, 'joao');
   assert.strictEqual(sess.lojaId, 'L2');
   assert.strictEqual(sess.lojaNome, 'Campo Grande');
+  await a.p.click('nav button[data-v="aj"]');
+  await a.p.waitForSelector('#cardConta', { state: 'visible' });
   assert.ok((await a.p.textContent('#contaInfo')).includes('Campo Grande'));
   assert.deepStrictEqual(a.erros, []);
   await a.fechar();
@@ -295,8 +294,7 @@ tflaky('conta: entra (usuário→e-mail interno), lista e escolhe a loja', { ski
 tflaky('conta: senha errada mostra mensagem de erro', { skip: pular }, async () => {
   const a = await abrir({ url: URL_SUPA });
   await a.p.route('**/auth/v1/token*', r => r.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error_description: 'Invalid login credentials' }) }));
-  await a.p.click('nav button[data-v="aj"]');
-  await a.p.click('#bEntrarAj');
+  await a.p.waitForSelector('#conta', { state: 'visible' });
   await a.p.fill('#cUser', 'joao'); await a.p.fill('#cPass', 'errada');
   await a.p.click('#bEntrar');
   await a.p.waitForSelector('#cErro', { state: 'visible' });
@@ -393,5 +391,36 @@ tflaky('backup: envia produtos, lotes e perecíveis da loja para a nuvem ao abri
   assert.ok(bodies.pere_itens.some(r => r.cod === '6019' && r.descricao === 'Pernil' && r.loja_id === 'L1'), 'código enviado');
   assert.ok(bodies.pere_regs.some(r => r.id === 'r1' && r.peso === 0.8 && r.loja_id === 'L1'), 'registro enviado');
   assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
+
+const R_PERFIL = /\/rest\/v1\/perfis/;
+async function rotasBase(p, papel) {
+  await p.route(R_PULL, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await p.route(R_PERFIL, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ papel, nome: papel }]) }));
+  for (const t of ['produtos', 'lotes', 'pere_itens', 'pere_regs']) await p.route(new RegExp('/rest/v1/' + t + '\\?on_conflict'), r => r.fulfill({ status: 201, body: '' }));
+}
+
+tflaky('gate: sem sessão, exige login ao abrir (cancelar escondido)', { skip: pular }, async () => {
+  const a = await abrir({ url: URL_SUPA });
+  await a.p.waitForSelector('#conta', { state: 'visible' });
+  assert.strictEqual(await a.p.isVisible('#bCancelaConta'), false);
+  await a.fechar();
+});
+
+tflaky('papel analista: esconde a aba Registrar (só leitura)', { skip: pular }, async () => {
+  const a = await abrirLogado(p => rotasBase(p, 'analista'));
+  await a.p.waitForFunction(() => { try { return JSON.parse(localStorage.getItem('validade_sessao')).papel === 'analista'; } catch (e) { return false; } });
+  assert.strictEqual(await a.p.isVisible('nav button[data-v="reg"]'), false);
+  assert.strictEqual(await a.p.isVisible('#bSalvarLote'), false);
+  await a.fechar();
+});
+
+tflaky('papel operador: Registrar visível; códigos (cadastro) escondido', { skip: pular }, async () => {
+  const a = await abrirLogado(p => rotasBase(p, 'operador'));
+  await a.p.waitForFunction(() => { try { return JSON.parse(localStorage.getItem('validade_sessao')).papel === 'operador'; } catch (e) { return false; } });
+  assert.strictEqual(await a.p.isVisible('nav button[data-v="reg"]'), true);
+  await a.p.click('nav button[data-v="pere"]');
+  assert.strictEqual(await a.p.isVisible('#subPere button[data-s="cad"]'), false);
   await a.fechar();
 });
