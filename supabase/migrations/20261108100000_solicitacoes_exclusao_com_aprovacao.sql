@@ -3,7 +3,7 @@
 create table if not exists public.solicitacoes_exclusao (
   id uuid primary key default gen_random_uuid(),
   loja_id uuid not null references public.lojas(id) on delete cascade,
-  solicitante_id uuid not null references auth.users(id) on delete restrict,
+  solicitante_id uuid references auth.users(id) on delete set null,\n  solicitante_nome text not null default '',
   tipo text not null check (tipo in ('produto','lote','pere_item','pere_reg')),
   registro_id text not null,
   motivo text not null check (length(trim(motivo)) between 3 and 1000),
@@ -19,6 +19,24 @@ create index if not exists solicitacoes_exclusao_loja_status_idx
   on public.solicitacoes_exclusao (loja_id, status, criado_em desc);
 create index if not exists solicitacoes_exclusao_solicitante_idx
   on public.solicitacoes_exclusao (solicitante_id, criado_em desc);
+
+-- Snapshot de solicitante para preservar a trilha mesmo após exclusão de conta.
+create or replace function private.snapshot_solicitante_exclusao()
+returns trigger language plpgsql security definer set search_path=''
+as $
+begin
+  if new.solicitante_id is null then new.solicitante_id := auth.uid(); end if;
+  select coalesce(nullif(trim(p.nome),''),u.email,new.solicitante_id::text)
+    into new.solicitante_nome
+    from auth.users u left join public.perfis p on p.id=u.id
+    where u.id=new.solicitante_id;
+  return new;
+end;
+$;
+revoke all on function private.snapshot_solicitante_exclusao() from public,anon,authenticated;
+drop trigger if exists solicitacao_snapshot_solicitante on public.solicitacoes_exclusao;
+create trigger solicitacao_snapshot_solicitante before insert on public.solicitacoes_exclusao
+for each row execute function private.snapshot_solicitante_exclusao();
 
 alter table public.solicitacoes_exclusao enable row level security;
 alter table public.solicitacoes_exclusao force row level security;
