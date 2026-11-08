@@ -39,7 +39,7 @@ declare t text;
 begin
   foreach t in array array['produtos','lotes','pere_itens','pere_regs'] loop
     execute format('drop trigger if exists %I_creator on public.%I',t,t);
-    execute format('create trigger %I_creator before insert on public.%I for each row execute function private.set_created_by()',t,t);
+    execute format('create trigger %I_creator before insert or update on public.%I for each row execute function private.set_created_by()',t,t);
   end loop;
 end $$;
 
