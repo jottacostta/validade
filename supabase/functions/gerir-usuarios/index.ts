@@ -109,7 +109,8 @@ Deno.serve(async (req) => {
       if (!nome) return json({ error: "Informe o nome do usuário." }, 400);
       const e1 = validarSenha(senha, usuario); if (e1) return json({ error: e1 }, 400);
       if (!PAPEIS.includes(papel)) return json({ error: "Papel inválido." }, 400);
-      if (papel !== "operador" && !(ehAdmin || ehGerente || ehAnalista)) return json({ error: "Seu perfil só pode criar operadores." }, 403);\n      if ((ehAnalista || ehGerente) && !["operador", "assistente"].includes(papel)) return json({ error: "Analista/Gerente só pode criar operadores e assistentes." }, 403);
+      if (papel !== "operador" && !(ehAdmin || ehGerente || ehAnalista)) return json({ error: "Seu perfil só pode criar operadores." }, 403);
+      if ((ehAnalista || ehGerente) && !["operador", "assistente"].includes(papel)) return json({ error: "Analista/Gerente só pode criar operadores e assistentes." }, 403);
       const permit = await lojasPermitidas();
       lojas = [...new Set(lojas)];
       if (!lojas.length) return json({ error: "Escolha pelo menos uma loja." }, 400);
@@ -142,7 +143,9 @@ Deno.serve(async (req) => {
       const papel = body.papel != null ? String(body.papel) : null;
       const lojas = Array.isArray(body.lojas) ? (body.lojas as unknown[]).map(String) : null;
 
-      if ((papel != null || lojas != null) && !(ehAdmin || ehAnalista || ehGerente)) return json({ error: "Seu perfil não pode alterar papel ou lojas." }, 403);\n      if ((ehAnalista || ehGerente) && papel != null && !["operador", "assistente"].includes(papel)) return json({ error: "Analista/Gerente só pode atribuir Operador ou Assistente." }, 403);\n      if ((ehAnalista || ehGerente) && ["analista", "gerente", "admin"].includes(alvo.papel)) return json({ error: "Não pode administrar usuários com papel igual ou superior." }, 403);
+      if ((papel != null || lojas != null) && !(ehAdmin || ehAnalista || ehGerente)) return json({ error: "Seu perfil não pode alterar papel ou lojas." }, 403);
+      if ((ehAnalista || ehGerente) && papel != null && !["operador", "assistente"].includes(papel)) return json({ error: "Analista/Gerente só pode atribuir Operador ou Assistente." }, 403);
+      if ((ehAnalista || ehGerente) && ["analista", "gerente", "admin"].includes(alvo.papel)) return json({ error: "Não pode administrar usuários com papel igual ou superior." }, 403);
       if (papel != null && !PAPEIS.includes(papel)) return json({ error: "Papel inválido." }, 400);
       if (papel != null && alvo.papel === "admin" && papel !== "admin") {
         const { count } = await admin.from("perfis").select("id", { count: "exact", head: true }).eq("papel", "admin");
@@ -177,7 +180,14 @@ Deno.serve(async (req) => {
     }
 
     if (acao === "excluir") {
-      if (!(ehAdmin || ehGerente)) return json({ error: "Somente Gerente ou Administrador pode excluir usuários." }, 403);\n      if (ehGerente) {\n        const { data: targetStores } = await admin.from("loja_membros").select("loja_id").eq("user_id", String(body.id || ""));\n        const allowedStores = await lojasPermitidas();\n        if ((targetStores || []).some((m: { loja_id: string }) => !allowedStores.has(m.loja_id))) return json({ error: "Gerente não pode excluir usuário de loja fora do seu escopo." }, 403);\n        const { data: targetProfile } = await admin.from("perfis").select("papel").eq("id", String(body.id || "")).single();\n        if (["analista", "gerente", "admin"].includes(targetProfile?.papel || "")) return json({ error: "Gerente não pode excluir perfil igual ou superior." }, 403);\n      }
+      if (!(ehAdmin || ehGerente)) return json({ error: "Somente Gerente ou Administrador pode excluir usuários." }, 403);
+      if (ehGerente) {
+        const { data: targetStores } = await admin.from("loja_membros").select("loja_id").eq("user_id", String(body.id || ""));
+        const allowedStores = await lojasPermitidas();
+        if ((targetStores || []).some((m: { loja_id: string }) => !allowedStores.has(m.loja_id))) return json({ error: "Gerente não pode excluir usuário de loja fora do seu escopo." }, 403);
+        const { data: targetProfile } = await admin.from("perfis").select("papel").eq("id", String(body.id || "")).single();
+        if (["analista", "gerente", "admin"].includes(targetProfile?.papel || "")) return json({ error: "Gerente não pode excluir perfil igual ou superior." }, 403);
+      }
       const id = String(body.id || "");
       if (!id) return json({ error: "Usuário não informado." }, 400);
       if (id === caller.id) return json({ error: "Você não pode excluir a própria conta." }, 400);
