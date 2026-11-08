@@ -635,7 +635,7 @@ function sbLogin(user,pass){return sbReq('/auth/v1/token?grant_type=password',{m
   .then(function(r){if(!r.ok||!r.dados||!r.dados.access_token)throw new Error((r.dados&&(r.dados.error_description||r.dados.msg||r.dados.error))||'Usuário ou senha inválidos');
     var u=r.dados.user||{};SESS={access_token:r.dados.access_token,refresh_token:r.dados.refresh_token,expira:Date.now()+((r.dados.expires_in||3600)*1000),usuario:user,email:u.email,uid:u.id,lojaId:null,lojaNome:null};salvarSess();return SESS;});}
 function sbLogout(){var token=SESS&&SESS.access_token;SESS=null;salvarSess();refreshSessaoEmAndamento=null;try{localStorage.removeItem('validade_ultima_loja');}catch(e){}if(token&&sbOn()){return fetch(CFG.supaUrl+'/auth/v1/logout',{method:'POST',headers:{apikey:CFG.supaKey,Authorization:'Bearer '+token}}).catch(function(e){console.warn('Falha ao invalidar sessão remota (sessão local já encerrada):',e);});}return Promise.resolve();}
-function sairParaLogin(){sbLogout();var modal=$('conta');if(modal)modal.classList.add('on');mostrarLoginForm();contaCard();atualizarBotaoLogout();atualizarGate();toast('Você saiu');}
+function sairParaLogin(){sbLogout();try{history.replaceState({loggedOut:true},'',location.href.split('#')[0]);}catch(e){}var modal=$('conta');if(modal)modal.classList.add('on');mostrarLoginForm();contaCard();atualizarBotaoLogout();atualizarGate();toast('Você saiu');}
 function sbLojas(){return sbReq('/rest/v1/lojas?select=id,nome&order=nome.asc').then(function(r){if(!r.ok)throw new Error('falha');return Array.isArray(r.dados)?r.dados:[];});}
 /* ───── catálogo compartilhado (EAN → nome), entre todas as lojas ───── */
 var SYNC={};try{SYNC=JSON.parse(localStorage.getItem('validade_sync')||'{}')||{};}catch(e){}
@@ -757,7 +757,7 @@ function salvarTokenCosmos(v){
       .then(function(r){toast(r&&r.ok?(v?'Seu token do Cosmos salvo':'Token removido'):'⚠️ Não salvou o token na nuvem');},
             function(){toast('⚠️ Não foi possível salvar o token na nuvem');});
   }else{D.aj.cosmos=v;salvar();toast(v?'Token do Cosmos salvo':'Token removido');}}
-function precisaLogin(){return sbOn()&&(!logado()||!SESS.lojaId);}
+function precisaLogin(){return sbOn()&&(!logado()||!SESS.lojaId);}\nfunction protegerVoltaPosLogout(){if(sbOn()&&!logado()){ir('reg');$('conta').classList.add('on');mostrarLoginForm();atualizarBotaoLogout();}}\nwindow.addEventListener('pageshow',protegerVoltaPosLogout);window.addEventListener('popstate',protegerVoltaPosLogout);
 function atualizarGate(){if(precisaLogin()){$('conta').classList.add('on');if(logado())mostrarLojas();else mostrarLoginForm();}}
 function fdataHora(ms){try{var d=new Date(ms);return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
 function ehAdmin(){return papelAtual()==='admin';}
