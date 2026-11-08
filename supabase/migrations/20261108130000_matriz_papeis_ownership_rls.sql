@@ -17,7 +17,7 @@ alter table public.pere_regs add column if not exists created_by uuid references
 
 create or replace function private.set_created_by()
 returns trigger language plpgsql security definer set search_path=''
-as $
+as $$
 begin
   if tg_op = 'INSERT' then
     if auth.uid() is not null then
@@ -31,7 +31,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 revoke all on function private.set_created_by() from public, anon, authenticated;
 
 do $$
@@ -195,14 +195,14 @@ end;
 $fn$;
 revoke all on function private.audit_mutation() from public,anon,authenticated;
 
-do $
+do $$
 declare t text;
 begin
   foreach t in array array['produtos','lotes','pere_itens','pere_regs','ajustes','catalogo','lojas'] loop
     execute format('drop trigger if exists %I_audit on public.%I',t,t);
     execute format('create trigger %I_audit after insert or update or delete on public.%I for each row execute function private.audit_mutation()',t,t);
   end loop;
-end $;
+end $$;
 
 -- Prevent client from forging creator or editing audit identity.
 create or replace function private.proteger_auditoria()
