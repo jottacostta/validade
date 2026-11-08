@@ -812,7 +812,7 @@ function carregarSolicitacoesExclusao(){
     $('listaSolicitacoes').innerHTML=r.dados.map(function(x){
       var status=x.status==='pendente'?'⏳ Pendente':x.status==='aprovada'?'✅ Aprovada':'❌ Rejeitada';
       var buttons=x.status==='pendente'&&podeRevisarExclusao()?'<div class="row" style="margin-top:8px"><button class="btn" data-review="yes" data-id="'+esc(x.id)+'">Aprovar</button><button class="btn perigo" data-review="no" data-id="'+esc(x.id)+'">Rejeitar</button></div>':'';
-      return '<div class="card" style="margin:8px 0;padding:10px"><b>'+esc(x.tipo)+' · '+esc(x.registro_id)+'</b><div class="ean">'+esc(status)+' · '+fdataHora(Date.parse(x.criado_em))+'</div><div style="font-size:13px;margin:5px 0">Motivo: '+esc(x.motivo)+'</div>'+(x.resposta?'<div class="ean">Resposta: '+esc(x.resposta)+'</div>':'')+buttons+'</div>';
+      return '<div class="card" style="margin:8px 0;padding:10px"><b>'+esc(x.tipo)+' · '+esc(x.registro_id)+'</b><div class="ean">'+esc(status)+' · '+fdataHora(Date.parse(x.criado_em))+' · por '+esc(x.solicitante_nome||'usuário removido')+'</div><div style="font-size:13px;margin:5px 0">Motivo: '+esc(x.motivo)+'</div>'+(x.resposta?'<div class="ean">Resposta: '+esc(x.resposta)+'</div>':'')+buttons+'</div>';
     }).join('')||'<div class="vazio">Nenhuma solicitação encontrada.</div>';
     document.querySelectorAll('[data-review]').forEach(function(b){b.onclick=function(){revisarSolicitacaoExclusao(b.dataset.id,b.dataset.review==='yes');};});
   }).catch(function(e){$('listaSolicitacoes').innerHTML='<div class="vazio">'+esc(e.message||'Erro ao carregar')+'</div>';});
