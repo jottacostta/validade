@@ -662,10 +662,10 @@ function sincronizarLoja(){
   function baixar(tabela,campos){return sbReq('/rest/v1/'+tabela+'?loja_id=eq.'+loja+'&select='+campos+'&order=updated_at.asc&limit=10000')
     .then(function(r){if(!r.ok)throw new Error('Falha ao baixar '+tabela+' (HTTP '+r.status+')');return Array.isArray(r.dados)?r.dados:[];});}
   return Promise.all([
-    baixar('produtos','ean,updated_at,deleted_at'),
-    baixar('lotes','id,ean,lote,qtd,val,criado,updated_at,deleted_at'),
-    baixar('pere_itens','cod,descricao,sif,updated_at,deleted_at'),
-    baixar('pere_regs','id,cod,sif,peso,val,criado,updated_at,deleted_at')
+    baixar('produtos','ean,nome,created_by,updated_at,deleted_at'),
+    baixar('lotes','id,ean,lote,qtd,val,criado,created_by,updated_at,deleted_at'),
+    baixar('pere_itens','cod,descricao,sif,created_by,updated_at,deleted_at'),
+    baixar('pere_regs','id,cod,sif,peso,val,criado,created_by,updated_at,deleted_at')
   ]).then(function(res){
     var produtos=res[0],lotes=res[1],itens=res[2],regs=res[3],n=0;
     produtos.forEach(function(row){var ean=String(row.ean);if(row.deleted_at){delete D.prod[ean];return;}var p=D.prod[ean]||(D.prod[ean]={lotes:[]});if(!Array.isArray(p.lotes))p.lotes=[];if(row.nome&&!p.desc)p.desc=row.nome;if(row.created_by)p.created_by=row.created_by;n++;});
