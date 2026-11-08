@@ -37,3 +37,16 @@ test('registro de perecível grava cadastro e movimento diretamente no Supabase'
   assert.match(app, /\/rest\/v1\/pere_regs/);
   assert.match(app, /Salvo no Supabase/);
 });
+
+test('upserts de produto e código perecível não executam UPDATE em registros de outro usuário', () => {
+  assert.match(app, /resolution=ignore-duplicates,return=minimal/);
+  assert.doesNotMatch(app, /produtos\?on_conflict=loja_id,ean[^\n]*resolution=merge-duplicates/);
+  assert.doesNotMatch(app, /pere_itens\?on_conflict=loja_id,cod[^\n]*resolution=merge-duplicates/);
+});
+
+test('erros REST do Supabase exibem mensagem, detalhes e hint retornados pelo PostgreSQL', () => {
+  assert.match(app, /function erroSQL\(r,contexto\)/);
+  assert.match(app, /d\.message\|\|d\.error_description\|\|d\.msg\|\|d\.error/);
+  assert.match(app, /d\.details/);
+  assert.match(app, /d\.hint/);
+});
