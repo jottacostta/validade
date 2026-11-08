@@ -317,6 +317,11 @@ tflaky('conta: sair invalida token e retorna à tela de login', { skip: pular },
   await a.p.waitForSelector('#conta-login', { state: 'visible' });
   assert.strictEqual(logoutAuthorization, 'Bearer logout-token');
   assert.strictEqual(await a.p.evaluate(() => localStorage.getItem('validade_sessao')), null);
+  // simula botão Voltar após logout: sessão/tela autenticada não pode reaparecer
+  await a.p.evaluate(() => { history.pushState({protected:true}, '', location.href.split('#')[0]+'#protected'); history.back(); });
+  await a.p.waitForFunction(() => localStorage.getItem('validade_sessao') === null);
+  await a.p.waitForSelector('#conta-login', { state: 'visible' });
+  assert.strictEqual(await a.p.evaluate(() => localStorage.getItem('validade_sessao')), null);
   assert.deepStrictEqual(a.erros, []);
   await a.fechar();
 });
