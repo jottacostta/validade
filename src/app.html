@@ -666,7 +666,14 @@ function sincronizarLoja(){
       if(l){Object.assign(l,obj);}else p.lotes.push(obj);n++;});
     itens.forEach(function(row){if(row.deleted_at)return;D.pere.itens[String(row.cod)]={desc:row.descricao||'',sif:row.sif||''};n++;});
     regs.forEach(function(row){if(row.deleted_at)return;var reg={id:row.id,cod:String(row.cod),sif:row.sif||'',peso:Number(row.peso)||0,val:row.val||'',criado:row.criado||null},ix=D.pere.regs.findIndex(function(x){return String(x.id)===String(row.id);});if(ix>=0)D.pere.regs[ix]=reg;else D.pere.regs.push(reg);n++;});
-    try{localStorage.setItem(K,JSON.stringify(D));}catch(e){console.warn('Falha ao persistir dados recebidos na sincronização:',e);toast(e&&e.name==='QuotaExceededError'?'⚠️ Armazenamento do navegador cheio. Libere espaço antes de sincronizar.':'⚠️ Falha ao gravar dados sincronizados ('+(e&&e.name||'erro')+').');throw e;}
+    try{localStorage.setItem(K,JSON.stringify(D));}catch(e){
+      if(e&&e.name==='QuotaExceededError'){
+        try{Object.keys(D.cat||{}).forEach(function(k){if(D.cat[k]&&D.cat[k].img)D.cat[k].img='';});localStorage.setItem(K,JSON.stringify(D));toast('⚠️ Espaço liberado (imagens removidas do cache). Sincronização concluída.');return n;}catch(e2){}
+        toast('⚠️ Armazenamento cheio. Os dados estão na memória, mas não foram salvos. Limpe o cache do navegador.');
+      }else toast('⚠️ Falha ao gravar dados sincronizados.');
+      console.warn('Falha ao persistir dados recebidos na sincronização:',e);
+      throw e;
+    }
     var abaAtiva=document.querySelector('#abas button.on');if(abaAtiva){if(abaAtiva.dataset.v==='prod')listaProdutos();else if(abaAtiva.dataset.v==='pere')subPere(subAtual);else if(abaAtiva.dataset.v==='aj')contaCard();}
     SYNC.loja=SESS.lojaId;SYNC.recebido=Date.now();salvarSync();return n;
   }).catch(function(e){console.warn('Sincronização da loja falhou:',e);return -1;}).then(function(n){sincronizacaoEmAndamento=false;return n;},function(e){sincronizacaoEmAndamento=false;throw e;});
