@@ -756,7 +756,7 @@ $('bLogoutHdr').onclick=function(){if(!logado())return;if(confirm('Sair da conta
 var PAPEIS={operador:'Operador',assistente:'Assistente',analista:'Analista',gerente:'Gerente',admin:'Administrador'};
 function papelAtual(){return (sbOn()&&SESS&&SESS.papel)||(sbOn()?'operador':'admin');}
 function pode(acao){var p=papelAtual();if(p==='admin')return true;
-  if(acao==='registrar')return p==='operador'||p==='assistente';
+  if(acao==='registrar')return ['operador','assistente','analista','gerente'].includes(p);
   if(acao==='editar'||acao==='ajustes'||acao==='codigos')return p==='assistente'||p==='analista'||p==='gerente';
   if(acao==='admin')return false;return true;}
 function aplicarPapel(){var reg=pode('registrar'),ed=pode('editar'),aj=pode('ajustes');
