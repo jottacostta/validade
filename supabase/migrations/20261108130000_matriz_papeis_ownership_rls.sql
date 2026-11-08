@@ -17,15 +17,21 @@ alter table public.pere_regs add column if not exists created_by uuid references
 
 create or replace function private.set_created_by()
 returns trigger language plpgsql security definer set search_path=''
-as $$
+as $
 begin
-  if new.created_by is null then new.created_by := auth.uid(); end if;
-  if auth.uid() is not null and new.created_by is distinct from auth.uid() and not private.tem_escopo_global() then
-    raise exception 'Não é permitido atribuir autoria a outro usuário';
+  if tg_op = 'INSERT' then
+    if auth.uid() is not null then
+      -- Autoria é definida pelo servidor; não confiar no payload do cliente.
+      new.created_by := auth.uid();
+    end if;
+  elsif tg_op = 'UPDATE' then
+    if new.created_by is distinct from old.created_by then
+      raise exception 'A autoria do registro não pode ser alterada';
+    end if;
   end if;
   return new;
 end;
-$$;
+$;
 revoke all on function private.set_created_by() from public, anon, authenticated;
 
 do $$
