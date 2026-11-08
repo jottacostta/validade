@@ -189,6 +189,7 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
   </div>
   <div class="card" id="cardConta" style="display:none"><h2>Conta e sincronização</h2><div id="contaInfo"></div></div>
   <div class="card" id="cardAuditoria" style="display:none"><h2>Auditoria <span class="ean">(somente admin)</span></h2><div id="listaAud"></div><button class="btn sec" id="bAudRefresh" style="margin-top:10px">🔄 Atualizar</button></div>
+  <div class="card" id="cardSolicitacoes" style="display:none"><h2>Solicitações de exclusão</h2><p style="font-size:13px;color:var(--mu)">Solicitações pendentes e histórico de revisão. Exclusões aprovadas são tombstones sincronizados.</p><div id="listaSolicitacoes"><div class="vazio">Carregando…</div></div><button class="btn sec" id="bSolicitacoesRefresh" style="margin-top:10px">Atualizar solicitações</button></div>
   <div class="card" id="cardUsuarios" style="display:none">
     <h2>Gestão de usuários <span class="ean">(assistente, analista e admin)</span></h2>
     <p style="font-size:13px;color:var(--mu)">Contas de acesso ao sistema. As permissões são validadas no servidor.</p>
@@ -313,7 +314,7 @@ mostrarDias();
 /* ───── navegação ───── */
 function ir(v){document.querySelectorAll('.vista').forEach(function(s){s.classList.toggle('on',s.id==='v-'+v);});
   document.querySelectorAll('#abas button').forEach(function(b){b.classList.toggle('on',b.dataset.v===v);});
-  if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='aj')ajustes();window.scrollTo(0,0);}
+  if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='aj'){ajustes();carregarSolicitacoesExclusao();}window.scrollTo(0,0);}
 $('abas').onclick=function(e){var b=e.target.closest('button');if(b)ir(b.dataset.v);};
 window.aoVoltarAndroid=function(){if($('scanner').classList.contains('on')){fecharScanner();return true;}
   var on=document.querySelector('#abas button.on');if(on&&on.dataset.v!=='reg'){ir('reg');return true;}return false;};
@@ -770,7 +771,40 @@ function contaCard(){if(!sbOn()){$('cardConta').style.display='none';atualizarBo
   else{$('contaInfo').innerHTML='<p style="margin:0 0 10px;font-size:13px;color:var(--mu)">Entre para sincronizar os dados entre aparelhos e lojas.</p><button class="btn big" id="bEntrarAj">Entrar</button>';$('bEntrarAj').onclick=abrirConta;}}
 
 
-// ── Gestão de usuários via Edge Function ──
+
+// ── Solicitações de exclusão (RLS/RPC no backend) ──
+function podeRevisarExclusao(){return ['assistente','analista','gerente','admin'].includes(papelAtual());}
+function carregarSolicitacoesExclusao(){
+  var card=$('cardSolicitacoes');if(!card)return;
+  var vis=sbOn()&&logado()&&SESS.lojaId;card.style.display=vis?'':'none';if(!vis)return;
+  $('listaSolicitacoes').innerHTML='<div class="vazio"><span class="gira"></span> consultando…</div>';
+  var q='/rest/v1/solicitacoes_exclusao?select=id,tipo,registro_id,motivo,status,resposta,criado_em,revisado_em,solicitante_id,revisor_id,loja_id&loja_id=eq.'+encodeURIComponent(SESS.lojaId)+'&order=criado_em.desc&limit=100';
+  sbReq(q).then(function(r){
+    if(!r.ok||!Array.isArray(r.dados))throw new Error('Falha ao carregar solicitações');
+    $('listaSolicitacoes').innerHTML=r.dados.map(function(x){
+      var status=x.status==='pendente'?'⏳ Pendente':x.status==='aprovada'?'✅ Aprovada':'❌ Rejeitada';
+      var buttons=x.status==='pendente'&&podeRevisarExclusao()?'<div class="row" style="margin-top:8px"><button class="btn" data-review="yes" data-id="'+esc(x.id)+'">Aprovar</button><button class="btn perigo" data-review="no" data-id="'+esc(x.id)+'">Rejeitar</button></div>':'';
+      return '<div class="card" style="margin:8px 0;padding:10px"><b>'+esc(x.tipo)+' · '+esc(x.registro_id)+'</b><div class="ean">'+esc(status)+' · '+fdataHora(Date.parse(x.criado_em))+'</div><div style="font-size:13px;margin:5px 0">Motivo: '+esc(x.motivo)+'</div>'+(x.resposta?'<div class="ean">Resposta: '+esc(x.resposta)+'</div>':'')+buttons+'</div>';
+    }).join('')||'<div class="vazio">Nenhuma solicitação encontrada.</div>';
+    document.querySelectorAll('[data-review]').forEach(function(b){b.onclick=function(){revisarSolicitacaoExclusao(b.dataset.id,b.dataset.review==='yes');};});
+  }).catch(function(e){$('listaSolicitacoes').innerHTML='<div class="vazio">'+esc(e.message||'Erro ao carregar')+'</div>';});
+}
+function solicitarExclusao(tipo,registroId){
+  if(!sbOn()||!logado()||!SESS.lojaId){toast('Exclusão local: entre na conta para solicitar aprovação.');return Promise.resolve(false);}
+  var motivo=prompt('Motivo para solicitar a exclusão:');if(motivo===null)return Promise.resolve(false);motivo=motivo.trim();if(motivo.length<3){toast('Informe um motivo com pelo menos 3 caracteres.');return Promise.resolve(false);}
+  return sbReq('/rest/v1/rpc/solicitar_exclusao',{method:'POST',body:{p_loja_id:SESS.lojaId,p_tipo:tipo,p_registro_id:String(registroId),p_motivo:motivo}})
+    .then(function(r){if(!r.ok)throw new Error(r.dados&&r.dados.message||'Não foi possível criar a solicitação');toast('Solicitação enviada para aprovação');carregarSolicitacoesExclusao();auditar('solicitou_exclusao',{tipo:tipo,registro_id:registroId});return true;})
+    .catch(function(e){toast(e.message||'Falha ao solicitar exclusão');return false;});
+}
+function revisarSolicitacaoExclusao(id,aprovar){
+  var resposta=aprovar?'':prompt('Motivo da rejeição:');if(!aprovar&&(resposta===null||resposta.trim().length<3)){toast('Informe o motivo da rejeição.');return;}
+  if(aprovar&&!confirm('Confirmar aprovação? O registro será removido por tombstone.'))return;
+  sbReq('/rest/v1/rpc/revisar_solicitacao_exclusao',{method:'POST',body:{p_id:id,p_aprovar:aprovar,p_resposta:resposta||null}})
+    .then(function(r){if(!r.ok)throw new Error(r.dados&&r.dados.message||'Falha ao revisar');toast(aprovar?'Exclusão aprovada':'Solicitação rejeitada');carregarSolicitacoesExclusao();sincronizarLoja();})
+    .catch(function(e){toast(e.message||'Falha ao revisar solicitação');});
+}
+$('bSolicitacoesRefresh').onclick=carregarSolicitacoesExclusao;
+\n// ── Gestão de usuários via Edge Function ──
 function iniciarGestaoUsuarios(){
   var card=$('cardUsuarios');if(!card)return;
   var p=papelAtual(),vis=sbOn()&&logado()&&['assistente','analista','gerente','admin'].includes(p);
