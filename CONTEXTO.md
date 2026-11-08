@@ -4,7 +4,7 @@
 > qualquer assistente). Descreve o objetivo, a arquitetura, o backend, a segurança,
 > a hierarquia de usuários e **o que está em construção agora**. Mantido em português.
 >
-> Última atualização: commit base `13a59e1` (após "funções de RLS em schema privado").
+> Última atualização: separação do catálogo global único e das associações produto–loja.
 
 ---
 
@@ -98,8 +98,8 @@ CONTEXTO.md                          # este arquivo
 |---|---|
 | `lojas` (id, nome) | lojas da rede |
 | `loja_membros` (loja_id, user_id) | quais lojas cada usuário acessa |
-| `catalogo` (ean, nome, marca, img, updated_at) | catálogo global compartilhado |
-| `produtos` (loja_id, ean, nome, …) | produtos por loja (backup da nuvem) |
+| `catalogo` (ean, nome, marca, img, updated_at) | cadastro global único: uma linha por EAN |
+| `produtos` (loja_id, ean, updated_at, deleted_at) | associação: EAN encontrado em cada loja, sem nome/marca/imagem |
 | `lotes` (id, loja_id, ean, lote, qtd, val, …) | lotes/validades por loja |
 | `pere_itens` (loja_id, cod, descricao, sif) | itens de perecíveis (código de balança) |
 | `pere_regs` (id, loja_id, cod, peso/preco, val, …) | registros de perecíveis |
@@ -154,9 +154,9 @@ Chaves no localStorage: `validade_dados` (D, dados do app), `validade_sessao` (S
   com `dig=5`). Campo `dig` define o tamanho do código (4, 5 ou 6).
 - **OCR** (Tesseract.js via CDN) para capturar descrição do produto e **lote** (o lote
   vai para o campo SIF dos perecíveis).
-- **Catálogo** compartilhado: ao escanear, busca o nome em ordem:
+- **Catálogo global único** (uma linha por EAN) compartilhado: ao escanear, busca o nome em ordem:
   **catálogo → Cosmos (token do usuário) → Open Food/Beauty/Products Facts → digita**.
-- **Backup na nuvem** por loja (produtos, lotes, perecíveis) com debounce; hoje é
+- **Backup na nuvem** por loja (associações de produto, lotes, perecíveis) com debounce; hoje é
   **push** (envia). (Pendência: puxar/mesclar de outros aparelhos e propagar exclusões.)
 - **Token do Cosmos por usuário**: cada pessoa cadastra o seu em Ajustes; fica em
   `preferencias` (RLS: só a própria linha) e vale em qualquer aparelho.

@@ -11,7 +11,7 @@ Com o Supabase, tudo passa a **sincronizar** entre aparelhos e lojas, e vocês t
 - Depois, **escolhe a loja** onde está atuando. Aparecem só as lojas às quais ele tem acesso.
   Um operador pode ter acesso a mais de uma loja.
 - **Isolamento:** cada loja só enxerga os próprios dados (garantido por RLS, pelo vínculo
-  operador↔loja). O **catálogo** (EAN → nome) é compartilhado entre todas as lojas.
+  operador↔loja). O **catálogo** (EAN → nome/marca/imagem) é único e compartilhado.
 
 ## Tabelas
 
@@ -19,8 +19,9 @@ Com o Supabase, tudo passa a **sincronizar** entre aparelhos e lojas, e vocês t
 |---|---|
 | `lojas` | as lojas (nome) |
 | `loja_membros` | vínculo: quais operadores acessam quais lojas |
-| `catalogo` | EAN → nome/marca (compartilhado entre todas as lojas) |
-| `produtos` / `lotes` | produtos e lotes, por loja |
+| `catalogo` | cadastro global, uma linha por EAN: nome/marca/imagem |
+| `produtos` | associação de presença: uma linha por loja + EAN, sem atributos repetidos |
+| `lotes` | lotes/quantidades/validade, por loja e EAN |
 | `pere_itens` / `pere_regs` | códigos de balança e registros de perecíveis, por loja |
 | `ajustes` | configuração da loja (dígitos, valor, dias, OCR, token do Cosmos…) |
 
@@ -49,6 +50,15 @@ há internet. Sem rede, tudo funciona igual. Busca do nome: **catálogo → Cosm
    values ('<id-da-loja>', '<uid-do-usuario>');
    ```
 7. **Project Settings → API:** copie a **Project URL** e a **chave pública** (**anon**/**publishable**).
+
+### Atualizar projeto existente
+
+Para uma base já instalada, publique primeiro a versão nova do aplicativo (ela usa apenas
+`loja_id`/`ean` em `produtos` e envia os atributos ao catálogo). Depois aplique a migração
+[`20261107120000_produtos_como_associacao.sql`](./migrations/20261107120000_produtos_como_associacao.sql)
+no SQL Editor. Ela preenche `catalogo` com descrições legadas que ainda não existam e só então
+remove `nome`, `marca` e `img` de `produtos`. Faça backup antes. Não aplique essa migração
+enquanto versões antigas do app ainda estiverem em uso: elas consultam as colunas antigas.
 
 Me passe a **Project URL** e a **chave pública**. ⚠️ A `service_role`/`secret` **nunca** — é privada.
 
