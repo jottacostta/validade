@@ -227,6 +227,15 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
   <button data-v="aj"><span>⚙️</span>Ajustes</button>
 </nav>
 
+<div id="modalEditarUsuario" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloEditarUsuario">
+  <div class="box"><h2 id="tituloEditarUsuario">Editar usuário</h2>
+    <label class="f" for="editarNome">Nome completo</label><input id="editarNome" autocomplete="name">
+    <label class="f" for="editarSenha">Nova senha (deixe em branco para manter)</label><input id="editarSenha" type="password" autocomplete="new-password">
+    <div id="editarPapelWrap"><label class="f" for="editarPapel">Papel</label><select id="editarPapel"><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option><option value="admin">Administrador</option></select></div>
+    <div id="editarLojasWrap"><div class="f">Lojas vinculadas</div><input id="editarLojasBusca" type="search" placeholder="Buscar loja"><div id="editarLojasAcoes"><button type="button" class="btn sec" id="editarMarcarVisiveis">Marcar lojas visíveis</button><button type="button" class="btn sec" id="editarDesmarcarVisiveis">Desmarcar visíveis</button></div><div id="editarLojasResumo"></div><div id="editarLojas"></div></div>
+    <div class="row" style="margin-top:14px"><button class="btn sec" id="cancelarEditarUsuario">Cancelar</button><button class="btn" id="salvarEditarUsuario">Salvar alterações</button></div>
+  </div>
+</div>
 <div id="scanner"><video id="video" playsinline muted></video><div class="mira"></div>
   <div class="topo" id="scanTxt">Aponte para o código de barras</div>
   <div class="base"><button class="btn" id="bLuz">🔦 Luz</button><label class="btn" for="fFoto">📸 Foto</label><button class="btn" id="bFechar">✕ Cancelar</button></div>
