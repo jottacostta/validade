@@ -12,7 +12,7 @@ test('sincronização de produtos respeita o schema catálogo global + associaç
 
 test('backup não tenta alterar created_by definido pelo trigger do banco', () => {
   assert.match(app, /var payload=rows\.map\(function\(row\)\{var clean=Object\.assign\(\{\},row\);delete clean\.created_by;return clean;\}\)/);
-  assert.match(app, /set_created_by/);
+  assert.match(app, /created_by é identidade definida pelo trigger do banco/);
 });
 
 test('frontend não lê nome de produto da tabela de associação', () => {
