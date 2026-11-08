@@ -84,7 +84,7 @@ begin
     execute format('drop policy if exists %I_del on public.%I',t,t);
     execute format('revoke delete on public.%I from authenticated',t);
   end loop;
-end $;
+end $$;
 
 -- Ajustes são por loja (sem created_by); mantêm isolamento por loja.
 drop policy if exists ajustes_sel on public.ajustes;
