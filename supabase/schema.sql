@@ -8,7 +8,8 @@
 --   • VÍNCULO: `loja_membros` diz quais lojas cada operador pode acessar.
 --   • Dados por loja (produtos, lotes, pere_itens, pere_regs, ajustes): o RLS libera
 --     a linha se o operador logado for membro da loja daquela linha.
---   • `catalogo` (EAN → nome): COMPARTILHADO entre todas as lojas.
+--   • `catalogo` (EAN → nome/marca/imagem): cadastro único COMPARTILHADO.
+--   • `produtos` (loja_id + EAN): associação de presença por loja, sem duplicar atributos.
 --   • Sincronização: updated_at (puxar o que mudou) + deleted_at (exclusão suave).
 --
 -- Gestão de lojas/usuários/vínculos é feita por você no painel (SQL/Table Editor),
@@ -51,9 +52,6 @@ create index if not exists catalogo_updated_idx on public.catalogo (updated_at);
 create table if not exists public.produtos (
   loja_id    uuid not null references public.lojas(id) on delete cascade,
   ean        text not null,
-  nome       text not null default '',
-  marca      text default '',
-  img        text default '',
   updated_at timestamptz not null default now(),
   deleted_at timestamptz,
   primary key (loja_id, ean)

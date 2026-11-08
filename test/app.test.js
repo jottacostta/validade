@@ -70,6 +70,21 @@ tflaky('UPC-E do leitor nativo vira EAN-13', { skip: pular }, async () => {
   await a.fechar();
 });
 
+tflaky('metadados legados de produto migram para o catálogo único local', { skip: pular }, async () => {
+  const ean = '7891000315507';
+  const a = await abrir({ dados: {
+    prod: { [ean]: { nome: 'Nome legado', marca: 'Marca antiga', img: 'https://img.test/p.jpg', lotes: [lote('legado', '2030-01-01')] } },
+    cat: { [ean]: { nome: 'Nome canônico', marca: 'Marca canônica', img: 'https://img.test/c.jpg' } }
+  } });
+  const d = await a.salvo();
+  assert.deepStrictEqual(Object.keys(d.prod[ean]).sort(), ['lotes']);
+  assert.deepStrictEqual(d.cat[ean], { nome: 'Nome canônico', marca: 'Marca canônica', img: 'https://img.test/c.jpg' });
+  await a.p.click('nav button[data-v="prod"]');
+  assert.ok((await a.p.textContent('#listaProd')).includes('Nome canônico'));
+  assert.ok(!(await a.p.textContent('#listaProd')).includes('Nome legado'));
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
 tflaky('backup incompleto é importado sem travar', { skip: pular }, async () => {
   const a = await abrir({ dados: {} });
   const f = path.join(os.tmpdir(), 'validade-backup.json');
@@ -370,7 +385,28 @@ tflaky('catálogo: pull junta os produtos do servidor no cache local', { skip: p
   await a.fechar();
 });
 
-tflaky('backup: envia produtos, lotes e perecíveis da loja para a nuvem ao abrir', { skip: pular }, async () => {
+tflaky('sync: produtos por loja guardam somente EAN e leem nome do catálogo global', { skip: pular }, async () => {
+  const a = await abrirLogado(async p => {
+    await p.route(R_PULL, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+      { ean: '789', nome: 'Nome do catálogo', marca: 'Marca global', img: '', updated_at: '2026-11-07T10:00:00Z' }
+    ]) }));
+    await p.route(/\/rest\/v1\/produtos\?loja_id=/, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+      { ean: '789', updated_at: '2026-11-07T11:00:00Z', deleted_at: null }
+    ]) }));
+    for (const t of ['lotes', 'pere_itens', 'pere_regs']) await p.route(new RegExp('/rest/v1/' + t + '\\?loja_id='), r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.route(new RegExp('/rest/v1/catalogo\\?on_conflict'), r => r.fulfill({ status: 201, body: '' }));
+    await p.route(new RegExp('/rest/v1/produtos\\?on_conflict'), r => r.fulfill({ status: 201, body: '' }));
+    for (const t of ['lotes', 'pere_itens', 'pere_regs']) await p.route(new RegExp('/rest/v1/' + t + '\\?on_conflict'), r => r.fulfill({ status: 201, body: '' }));
+  });
+  await a.p.waitForFunction(() => { const d = JSON.parse(localStorage.getItem('validade_dados') || '{}'); return !!(d.prod && d.prod['789'] && d.cat && d.cat['789']); });
+  const d = await a.salvo();
+  assert.deepStrictEqual(Object.keys(d.prod['789']), ['lotes']);
+  await a.p.click('nav button[data-v="prod"]');
+  assert.ok((await a.p.textContent('#listaProd')).includes('Nome do catálogo'));
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('backup: envia atributos ao catálogo único e apenas associações loja-EAN em produtos', { skip: pular }, async () => {
   const bodies = {};
   const dados = {
     prod: { '789': { nome: 'Café', marca: '', img: '', lotes: [{ id: 'l1', lote: 'L1', qtd: 3, val: '2027-01-01', criado: 1 }] } },
@@ -380,6 +416,10 @@ tflaky('backup: envia produtos, lotes e perecíveis da loja para a nuvem ao abri
   };
   const a = await abrirLogado(async p => {
     await p.route(R_PULL, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.route(new RegExp('/rest/v1/catalogo\\?on_conflict'), async r => {
+      try { bodies.catalogo = r.request().postDataJSON(); } catch (e) {}
+      await r.fulfill({ status: 201, body: '' });
+    });
     for (const t of ['produtos', 'lotes', 'pere_itens', 'pere_regs']) {
       await p.route(new RegExp('/rest/v1/' + t + '\\?on_conflict'), async r => {
         try { (bodies[t] = bodies[t] || []).push(...r.request().postDataJSON()); } catch (e) {}
@@ -388,7 +428,8 @@ tflaky('backup: envia produtos, lotes e perecíveis da loja para a nuvem ao abri
     }
   }, dados);
   await a.p.waitForFunction(() => { try { return !!JSON.parse(localStorage.getItem('validade_sync') || '{}').backup; } catch (e) { return false; } });
-  assert.ok(bodies.produtos.some(r => r.ean === '789' && r.nome === 'Café' && r.loja_id === 'L1'), 'produto enviado');
+  assert.ok(bodies.catalogo.some(r => r.ean === '789' && r.nome === 'Café'), 'metadados enviados ao catálogo global');
+  assert.ok(bodies.produtos.some(r => r.ean === '789' && r.loja_id === 'L1' && Object.keys(r).sort().join(',') === 'ean,loja_id'), 'associação loja-EAN enviada sem atributos duplicados');
   assert.ok(bodies.lotes.some(r => r.id === 'l1' && r.ean === '789' && r.qtd === 3 && r.loja_id === 'L1'), 'lote enviado');
   assert.ok(bodies.pere_itens.some(r => r.cod === '6019' && r.descricao === 'Pernil' && r.loja_id === 'L1'), 'código enviado');
   assert.ok(bodies.pere_regs.some(r => r.id === 'r1' && r.peso === 0.8 && r.loja_id === 'L1'), 'registro enviado');
