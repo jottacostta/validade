@@ -12,6 +12,8 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Roboto,Arial,sans-serif;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 header{background:linear-gradient(135deg,var(--c),var(--c3));color:#fff;padding:calc(18px + env(safe-area-inset-top)) 16px 18px;border-bottom:5px solid var(--am)}
 header h1{margin:0;font-size:20px}header p{margin:3px 0 0;opacity:.85;font-size:13px}
+.hdr-logout{margin-left:auto;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:10px;padding:8px 12px;font:700 13px system-ui;cursor:pointer;display:none}
+.hdr-logout:hover{background:rgba(255,255,255,.25)}
 .hdr-in{display:flex;align-items:center;gap:12px}.hdr-logo{width:46px;height:46px;border-radius:10px;object-fit:cover;flex:none}
 main{max-width:760px;margin:0 auto;padding:14px 12px}
 .vista{display:none}.vista.on{display:block;animation:e .2s}@keyframes e{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
@@ -97,7 +99,7 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
 </head>
 <body>
 <div id="splash"><div class="sp-logo"><img id="splashLogo" alt="" style="display:none"><span id="splashIni">📅</span></div><div class="sp-nome">/*NOME_HTML*/</div><div class="sp-sub">Controle de validade e perecíveis</div><span class="gira"></span><div class="barra-am"></div></div>
-<header><div class="hdr-in"><img id="hdrLogo" alt="" class="hdr-logo" style="display:none"><div style="min-width:0"><h1>/*NOME_HTML*/</h1><p id="slogan">Lotes, validades e perecíveis</p></div></div></header>
+<header><div class="hdr-in"><img id="hdrLogo" alt="" class="hdr-logo" style="display:none"><div style="min-width:0"><h1>/*NOME_HTML*/</h1><p id="slogan">Lotes, validades e perecíveis</p></div><button id="bLogoutHdr" class="hdr-logout" type="button">Sair</button></div></header>
 <main>
 
 <!-- ═════════ REGISTRAR ═════════ -->
@@ -708,6 +710,7 @@ $('cPass').onkeydown=function(e){if(e.key==='Enter')$('bEntrar').click();};
 $('cEye').onclick=function(){var p=$('cPass'),vis=p.type==='text';p.type=vis?'password':'text';this.classList.toggle('off',vis);this.setAttribute('aria-label',vis?'Mostrar senha':'Ocultar senha');};
 $('bVoltarLoja').onclick=fecharConta;
 $('bSairConta').onclick=function(){sbLogout();fecharConta();toast('Você saiu');contaCard();};
+$('bLogoutHdr').onclick=function(){if(!logado())return;if(confirm('Sair da conta?')){sbLogout();toast('Você saiu');contaCard();atualizarGate();}};
 var PAPEIS={operador:'Operador',assistente:'Assistente',analista:'Analista',admin:'Administrador'};
 function papelAtual(){return (sbOn()&&SESS&&SESS.papel)||(sbOn()?'operador':'admin');}
 function pode(acao){var p=papelAtual();if(p==='admin')return true;
@@ -751,7 +754,9 @@ function auditoriaCard(){var c=$('cardAuditoria');if(!c)return;if(!sbOn()||!ehAd
     if(!r.dados.length){$('listaAud').innerHTML='<div class="vazio">Sem registros ainda.</div>';return;}
     $('listaAud').innerHTML='<table><tr><th>Quando</th><th>Quem</th><th>Ação</th></tr>'+r.dados.map(function(a){var d=a.detalhe&&typeof a.detalhe==='object'&&Object.keys(a.detalhe).length?'<div class="ean">'+esc(JSON.stringify(a.detalhe))+'</div>':'';return '<tr><td>'+fdataHora(new Date(a.criado).getTime())+'</td><td>'+esc(a.usuario||'')+(a.papel?' <span class="ean">('+esc(a.papel)+')</span>':'')+'</td><td>'+esc(a.acao)+(a.loja_nome?' <span class="ean">• '+esc(a.loja_nome)+'</span>':'')+d+'</td></tr>';}).join('')+'</table>';
   },function(){$('listaAud').innerHTML='<div class="vazio">Erro ao carregar.</div>';});}
-function contaCard(){if(!sbOn()){$('cardConta').style.display='none';return;}$('cardConta').style.display='';
+function atualizarBotaoLogout(){var b=$('bLogoutHdr');if(!b)return;b.style.display=(sbOn()&&logado())?'':'none';}
+function contaCard(){if(!sbOn()){$('cardConta').style.display='none';atualizarBotaoLogout();return;}$('cardConta').style.display='';
+  atualizarBotaoLogout();
   if(logado()){$('contaInfo').innerHTML='<div style="font-size:14px">Operador: <b>'+esc(SESS.usuario||SESS.email||'')+'</b>'+(SESS.papel?' <span class="st ok">'+esc(PAPEIS[SESS.papel]||SESS.papel)+'</span>':'')+'</div>'+(SESS.lojaNome?'<div style="font-size:14px;margin-top:4px">Loja atual: <b>'+esc(SESS.lojaNome)+'</b></div>':'<div class="aviso wa" style="margin-top:8px">Escolha a loja onde está atuando.</div>')+'<div class="row" style="margin-top:12px"><button class="btn sec" id="bTrocarLoja">'+(SESS.lojaNome?'Trocar loja':'Escolher loja')+'</button><button class="btn sec" id="bSair2">Sair</button></div>'+(SESS.lojaNome?'<p style="margin:10px 0 0;font-size:12px;color:var(--mu)">Backup na nuvem: '+(SYNC.backup?'último '+fdataHora(SYNC.backup):'enviando…')+'</p>':'');
     $('bTrocarLoja').onclick=abrirConta;$('bSair2').onclick=function(){sbLogout();contaCard();toast('Você saiu');};}
   else{$('contaInfo').innerHTML='<p style="margin:0 0 10px;font-size:13px;color:var(--mu)">Entre para sincronizar os dados entre aparelhos e lojas.</p><button class="btn big" id="bEntrarAj">Entrar</button>';$('bEntrarAj').onclick=abrirConta;}}
@@ -792,7 +797,7 @@ function iniciarGestaoUsuarios(){
 window.__initGestaoUsuarios=iniciarGestaoUsuarios;
 iniciarGestaoUsuarios();
 
-if(sbOn()){aplicarPapel();atualizarGate();if(logado())carregarPapel();}if(logado()&&SESS.lojaId){catalogoPull().then(function(){return sincronizarLoja();}).then(function(){backupNuvem();});agendarSincronizacaoPeriodica();}
+if(sbOn()){aplicarPapel();atualizarGate();if(logado())carregarPapel();}atualizarBotaoLogout();if(logado()&&SESS.lojaId){catalogoPull().then(function(){return sincronizarLoja();}).then(function(){backupNuvem();});agendarSincronizacaoPeriodica();}
 (function(){var sp=$('splash');if(!sp)return;if(window.__noSplash){sp.style.display='none';return;}if(CFG.logo){var im=$('splashLogo');im.src=CFG.logo;im.style.display='';$('splashIni').style.display='none';}
   setTimeout(function(){sp.classList.add('sai');setTimeout(function(){sp.style.display='none';},480);},1400);})();
 listaProdutos();
