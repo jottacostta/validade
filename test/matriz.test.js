@@ -33,7 +33,7 @@ test('gerente pode excluir contas via Edge Function, analista não',()=>{
 
 test('sync aplica tombstones recebidos para remover dados locais',()=>{
   assert.match(app,/if\(row\.deleted_at\)\{delete D\.prod\[ean\];return;\}/);
-  assert.match(app,/if\(row\.deleted_at\)\{p\.lotes=p\.lotes\.filter/);
+  assert.match(app,/if\(row\.deleted_at\)\{var existing=D\.prod/);
 });
 
 test('solicitações de exclusão ficam na fila offline e são reenviadas ao reconectar',()=>{
