@@ -41,3 +41,11 @@ test('solicitações de exclusão ficam na fila offline e são reenviadas ao rec
   assert.match(app,/window\.addEventListener\('online',function\(\)\{processarSolicitacoesOffline\(\);\}\)/);
   assert.match(app,/solicitante_id===SESS\.uid/);
 });
+
+test('RLS/auditoria: mutation triggers server-side audit and requester snapshot survives user deletion',()=>{
+  assert.match(sql,/create or replace function private\.audit_mutation/);
+  assert.match(sql,/create trigger %I_audit after insert or update or delete/);
+  const requests=fs.readFileSync(path.join(__dirname,'../supabase/migrations/20261108100000_solicitacoes_exclusao_com_aprovacao.sql'),'utf8');
+  assert.match(requests,/solicitante_id uuid references auth\.users\(id\) on delete set null/);
+  assert.match(requests,/solicitante_nome text not null default ''/);
+});
