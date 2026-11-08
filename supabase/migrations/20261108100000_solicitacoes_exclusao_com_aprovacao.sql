@@ -24,7 +24,7 @@ create index if not exists solicitacoes_exclusao_solicitante_idx
 -- Snapshot de solicitante para preservar a trilha mesmo após exclusão de conta.
 create or replace function private.snapshot_solicitante_exclusao()
 returns trigger language plpgsql security definer set search_path=''
-as $
+as $fn$
 begin
   if new.solicitante_id is null then new.solicitante_id := auth.uid(); end if;
   select coalesce(nullif(trim(p.nome),''),u.email,new.solicitante_id::text)
@@ -33,7 +33,7 @@ begin
     where u.id=new.solicitante_id;
   return new;
 end;
-$;
+$fn$;
 revoke all on function private.snapshot_solicitante_exclusao() from public,anon,authenticated;
 drop trigger if exists solicitacao_snapshot_solicitante on public.solicitacoes_exclusao;
 create trigger solicitacao_snapshot_solicitante before insert on public.solicitacoes_exclusao
