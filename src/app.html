@@ -795,12 +795,30 @@ function carregarSolicitacoesExclusao(){
     document.querySelectorAll('[data-review]').forEach(function(b){b.onclick=function(){revisarSolicitacaoExclusao(b.dataset.id,b.dataset.review==='yes');};});
   }).catch(function(e){$('listaSolicitacoes').innerHTML='<div class="vazio">'+esc(e.message||'Erro ao carregar')+'</div>';});
 }
+function guardarSolicitacaoOffline(tipo,registroId,motivo){
+  SYNC.pendingExclusoes=Array.isArray(SYNC.pendingExclusoes)?SYNC.pendingExclusoes:[];
+  var item={id:uid(),loja_id:SESS.lojaId,tipo:tipo,registro_id:String(registroId),motivo:motivo,criado:Date.now()};
+  SYNC.pendingExclusoes.push(item);salvarSync();toast('Solicitação guardada offline; será enviada quando a conexão voltar.');return item;
+}
+function processarSolicitacoesOffline(){
+  if(!sbOn()||!logado()||!SESS.lojaId||navigator.onLine===false)return Promise.resolve(0);
+  var fila=(SYNC.pendingExclusoes||[]).filter(function(x){return x.loja_id===SESS.lojaId;});if(!fila.length)return Promise.resolve(0);
+  var enviados=0;
+  return fila.reduce(function(p,item){return p.then(function(){
+    return sbReq('/rest/v1/rpc/solicitar_exclusao',{method:'POST',body:{p_loja_id:item.loja_id,p_tipo:item.tipo,p_registro_id:item.registro_id,p_motivo:item.motivo}})
+      .then(function(r){if(!r.ok)throw new Error('RPC rejected');enviados++;SYNC.pendingExclusoes=(SYNC.pendingExclusoes||[]).filter(function(x){return x.id!==item.id;});salvarSync();})
+      .catch(function(){/* keep in queue; no data loss on transient network failure */});
+  });},Promise.resolve()).then(function(){if(enviados)carregarSolicitacoesExclusao();return enviados;});
+}
+window.addEventListener('online',function(){processarSolicitacoesOffline();});
 function solicitarExclusao(tipo,registroId){
-  if(!sbOn()||!logado()||!SESS.lojaId){toast('Exclusão local: entre na conta para solicitar aprovação.');return Promise.resolve(false);}
+  if(!sbOn()||!logado()||!SESS.lojaId){toast('Entre na conta para solicitar aprovação.');return Promise.resolve(false);}
   var motivo=prompt('Motivo para solicitar a exclusão:');if(motivo===null)return Promise.resolve(false);motivo=motivo.trim();if(motivo.length<3){toast('Informe um motivo com pelo menos 3 caracteres.');return Promise.resolve(false);}
-  return sbReq('/rest/v1/rpc/solicitar_exclusao',{method:'POST',body:{p_loja_id:SESS.lojaId,p_tipo:tipo,p_registro_id:String(registroId),p_motivo:motivo}})
+  var item={loja_id:SESS.lojaId,tipo:tipo,registro_id:String(registroId),motivo:motivo};
+  if(navigator.onLine===false){guardarSolicitacaoOffline(tipo,registroId,motivo);return Promise.resolve(true);}
+  return sbReq('/rest/v1/rpc/solicitar_exclusao',{method:'POST',body:{p_loja_id:item.loja_id,p_tipo:tipo,p_registro_id:item.registro_id,p_motivo:motivo}})
     .then(function(r){if(!r.ok)throw new Error(r.dados&&r.dados.message||'Não foi possível criar a solicitação');toast('Solicitação enviada para aprovação');carregarSolicitacoesExclusao();auditar('solicitou_exclusao',{tipo:tipo,registro_id:registroId});return true;})
-    .catch(function(e){toast(e.message||'Falha ao solicitar exclusão');return false;});
+    .catch(function(e){if(navigator.onLine===false||/network|fetch|timeout/i.test(e.message||'')){guardarSolicitacaoOffline(tipo,registroId,motivo);return true;}toast(e.message||'Falha ao solicitar exclusão');return false;});
 }
 function revisarSolicitacaoExclusao(id,aprovar){
   var resposta=aprovar?'':prompt('Motivo da rejeição:');if(!aprovar&&(resposta===null||resposta.trim().length<3)){toast('Informe o motivo da rejeição.');return;}
