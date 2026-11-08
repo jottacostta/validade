@@ -545,13 +545,15 @@ function listaPere(){var q=$('qPe').value.toLowerCase(),grupos={};
   $('listaPe').innerHTML=gs.map(function(g){var tot=g.regs.reduce(function(t,r){return t+r.peso;},0);
     return '<div class="card"><b>'+esc(g.it.desc)+'</b><div class="ean">código '+g.cod+' • '+g.regs.length+' registro(s) • '+kg(tot)+' kg</div><table><tr><th>SIF</th><th>Peso</th><th>Validade</th><th></th></tr>'
       +g.regs.map(function(r){return '<tr data-pe="'+r.id+'"><td>'+esc(r.sif||'—')+'</td><td>'+kg(r.peso)+' kg</td><td>'+fdata(r.val)+'</td><td style="text-align:right">'+status(r.val)+'</td></tr>';}).join('')+'</table></div>';}).join('')||'<div class="vazio">Nenhum registro de perecíveis.</div>';}
-$('listaPe').onclick=function(e){var tr=e.target.closest('tr[data-pe]');if(!tr)return;var r=D.pere.regs.filter(function(x){return x.id===tr.dataset.pe;})[0];if(!r)return;if(!pode('editar')){toast('Seu perfil não edita registros');return;}
+$('listaPe').onclick=function(e){var tr=e.target.closest('tr[data-pe]');if(!tr)return;var r=D.pere.regs.filter(function(x){return x.id===tr.dataset.pe;})[0];if(!r)return;
+  var papel=papelAtual(),proprio=!!(SESS&&SESS.uid&&r.created_by===SESS.uid),full=['analista','gerente','admin'].includes(papel);if(!full&&!proprio){toast('Você só pode editar seus próprios registros');return;}
   var it=D.pere.itens[r.cod]||{},nome=it.desc||('código '+r.cod);
-  var p=prompt(nome+' • '+kg(r.peso)+' kg • validade '+fdata(r.val)+'\n\nPeso em kg (0 para apagar o registro):',String(r.peso).replace('.',','));if(p===null)return;
-  var peso=num(p);if(peso<=0){if(confirm('Apagar o registro de '+kg(r.peso)+' kg (validade '+fdata(r.val)+')?')){D.pere.regs=D.pere.regs.filter(function(x){return x!==r;});cancelarLembrete(r.id);salvar();listaPere();auditar('apagou_perecivel',{cod:r.cod,peso:r.peso});}return;}
+  var p=prompt(nome+' • '+kg(r.peso)+' kg • validade '+fdata(r.val)+'\n\nPeso em kg (0 solicita exclusão):',String(r.peso).replace('.',','));if(p===null)return;
+  var peso=num(p);if(peso<=0){if(sbOn()&&logado()){solicitarExclusao('pere_reg',r.id);return;}if(confirm('Excluir registro localmente?')){D.pere.regs=D.pere.regs.filter(function(x){return x!==r;});cancelarLembrete(r.id);salvar();listaPere();auditar('apagou_perecivel',{cod:r.cod,peso:r.peso});}return;}
   var v=prompt('Validade (dd/mm/aaaa):',fdata(r.val));if(v===null)return;var val=lerData(v);if(!val){toast('Data inválida — nada alterado');return;}
   var sif=prompt('SIF:',r.sif||'');if(sif===null)return;
-  r.peso=peso;r.val=val;r.sif=sif.trim();r.atualizado=Date.now();salvar();cancelarLembrete(r.id);lembrete(r,nome);listaPere();toast('Registro atualizado ✔');};
+  r.peso=peso;r.val=val;r.sif=sif.trim();r.atualizado=Date.now();if(proprio&&it.created_by===SESS.uid){var desc=prompt('Descrição do código:',it.desc||'');if(desc!==null&&desc.trim())it.desc=desc.trim();}
+  salvar();cancelarLembrete(r.id);lembrete(r,nome);listaPere();toast('Registro atualizado ✔');};
 /* dd/mm/aaaa, dd/mm/aa ou aaaa-mm-dd → 'aaaa-mm-dd' (null se a data não existir) */
 function lerData(t){t=String(t||'').trim();var m=/^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t),a,me,di;
   if(m){a=+m[1];me=+m[2];di=+m[3];}else{m=/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2}|\d{4})$/.exec(t);if(!m)return null;di=+m[1];me=+m[2];a=+m[3];if(a<100)a+=2000;}
@@ -730,7 +732,7 @@ var PAPEIS={operador:'Operador',assistente:'Assistente',analista:'Analista',gere
 function papelAtual(){return (sbOn()&&SESS&&SESS.papel)||(sbOn()?'operador':'admin');}
 function pode(acao){var p=papelAtual();if(p==='admin')return true;
   if(acao==='registrar')return p==='operador'||p==='assistente';
-  if(acao==='editar'||acao==='ajustes'||acao==='codigos')return p==='assistente'||p==='analista';
+  if(acao==='editar'||acao==='ajustes'||acao==='codigos')return p==='assistente'||p==='analista'||p==='gerente';
   if(acao==='admin')return false;return true;}
 function aplicarPapel(){var reg=pode('registrar'),ed=pode('editar'),aj=pode('ajustes');
   var tr=document.querySelector('#abas button[data-v=\"reg\"]');if(tr)tr.style.display=reg?'':'none';
