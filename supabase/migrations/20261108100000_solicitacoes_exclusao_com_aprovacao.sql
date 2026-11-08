@@ -78,7 +78,7 @@ create or replace function public.revisar_solicitacao_exclusao(
 ) returns void
 language plpgsql security definer set search_path = ''
 as $$
-declare r public.solicitacoes_exclusao%rowtype; v_papel text;
+declare r public.solicitacoes_exclusao%rowtype; v_papel text; v_usuario text; v_loja_nome text;
 begin
   if auth.uid() is null then raise exception 'Sessão inválida'; end if;
   v_papel := private.meu_papel();
@@ -104,8 +104,15 @@ begin
       revisor_id=auth.uid(), resposta=nullif(trim(p_resposta),''), revisado_em=now()
   where id=p_id;
 
-  insert into public.auditoria(user_id, loja_id, evento, detalhes)
-  values(auth.uid(), r.loja_id,
+  select coalesce(p.nome, u.email, auth.uid()::text), p.papel, l.nome
+    into v_usuario, v_papel, v_loja_nome
+    from auth.users u
+    left join public.perfis p on p.id=u.id
+    left join public.lojas l on l.id=r.loja_id
+    where u.id=auth.uid();
+
+  insert into public.auditoria(user_id, usuario, papel, loja_id, loja_nome, acao, detalhe)
+  values(auth.uid(), v_usuario, v_papel, r.loja_id, v_loja_nome,
     case when p_aprovar then 'exclusao_aprovada' else 'exclusao_rejeitada' end,
     jsonb_build_object('solicitacao_id',r.id,'tipo',r.tipo,'registro_id',r.registro_id,
       'solicitante_id',r.solicitante_id,'motivo',r.motivo,'resposta',p_resposta));
