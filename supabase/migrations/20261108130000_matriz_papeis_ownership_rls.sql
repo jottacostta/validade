@@ -150,6 +150,44 @@ $$;
 revoke all on function public.revisar_solicitacao_exclusao(uuid,boolean,text) from public,anon;
 grant execute on function public.revisar_solicitacao_exclusao(uuid,boolean,text) to authenticated;
 
+-- Server-side audit for meaningful mutations (avoids client-only forged identity).
+create or replace function private.audit_mutation()
+returns trigger language plpgsql security definer set search_path=''
+as $
+declare v_user text; v_role text; v_store uuid; v_store_name text; v_old jsonb; v_new jsonb; v_key text;
+begin
+  if auth.uid() is null then
+    -- Edge Functions using service_role record their own actor in their server audit.
+    return coalesce(new,old);
+  end if;
+  if tg_op='DELETE' then v_old:=to_jsonb(old);v_new:=null;
+  elsif tg_op='INSERT' then v_old:=null;v_new:=to_jsonb(new);
+  else v_old:=to_jsonb(old);v_new:=to_jsonb(new);
+    if (v_old - 'updated_at') = (v_new - 'updated_at') then return new; end if;
+  end if;
+  v_store := coalesce((v_new->>'loja_id')::uuid,(v_old->>'loja_id')::uuid);
+  select coalesce(nullif(trim(p.nome),''),u.email,auth.uid()::text),p.papel
+    into v_user,v_role from auth.users u left join public.perfis p on p.id=u.id where u.id=auth.uid();
+  if v_store is not null then select nome into v_store_name from public.lojas where id=v_store; end if;
+  v_key:=coalesce(v_new->>'id',v_new->>'ean',v_new->>'cod',v_old->>'id',v_old->>'ean',v_old->>'cod',v_store::text);
+  insert into public.auditoria(user_id,usuario,papel,loja_id,loja_nome,acao,detalhe)
+  values(auth.uid(),v_user,v_role,v_store,v_store_name,
+    lower(tg_op)||'_'||tg_table_name,
+    jsonb_build_object('table',tg_table_name,'operation',tg_op,'record_id',v_key,'old',v_old,'new',v_new));
+  return coalesce(new,old);
+end;
+$;
+revoke all on function private.audit_mutation() from public,anon,authenticated;
+
+do $
+declare t text;
+begin
+  foreach t in array array['produtos','lotes','pere_itens','pere_regs','ajustes','catalogo','lojas'] loop
+    execute format('drop trigger if exists %I_audit on public.%I',t,t);
+    execute format('create trigger %I_audit after insert or update or delete on public.%I for each row execute function private.audit_mutation()',t,t);
+  end loop;
+end $;
+
 -- Prevent client from forging creator or editing audit identity.
 create or replace function private.proteger_auditoria()
 returns trigger language plpgsql security definer set search_path=''
