@@ -597,12 +597,26 @@ var DOM_LOGIN=CFG.loginDom||'loja.validade';
 function sbOn(){return !!(CFG.supaUrl&&CFG.supaKey);}
 function salvarSess(){try{SESS?localStorage.setItem('validade_sessao',JSON.stringify(SESS)):localStorage.removeItem('validade_sessao');}catch(e){}}
 function logado(){return !!(SESS&&SESS.access_token);}
-function sbReq(path,opt){opt=opt||{};var h={apikey:CFG.supaKey,'Content-Type':'application/json'};
-  if(opt.auth!==false&&logado())h.Authorization='Bearer '+SESS.access_token;
-  if(opt.headers)for(var k in opt.headers)h[k]=opt.headers[k];
-  var ctl=window.AbortController?new AbortController():null,tm=setTimeout(function(){ctl&&ctl.abort();},12000);
-  return fetch(CFG.supaUrl+path,{method:opt.method||'GET',headers:h,body:opt.body?JSON.stringify(opt.body):undefined,signal:ctl?ctl.signal:undefined})
-    .then(function(r){clearTimeout(tm);return r.text().then(function(t){var j=null;try{j=t?JSON.parse(t):null;}catch(e){}return {status:r.status,ok:r.ok,dados:j};});},function(e){clearTimeout(tm);throw e;});}
+var refreshSessaoEmAndamento=null;
+function sbRefreshSess(){
+  if(!logado()||!SESS.refresh_token)return Promise.resolve(false);
+  if(refreshSessaoEmAndamento)return refreshSessaoEmAndamento;
+  refreshSessaoEmAndamento=fetch(CFG.supaUrl+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:CFG.supaKey,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:SESS.refresh_token})})
+    .then(function(r){return r.text().then(function(t){var j=null;try{j=t?JSON.parse(t):null;}catch(e){}if(!r.ok||!j||!j.access_token)throw new Error((j&&(j.message||j.error_description||j.msg))||'Falha ao renovar sessão');var u=j.user||{};SESS.access_token=j.access_token;SESS.refresh_token=j.refresh_token||SESS.refresh_token;SESS.expira=Date.now()+((j.expires_in||3600)*1000);if(u.id)SESS.uid=u.id;salvarSess();return true;});})
+    .catch(function(e){console.warn('Não foi possível renovar a sessão Supabase:',e);return false;})
+    .then(function(ok){refreshSessaoEmAndamento=null;return ok;},function(e){refreshSessaoEmAndamento=null;throw e;});
+  return refreshSessaoEmAndamento;
+}
+function sbReq(path,opt){opt=opt||{};
+  function executar(retry){var h={apikey:CFG.supaKey,'Content-Type':'application/json'};
+    if(opt.auth!==false&&logado())h.Authorization='Bearer '+SESS.access_token;
+    if(opt.headers)for(var k in opt.headers)h[k]=opt.headers[k];
+    var ctl=window.AbortController?new AbortController():null,tm=setTimeout(function(){ctl&&ctl.abort();},12000);
+    return fetch(CFG.supaUrl+path,{method:opt.method||'GET',headers:h,body:opt.body?JSON.stringify(opt.body):undefined,signal:ctl?ctl.signal:undefined})
+      .then(function(r){clearTimeout(tm);return r.text().then(function(t){var j=null;try{j=t?JSON.parse(t):null;}catch(e){}var out={status:r.status,ok:r.ok,dados:j};if(r.status===401&&retry&&opt.auth!==false&&logado()&&SESS.refresh_token)return sbRefreshSess().then(function(ok){return ok?executar(false):out;});return out;});},function(e){clearTimeout(tm);throw e;});}
+  if(opt.auth!==false&&logado()&&SESS.expira&&SESS.expira<Date.now()+60000)return sbRefreshSess().then(function(){return executar(true);});
+  return executar(true);
+}
 function sbLogin(user,pass){return sbReq('/auth/v1/token?grant_type=password',{method:'POST',auth:false,body:{email:user+'@'+DOM_LOGIN,password:pass}})
   .then(function(r){if(!r.ok||!r.dados||!r.dados.access_token)throw new Error((r.dados&&(r.dados.error_description||r.dados.msg||r.dados.error))||'Usuário ou senha inválidos');
     var u=r.dados.user||{};SESS={access_token:r.dados.access_token,refresh_token:r.dados.refresh_token,expira:Date.now()+((r.dados.expires_in||3600)*1000),usuario:user,email:u.email,uid:u.id,lojaId:null,lojaNome:null};salvarSess();return SESS;});}
