@@ -35,3 +35,9 @@ test('sync aplica tombstones recebidos para remover dados locais',()=>{
   assert.match(app,/if\(row\.deleted_at\)\{delete D\.prod\[ean\];return;\}/);
   assert.match(app,/if\(row\.deleted_at\)\{p\.lotes=p\.lotes\.filter/);
 });
+
+test('solicitações de exclusão ficam na fila offline e são reenviadas ao reconectar',()=>{
+  assert.match(app,/SYNC\.pendingExclusoes/);
+  assert.match(app,/window\.addEventListener\('online',function\(\)\{processarSolicitacoesOffline\(\);\}\)/);
+  assert.match(app,/solicitante_id===SESS\.uid/);
+});
