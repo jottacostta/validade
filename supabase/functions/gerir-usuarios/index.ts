@@ -103,6 +103,7 @@ Deno.serve(async (req) => {
       const usuario = String(body.usuario || "").trim().toLowerCase();
       const nome = String(body.nome || "").trim();
       const senha = String(body.senha || "");
+      const exigirTrocaSenha = body.exigir_troca_senha === true;
       const papel = String(body.papel || "operador");
       let lojas = Array.isArray(body.lojas) ? (body.lojas as unknown[]).map(String) : [];
       if (!validarUsuario(usuario)) return json({ error: "Usuário inválido: use 3 a 30 letras minúsculas, números ou . _ -" }, 400);
