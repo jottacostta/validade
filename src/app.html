@@ -806,7 +806,7 @@ function carregarSolicitacoesExclusao(){
   var card=$('cardSolicitacoes');if(!card)return;
   var vis=sbOn()&&logado()&&SESS.lojaId;card.style.display=vis?'':'none';if(!vis)return;
   $('listaSolicitacoes').innerHTML='<div class="vazio"><span class="gira"></span> consultando…</div>';
-  var q='/rest/v1/solicitacoes_exclusao?select=id,tipo,registro_id,motivo,status,resposta,criado_em,revisado_em,solicitante_id,revisor_id,loja_id&loja_id=eq.'+encodeURIComponent(SESS.lojaId)+'&order=criado_em.desc&limit=100';
+  var q='/rest/v1/solicitacoes_exclusao?select=id,tipo,registro_id,motivo,status,resposta,criado_em,revisado_em,solicitante_id,solicitante_nome,revisor_id,loja_id&loja_id=eq.'+encodeURIComponent(SESS.lojaId)+'&order=criado_em.desc&limit=100';
   sbReq(q).then(function(r){
     if(!r.ok||!Array.isArray(r.dados))throw new Error('Falha ao carregar solicitações');
     $('listaSolicitacoes').innerHTML=r.dados.map(function(x){
