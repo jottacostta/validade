@@ -186,7 +186,7 @@ Deno.serve(async (req) => {
         const allowedStores = await lojasPermitidas();
         if ((targetStores || []).some((m: { loja_id: string }) => !allowedStores.has(m.loja_id))) return json({ error: "Gerente não pode excluir usuário de loja fora do seu escopo." }, 403);
         const { data: targetProfile } = await admin.from("perfis").select("papel").eq("id", String(body.id || "")).single();
-        if (["analista", "gerente", "admin"].includes(targetProfile?.papel || "")) return json({ error: "Gerente não pode excluir perfil igual ou superior." }, 403);
+        if (targetProfile?.papel === "admin") return json({ error: "Gerente não pode excluir Administrador." }, 403);
       }
       const id = String(body.id || "");
       if (!id) return json({ error: "Usuário não informado." }, 400);
