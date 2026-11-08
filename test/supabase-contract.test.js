@@ -18,3 +18,9 @@ test('backup não tenta alterar created_by definido pelo trigger do banco', () =
 test('frontend não lê nome de produto da tabela de associação', () => {
   assert.doesNotMatch(app, /if\(row\.nome&&!p\.desc\)p\.desc=row\.nome/);
 });
+
+test('frontend libera inserção para Operador, Assistente, Analista, Gerente e Administrador', () => {
+  assert.match(app, /function pode\(acao\)\{var p=papelAtual\(\);if\(p==='admin'\)return true;/);
+  assert.match(app, /if\(acao==='registrar'\)return \['operador','assistente','analista','gerente'\]\.includes\(p\);/);
+  assert.match(app, /function aplicarPapel\(\)\{var reg=pode\('registrar'\)/);
+});
