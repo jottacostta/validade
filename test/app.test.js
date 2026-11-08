@@ -309,14 +309,9 @@ tflaky('conta: entra (usuário→e-mail interno), lista e escolhe a loja', { ski
 });
 
 tflaky('conta: sair invalida token e retorna à tela de login', { skip: pular }, async () => {
-  const a = await abrir({ url: URL_SUPA, chave: 'validade_sessao', dados: null });
+  const a = await abrir({ url: URL_SUPA, chave: 'validade_sessao', dados: { access_token: 'logout-token', refresh_token: 'logout-refresh', expira: Date.now()+3600000, usuario: 'joao', uid: 'u1', lojaId: 'L1', lojaNome: 'Bangu' } });
   let logoutAuthorization = '';
-  await a.p.route('**/auth/v1/token*', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ access_token: 'logout-token', refresh_token: 'logout-refresh', expires_in: 3600, user: { id: 'u1', email: 'joao@loja.validade' } }) }));
-  await a.p.route('**/rest/v1/lojas*', r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
   await a.p.route('**/auth/v1/logout', async r => { logoutAuthorization = r.request().headers().authorization || ''; await r.fulfill({ status: 204, body: '' }); });
-  await a.p.waitForSelector('#conta', { state: 'visible' });
-  await a.p.fill('#cUser', 'joao'); await a.p.fill('#cPass', '1234'); await a.p.click('#bEntrar');
-  await a.p.waitForFunction(() => !!localStorage.getItem('validade_sessao'));
   await a.p.click('#bLogoutHdr');
   await a.p.waitForFunction(() => localStorage.getItem('validade_sessao') === null);
   await a.p.waitForSelector('#conta-login', { state: 'visible' });
