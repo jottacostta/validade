@@ -20,7 +20,7 @@ returns trigger language plpgsql security definer set search_path=''
 as $$
 begin
   if new.created_by is null then new.created_by := auth.uid(); end if;
-  if auth.uid() is not null and new.created_by is distinct from auth.uid() then
+  if auth.uid() is not null and new.created_by is distinct from auth.uid() and not private.tem_escopo_global() then
     raise exception 'Não é permitido atribuir autoria a outro usuário';
   end if;
   return new;
