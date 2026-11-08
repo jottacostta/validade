@@ -12,9 +12,13 @@ create table if not exists public.solicitacoes_exclusao (
   revisor_id uuid references auth.users(id) on delete set null,
   resposta text,
   criado_em timestamptz not null default now(),
-  revisado_em timestamptz,
-  unique (loja_id, tipo, registro_id, solicitante_id, status)
+  revisado_em timestamptz
 );
+
+alter table public.solicitacoes_exclusao drop constraint if exists solicitacoes_exclusao_loja_id_tipo_registro_id_solicitante_id_status_key;
+create unique index if not exists solicitacoes_exclusao_pending_unique_idx
+  on public.solicitacoes_exclusao (loja_id, tipo, registro_id, solicitante_id)
+  where status = 'pendente';
 
 create index if not exists solicitacoes_exclusao_loja_status_idx
   on public.solicitacoes_exclusao (loja_id, status, criado_em desc);
