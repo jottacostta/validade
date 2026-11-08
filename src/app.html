@@ -781,7 +781,8 @@ function salvarTokenCosmos(v){
             function(){toast('⚠️ Não foi possível salvar o token na nuvem');});
   }else{D.aj.cosmos=v;salvar();toast(v?'Token do Cosmos salvo':'Token removido');}}
 function precisaLogin(){return sbOn()&&(!logado()||(SESS&&SESS.forcePasswordChange)||!SESS.lojaId);}
-function protegerVoltaPosLogout(){if(sbOn()&&!logado()){ir('reg');$('conta').classList.add('on');mostrarLoginForm();atualizarBotaoLogout();}}\nwindow.addEventListener('pageshow',protegerVoltaPosLogout);window.addEventListener('popstate',protegerVoltaPosLogout);
+function protegerVoltaPosLogout(){if(sbOn()&&!logado()){ir('reg');$('conta').classList.add('on');mostrarLoginForm();atualizarBotaoLogout();}}
+window.addEventListener('pageshow',protegerVoltaPosLogout);window.addEventListener('popstate',protegerVoltaPosLogout);
 function atualizarGate(){if(precisaLogin()){$('conta').classList.add('on');if(logado()){if(SESS.forcePasswordChange)mostrarTrocaSenhaPrimeiroAcesso();else mostrarLojas();}else mostrarLoginForm();}}
 function fdataHora(ms){try{var d=new Date(ms);return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
 function ehAdmin(){return papelAtual()==='admin';}
@@ -864,7 +865,8 @@ function revisarSolicitacaoExclusao(id,aprovar){
     .catch(function(e){toast(e.message||'Falha ao revisar solicitação');});
 }
 $('bSolicitacoesRefresh').onclick=carregarSolicitacoesExclusao;
-\n
+
+
 // ── CRUD de lojas (somente Administrador; RLS no Supabase) ──
 function carregarLojasAdmin(){
   var card=$('cardLojasAdmin');if(!card)return;var vis=sbOn()&&logado()&&ehAdmin();card.style.display=vis?'':'none';if(!vis)return;
