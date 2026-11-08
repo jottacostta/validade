@@ -79,10 +79,27 @@ begin
     execute format('create policy %I_ins on public.%I for insert to authenticated with check ((private.meu_papel() = ''admin'') or ((private.meu_papel() = any(array[''operador'',''assistente''])) and private.membro_da(loja_id)) or (private.tem_escopo_global() and private.meu_papel() <> ''admin''))',t,t);
     execute format('drop policy if exists %I_upd on public.%I',t,t);
     execute format('create policy %I_upd on public.%I for update to authenticated using ((private.meu_papel() = ''admin'') or (private.tem_escopo_global() and private.meu_papel() <> ''admin'') or (private.meu_papel() = ''assistente'' and private.membro_da(loja_id) and created_by = auth.uid()) or (private.meu_papel() = ''operador'' and private.membro_da(loja_id) and created_by = auth.uid())) with check ((private.meu_papel() = ''admin'') or (private.tem_escopo_global() and private.meu_papel() <> ''admin'') or (private.meu_papel() = ''assistente'' and private.membro_da(loja_id)) or (private.meu_papel() = ''operador'' and private.membro_da(loja_id) and created_by = auth.uid()))',t,t);
+    -- O app sincroniza exclusões por deleted_at/tombstone. Bloquear DELETE físico,
+    -- inclusive Admin, para não perder a informação no próximo pull.
     execute format('drop policy if exists %I_del on public.%I',t,t);
-    execute format('create policy %I_del on public.%I for delete to authenticated using (private.meu_papel() = ''admin'')',t,t);
+    execute format('revoke delete on public.%I from authenticated',t);
   end loop;
-end $$;
+end $;
+
+-- Ajustes são por loja (sem created_by); mantêm isolamento por loja.
+drop policy if exists ajustes_sel on public.ajustes;
+create policy ajustes_sel on public.ajustes for select to authenticated
+using (private.tem_escopo_global() or private.membro_da(loja_id));
+drop policy if exists ajustes_ins on public.ajustes;
+create policy ajustes_ins on public.ajustes for insert to authenticated
+with check (private.tem_escopo_global() or private.membro_da(loja_id));
+drop policy if exists ajustes_upd on public.ajustes;
+create policy ajustes_upd on public.ajustes for update to authenticated
+using (private.tem_escopo_global() or private.membro_da(loja_id))
+with check (private.tem_escopo_global() or private.membro_da(loja_id));
+drop policy if exists ajustes_del on public.ajustes;
+create policy ajustes_del on public.ajustes for delete to authenticated
+using (private.meu_papel()='admin');
 
 -- Store/admin and audit controls.
 drop policy if exists lojas_sel on public.lojas;
