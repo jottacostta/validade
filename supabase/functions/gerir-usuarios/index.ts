@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
       if (!lojas.length) return json({ error: "Escolha pelo menos uma loja." }, 400);
       if (lojas.some((id) => !permit.has(id))) return json({ error: "Você tentou atribuir loja sem permissão." }, 403);
       const email = usuario + "@" + dominio;
-      const { data: novo, error: cerr } = await admin.auth.admin.createUser({ email, password: senha, email_confirm: true, user_metadata: { nome } });
+      const { data: novo, error: cerr } = await admin.auth.admin.createUser({ email, password: senha, email_confirm: true, user_metadata: { nome }, app_metadata: { force_password_change: exigirTrocaSenha } });
       if (cerr || !novo?.user) {
         const dup = /already|exist|registered/i.test(cerr?.message || "");
         return json({ error: dup ? "Já existe um usuário com esse nome." : ("Não foi possível criar o usuário. " + (cerr?.message || "")) }, 400);
@@ -129,6 +129,18 @@ Deno.serve(async (req) => {
       if (membroErr) { await admin.auth.admin.deleteUser(uid); return json({ error: "Falha ao vincular usuário às lojas." }, 500); }
       await audit("criou_usuario", { usuario, papel, lojas: lojas.length });
       return json({ ok: true, id: uid });
+    }
+
+    if (acao === "trocar_senha_primeiro_acesso") {
+      const senha = String(body.senha || "");
+      const usuario = (caller.email || "").split("@")[0];
+      const appMeta = caller.app_metadata || {};
+      if (appMeta.force_password_change !== true) return json({ error: "Esta conta não está marcada para troca obrigatória de senha." }, 403);
+      const e1 = validarSenha(senha, usuario); if (e1) return json({ error: e1 }, 400);
+      const { error: trocaErr } = await admin.auth.admin.updateUserById(caller.id, { password: senha, app_metadata: { ...appMeta, force_password_change: false } });
+      if (trocaErr) return json({ error: "Não foi possível alterar a senha. " + trocaErr.message }, 400);
+      await audit("troca_senha_primeiro_acesso", {});
+      return json({ ok: true });
     }
 
     if (acao === "editar") {
