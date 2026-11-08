@@ -198,7 +198,12 @@ begin
   else v_old:=to_jsonb(old);v_new:=to_jsonb(new);
     if (v_old - 'updated_at') = (v_new - 'updated_at') then return new; end if;
   end if;
-  v_store := coalesce((v_new->>'loja_id')::uuid,(v_old->>'loja_id')::uuid);
+  -- A tabela lojas usa id como chave de loja; as demais usam loja_id.
+  if tg_table_name='lojas' then
+    v_store := coalesce((v_new->>'id')::uuid,(v_old->>'id')::uuid);
+  else
+    v_store := coalesce((v_new->>'loja_id')::uuid,(v_old->>'loja_id')::uuid);
+  end if;
   select coalesce(nullif(trim(p.nome),''),u.email,auth.uid()::text),p.papel
     into v_user,v_role from auth.users u left join public.perfis p on p.id=u.id where u.id=auth.uid();
   if v_store is not null then select nome into v_store_name from public.lojas where id=v_store; end if;
