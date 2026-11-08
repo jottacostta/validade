@@ -3,7 +3,8 @@
 create table if not exists public.solicitacoes_exclusao (
   id uuid primary key default gen_random_uuid(),
   loja_id uuid not null references public.lojas(id) on delete cascade,
-  solicitante_id uuid references auth.users(id) on delete set null,\n  solicitante_nome text not null default '',
+  solicitante_id uuid references auth.users(id) on delete set null,
+  solicitante_nome text not null default '',
   tipo text not null check (tipo in ('produto','lote','pere_item','pere_reg')),
   registro_id text not null,
   motivo text not null check (length(trim(motivo)) between 3 and 1000),
