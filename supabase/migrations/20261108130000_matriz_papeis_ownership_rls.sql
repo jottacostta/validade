@@ -17,7 +17,7 @@ alter table public.pere_regs add column if not exists created_by uuid references
 
 create or replace function private.set_created_by()
 returns trigger language plpgsql security definer set search_path=''
-as $
+as $$
 begin
   if tg_op = 'INSERT' then
     if auth.uid() is not null then
@@ -31,7 +31,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 revoke all on function private.set_created_by() from public, anon, authenticated;
 
 do $$
@@ -79,10 +79,27 @@ begin
     execute format('create policy %I_ins on public.%I for insert to authenticated with check ((private.meu_papel() = ''admin'') or ((private.meu_papel() = any(array[''operador'',''assistente''])) and private.membro_da(loja_id)) or (private.tem_escopo_global() and private.meu_papel() <> ''admin''))',t,t);
     execute format('drop policy if exists %I_upd on public.%I',t,t);
     execute format('create policy %I_upd on public.%I for update to authenticated using ((private.meu_papel() = ''admin'') or (private.tem_escopo_global() and private.meu_papel() <> ''admin'') or (private.meu_papel() = ''assistente'' and private.membro_da(loja_id) and created_by = auth.uid()) or (private.meu_papel() = ''operador'' and private.membro_da(loja_id) and created_by = auth.uid())) with check ((private.meu_papel() = ''admin'') or (private.tem_escopo_global() and private.meu_papel() <> ''admin'') or (private.meu_papel() = ''assistente'' and private.membro_da(loja_id)) or (private.meu_papel() = ''operador'' and private.membro_da(loja_id) and created_by = auth.uid()))',t,t);
+    -- O app sincroniza exclusões por deleted_at/tombstone. Bloquear DELETE físico,
+    -- inclusive Admin, para não perder a informação no próximo pull.
     execute format('drop policy if exists %I_del on public.%I',t,t);
-    execute format('create policy %I_del on public.%I for delete to authenticated using (private.meu_papel() = ''admin'')',t,t);
+    execute format('revoke delete on public.%I from authenticated',t);
   end loop;
 end $$;
+
+-- Ajustes são por loja (sem created_by); mantêm isolamento por loja.
+drop policy if exists ajustes_sel on public.ajustes;
+create policy ajustes_sel on public.ajustes for select to authenticated
+using (private.tem_escopo_global() or private.membro_da(loja_id));
+drop policy if exists ajustes_ins on public.ajustes;
+create policy ajustes_ins on public.ajustes for insert to authenticated
+with check (private.tem_escopo_global() or private.membro_da(loja_id));
+drop policy if exists ajustes_upd on public.ajustes;
+create policy ajustes_upd on public.ajustes for update to authenticated
+using (private.tem_escopo_global() or private.membro_da(loja_id))
+with check (private.tem_escopo_global() or private.membro_da(loja_id));
+drop policy if exists ajustes_del on public.ajustes;
+create policy ajustes_del on public.ajustes for delete to authenticated
+using (private.meu_papel()='admin');
 
 -- Store/admin and audit controls.
 drop policy if exists lojas_sel on public.lojas;
@@ -139,9 +156,12 @@ begin
       update public.pere_itens set deleted_at=now() where loja_id=r.loja_id and cod=r.registro_id and deleted_at is null;
       if not found then raise exception 'Código perecível já removido ou não encontrado'; end if;
       update public.pere_regs set deleted_at=now() where loja_id=r.loja_id and cod=r.registro_id and deleted_at is null;
-    elsif r.tipo='pere_reg' then update public.pere_regs set deleted_at=now() where loja_id=r.loja_id and id=r.registro_id and deleted_at is null;
+    elsif r.tipo='pere_reg' then
+      update public.pere_regs set deleted_at=now() where loja_id=r.loja_id and id=r.registro_id and deleted_at is null;
+      if not found then raise exception 'Registro perecível já removido ou não encontrado'; end if;
+    else
+      raise exception 'Tipo de registro inválido para exclusão: %', r.tipo;
     end if;
-    if r.tipo not in ('produto','pere_item') and not found then raise exception 'Registro já removido ou não encontrado'; end if;
   end if;
   update public.solicitacoes_exclusao set status=case when p_aprovar then 'aprovada' else 'rejeitada' end,
     revisor_id=auth.uid(),resposta=nullif(trim(p_resposta),''),revisado_em=now() where id=p_id;
@@ -181,7 +201,12 @@ begin
   else v_old:=to_jsonb(old);v_new:=to_jsonb(new);
     if (v_old - 'updated_at') = (v_new - 'updated_at') then return new; end if;
   end if;
-  v_store := coalesce((v_new->>'loja_id')::uuid,(v_old->>'loja_id')::uuid);
+  -- A tabela lojas usa id como chave de loja; as demais usam loja_id.
+  if tg_table_name='lojas' then
+    v_store := coalesce((v_new->>'id')::uuid,(v_old->>'id')::uuid);
+  else
+    v_store := coalesce((v_new->>'loja_id')::uuid,(v_old->>'loja_id')::uuid);
+  end if;
   select coalesce(nullif(trim(p.nome),''),u.email,auth.uid()::text),p.papel
     into v_user,v_role from auth.users u left join public.perfis p on p.id=u.id where u.id=auth.uid();
   if v_store is not null then select nome into v_store_name from public.lojas where id=v_store; end if;
@@ -195,14 +220,14 @@ end;
 $fn$;
 revoke all on function private.audit_mutation() from public,anon,authenticated;
 
-do $
+do $$
 declare t text;
 begin
   foreach t in array array['produtos','lotes','pere_itens','pere_regs','ajustes','catalogo','lojas'] loop
     execute format('drop trigger if exists %I_audit on public.%I',t,t);
     execute format('create trigger %I_audit after insert or update or delete on public.%I for each row execute function private.audit_mutation()',t,t);
   end loop;
-end $;
+end $$;
 
 -- Prevent client from forging creator or editing audit identity.
 create or replace function private.proteger_auditoria()
