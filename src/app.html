@@ -434,7 +434,7 @@ function lotesDoAtual(){var p=D.prod[atual];if(!p||!p.lotes.length){$('pLotes').
   $('pLotes').innerHTML='<table><tr><th>Lote</th><th>Qtd</th><th>Validade</th><th></th></tr>'+ordenar(p.lotes).map(function(l){return '<tr data-id="'+l.id+'" data-ean="'+atual+'"><td><b>'+esc(l.lote||'—')+'</b></td><td>'+l.qtd+'</td><td>'+fdata(l.val)+'</td><td style="text-align:right">'+status(l.val)+'</td></tr>';}).join('')+'</table>';}
 function ordenar(ls){return ls.slice().sort(function(a,b){return (a.val||'9').localeCompare(b.val||'9');});}
 document.addEventListener('click',function(e){var tr=e.target.closest('tr[data-id][data-ean]');if(!tr)return;var p=D.prod[tr.dataset.ean],l=p&&p.lotes.filter(function(x){return x.id===tr.dataset.id;})[0];if(!l)return;
-  var proprio=!!(SESS&&SESS.uid&&l.created_by===SESS.uid),podeEditar= pode('editar') || (papelAtual()==='operador'&&proprio);
+  var proprio=!!(SESS&&SESS.uid&&l.created_by===SESS.uid),papel=papelAtual(),podeEditar=['analista','gerente','admin'].includes(papel) || (['operador','assistente'].includes(papel)&&proprio);
   if(!podeEditar){toast('Você só pode editar suas próprias inserções');return;}
   var q=prompt('Lote '+(l.lote||'—')+' • validade '+fdata(l.val)+'\n\nQuantidade (0 solicita exclusão):',l.qtd);if(q===null)return;q=num(q);
   if(q<=0){if(sbOn()&&logado()){solicitarExclusao('lote',l.id).then(function(ok){if(ok)carregarSolicitacoesExclusao();});return;}
@@ -728,7 +728,7 @@ $('bSairConta').onclick=sairParaLogin;
 $('bLogoutHdr').onclick=function(){if(!logado())return;if(confirm('Sair da conta?'))sairParaLogin();};
 var PAPEIS={operador:'Operador',assistente:'Assistente',analista:'Analista',gerente:'Gerente',admin:'Administrador'};
 function papelAtual(){return (sbOn()&&SESS&&SESS.papel)||(sbOn()?'operador':'admin');}
-function pode(acao){var p=papelAtual();if(p==='admin'||p==='gerente')return true;
+function pode(acao){var p=papelAtual();if(p==='admin')return true;
   if(acao==='registrar')return p==='operador'||p==='assistente';
   if(acao==='editar'||acao==='ajustes'||acao==='codigos')return p==='assistente'||p==='analista';
   if(acao==='admin')return false;return true;}
