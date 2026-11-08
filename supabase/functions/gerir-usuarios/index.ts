@@ -17,7 +17,7 @@ const json = (body: unknown, status = 200) =>
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const PAPEIS = ["operador", "assistente", "analista", "admin"];
+const PAPEIS = ["operador", "assistente", "analista", "gerente", "admin"];
 const COMUNS = ["123456","1234567","12345678","123456789","senha","password","qwerty","111111","000000","abc123","admin123","guanabara"];
 
 const validarUsuario = (u: string) => /^[a-z0-9._-]{3,30}$/.test(u);
@@ -44,8 +44,10 @@ Deno.serve(async (req) => {
   if (perfilCallerErr || !perfilCaller) return json({ error: "Perfil do usuário não encontrado." }, 403);
   const papelCaller = perfilCaller.papel || "operador";
   const ehAdmin = papelCaller === "admin";
-  const podeCriar = ["assistente", "analista", "admin"].includes(papelCaller);
-  const podeEditar = ["analista", "admin"].includes(papelCaller);
+  const ehGerente = papelCaller === "gerente";
+  const ehAnalista = papelCaller === "analista";
+  const podeCriar = ["assistente", "analista", "gerente", "admin"].includes(papelCaller);
+  const podeEditar = ["analista", "gerente", "admin"].includes(papelCaller);
 
   let body: Record<string, unknown> = {};
   try { body = await req.json(); } catch { return json({ error: "Requisição inválida" }, 400); }
@@ -62,7 +64,7 @@ Deno.serve(async (req) => {
     } catch { /* auditoria é best-effort */ }
   };
   const lojasPermitidas = async (): Promise<Set<string>> => {
-    if (ehAdmin || papelCaller === "analista") {
+    if (["admin", "gerente", "analista"].includes(papelCaller)) {
       const { data } = await admin.from("lojas").select("id");
       return new Set((data || []).map((l: { id: string }) => l.id));
     }
@@ -83,7 +85,7 @@ Deno.serve(async (req) => {
       const { data: lojas, error: lojasErr } = await admin.from("lojas").select("id, nome").order("nome");
       if (membrosErr || lojasErr) return json({ error: "Falha ao consultar lojas e vínculos." }, 500);
       const permitidas = await lojasPermitidas();
-      const perfisVisiveis = ehAdmin || papelCaller === "analista" ? (perfis || []) : (perfis || []).filter((p: { id: string }) => (membros || []).some((m: { user_id: string; loja_id: string }) => m.user_id === p.id && permitidas.has(m.loja_id)));
+      const perfisVisiveis = ["admin", "gerente", "analista"].includes(papelCaller) ? (perfis || []) : (perfis || []).filter((p: { id: string }) => (membros || []).some((m: { user_id: string; loja_id: string }) => m.user_id === p.id && permitidas.has(m.loja_id)));
       const nomeLoja: Record<string, string> = {};
       for (const l of (lojas || [])) nomeLoja[l.id] = l.nome;
       const porUser: Record<string, { id: string; nome: string }[]> = {};
@@ -91,7 +93,7 @@ Deno.serve(async (req) => {
       const usuarios = perfisVisiveis.map((p: { id: string; nome: string; papel: string }) => ({
         id: p.id, nome: p.nome || "", papel: p.papel,
         usuario: (emailPorId[p.id] || "").split("@")[0],
-        lojas: (porUser[p.id] || []).filter((l) => ehAdmin || papelCaller === "analista" || permitidas.has(l.id)),
+        lojas: (porUser[p.id] || []).filter((l) => ["admin", "gerente", "analista"].includes(papelCaller) || permitidas.has(l.id)),
       })).sort((a, b) => (a.usuario || "").localeCompare(b.usuario || ""));
       return json({ usuarios, lojas: (lojas || []).filter((l: { id: string }) => permitidas.has(l.id)), euPapel: papelCaller });
     }
@@ -108,9 +110,11 @@ Deno.serve(async (req) => {
       if (!nome) return json({ error: "Informe o nome do usuário." }, 400);
       const e1 = validarSenha(senha, usuario); if (e1) return json({ error: e1 }, 400);
       if (!PAPEIS.includes(papel)) return json({ error: "Papel inválido." }, 400);
-      if (papel !== "operador" && !ehAdmin) return json({ error: "Somente admin define papéis diferentes de Operador." }, 403);
+      if (papel !== "operador" && !(ehAdmin || ehGerente || ehAnalista)) return json({ error: "Seu perfil só pode criar operadores." }, 403);
+      if ((ehAnalista || ehGerente) && !["operador", "assistente"].includes(papel)) return json({ error: "Analista/Gerente só pode criar operadores e assistentes." }, 403);
       const permit = await lojasPermitidas();
       lojas = [...new Set(lojas)];
+      if (papelCaller === "assistente" && (permit.size !== 1 || lojas.length !== 1 || !permit.has(lojas[0]))) return json({ error: "Assistente só pode cadastrar operador na sua única loja vinculada." }, 403);
       if (!lojas.length) return json({ error: "Escolha pelo menos uma loja." }, 400);
       if (lojas.some((id) => !permit.has(id))) return json({ error: "Você tentou atribuir loja sem permissão." }, 403);
       const email = usuario + "@" + dominio;
@@ -132,14 +136,9 @@ Deno.serve(async (req) => {
       const senha = String(body.senha || "");
       const usuario = (caller.email || "").split("@")[0];
       const appMeta = caller.app_metadata || {};
-      if (appMeta.force_password_change !== true) {
-        return json({ error: "Esta conta não está marcada para troca obrigatória de senha." }, 403);
-      }
+      if (appMeta.force_password_change !== true) return json({ error: "Esta conta não está marcada para troca obrigatória de senha." }, 403);
       const e1 = validarSenha(senha, usuario); if (e1) return json({ error: e1 }, 400);
-      const { error: trocaErr } = await admin.auth.admin.updateUserById(caller.id, {
-        password: senha,
-        app_metadata: { ...appMeta, force_password_change: false },
-      });
+      const { error: trocaErr } = await admin.auth.admin.updateUserById(caller.id, { password: senha, app_metadata: { ...appMeta, force_password_change: false } });
       if (trocaErr) return json({ error: "Não foi possível alterar a senha. " + trocaErr.message }, 400);
       await audit("troca_senha_primeiro_acesso", {});
       return json({ ok: true });
@@ -158,7 +157,9 @@ Deno.serve(async (req) => {
       const papel = body.papel != null ? String(body.papel) : null;
       const lojas = Array.isArray(body.lojas) ? (body.lojas as unknown[]).map(String) : null;
 
-      if ((papel != null || lojas != null) && !ehAdmin) return json({ error: "Somente admin altera papel ou lojas." }, 403);
+      if ((papel != null || lojas != null) && !(ehAdmin || ehAnalista || ehGerente)) return json({ error: "Seu perfil não pode alterar papel ou lojas." }, 403);
+      if ((ehAnalista || ehGerente) && papel != null && !["operador", "assistente"].includes(papel)) return json({ error: "Analista/Gerente só pode atribuir Operador ou Assistente." }, 403);
+      if ((ehAnalista || ehGerente) && ["analista", "gerente", "admin"].includes(alvo.papel)) return json({ error: "Não pode administrar usuários com papel igual ou superior." }, 403);
       if (papel != null && !PAPEIS.includes(papel)) return json({ error: "Papel inválido." }, 400);
       if (papel != null && alvo.papel === "admin" && papel !== "admin") {
         const { count } = await admin.from("perfis").select("id", { count: "exact", head: true }).eq("papel", "admin");
@@ -193,7 +194,16 @@ Deno.serve(async (req) => {
     }
 
     if (acao === "excluir") {
-      if (!ehAdmin) return json({ error: "Somente admin pode excluir usuários." }, 403);
+      if (!(ehAdmin || ehGerente)) return json({ error: "Somente Gerente ou Administrador pode excluir usuários." }, 403);
+      if (ehGerente) {
+        const { data: targetStores } = await admin.from("loja_membros").select("loja_id").eq("user_id", String(body.id || ""));
+        const allowedStores = await lojasPermitidas();
+        if (!targetStores || targetStores.length === 0) return json({ error: "Não é possível excluir usuário sem vínculo de loja; valide o cadastro com Administrador." }, 403);
+        if (targetStores.some((m: { loja_id: string }) => !allowedStores.has(m.loja_id))) return json({ error: "Gerente não pode excluir usuário de loja fora do seu escopo." }, 403);
+        const { data: targetProfile, error: targetProfileErr } = await admin.from("perfis").select("papel").eq("id", String(body.id || "")).single();
+        if (targetProfileErr || !targetProfile) return json({ error: "Perfil do usuário alvo não encontrado." }, 404);
+        if (["admin", "gerente"].includes(targetProfile.papel)) return json({ error: "Gerente não pode excluir Administrador ou outro Gerente." }, 403);
+      }
       const id = String(body.id || "");
       if (!id) return json({ error: "Usuário não informado." }, 400);
       if (id === caller.id) return json({ error: "Você não pode excluir a própria conta." }, 400);

@@ -196,21 +196,22 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
   </div>
   <div class="card" id="cardConta" style="display:none"><h2>Conta e sincronização</h2><div id="contaInfo"></div></div>
   <div class="card" id="cardAuditoria" style="display:none"><h2>Auditoria <span class="ean">(somente admin)</span></h2><div id="listaAud"></div><button class="btn sec" id="bAudRefresh" style="margin-top:10px">🔄 Atualizar</button></div>
+  <div class="card" id="cardSolicitacoes" style="display:none"><h2>Solicitações de exclusão</h2><p style="font-size:13px;color:var(--mu)">Solicitações pendentes e histórico de revisão. Exclusões aprovadas são tombstones sincronizados.</p><div id="listaSolicitacoes"><div class="vazio">Carregando…</div></div><button class="btn sec" id="bSolicitacoesRefresh" style="margin-top:10px">Atualizar solicitações</button></div>
   <div class="card" id="cardUsuarios" style="display:none">
     <h2>Gestão de usuários <span class="ean">(assistente, analista e admin)</span></h2>
     <p style="font-size:13px;color:var(--mu)">Contas de acesso ao sistema. As permissões são validadas no servidor.</p>
     <div id="usuariosForm">
       <label class="f" for="uUsuario">Usuário (login)</label><input id="uUsuario" autocomplete="off" autocapitalize="none" placeholder="ex.: joao.silva">
       <label class="f" for="uNome">Nome completo</label><input id="uNome" autocomplete="name">
-      <label class="f" for="uSenha">Senha inicial</label><input id="uSenha" type="password" autocomplete="new-password">
-      <label style="display:flex;align-items:center;gap:9px;margin:8px 0 12px"><input id="uTrocaSenha" type="checkbox" style="width:18px;height:18px"> <span>Exigir troca de senha no primeiro acesso</span></label>
-      <label class="f" for="uPapel">Papel</label><select id="uPapel"><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="admin">Administrador</option></select>
+      <label class="f" for="uSenha">Senha inicial</label><input id="uSenha" type="password" autocomplete="new-password"><label style="display:flex;align-items:center;gap:9px;margin:8px 0 12px"><input id="uTrocaSenha" type="checkbox" style="width:18px;height:18px"> <span>Exigir troca de senha no primeiro acesso</span></label>
+      <label class="f" for="uPapel">Papel</label><select id="uPapel"><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option><option value="admin">Administrador</option></select>
       <div class="f">Lojas vinculadas</div><div id="uLojas" class="row" style="flex-wrap:wrap"></div>
       <button class="btn big" id="bUsuarioCriar" style="margin-top:12px">Criar usuário</button>
     </div>
     <div class="row" style="margin-top:12px"><button class="btn sec" id="bUsuarioRefresh">Atualizar lista</button></div>
     <div id="listaUsuarios" style="margin-top:12px"><div class="vazio">Carregue a lista para começar.</div></div>
   </div>
+  <div class="card" id="cardLojasAdmin" style="display:none"><h2>Administração de lojas</h2><p style="font-size:13px;color:var(--mu)">Cadastro global de unidades (Administrador).</p><label class="f" for="lojaNovaNome">Nome da loja</label><input id="lojaNovaNome" placeholder="ex.: Filial 31"><button class="btn big" id="bLojaNova" style="margin-top:8px">Criar loja</button><div id="listaLojasAdmin" style="margin-top:12px"></div><button class="btn sec" id="bLojasAdminRefresh" style="margin-top:8px">Atualizar lojas</button></div>
   <div class="card"><h2>Backup</h2>
     <div class="row"><button class="btn sec" id="bExp">💾 Exportar backup</button><label class="btn sec" for="fImp">📥 Importar backup</label></div>
     <input type="file" id="fImp" accept=".json,application/json" style="display:none">
@@ -227,15 +228,11 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
 </nav>
 
 <div id="modalEditarUsuario" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloEditarUsuario">
-  <div class="box">
-    <h2 id="tituloEditarUsuario">Editar usuário</h2>
+  <div class="box"><h2 id="tituloEditarUsuario">Editar usuário</h2>
     <label class="f" for="editarNome">Nome completo</label><input id="editarNome" autocomplete="name">
     <label class="f" for="editarSenha">Nova senha (deixe em branco para manter)</label><input id="editarSenha" type="password" autocomplete="new-password">
-    <div id="editarPapelWrap"><label class="f" for="editarPapel">Papel</label><select id="editarPapel"><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="admin">Administrador</option></select></div>
-    <div id="editarLojasWrap"><div class="f">Lojas vinculadas</div>
-      <input id="editarLojasBusca" type="search" placeholder="Buscar loja (FL01, DEP99…)" aria-label="Buscar loja">
-      <div id="editarLojasAcoes"><button type="button" class="btn sec" id="editarMarcarVisiveis">Marcar lojas visíveis</button><button type="button" class="btn sec" id="editarDesmarcarVisiveis">Desmarcar visíveis</button></div>
-      <div id="editarLojasResumo"></div><div id="editarLojas"></div></div>
+    <div id="editarPapelWrap"><label class="f" for="editarPapel">Papel</label><select id="editarPapel"><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option><option value="admin">Administrador</option></select></div>
+    <div id="editarLojasWrap"><div class="f">Lojas vinculadas</div><input id="editarLojasBusca" type="search" placeholder="Buscar loja"><div id="editarLojasAcoes"><button type="button" class="btn sec" id="editarMarcarVisiveis">Marcar lojas visíveis</button><button type="button" class="btn sec" id="editarDesmarcarVisiveis">Desmarcar visíveis</button></div><div id="editarLojasResumo"></div><div id="editarLojas"></div></div>
     <div class="row" style="margin-top:14px"><button class="btn sec" id="cancelarEditarUsuario">Cancelar</button><button class="btn" id="salvarEditarUsuario">Salvar alterações</button></div>
   </div>
 </div>
@@ -259,14 +256,7 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
     <div id="cErro" class="aviso da" style="display:none;margin-top:4px;margin-bottom:12px"></div>
     <button class="btn big" id="bEntrar">Entrar</button>
   </div>
-  <div id="conta-trocaSenha" style="display:none">
-    <h2>Primeiro acesso</h2><p style="color:rgba(255,255,255,.82)">Por segurança, crie uma nova senha para continuar.</p>
-    <div class="gate-field"><input id="cNovaSenha" type="password" autocomplete="new-password" placeholder="Nova senha" aria-label="Nova senha"></div>
-    <div class="gate-field"><input id="cConfirmaSenha" type="password" autocomplete="new-password" placeholder="Confirme a nova senha" aria-label="Confirme a nova senha"></div>
-    <div id="cTrocaErro" class="aviso da" style="display:none;margin-bottom:12px"></div>
-    <button class="btn big" id="bTrocarSenhaPrimeiroAcesso">Alterar senha</button><button class="btn sec big" id="bSairTrocaSenha" style="margin-top:8px">Sair</button>
-  </div>
-  <div id="conta-lojas" style="display:none">
+  <div id="conta-trocaSenha" style="display:none"><h2>Primeiro acesso</h2><p style="color:rgba(255,255,255,.82)">Por segurança, crie uma nova senha para continuar.</p><div class="gate-field"><input id="cNovaSenha" type="password" autocomplete="new-password" placeholder="Nova senha" aria-label="Nova senha"></div><div class="gate-field"><input id="cConfirmaSenha" type="password" autocomplete="new-password" placeholder="Confirme a nova senha" aria-label="Confirme a nova senha"></div><div id="cTrocaErro" class="aviso da" style="display:none;margin-bottom:12px"></div><button class="btn big" id="bTrocarSenhaPrimeiroAcesso">Alterar senha</button><button class="btn sec big" id="bSairTrocaSenha" style="margin-top:8px">Sair</button></div><div id="conta-lojas" style="display:none">
     <h2>Escolha a loja</h2>
     <label class="f" for="selectLoja" style="color:rgba(255,255,255,.8)">Selecione uma unidade na lista</label>
     <select id="selectLoja" aria-label="Selecionar loja" disabled><option value="">Carregando lojas…</option></select>
@@ -480,7 +470,7 @@ function upcE(c){var s=c[0],d=c.substr(1,6),u=d[5],m;
   else if(u==='4')m=d[0]+d[1]+d[2]+d[3]+'00000'+d[4];else m=d.substr(0,5)+'0000'+u;
   return s+m+c[7];}
 function salvar(){try{localStorage.setItem(K,JSON.stringify(D));}catch(e){toast('⚠️ Não foi possível salvar');}agendarBackup();}
-function detalheProduto(ean){return D.cat[ean]||{nome:'',marca:'',img:''};}
+function detalheProduto(ean){var cat=D.cat[ean]||{nome:'',marca:'',img:''},p=D.prod[ean];return p&&p.desc?Object.assign({},cat,{nome:p.desc}):cat;}
 function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 var tt;function toast(m){var t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(function(){t.classList.remove('on');},2200);}
 function vib(ms){try{navigator.vibrate&&navigator.vibrate(ms||40);}catch(e){}}
@@ -500,7 +490,7 @@ mostrarDias();
 /* ───── navegação ───── */
 function ir(v){document.querySelectorAll('.vista').forEach(function(s){s.classList.toggle('on',s.id==='v-'+v);});
   document.querySelectorAll('#abas button').forEach(function(b){b.classList.toggle('on',b.dataset.v===v);});
-  if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='aj')ajustes();window.scrollTo(0,0);}
+  if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='aj'){ajustes();carregarSolicitacoesExclusao();}window.scrollTo(0,0);}
 $('abas').onclick=function(e){var b=e.target.closest('button');if(b)ir(b.dataset.v);};
 window.aoVoltarAndroid=function(){if($('scanner').classList.contains('on')){fecharScanner();return true;}
   var on=document.querySelector('#abas button.on');if(on&&on.dataset.v!=='reg'){ir('reg');return true;}return false;};
@@ -610,19 +600,25 @@ $('bBuscar').onclick=function(){var c=$('tCodigo').value.replace(/\D/g,'');if(c)
 $('tCodigo').onkeydown=function(e){if(e.key==='Enter')$('bBuscar').click();};
 $('bSalvarLote').onclick=function(){if(!pode('registrar')){toast('Seu perfil não registra produtos');return;}if(!atual)return;var nome=$('pNome').value.trim(),lote=$('pLote').value.trim().toUpperCase(),qtd=num($('pQtd').value),val=$('pVal').value;
   if(!nome){toast('Digite o nome do produto');$('pNome').focus();return;}if(!val){toast('Informe a validade');$('pVal').focus();return;}
-  var p=D.prod[atual]||(D.prod[atual]={lotes:[]});
+  var p=D.prod[atual]||(D.prod[atual]={lotes:[],created_by:SESS&&SESS.uid||null});if(!p.created_by&&SESS&&SESS.uid)p.created_by=SESS.uid;
   catalogar(atual,{nome:nome});
   var ex=null;p.lotes.forEach(function(l){if(l.lote===lote&&l.val===val)ex=l;});
   if(ex){var q=prompt('O lote '+(lote||'sem número')+' (validade '+fdata(val)+') já tem '+ex.qtd+' un. e você informou '+qtd+'.\n\nQuantidade final do lote — já vem somada; troque se quiser substituir:',ex.qtd+qtd);
-    if(q===null){toast('Nada alterado');return;}ex.qtd=num(q);ex.atualizado=Date.now();toast('Lote com '+ex.qtd+' un. ✔');auditar('editou_lote',{ean:atual,lote:lote,qtd:ex.qtd});}else{ex={id:uid(),lote:lote,qtd:qtd,val:val,criado:Date.now()};p.lotes.push(ex);toast('Lote salvo ✔');auditar('registrou_lote',{ean:atual,lote:lote,qtd:qtd,val:val});}
+    if(q===null){toast('Nada alterado');return;}ex.qtd=num(q);ex.atualizado=Date.now();toast('Lote com '+ex.qtd+' un. ✔');auditar('editou_lote',{ean:atual,lote:lote,qtd:ex.qtd});}else{ex={id:uid(),lote:lote,qtd:qtd,val:val,criado:Date.now(),created_by:SESS&&SESS.uid||null};p.lotes.push(ex);toast('Lote salvo ✔');auditar('registrou_lote',{ean:atual,lote:lote,qtd:qtd,val:val});}
   salvar();lembrete(ex,nome);vib(40);$('pLote').value='';$('pQtd').value='';$('pVal').value='';lotesDoAtual();$('pLote').focus();};
 function lotesDoAtual(){var p=D.prod[atual];if(!p||!p.lotes.length){$('pLotes').innerHTML='';return;}
   $('pLotes').innerHTML='<table><tr><th>Lote</th><th>Qtd</th><th>Validade</th><th></th></tr>'+ordenar(p.lotes).map(function(l){return '<tr data-id="'+l.id+'" data-ean="'+atual+'"><td><b>'+esc(l.lote||'—')+'</b></td><td>'+l.qtd+'</td><td>'+fdata(l.val)+'</td><td style="text-align:right">'+status(l.val)+'</td></tr>';}).join('')+'</table>';}
 function ordenar(ls){return ls.slice().sort(function(a,b){return (a.val||'9').localeCompare(b.val||'9');});}
-document.addEventListener('click',function(e){var tr=e.target.closest('tr[data-id][data-ean]');if(!tr)return;var p=D.prod[tr.dataset.ean],l=p&&p.lotes.filter(function(x){return x.id===tr.dataset.id;})[0];if(!l)return;if(!pode('editar')){toast('Seu perfil não edita lotes');return;}
-  var q=prompt('Lote '+(l.lote||'—')+' • validade '+fdata(l.val)+'\n\nNova quantidade (0 para apagar o lote):',l.qtd);if(q===null)return;q=num(q);
-  if(q<=0){if(confirm('Apagar este lote?')){p.lotes=p.lotes.filter(function(x){return x!==l;});cancelarLembrete(l.id);auditar('apagou_lote',{ean:tr.dataset.ean,lote:l.lote});if(!p.lotes.length&&confirm('O produto ficou sem lotes. Remover o produto da lista?'))delete D.prod[tr.dataset.ean];}}
-  else l.qtd=q;salvar();lotesDoAtual();listaProdutos();});
+document.addEventListener('click',function(e){var tr=e.target.closest('tr[data-id][data-ean]');if(!tr)return;var p=D.prod[tr.dataset.ean],l=p&&p.lotes.filter(function(x){return x.id===tr.dataset.id;})[0];if(!l)return;
+  var proprio=!!(SESS&&SESS.uid&&l.created_by===SESS.uid),papel=papelAtual(),podeEditar=['analista','gerente','admin'].includes(papel) || (['operador','assistente'].includes(papel)&&proprio);
+  if(!podeEditar){toast('Você só pode editar suas próprias inserções');return;}
+  var q=prompt('Lote '+(l.lote||'—')+' • validade '+fdata(l.val)+'\n\nQuantidade (0 solicita exclusão):',l.qtd);if(q===null)return;q=num(q);
+  if(q<=0){if(ehAdmin()){if(confirm('Excluir este lote como Administrador?'))adminExcluirRegistro('lote',l.id);return;}if(sbOn()&&logado()){solicitarExclusao('lote',l.id).then(function(ok){if(ok)carregarSolicitacoesExclusao();});return;}
+    if(confirm('Excluir lote localmente?')){p.lotes=p.lotes.filter(function(x){return x!==l;});cancelarLembrete(l.id);auditar('apagou_lote',{ean:tr.dataset.ean,lote:l.lote});}}
+  else {l.qtd=q;var val=prompt('Validade (AAAA-MM-DD):',l.val||'');if(val!==null&&/^\\d{4}-\\d{2}-\\d{2}$/.test(val))l.val=val;
+    var desc=prompt('Descrição do produto:',(p.desc||detalheProduto(tr.dataset.ean).nome||''));if(desc!==null&&desc.trim())p.desc=desc.trim();
+    l.atualizado=Date.now();auditar('editou_lote_proprio',{ean:tr.dataset.ean,id:l.id,qtd:q,val:l.val,descricao:p.desc||''});}
+  salvar();lotesDoAtual();listaProdutos();});
 
 /* ───── lista de produtos ───── */
 var filtro='todos';
@@ -633,7 +629,7 @@ function listaProdutos(){var q=$('qProd').value.toLowerCase(),nP=0,nL=0,nV=0,nA=
   Object.keys(D.prod).forEach(function(ean){var p=D.prod[ean],c=detalheProduto(ean);nP++;p.lotes.forEach(function(l){nL++;var n=dias(l.val);if(n!==null&&n<0)nV++;else if(n!==null&&n<=D.aj.dias)nA++;});
     var ls=ordenar(p.lotes).filter(passa);if(q&&((c.nome||'')+' '+ean+' '+p.lotes.map(function(l){return l.lote;}).join(' ')).toLowerCase().indexOf(q)<0)return;if(!ls.length&&filtro!=='todos')return;
     var tot=p.lotes.reduce(function(t,l){return t+(+l.qtd||0);},0),pior=ls.reduce(function(m,l){return Math.max(m,nivel(l.val));},0);
-    cards.push({ord:ls[0]?ls[0].val:'9',h:'<div class="card"><div class="prod">'+(c.img?'<img src="'+esc(c.img)+'" alt="" onerror="this.style.display=\'none\'">':'')+'<div style="flex:1;min-width:0"><b>'+esc(c.nome||ean)+'</b><div class="ean">'+ean+' • '+tot+' un.</div></div>'+(pior===3?'<span class="st da">⚠️</span>':pior===2?'<span class="st wa">⏰</span>':'')+'</div>'
+    cards.push({ord:ls[0]?ls[0].val:'9',h:'<div class="card"><div class="prod">'+(c.img?'<img src="'+esc(c.img)+'" alt="" onerror="this.style.display=\'none\'">':'')+'<div style="flex:1;min-width:0"><b>'+esc(c.nome||ean)+'</b><div class="ean">'+ean+' • '+tot+' un.</div></div>'+(pior===3?'<span class="st da">⚠️</span>':pior===2?'<span class="st wa">⏰</span>':'')+'</div><button class="btn sec" data-delete-product="'+ean+'" style="margin-top:8px;width:100%">Solicitar exclusão do produto</button>'
       +'<table><tr><th>Lote</th><th>Qtd</th><th>Validade</th><th></th></tr>'+ls.map(function(l){return '<tr data-id="'+l.id+'" data-ean="'+ean+'"><td><b>'+esc(l.lote||'—')+'</b></td><td>'+l.qtd+'</td><td>'+fdata(l.val)+'</td><td style="text-align:right">'+status(l.val)+'</td></tr>';}).join('')+'</table></div>'});});
   cards.sort(function(a,b){return a.ord.localeCompare(b.ord);});
   $('listaProd').innerHTML=cards.map(function(c){return c.h;}).join('')||'<div class="vazio">'+(nP?'Nada neste filtro.':'Nenhum produto ainda.<br>Toque em 📷 Registrar para começar.')+'</div>';
@@ -711,11 +707,11 @@ $('bSalvarPe').onclick=function(){if(!pode('registrar')){toast('Seu perfil não 
   var r={id:uid(),cod:peAtual,sif:sif||it.sif||'',peso:peso,val:val,criado:Date.now()};D.pere.regs.push(r);salvar();lembrete(r,desc);auditar('registrou_perecivel',{cod:peAtual,peso:peso,val:val});
   toast('Registrado ✔ '+kg(peso)+' kg');vib(40);$('pePeso').value='';$('peVal').value='';$('peInfo').innerHTML='';$('cardPe').style.display='none';peAtual=null;};
 $('bAddCod').onclick=function(){if(!pode('codigos')){toast('Só assistente/admin cadastra códigos');return;}var c=norm($('cCod').value),d=$('cDesc').value.trim();if(!c||!d){toast('Preencha código e descrição');return;}
-  D.pere.itens[c]={desc:d,sif:$('cSif').value.trim()};salvar();auditar('cadastrou_codigo',{cod:c,desc:d});$('cCod').value='';$('cDesc').value='';$('cSif').value='';toast('Código '+c+' cadastrado ✔');listaCodigos();};
+  D.pere.itens[c]={desc:d,sif:$('cSif').value.trim(),created_by:SESS&&SESS.uid||null};salvar();auditar('cadastrou_codigo',{cod:c,desc:d});$('cCod').value='';$('cDesc').value='';$('cSif').value='';toast('Código '+c+' cadastrado ✔');listaCodigos();};
 function listaCodigos(){var ks=Object.keys(D.pere.itens).sort(function(a,b){return +a-+b;});
-  $('listaCod').innerHTML=ks.map(function(k){var it=D.pere.itens[k];return '<div class="item-pe" data-cod="'+k+'"><div><b>'+esc(it.desc)+'</b><div class="ean">código '+k+(it.sif?' • SIF '+esc(it.sif):'')+'</div></div><button class="btn sec" data-ed="'+k+'" style="flex:none;padding:8px 12px">Editar</button></div>';}).join('')||'<div class="vazio">Nenhum código cadastrado.</div>';}
-$('listaCod').onclick=function(e){var b=e.target.closest('[data-ed]');if(!b)return;var k=b.dataset.ed,it=D.pere.itens[k];if(!pode('codigos')){toast('Só assistente/admin edita códigos');return;}
-  var d=prompt('Descrição do código '+k+' (vazio para apagar):',it.desc);if(d===null)return;if(!d.trim()){if(confirm('Apagar o código '+k+'?')){delete D.pere.itens[k];salvar();listaCodigos();}return;}
+  $('listaCod').innerHTML=ks.map(function(k){var it=D.pere.itens[k];return '<div class="item-pe" data-cod="'+k+'"><div><b>'+esc(it.desc)+'</b><div class="ean">código '+k+(it.sif?' • SIF '+esc(it.sif):'')+'</div></div><div class="row"><button class="btn sec" data-ed="'+k+'" style="flex:none;padding:8px 12px">Editar</button><button class="btn perigo" data-cod-del="'+k+'" style="flex:none;padding:8px 12px">Excluir</button></div></div>';}).join('')||'<div class="vazio">Nenhum código cadastrado.</div>';}
+$('listaCod').onclick=function(e){var del=e.target.closest('[data-cod-del]');if(del){var code=del.dataset.codDel;if(ehAdmin()){if(confirm('Excluir código perecível e registros associados?'))adminExcluirRegistro('pere_item',code);}else solicitarExclusao('pere_item',code);return;}var b=e.target.closest('[data-ed]');if(!b)return;var k=b.dataset.ed,it=D.pere.itens[k];if(!pode('codigos')){toast('Só assistente/admin edita códigos');return;}
+  var d=prompt('Descrição do código '+k+' (vazio para apagar):',it.desc);if(d===null)return;if(!d.trim()){if(ehAdmin()){if(confirm('Excluir código perecível e registros associados?'))adminExcluirRegistro('pere_item',k);}else solicitarExclusao('pere_item',k);return;}
   var s=prompt('SIF:',it.sif||'');it.desc=d.trim();if(s!==null)it.sif=s.trim();salvar();listaCodigos();};
 $('qPe').oninput=function(){listaPere();};
 function listaPere(){var q=$('qPe').value.toLowerCase(),grupos={};
@@ -725,13 +721,15 @@ function listaPere(){var q=$('qPe').value.toLowerCase(),grupos={};
   $('listaPe').innerHTML=gs.map(function(g){var tot=g.regs.reduce(function(t,r){return t+r.peso;},0);
     return '<div class="card"><b>'+esc(g.it.desc)+'</b><div class="ean">código '+g.cod+' • '+g.regs.length+' registro(s) • '+kg(tot)+' kg</div><table><tr><th>SIF</th><th>Peso</th><th>Validade</th><th></th></tr>'
       +g.regs.map(function(r){return '<tr data-pe="'+r.id+'"><td>'+esc(r.sif||'—')+'</td><td>'+kg(r.peso)+' kg</td><td>'+fdata(r.val)+'</td><td style="text-align:right">'+status(r.val)+'</td></tr>';}).join('')+'</table></div>';}).join('')||'<div class="vazio">Nenhum registro de perecíveis.</div>';}
-$('listaPe').onclick=function(e){var tr=e.target.closest('tr[data-pe]');if(!tr)return;var r=D.pere.regs.filter(function(x){return x.id===tr.dataset.pe;})[0];if(!r)return;if(!pode('editar')){toast('Seu perfil não edita registros');return;}
+$('listaPe').onclick=function(e){var tr=e.target.closest('tr[data-pe]');if(!tr)return;var r=D.pere.regs.filter(function(x){return x.id===tr.dataset.pe;})[0];if(!r)return;
+  var papel=papelAtual(),local=!sbOn()||!logado(),proprio=!!(SESS&&SESS.uid&&(r.created_by===SESS.uid||!r.created_by)),full=['analista','gerente','admin'].includes(papel);if(!local&&!full&&!proprio){toast('Você só pode editar seus próprios registros');return;}
   var it=D.pere.itens[r.cod]||{},nome=it.desc||('código '+r.cod);
-  var p=prompt(nome+' • '+kg(r.peso)+' kg • validade '+fdata(r.val)+'\n\nPeso em kg (0 para apagar o registro):',String(r.peso).replace('.',','));if(p===null)return;
-  var peso=num(p);if(peso<=0){if(confirm('Apagar o registro de '+kg(r.peso)+' kg (validade '+fdata(r.val)+')?')){D.pere.regs=D.pere.regs.filter(function(x){return x!==r;});cancelarLembrete(r.id);salvar();listaPere();auditar('apagou_perecivel',{cod:r.cod,peso:r.peso});}return;}
+  var p=prompt(nome+' • '+kg(r.peso)+' kg • validade '+fdata(r.val)+'\n\nPeso em kg (0 solicita exclusão):',String(r.peso).replace('.',','));if(p===null)return;
+  var peso=num(p);if(peso<=0){if(ehAdmin()&&sbOn()&&logado()){if(confirm('Excluir este registro como Administrador?'))adminExcluirRegistro('pere_reg',r.id);return;}if(sbOn()&&logado()){solicitarExclusao('pere_reg',r.id);return;}if(confirm('Excluir registro localmente?')){D.pere.regs=D.pere.regs.filter(function(x){return x!==r;});cancelarLembrete(r.id);salvar();listaPere();auditar('apagou_perecivel',{cod:r.cod,peso:r.peso});}return;}
   var v=prompt('Validade (dd/mm/aaaa):',fdata(r.val));if(v===null)return;var val=lerData(v);if(!val){toast('Data inválida — nada alterado');return;}
   var sif=prompt('SIF:',r.sif||'');if(sif===null)return;
-  r.peso=peso;r.val=val;r.sif=sif.trim();r.atualizado=Date.now();salvar();cancelarLembrete(r.id);lembrete(r,nome);listaPere();toast('Registro atualizado ✔');};
+  r.peso=peso;r.val=val;r.sif=sif.trim();r.atualizado=Date.now();if(proprio&&it.created_by===SESS.uid){var desc=prompt('Descrição do código:',it.desc||'');if(desc!==null&&desc.trim())it.desc=desc.trim();}
+  salvar();cancelarLembrete(r.id);lembrete(r,nome);listaPere();toast('Registro atualizado ✔');};
 /* dd/mm/aaaa, dd/mm/aa ou aaaa-mm-dd → 'aaaa-mm-dd' (null se a data não existir) */
 function lerData(t){t=String(t||'').trim();var m=/^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t),a,me,di;
   if(m){a=+m[1];me=+m[2];di=+m[3];}else{m=/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2}|\d{4})$/.exec(t);if(!m)return null;di=+m[1];me=+m[2];a=+m[3];if(a<100)a+=2000;}
@@ -769,7 +767,7 @@ $('bRelPe').onclick=function(){var t='*'+CFG.nome+' — Perecíveis* ('+new Date
   t+='\n'+(n<0?'⚠️ ':n<=D.aj.dias?'⏰ ':'')+(it.desc||r.cod)+' — SIF '+(r.sif||'—')+' — '+kg(r.peso)+' kg — '+fdata(r.val);});compartilhar(t);};
 
 /* ───── ajustes ───── */
-function ajustes(){$('aCosmos').value=tokenCosmos();$('aDig').value=String(D.aj.dig);$('aValor').value=D.aj.valor;$('aDias').value=D.aj.dias;$('aNotif').checked=!!D.aj.notif;$('aOcr').checked=!!D.aj.ocr;contaCard();auditoriaCard();}
+function ajustes(){$('aCosmos').value=tokenCosmos();$('aDig').value=String(D.aj.dig);$('aValor').value=D.aj.valor;$('aDias').value=D.aj.dias;$('aNotif').checked=!!D.aj.notif;$('aOcr').checked=!!D.aj.ocr;contaCard();auditoriaCard();carregarLojasAdmin();}
 $('bAudRefresh')&&($('bAudRefresh').onclick=auditoriaCard);
 $('aOcr').onchange=function(){D.aj.ocr=this.checked;salvar();toast(D.aj.ocr?'OCR ligado':'OCR desligado');};
 $('aDig').onchange=function(){D.aj.dig=+this.value;salvar();toast('Formato da etiqueta salvo');};
@@ -814,7 +812,8 @@ function sbReq(path,opt){opt=opt||{};
 function sbLogin(user,pass){return sbReq('/auth/v1/token?grant_type=password',{method:'POST',auth:false,body:{email:user+'@'+DOM_LOGIN,password:pass}})
   .then(function(r){if(!r.ok||!r.dados||!r.dados.access_token)throw new Error((r.dados&&(r.dados.error_description||r.dados.msg||r.dados.error))||'Usuário ou senha inválidos');
     var u=r.dados.user||{},meta=u.app_metadata||{};SESS={access_token:r.dados.access_token,refresh_token:r.dados.refresh_token,expira:Date.now()+((r.dados.expires_in||3600)*1000),usuario:user,email:u.email,uid:u.id,lojaId:null,lojaNome:null,forcePasswordChange:meta.force_password_change===true};salvarSess();return SESS;});}
-function sbLogout(){SESS=null;salvarSess();try{localStorage.removeItem('validade_ultima_loja');}catch(e){}}
+function sbLogout(){var token=SESS&&SESS.access_token;SESS=null;salvarSess();refreshSessaoEmAndamento=null;try{localStorage.removeItem('validade_ultima_loja');}catch(e){}if(token&&sbOn()){return fetch(CFG.supaUrl+'/auth/v1/logout',{method:'POST',headers:{apikey:CFG.supaKey,Authorization:'Bearer '+token}}).catch(function(e){console.warn('Falha ao invalidar sessão remota (sessão local já encerrada):',e);});}return Promise.resolve();}
+function sairParaLogin(){sbLogout();try{history.replaceState({loggedOut:true},'',location.href.split('#')[0]);}catch(e){}var modal=$('conta');if(modal)modal.classList.add('on');mostrarLoginForm();contaCard();atualizarBotaoLogout();atualizarGate();toast('Você saiu');}
 function sbLojas(){return sbReq('/rest/v1/lojas?select=id,nome&order=nome.asc').then(function(r){if(!r.ok)throw new Error('falha');return Array.isArray(r.dados)?r.dados:[];});}
 /* ───── catálogo compartilhado (EAN → nome), entre todas as lojas ───── */
 var SYNC={};try{SYNC=JSON.parse(localStorage.getItem('validade_sync')||'{}')||{};}catch(e){}
@@ -841,18 +840,18 @@ function sincronizarLoja(){
   function baixar(tabela,campos){return sbReq('/rest/v1/'+tabela+'?loja_id=eq.'+loja+'&select='+campos+'&order=updated_at.asc&limit=10000')
     .then(function(r){if(!r.ok)throw new Error('Falha ao baixar '+tabela+' (HTTP '+r.status+')');return Array.isArray(r.dados)?r.dados:[];});}
   return Promise.all([
-    baixar('produtos','ean,updated_at,deleted_at'),
-    baixar('lotes','id,ean,lote,qtd,val,criado,updated_at,deleted_at'),
-    baixar('pere_itens','cod,descricao,sif,updated_at,deleted_at'),
-    baixar('pere_regs','id,cod,sif,peso,val,criado,updated_at,deleted_at')
+    baixar('produtos','ean,nome,created_by,updated_at,deleted_at'),
+    baixar('lotes','id,ean,lote,qtd,val,criado,created_by,updated_at,deleted_at'),
+    baixar('pere_itens','cod,descricao,sif,created_by,updated_at,deleted_at'),
+    baixar('pere_regs','id,cod,sif,peso,val,criado,created_by,updated_at,deleted_at')
   ]).then(function(res){
     var produtos=res[0],lotes=res[1],itens=res[2],regs=res[3],n=0;
-    produtos.forEach(function(row){if(row.deleted_at)return;var ean=String(row.ean),p=D.prod[ean]||(D.prod[ean]={lotes:[]});if(!Array.isArray(p.lotes))p.lotes=[];n++;});
-    lotes.forEach(function(row){if(row.deleted_at)return;var p=D.prod[String(row.ean)]||(D.prod[String(row.ean)]={lotes:[]});if(!Array.isArray(p.lotes))p.lotes=[];
-      var l=p.lotes.find(function(x){return String(x.id)===String(row.id);}),obj={id:row.id,lote:row.lote||'',qtd:Number(row.qtd)||0,val:row.val||'',criado:row.criado||null,atualizado:row.updated_at?Date.parse(row.updated_at):null};
+    produtos.forEach(function(row){var ean=String(row.ean);if(row.deleted_at){delete D.prod[ean];return;}var p=D.prod[ean]||(D.prod[ean]={lotes:[]});if(!Array.isArray(p.lotes))p.lotes=[];if(row.nome&&!p.desc)p.desc=row.nome;if(row.created_by)p.created_by=row.created_by;n++;});
+    lotes.forEach(function(row){if(row.deleted_at){var existing=D.prod[String(row.ean)];if(existing&&Array.isArray(existing.lotes))existing.lotes=existing.lotes.filter(function(x){return String(x.id)!==String(row.id);});return;}var p=D.prod[String(row.ean)]||(D.prod[String(row.ean)]={lotes:[]});if(!Array.isArray(p.lotes))p.lotes=[];
+      var l=p.lotes.find(function(x){return String(x.id)===String(row.id);}),obj={id:row.id,lote:row.lote||'',qtd:Number(row.qtd)||0,val:row.val||'',criado:row.criado||null,created_by:row.created_by||null,atualizado:row.updated_at?Date.parse(row.updated_at):null};
       if(l){Object.assign(l,obj);}else p.lotes.push(obj);n++;});
-    itens.forEach(function(row){if(row.deleted_at)return;D.pere.itens[String(row.cod)]={desc:row.descricao||'',sif:row.sif||''};n++;});
-    regs.forEach(function(row){if(row.deleted_at)return;var reg={id:row.id,cod:String(row.cod),sif:row.sif||'',peso:Number(row.peso)||0,val:row.val||'',criado:row.criado||null},ix=D.pere.regs.findIndex(function(x){return String(x.id)===String(row.id);});if(ix>=0)D.pere.regs[ix]=reg;else D.pere.regs.push(reg);n++;});
+    itens.forEach(function(row){if(row.deleted_at){delete D.pere.itens[String(row.cod)];return;}D.pere.itens[String(row.cod)]={desc:row.descricao||'',sif:row.sif||'',created_by:row.created_by||null};n++;});
+    regs.forEach(function(row){var ix=D.pere.regs.findIndex(function(x){return String(x.id)===String(row.id);});if(row.deleted_at){if(ix>=0)D.pere.regs.splice(ix,1);return;}var reg={id:row.id,cod:String(row.cod),sif:row.sif||'',peso:Number(row.peso)||0,val:row.val||'',criado:row.criado||null,created_by:row.created_by||null},ix=D.pere.regs.findIndex(function(x){return String(x.id)===String(row.id);});if(ix>=0)D.pere.regs[ix]=reg;else D.pere.regs.push(reg);n++;});
     try{localStorage.setItem(K,JSON.stringify(D));}catch(e){
       if(e&&e.name==='QuotaExceededError'){
         try{Object.keys(D.cat||{}).forEach(function(k){if(D.cat[k]&&D.cat[k].img)D.cat[k].img='';});localStorage.setItem(K,JSON.stringify(D));toast('⚠️ Espaço liberado (imagens removidas do cache). Sincronização concluída.');return n;}catch(e2){}
@@ -867,11 +866,12 @@ function sincronizarLoja(){
 }
 function agendarSincronizacaoPeriodica(){clearInterval(temporizadorSincronizacao);if(!sbOn()||!logado()||!SESS.lojaId)return;temporizadorSincronizacao=setInterval(function(){if(!document.hidden)sincronizarLoja();},20000);}
 /* ───── backup do estoque da loja na nuvem (envio; a volta vem depois) ───── */
-function linhasLocais(loja){var pr=[],lo=[],pi=[],pg=[];
-  Object.keys(D.prod).forEach(function(ean){var p=D.prod[ean];pr.push({loja_id:loja,ean:String(ean)});
-    (p.lotes||[]).forEach(function(l){lo.push({id:l.id,loja_id:loja,ean:String(ean),lote:l.lote||'',qtd:+l.qtd||0,val:l.val||null,criado:l.criado||null});});});
-  Object.keys(D.pere.itens).forEach(function(cod){var it=D.pere.itens[cod];pi.push({loja_id:loja,cod:String(cod),descricao:it.desc||'',sif:it.sif||''});});
-  (D.pere.regs||[]).forEach(function(r){pg.push({id:r.id,loja_id:loja,cod:String(r.cod),sif:r.sif||'',peso:+r.peso||0,val:r.val||null,criado:r.criado||null});});
+function linhasLocais(loja){var pr=[],lo=[],pi=[],pg=[],uid=SESS&&SESS.uid,papel=papelAtual(),global=['analista','gerente','admin'].includes(papel);
+  function meu(o){return global||!o.created_by||o.created_by===uid;}
+  Object.keys(D.prod).forEach(function(ean){var p=D.prod[ean];if(meu(p))pr.push({loja_id:loja,ean:String(ean),created_by:p.created_by||null});
+    (p.lotes||[]).forEach(function(l){if(meu(l))lo.push({id:l.id,loja_id:loja,ean:String(ean),lote:l.lote||'',qtd:+l.qtd||0,val:l.val||null,criado:l.criado||null,created_by:l.created_by||null});});});
+  Object.keys(D.pere.itens).forEach(function(cod){var it=D.pere.itens[cod];if(meu(it))pi.push({loja_id:loja,cod:String(cod),descricao:it.desc||'',sif:it.sif||'',created_by:it.created_by||null});});
+  (D.pere.regs||[]).forEach(function(r){if(meu(r))pg.push({id:r.id,loja_id:loja,cod:String(r.cod),sif:r.sif||'',peso:+r.peso||0,val:r.val||null,criado:r.criado||null,created_by:r.created_by||null});});
   return {produtos:pr,lotes:lo,pere_itens:pi,pere_regs:pg};}
 var tBackup=null,backupEmAndamento=false;
 function agendarBackup(){if(!sbOn()||!logado()||!SESS.lojaId)return;clearTimeout(tBackup);tBackup=setTimeout(backupNuvem,5000);}
@@ -907,13 +907,13 @@ $('bSairTrocaSenha').onclick=function(){sbLogout();mostrarLoginForm();toast('Voc
 $('cPass').onkeydown=function(e){if(e.key==='Enter')$('bEntrar').click();};
 $('cEye').onclick=function(){var p=$('cPass'),vis=p.type==='text';p.type=vis?'password':'text';this.classList.toggle('off',vis);this.setAttribute('aria-label',vis?'Mostrar senha':'Ocultar senha');};
 $('bVoltarLoja').onclick=fecharConta;
-$('bSairConta').onclick=function(){sbLogout();fecharConta();toast('Você saiu');contaCard();};
-$('bLogoutHdr').onclick=function(){if(!logado())return;if(confirm('Sair da conta?')){sbLogout();toast('Você saiu');contaCard();atualizarGate();}};
-var PAPEIS={operador:'Operador',assistente:'Assistente',analista:'Analista',admin:'Administrador'};
+$('bSairConta').onclick=sairParaLogin;
+$('bLogoutHdr').onclick=function(){if(!logado())return;if(confirm('Sair da conta?'))sairParaLogin();};
+var PAPEIS={operador:'Operador',assistente:'Assistente',analista:'Analista',gerente:'Gerente',admin:'Administrador'};
 function papelAtual(){return (sbOn()&&SESS&&SESS.papel)||(sbOn()?'operador':'admin');}
 function pode(acao){var p=papelAtual();if(p==='admin')return true;
   if(acao==='registrar')return p==='operador'||p==='assistente';
-  if(acao==='editar'||acao==='ajustes'||acao==='codigos')return p==='assistente';
+  if(acao==='editar'||acao==='ajustes'||acao==='codigos')return p==='assistente'||p==='analista'||p==='gerente';
   if(acao==='admin')return false;return true;}
 function aplicarPapel(){var reg=pode('registrar'),ed=pode('editar'),aj=pode('ajustes');
   var tr=document.querySelector('#abas button[data-v=\"reg\"]');if(tr)tr.style.display=reg?'':'none';
@@ -941,6 +941,8 @@ function salvarTokenCosmos(v){
             function(){toast('⚠️ Não foi possível salvar o token na nuvem');});
   }else{D.aj.cosmos=v;salvar();toast(v?'Token do Cosmos salvo':'Token removido');}}
 function precisaLogin(){return sbOn()&&(!logado()||(SESS&&SESS.forcePasswordChange)||!SESS.lojaId);}
+function protegerVoltaPosLogout(){if(sbOn()&&!logado()){ir('reg');$('conta').classList.add('on');mostrarLoginForm();atualizarBotaoLogout();}}
+window.addEventListener('pageshow',protegerVoltaPosLogout);window.addEventListener('popstate',protegerVoltaPosLogout);
 function atualizarGate(){if(precisaLogin()){$('conta').classList.add('on');if(logado()){if(SESS.forcePasswordChange)mostrarTrocaSenhaPrimeiroAcesso();else mostrarLojas();}else mostrarLoginForm();}}
 function fdataHora(ms){try{var d=new Date(ms);return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
 function ehAdmin(){return papelAtual()==='admin';}
@@ -956,14 +958,93 @@ function atualizarBotaoLogout(){var b=$('bLogoutHdr');if(!b)return;b.style.displ
 function contaCard(){if(!sbOn()){$('cardConta').style.display='none';atualizarBotaoLogout();return;}$('cardConta').style.display='';
   atualizarBotaoLogout();
   if(logado()){$('contaInfo').innerHTML='<div style="font-size:14px">Operador: <b>'+esc(SESS.usuario||SESS.email||'')+'</b>'+(SESS.papel?' <span class="st ok">'+esc(PAPEIS[SESS.papel]||SESS.papel)+'</span>':'')+'</div>'+(SESS.lojaNome?'<div style="font-size:14px;margin-top:4px">Loja atual: <b>'+esc(SESS.lojaNome)+'</b></div>':'<div class="aviso wa" style="margin-top:8px">Escolha a loja onde está atuando.</div>')+'<div class="row" style="margin-top:12px"><button class="btn sec" id="bTrocarLoja">'+(SESS.lojaNome?'Trocar loja':'Escolher loja')+'</button><button class="btn sec" id="bSair2">Sair</button></div>'+(SESS.lojaNome?'<p style="margin:10px 0 0;font-size:12px;color:var(--mu)">Backup na nuvem: '+(SYNC.backup?'último '+fdataHora(SYNC.backup):'enviando…')+'</p>':'');
-    $('bTrocarLoja').onclick=abrirConta;$('bSair2').onclick=function(){sbLogout();contaCard();toast('Você saiu');};}
+    $('bTrocarLoja').onclick=abrirConta;$('bSair2').onclick=sairParaLogin;}
   else{$('contaInfo').innerHTML='<p style="margin:0 0 10px;font-size:13px;color:var(--mu)">Entre para sincronizar os dados entre aparelhos e lojas.</p><button class="btn big" id="bEntrarAj">Entrar</button>';$('bEntrarAj').onclick=abrirConta;}}
 
+
+
+// ── Solicitações de exclusão (RLS/RPC no backend) ──
+function podeRevisarExclusao(){return ['assistente','analista','gerente','admin'].includes(papelAtual());}
+function carregarSolicitacoesExclusao(){
+  var card=$('cardSolicitacoes');if(!card)return;
+  var vis=sbOn()&&logado()&&SESS.lojaId;card.style.display=vis?'':'none';if(!vis)return;
+  $('listaSolicitacoes').innerHTML='<div class="vazio"><span class="gira"></span> consultando…</div>';
+  var q='/rest/v1/solicitacoes_exclusao?select=id,tipo,registro_id,motivo,status,resposta,criado_em,revisado_em,solicitante_id,solicitante_nome,revisor_id,loja_id&loja_id=eq.'+encodeURIComponent(SESS.lojaId)+'&order=criado_em.desc&limit=100';
+  sbReq(q).then(function(r){
+    if(!r.ok||!Array.isArray(r.dados))throw new Error('Falha ao carregar solicitações');
+    $('listaSolicitacoes').innerHTML=r.dados.map(function(x){
+      var status=x.status==='pendente'?'⏳ Pendente':x.status==='aprovada'?'✅ Aprovada':'❌ Rejeitada';
+      var buttons=x.status==='pendente'&&podeRevisarExclusao()?'<div class="row" style="margin-top:8px"><button class="btn" data-review="yes" data-id="'+esc(x.id)+'">Aprovar</button><button class="btn perigo" data-review="no" data-id="'+esc(x.id)+'">Rejeitar</button></div>':'';
+      return '<div class="card" style="margin:8px 0;padding:10px"><b>'+esc(x.tipo)+' · '+esc(x.registro_id)+'</b><div class="ean">'+esc(status)+' · '+fdataHora(Date.parse(x.criado_em))+' · por '+esc(x.solicitante_nome||'usuário removido')+'</div><div style="font-size:13px;margin:5px 0">Motivo: '+esc(x.motivo)+'</div>'+(x.resposta?'<div class="ean">Resposta: '+esc(x.resposta)+'</div>':'')+buttons+'</div>';
+    }).join('')||'<div class="vazio">Nenhuma solicitação encontrada.</div>';
+    document.querySelectorAll('[data-review]').forEach(function(b){b.onclick=function(){revisarSolicitacaoExclusao(b.dataset.id,b.dataset.review==='yes');};});
+  }).catch(function(e){$('listaSolicitacoes').innerHTML='<div class="vazio">'+esc(e.message||'Erro ao carregar')+'</div>';});
+}
+function guardarSolicitacaoOffline(tipo,registroId,motivo){
+  SYNC.pendingExclusoes=Array.isArray(SYNC.pendingExclusoes)?SYNC.pendingExclusoes:[];
+  var item={id:uid(),solicitante_id:SESS.uid,loja_id:SESS.lojaId,tipo:tipo,registro_id:String(registroId),motivo:motivo,criado:Date.now()};
+  SYNC.pendingExclusoes.push(item);salvarSync();toast('Solicitação guardada offline; será enviada quando a conexão voltar.');return item;
+}
+function processarSolicitacoesOffline(){
+  if(!sbOn()||!logado()||!SESS.lojaId||navigator.onLine===false)return Promise.resolve(0);
+  var fila=(SYNC.pendingExclusoes||[]).filter(function(x){return x.loja_id===SESS.lojaId&&x.solicitante_id===SESS.uid;});if(!fila.length)return Promise.resolve(0);
+  var enviados=0;
+  return fila.reduce(function(p,item){return p.then(function(){
+    return sbReq('/rest/v1/rpc/solicitar_exclusao',{method:'POST',body:{p_loja_id:item.loja_id,p_tipo:item.tipo,p_registro_id:item.registro_id,p_motivo:item.motivo}})
+      .then(function(r){if(!r.ok)throw new Error('RPC rejected');enviados++;SYNC.pendingExclusoes=(SYNC.pendingExclusoes||[]).filter(function(x){return x.id!==item.id;});salvarSync();})
+      .catch(function(){/* keep in queue; no data loss on transient network failure */});
+  });},Promise.resolve()).then(function(){if(enviados)carregarSolicitacoesExclusao();return enviados;});
+}
+window.addEventListener('online',function(){processarSolicitacoesOffline();});
+function adminExcluirRegistro(tipo,registroId){
+  if(!ehAdmin()||!sbOn()||!logado()||!SESS.lojaId){toast('Operação exclusiva do Administrador autenticado.');return Promise.resolve(false);}
+  var loja=encodeURIComponent(SESS.lojaId),now=new Date().toISOString(),url,extra=[];
+  if(tipo==='produto'){url='/rest/v1/produtos?loja_id=eq.'+loja+'&ean=eq.'+encodeURIComponent(registroId);extra.push('/rest/v1/lotes?loja_id=eq.'+loja+'&ean=eq.'+encodeURIComponent(registroId));}
+  else if(tipo==='lote')url='/rest/v1/lotes?loja_id=eq.'+loja+'&id=eq.'+encodeURIComponent(registroId);
+  else if(tipo==='pere_reg')url='/rest/v1/pere_regs?loja_id=eq.'+loja+'&id=eq.'+encodeURIComponent(registroId);
+  else if(tipo==='pere_item'){url='/rest/v1/pere_itens?loja_id=eq.'+loja+'&cod=eq.'+encodeURIComponent(registroId);extra.push('/rest/v1/pere_regs?loja_id=eq.'+loja+'&cod=eq.'+encodeURIComponent(registroId));}
+  else return Promise.resolve(false);
+  return sbReq(url,{method:'PATCH',body:{deleted_at:now}}).then(function(r){if(!r.ok)throw new Error('Falha ao excluir registro');return extra.reduce(function(p,u){return p.then(function(){return sbReq(u,{method:'PATCH',body:{deleted_at:now}}).then(function(x){if(!x.ok)throw new Error('Falha ao tombstonar registros vinculados');});});},Promise.resolve());})
+    .then(function(){auditar('admin_exclusao_tombstone',{tipo:tipo,registro_id:registroId,loja_id:SESS.lojaId});return sincronizarLoja();})
+    .then(function(){toast('Registro excluído (tombstone)');return true;}).catch(function(e){toast(e.message||'Falha ao excluir');return false;});
+}
+function solicitarExclusao(tipo,registroId){
+  if(!sbOn()||!logado()||!SESS.lojaId){toast('Entre na conta para solicitar aprovação.');return Promise.resolve(false);}
+  var motivo=prompt('Motivo para solicitar a exclusão:');if(motivo===null)return Promise.resolve(false);motivo=motivo.trim();if(motivo.length<3){toast('Informe um motivo com pelo menos 3 caracteres.');return Promise.resolve(false);}
+  var item={loja_id:SESS.lojaId,tipo:tipo,registro_id:String(registroId),motivo:motivo};
+  if(navigator.onLine===false){guardarSolicitacaoOffline(tipo,registroId,motivo);return Promise.resolve(true);}
+  return sbReq('/rest/v1/rpc/solicitar_exclusao',{method:'POST',body:{p_loja_id:item.loja_id,p_tipo:tipo,p_registro_id:item.registro_id,p_motivo:motivo}})
+    .then(function(r){if(!r.ok)throw new Error(r.dados&&r.dados.message||'Não foi possível criar a solicitação');toast('Solicitação enviada para aprovação');carregarSolicitacoesExclusao();auditar('solicitou_exclusao',{tipo:tipo,registro_id:registroId});return true;})
+    .catch(function(e){if(navigator.onLine===false||/network|fetch|timeout/i.test(e.message||'')){guardarSolicitacaoOffline(tipo,registroId,motivo);return true;}toast(e.message||'Falha ao solicitar exclusão');return false;});
+}
+function revisarSolicitacaoExclusao(id,aprovar){
+  var resposta=aprovar?'':prompt('Motivo da rejeição:');if(!aprovar&&(resposta===null||resposta.trim().length<3)){toast('Informe o motivo da rejeição.');return;}
+  if(aprovar&&!confirm('Confirmar aprovação? O registro será removido por tombstone.'))return;
+  sbReq('/rest/v1/rpc/revisar_solicitacao_exclusao',{method:'POST',body:{p_id:id,p_aprovar:aprovar,p_resposta:resposta||null}})
+    .then(function(r){if(!r.ok)throw new Error(r.dados&&r.dados.message||'Falha ao revisar');toast(aprovar?'Exclusão aprovada':'Solicitação rejeitada');carregarSolicitacoesExclusao();sincronizarLoja();})
+    .catch(function(e){toast(e.message||'Falha ao revisar solicitação');});
+}
+$('bSolicitacoesRefresh').onclick=carregarSolicitacoesExclusao;
+
+
+// ── CRUD de lojas (somente Administrador; RLS no Supabase) ──
+function carregarLojasAdmin(){
+  var card=$('cardLojasAdmin');if(!card)return;var vis=sbOn()&&logado()&&ehAdmin();card.style.display=vis?'':'none';if(!vis)return;
+  $('listaLojasAdmin').innerHTML='<div class="vazio"><span class="gira"></span> carregando lojas…</div>';
+  sbReq('/rest/v1/lojas?select=id,nome&order=nome.asc').then(function(r){
+    if(!r.ok||!Array.isArray(r.dados))throw new Error('Falha ao consultar lojas');
+    $('listaLojasAdmin').innerHTML=r.dados.map(function(l){return '<div class="card" style="padding:10px;margin:8px 0"><b>'+esc(l.nome)+'</b><div class="ean">'+esc(l.id)+'</div><div class="row" style="margin-top:8px"><button class="btn sec" data-loja-edit="'+esc(l.id)+'" data-nome="'+esc(l.nome)+'">Renomear</button><button class="btn perigo" data-loja-del="'+esc(l.id)+'" data-nome="'+esc(l.nome)+'">Excluir</button></div></div>';}).join('')||'<div class="vazio">Nenhuma loja cadastrada.</div>';
+    document.querySelectorAll('[data-loja-edit]').forEach(function(b){b.onclick=function(){var nome=prompt('Novo nome da loja:',b.dataset.nome);if(nome===null||!nome.trim())return;sbReq('/rest/v1/lojas?id=eq.'+encodeURIComponent(b.dataset.lojaEdit),{method:'PATCH',body:{nome:nome.trim()}}).then(function(r){if(!r.ok)throw new Error('Falha ao renomear');auditar('renomeou_loja',{loja_id:b.dataset.lojaEdit,nome:nome.trim()});carregarLojasAdmin();}).catch(function(e){toast(e.message);});};});
+    document.querySelectorAll('[data-loja-del]').forEach(function(b){b.onclick=function(){if(!confirm('Excluir a loja '+b.dataset.nome+'? Essa operação pode remover vínculos e dados relacionados por cascade.'))return;sbReq('/rest/v1/lojas?id=eq.'+encodeURIComponent(b.dataset.lojaDel),{method:'DELETE'}).then(function(r){if(!r.ok)throw new Error('Falha ao excluir loja');auditar('excluiu_loja',{loja_id:b.dataset.lojaDel,nome:b.dataset.nome});carregarLojasAdmin();}).catch(function(e){toast(e.message);});};});
+  }).catch(function(e){$('listaLojasAdmin').innerHTML='<div class="vazio">'+esc(e.message)+'</div>';});
+}
+$('bLojaNova').onclick=function(){var nome=$('lojaNovaNome').value.trim();if(!nome){toast('Informe o nome da loja');return;}sbReq('/rest/v1/lojas',{method:'POST',headers:{Prefer:'return=minimal'},body:{nome:nome}}).then(function(r){if(!r.ok)throw new Error('Falha ao criar loja');$('lojaNovaNome').value='';auditar('criou_loja',{nome:nome});carregarLojasAdmin();toast('Loja criada');}).catch(function(e){toast(e.message);});};
+$('bLojasAdminRefresh').onclick=carregarLojasAdmin;
 
 // ── Gestão de usuários via Edge Function ──
 function iniciarGestaoUsuarios(){
   var card=$('cardUsuarios');if(!card)return;
-  var p=papelAtual(),vis=sbOn()&&logado()&&['assistente','analista','admin'].includes(p);
+  var p=papelAtual(),vis=sbOn()&&logado()&&['assistente','analista','gerente','admin'].includes(p);
   card.style.display=vis?'':'none';if(!vis)return;
   var endpoint='/functions/v1/gerir-usuarios';
   function callGestao(body){return sbReq(endpoint,{method:'POST',body:body}).then(function(r){if(!r.ok)throw new Error(r.dados&&r.dados.error||'Falha na gestão de usuários (HTTP '+r.status+').');return r.dados||{};});}
@@ -971,45 +1052,43 @@ function iniciarGestaoUsuarios(){
   function selectedStores(){return Array.from(document.querySelectorAll('#uLojas .uLoja:checked')).map(function(e){return e.value;});}
   function strongPass(s,u){var common=['123456','1234567','12345678','123456789','senha','password','qwerty','111111','000000','abc123','admin123','guanabara'];if(!s||s.length<6)return 'A senha precisa de pelo menos 6 caracteres.';if(common.includes(s.toLowerCase()))return 'Essa senha é muito comum.';if(s.toLowerCase()===u.toLowerCase())return 'A senha não pode ser igual ao usuário.';return '';}
   var cache={users:[],lojas:[]};
-  function render(){var admin=p==='admin',analista=p==='analista'||admin;
-    $('uPapel').disabled=!admin;if(!admin)$('uPapel').value='operador';
+  function render(){var admin=p==='admin',gerente=p==='gerente',analista=p==='analista'||gerente||admin;
+    $('uPapel').disabled=!(admin||analista||gerente);if(!admin){$('uPapel').querySelectorAll('option').forEach(function(o){o.disabled=['analista','gerente','admin'].includes(o.value);});if(!['operador','assistente'].includes($('uPapel').value))$('uPapel').value='operador';}
     $('usuariosForm').style.display='';
     $('listaUsuarios').innerHTML=cache.users.map(function(u){var stores=(u.lojas||[]).map(function(l){return esc(l.nome);}).join(', ')||'—';
-      return '<div class="card" style="padding:12px;margin:8px 0"><div style="font-weight:700">'+esc(u.nome||u.usuario)+'</div><div class="ean">@'+esc(u.usuario)+' · '+esc(PAPEIS[u.papel]||u.papel)+'</div><div style="font-size:12px;margin:5px 0">'+stores+'</div>'+(analista?'<div class="row"><button class="btn sec uEdit" data-id="'+esc(u.id)+'">Editar</button>'+(admin?'<button class="btn perigo uDelete" data-id="'+esc(u.id)+'">Excluir</button>':'')+'</div>':'')+'</div>';
+      return '<div class="card" style="padding:12px;margin:8px 0"><div style="font-weight:700">'+esc(u.nome||u.usuario)+'</div><div class="ean">@'+esc(u.usuario)+' · '+esc(PAPEIS[u.papel]||u.papel)+'</div><div style="font-size:12px;margin:5px 0">'+stores+'</div>'+(analista?'<div class="row"><button class="btn sec uEdit" data-id="'+esc(u.id)+'">Editar</button>'+(admin||gerente?'<button class="btn perigo uDelete" data-id="'+esc(u.id)+'">Excluir</button>':'')+'</div>':'')+'</div>';
     }).join('')||'<div class="vazio">Nenhum usuário encontrado.</div>';
     document.querySelectorAll('.uEdit').forEach(function(b){b.onclick=function(){editar(b.dataset.id);};});
     document.querySelectorAll('.uDelete').forEach(function(b){b.onclick=function(){excluir(b.dataset.id);};});
   }
   function carregar(){ $('listaUsuarios').innerHTML='<div class="vazio"><span class="gira"></span> carregando usuários…</div>';
     callGestao({acao:'listar'}).then(function(r){cache.users=r.usuarios||[];cache.lojas=r.lojas||[];$('uLojas').innerHTML=lojaChecks(cache.lojas);render();}).catch(function(e){$('listaUsuarios').innerHTML='<div class="aviso wa">'+esc(e.message)+'</div>';});}
-  function criar(){var usuario=$('uUsuario').value.trim().toLowerCase(),nome=$('uNome').value.trim(),senha=$('uSenha').value,papel=p==='admin'?$('uPapel').value:'operador',lojas=selectedStores();
+  function criar(){var usuario=$('uUsuario').value.trim().toLowerCase(),nome=$('uNome').value.trim(),senha=$('uSenha').value,papel=['admin','analista','gerente'].includes(p)?$('uPapel').value:'operador',lojas=selectedStores();
     if(!/^[a-z0-9._-]{3,30}$/.test(usuario)){toast('Login: 3–30 caracteres minúsculos, números, . _ -');return;}
     if(!nome){toast('Informe o nome completo.');return;}var err=strongPass(senha,usuario);if(err){toast(err);return;}if(!lojas.length){toast('Selecione ao menos uma loja.');return;}
-    $('bUsuarioCriar').disabled=true;callGestao({acao:'criar',usuario:usuario,nome:nome,senha:senha,papel:papel,lojas:lojas,exigir_troca_senha:$('uTrocaSenha').checked}).then(function(){toast('Usuário criado.');$('uUsuario').value='';$('uNome').value='';$('uSenha').value='';$('uTrocaSenha').checked=false;carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('bUsuarioCriar').disabled=false;});}
+    $('bUsuarioCriar').disabled=true;callGestao({acao:'criar',usuario:usuario,nome: nome,senha:senha,papel:papel,lojas:lojas,exigir_troca_senha:$('uTrocaSenha').checked}).then(function(){toast('Usuário criado.');$('uUsuario').value='';$('uNome').value='';$('uSenha').value='';$('uTrocaSenha').checked=false;carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('bUsuarioCriar').disabled=false;});}
   var usuarioEditando=null,lojasSelecionadasEdicao=[];
   function atualizarResumoLojas(){var marcadas=lojasSelecionadasEdicao.length,total=cache.lojas.length;$('editarLojasResumo').textContent=marcadas+' loja(s) selecionada(s) de '+total+' disponíveis';}
   function renderLojasEdicao(){var busca=$('editarLojasBusca').value.trim().toLowerCase(),visiveis=cache.lojas.filter(function(l){return String(l.nome||'').toLowerCase().includes(busca);});
     $('editarLojas').innerHTML=lojaChecks(visiveis,lojasSelecionadasEdicao).replace(/class="uLoja"/g,'class="uLojaEdit"');
-    document.querySelectorAll('#editarLojas .uLojaEdit').forEach(function(c){c.onchange=function(){if(c.checked){if(!lojasSelecionadasEdicao.includes(c.value))lojasSelecionadasEdicao.push(c.value);}else{lojasSelecionadasEdicao=lojasSelecionadasEdicao.filter(function(id){return id!==c.value;});}atualizarResumoLojas();};});
-    atualizarResumoLojas();
-  }
+    document.querySelectorAll('#editarLojas .uLojaEdit').forEach(function(ch){ch.onchange=function(){if(ch.checked){if(!lojasSelecionadasEdicao.includes(ch.value))lojasSelecionadasEdicao.push(ch.value);}else lojasSelecionadasEdicao=lojasSelecionadasEdicao.filter(function(id){return id!==ch.value;});atualizarResumoLojas();};});atualizarResumoLojas();}
   function editar(id){var u=cache.users.find(function(x){return x.id===id;});if(!u)return;usuarioEditando=u;
     $('editarNome').value=u.nome||'';$('editarSenha').value='';$('editarPapel').value=u.papel||'operador';$('editarLojasBusca').value='';
     lojasSelecionadasEdicao=(u.lojas||[]).map(function(l){return l.id;});
-    $('editarPapelWrap').style.display=p==='admin'?'':'none';$('editarLojasWrap').style.display=p==='admin'?'':'none';
-    if(p==='admin')renderLojasEdicao();
-    $('modalEditarUsuario').classList.add('on');$('editarNome').focus();
-  }
+    var podeAlterarPapelLoja=['admin','analista','gerente'].includes(p);
+    $('editarPapelWrap').style.display=podeAlterarPapelLoja?'':'none';$('editarLojasWrap').style.display=podeAlterarPapelLoja?'':'none';
+    $('editarPapel').querySelectorAll('option').forEach(function(o){o.disabled=!admin&&['analista','gerente','admin'].includes(o.value);});
+    if(podeAlterarPapelLoja)renderLojasEdicao();
+    $('modalEditarUsuario').classList.add('on');$('editarNome').focus();}
   $('editarLojasBusca').oninput=renderLojasEdicao;
-  $('editarMarcarVisiveis').onclick=function(){var busca=$('editarLojasBusca').value.trim().toLowerCase();cache.lojas.filter(function(l){return String(l.nome||'').toLowerCase().includes(busca);}).forEach(function(l){if(!lojasSelecionadasEdicao.includes(l.id))lojasSelecionadasEdicao.push(l.id);});renderLojasEdicao();};
-  $('editarDesmarcarVisiveis').onclick=function(){var busca=$('editarLojasBusca').value.trim().toLowerCase();lojasSelecionadasEdicao=lojasSelecionadasEdicao.filter(function(id){var loja=cache.lojas.find(function(l){return l.id===id;});return loja&&!String(loja.nome||'').toLowerCase().includes(busca);});renderLojasEdicao();};
+  $('editarMarcarVisiveis').onclick=function(){var q=$('editarLojasBusca').value.trim().toLowerCase();cache.lojas.filter(function(l){return String(l.nome||'').toLowerCase().includes(q);}).forEach(function(l){if(!lojasSelecionadasEdicao.includes(l.id))lojasSelecionadasEdicao.push(l.id);});renderLojasEdicao();};
+  $('editarDesmarcarVisiveis').onclick=function(){var q=$('editarLojasBusca').value.trim().toLowerCase();lojasSelecionadasEdicao=lojasSelecionadasEdicao.filter(function(id){var l=cache.lojas.find(function(x){return x.id===id;});return l&&!String(l.nome||'').toLowerCase().includes(q);});renderLojasEdicao();};
   function fecharEdicao(){usuarioEditando=null;$('modalEditarUsuario').classList.remove('on');}
   function salvarEdicao(){if(!usuarioEditando)return;var nome=$('editarNome').value.trim(),senha=$('editarSenha').value,payload={acao:'editar',id:usuarioEditando.id,nome:nome};
     if(!nome){toast('Informe o nome completo.');$('editarNome').focus();return;}
     if(senha){var er=strongPass(senha,usuarioEditando.usuario);if(er){toast(er);return;}payload.senha=senha;}
-    if(p==='admin'){var papel=$('editarPapel').value;if(!['operador','assistente','analista','admin'].includes(papel)){toast('Papel inválido.');return;}payload.papel=papel;payload.lojas=lojasSelecionadasEdicao.slice();if(!payload.lojas.length){toast('Selecione pelo menos uma loja.');return;}}
-    $('salvarEditarUsuario').disabled=true;callGestao(payload).then(function(){toast('Cadastro atualizado.');fecharEdicao();carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('salvarEditarUsuario').disabled=false;});
-  }
+    if(['admin','analista','gerente'].includes(p)){var papel=$('editarPapel').value;if(!['operador','assistente','analista','gerente','admin'].includes(papel)){toast('Papel inválido.');return;}payload.papel=papel;payload.lojas=lojasSelecionadasEdicao.slice();if(!payload.lojas.length){toast('Selecione pelo menos uma loja.');return;}}
+    $('salvarEditarUsuario').disabled=true;callGestao(payload).then(function(){toast('Cadastro atualizado.');fecharEdicao();carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('salvarEditarUsuario').disabled=false;});}
   $('cancelarEditarUsuario').onclick=fecharEdicao;$('salvarEditarUsuario').onclick=salvarEdicao;
   $('modalEditarUsuario').addEventListener('click',function(e){if(e.target===this)fecharEdicao();});
   function excluir(id){var u=cache.users.find(function(x){return x.id===id;});if(!u||!confirm('Excluir definitivamente o usuário '+u.usuario+'? Esta ação não pode ser desfeita.'))return;callGestao({acao:'excluir',id:id}).then(function(){toast('Usuário excluído.');carregar();}).catch(function(e){toast(e.message);});}

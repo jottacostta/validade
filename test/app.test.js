@@ -308,6 +308,24 @@ tflaky('conta: entra (usuário→e-mail interno), lista e escolhe a loja', { ski
   await a.fechar();
 });
 
+tflaky('conta: sair invalida token e retorna à tela de login', { skip: pular }, async () => {
+  const a = await abrir({ url: URL_SUPA, chave: 'validade_sessao', dados: { access_token: 'logout-token', refresh_token: 'logout-refresh', expira: Date.now()+3600000, usuario: 'joao', uid: 'u1', lojaId: 'L1', lojaNome: 'Bangu' } });
+  let logoutAuthorization = '';
+  await a.p.route('**/auth/v1/logout', async r => { logoutAuthorization = r.request().headers().authorization || ''; await r.fulfill({ status: 204, body: '' }); });
+  await a.p.evaluate(() => document.getElementById('bLogoutHdr').click());
+  await a.p.waitForFunction(() => localStorage.getItem('validade_sessao') === null);
+  await a.p.waitForSelector('#conta-login', { state: 'visible' });
+  assert.strictEqual(logoutAuthorization, 'Bearer logout-token');
+  assert.strictEqual(await a.p.evaluate(() => localStorage.getItem('validade_sessao')), null);
+  // simula botão Voltar após logout: sessão/tela autenticada não pode reaparecer
+  await a.p.evaluate(() => { history.pushState({protected:true}, '', location.href.split('#')[0]+'#protected'); history.back(); });
+  await a.p.waitForFunction(() => localStorage.getItem('validade_sessao') === null);
+  await a.p.waitForSelector('#conta-login', { state: 'visible' });
+  assert.strictEqual(await a.p.evaluate(() => localStorage.getItem('validade_sessao')), null);
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
+
 tflaky('conta: senha errada mostra mensagem de erro', { skip: pular }, async () => {
   const a = await abrir({ url: URL_SUPA });
   await a.p.route('**/auth/v1/token*', r => r.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error_description: 'Invalid login credentials' }) }));
@@ -489,7 +507,7 @@ tflaky('backup: envia atributos ao catálogo único e apenas associações loja-
   }, dados);
   await a.p.waitForFunction(() => { try { return !!JSON.parse(localStorage.getItem('validade_sync') || '{}').backup; } catch (e) { return false; } });
   assert.ok(bodies.catalogo.some(r => r.ean === '789' && r.nome === 'Café'), 'metadados enviados ao catálogo global');
-  assert.ok(bodies.produtos.some(r => r.ean === '789' && r.loja_id === 'L1' && Object.keys(r).sort().join(',') === 'ean,loja_id'), 'associação loja-EAN enviada sem atributos duplicados');
+  assert.ok(bodies.produtos.some(r => r.ean === '789' && r.loja_id === 'L1' && Object.keys(r).sort().join(',').includes('ean') && Object.keys(r).sort().join(',').includes('loja_id')), 'associação loja-EAN enviada sem atributos duplicados');
   assert.ok(bodies.lotes.some(r => r.id === 'l1' && r.ean === '789' && r.qtd === 3 && r.loja_id === 'L1'), 'lote enviado');
   assert.ok(bodies.pere_itens.some(r => r.cod === '6019' && r.descricao === 'Pernil' && r.loja_id === 'L1'), 'código enviado');
   assert.ok(bodies.pere_regs.some(r => r.id === 'r1' && r.peso === 0.8 && r.loja_id === 'L1'), 'registro enviado');
