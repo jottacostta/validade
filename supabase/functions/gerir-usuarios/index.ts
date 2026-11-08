@@ -113,6 +113,7 @@ Deno.serve(async (req) => {
       if ((ehAnalista || ehGerente) && !["operador", "assistente"].includes(papel)) return json({ error: "Analista/Gerente só pode criar operadores e assistentes." }, 403);
       const permit = await lojasPermitidas();
       lojas = [...new Set(lojas)];
+      if (papelCaller === "assistente" && (permit.size !== 1 || lojas.length !== 1 || !permit.has(lojas[0]))) return json({ error: "Assistente só pode cadastrar operador na sua única loja vinculada." }, 403);
       if (!lojas.length) return json({ error: "Escolha pelo menos uma loja." }, 400);
       if (lojas.some((id) => !permit.has(id))) return json({ error: "Você tentou atribuir loja sem permissão." }, 403);
       const email = usuario + "@" + dominio;
