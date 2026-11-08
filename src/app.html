@@ -898,13 +898,34 @@ function iniciarGestaoUsuarios(){
   }
   function carregar(){ $('listaUsuarios').innerHTML='<div class="vazio"><span class="gira"></span> carregando usuários…</div>';
     callGestao({acao:'listar'}).then(function(r){cache.users=r.usuarios||[];cache.lojas=r.lojas||[];$('uLojas').innerHTML=lojaChecks(cache.lojas);render();}).catch(function(e){$('listaUsuarios').innerHTML='<div class="aviso wa">'+esc(e.message)+'</div>';});}
-  function criar(){var usuario=$('uUsuario').value.trim().toLowerCase(),nome=$('uNome').value.trim(),senha=$('uSenha').value,papel=p==='admin'?$('uPapel').value:'operador',lojas=selectedStores();
+  function criar(){var usuario=$('uUsuario').value.trim().toLowerCase(),nome=$('uNome').value.trim(),senha=$('uSenha').value,papel=['admin','analista','gerente'].includes(p)?$('uPapel').value:'operador',lojas=selectedStores();
     if(!/^[a-z0-9._-]{3,30}$/.test(usuario)){toast('Login: 3–30 caracteres minúsculos, números, . _ -');return;}
     if(!nome){toast('Informe o nome completo.');return;}var err=strongPass(senha,usuario);if(err){toast(err);return;}if(!lojas.length){toast('Selecione ao menos uma loja.');return;}
-    $('bUsuarioCriar').disabled=true;callGestao({acao:'criar',usuario:usuario,nome:nome,senha:senha,papel:papel,lojas:lojas}).then(function(){toast('Usuário criado.');$('uUsuario').value='';$('uNome').value='';$('uSenha').value='';carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('bUsuarioCriar').disabled=false;});}
-  function editar(id){var u=cache.users.find(function(x){return x.id===id;});if(!u)return;var nome=prompt('Nome completo:',u.nome||'');if(nome===null)return;var senha=prompt('Nova senha (deixe em branco para manter):','');if(senha===null)return;var payload={acao:'editar',id:id,nome:nome};if(senha){var er=strongPass(senha,u.usuario);if(er){toast(er);return;}payload.senha=senha;}
-    if(p==='admin'){var papel=prompt('Papel: operador, assistente, analista ou admin',u.papel);if(papel===null)return;if(!['operador','assistente','analista','admin'].includes(papel)){toast('Papel inválido.');return;}payload.papel=papel;var lojaIds=cache.lojas.map(function(l,i){return (i+1)+'. '+l.nome+' ['+l.id+']';}).join('\n');var resposta=prompt('IDs das lojas separados por vírgula (vazio = sem lojas):\n'+lojaIds,(u.lojas||[]).map(function(l){return l.id;}).join(','));if(resposta===null)return;payload.lojas=resposta.split(',').map(function(x){return x.trim();}).filter(Boolean);}
-    callGestao(payload).then(function(){toast('Cadastro atualizado.');carregar();}).catch(function(e){toast(e.message);});}
+    $('bUsuarioCriar').disabled=true;callGestao({acao:'criar',usuario:usuario,nome: nome,senha:senha,papel:papel,lojas:lojas,exigir_troca_senha:$('uTrocaSenha').checked}).then(function(){toast('Usuário criado.');$('uUsuario').value='';$('uNome').value='';$('uSenha').value='';$('uTrocaSenha').checked=false;carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('bUsuarioCriar').disabled=false;});}
+  var usuarioEditando=null,lojasSelecionadasEdicao=[];
+  function atualizarResumoLojas(){var marcadas=lojasSelecionadasEdicao.length,total=cache.lojas.length;$('editarLojasResumo').textContent=marcadas+' loja(s) selecionada(s) de '+total+' disponíveis';}
+  function renderLojasEdicao(){var busca=$('editarLojasBusca').value.trim().toLowerCase(),visiveis=cache.lojas.filter(function(l){return String(l.nome||'').toLowerCase().includes(busca);});
+    $('editarLojas').innerHTML=lojaChecks(visiveis,lojasSelecionadasEdicao).replace(/class="uLoja"/g,'class="uLojaEdit"');
+    document.querySelectorAll('#editarLojas .uLojaEdit').forEach(function(ch){ch.onchange=function(){if(ch.checked){if(!lojasSelecionadasEdicao.includes(ch.value))lojasSelecionadasEdicao.push(ch.value);}else lojasSelecionadasEdicao=lojasSelecionadasEdicao.filter(function(id){return id!==ch.value;});atualizarResumoLojas();};});atualizarResumoLojas();}
+  function editar(id){var u=cache.users.find(function(x){return x.id===id;});if(!u)return;usuarioEditando=u;
+    $('editarNome').value=u.nome||'';$('editarSenha').value='';$('editarPapel').value=u.papel||'operador';$('editarLojasBusca').value='';
+    lojasSelecionadasEdicao=(u.lojas||[]).map(function(l){return l.id;});
+    var podeAlterarPapelLoja=['admin','analista','gerente'].includes(p);
+    $('editarPapelWrap').style.display=podeAlterarPapelLoja?'':'none';$('editarLojasWrap').style.display=podeAlterarPapelLoja?'':'none';
+    $('editarPapel').querySelectorAll('option').forEach(function(o){o.disabled=!admin&&['analista','gerente','admin'].includes(o.value);});
+    if(podeAlterarPapelLoja)renderLojasEdicao();
+    $('modalEditarUsuario').classList.add('on');$('editarNome').focus();}
+  $('editarLojasBusca').oninput=renderLojasEdicao;
+  $('editarMarcarVisiveis').onclick=function(){var q=$('editarLojasBusca').value.trim().toLowerCase();cache.lojas.filter(function(l){return String(l.nome||'').toLowerCase().includes(q);}).forEach(function(l){if(!lojasSelecionadasEdicao.includes(l.id))lojasSelecionadasEdicao.push(l.id);});renderLojasEdicao();};
+  $('editarDesmarcarVisiveis').onclick=function(){var q=$('editarLojasBusca').value.trim().toLowerCase();lojasSelecionadasEdicao=lojasSelecionadasEdicao.filter(function(id){var l=cache.lojas.find(function(x){return x.id===id;});return l&&!String(l.nome||'').toLowerCase().includes(q);});renderLojasEdicao();};
+  function fecharEdicao(){usuarioEditando=null;$('modalEditarUsuario').classList.remove('on');}
+  function salvarEdicao(){if(!usuarioEditando)return;var nome=$('editarNome').value.trim(),senha=$('editarSenha').value,payload={acao:'editar',id:usuarioEditando.id,nome:nome};
+    if(!nome){toast('Informe o nome completo.');$('editarNome').focus();return;}
+    if(senha){var er=strongPass(senha,usuarioEditando.usuario);if(er){toast(er);return;}payload.senha=senha;}
+    if(['admin','analista','gerente'].includes(p)){var papel=$('editarPapel').value;if(!['operador','assistente','analista','gerente','admin'].includes(papel)){toast('Papel inválido.');return;}payload.papel=papel;payload.lojas=lojasSelecionadasEdicao.slice();if(!payload.lojas.length){toast('Selecione pelo menos uma loja.');return;}}
+    $('salvarEditarUsuario').disabled=true;callGestao(payload).then(function(){toast('Cadastro atualizado.');fecharEdicao();carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('salvarEditarUsuario').disabled=false;});}
+  $('cancelarEditarUsuario').onclick=fecharEdicao;$('salvarEditarUsuario').onclick=salvarEdicao;
+  $('modalEditarUsuario').addEventListener('click',function(e){if(e.target===this)fecharEdicao();});
   function excluir(id){var u=cache.users.find(function(x){return x.id===id;});if(!u||!confirm('Excluir definitivamente o usuário '+u.usuario+'? Esta ação não pode ser desfeita.'))return;callGestao({acao:'excluir',id:id}).then(function(){toast('Usuário excluído.');carregar();}).catch(function(e){toast(e.message);});}
   $('bUsuarioCriar').onclick=criar;$('bUsuarioRefresh').onclick=carregar;carregar();
 }
