@@ -681,13 +681,13 @@ function sincronizarLoja(){
   function baixar(tabela,campos){return sbReq('/rest/v1/'+tabela+'?loja_id=eq.'+loja+'&select='+campos+'&order=updated_at.asc&limit=10000')
     .then(function(r){if(!r.ok)throw new Error('Falha ao baixar '+tabela+' (HTTP '+r.status+')');return Array.isArray(r.dados)?r.dados:[];});}
   return Promise.all([
-    baixar('produtos','ean,nome,created_by,updated_at,deleted_at'),
+    baixar('produtos','ean,created_by,updated_at,deleted_at'),
     baixar('lotes','id,ean,lote,qtd,val,criado,created_by,updated_at,deleted_at'),
     baixar('pere_itens','cod,descricao,sif,created_by,updated_at,deleted_at'),
     baixar('pere_regs','id,cod,sif,peso,val,criado,created_by,updated_at,deleted_at')
   ]).then(function(res){
     var produtos=res[0],lotes=res[1],itens=res[2],regs=res[3],n=0;
-    produtos.forEach(function(row){var ean=String(row.ean);if(row.deleted_at){delete D.prod[ean];return;}var p=D.prod[ean]||(D.prod[ean]={lotes:[]});if(!Array.isArray(p.lotes))p.lotes=[];if(row.nome&&!p.desc)p.desc=row.nome;if(row.created_by)p.created_by=row.created_by;n++;});
+    produtos.forEach(function(row){var ean=String(row.ean);if(row.deleted_at){delete D.prod[ean];return;}var p=D.prod[ean]||(D.prod[ean]={lotes:[]});if(!Array.isArray(p.lotes))p.lotes=[];if(row.created_by)p.created_by=row.created_by;n++;});
     lotes.forEach(function(row){if(row.deleted_at){var existing=D.prod[String(row.ean)];if(existing&&Array.isArray(existing.lotes))existing.lotes=existing.lotes.filter(function(x){return String(x.id)!==String(row.id);});return;}var p=D.prod[String(row.ean)]||(D.prod[String(row.ean)]={lotes:[]});if(!Array.isArray(p.lotes))p.lotes=[];
       var l=p.lotes.find(function(x){return String(x.id)===String(row.id);}),obj={id:row.id,lote:row.lote||'',qtd:Number(row.qtd)||0,val:row.val||'',criado:row.criado||null,created_by:row.created_by||null,atualizado:row.updated_at?Date.parse(row.updated_at):null};
       if(l){Object.assign(l,obj);}else p.lotes.push(obj);n++;});
@@ -719,7 +719,10 @@ function agendarBackup(){if(!sbOn()||!logado()||!SESS.lojaId)return;clearTimeout
 function backupNuvem(){if(!sbOn()||!logado()||!SESS.lojaId||backupEmAndamento)return Promise.resolve(0);
   backupEmAndamento=true;var L=linhasLocais(SESS.lojaId);
   function up(tabela,conflito,rows){if(!rows.length)return Promise.resolve();
-    return sbReq('/rest/v1/'+tabela+'?on_conflict='+conflito,{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:rows}).then(function(r){if(!r.ok)throw new Error('Falha ao enviar '+tabela+' (HTTP '+r.status+')');return r;});}
+    // created_by é identidade definida pelo trigger do banco; não enviar em upsert,
+    // para evitar tentar sobrescrever autoria imutável (inclusive com null).
+    var payload=rows.map(function(row){var clean=Object.assign({},row);delete clean.created_by;return clean;});
+    return sbReq('/rest/v1/'+tabela+'?on_conflict='+conflito,{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:payload}).then(function(r){if(!r.ok)throw new Error('Falha ao enviar '+tabela+' (HTTP '+r.status+')');return r;});}
   var catalogo=L.produtos.map(function(r){var c=detalheProduto(r.ean);return c.nome?{ean:r.ean,nome:c.nome,marca:c.marca||'',img:c.img||''}:null;}).filter(Boolean);
   return up('catalogo','ean',catalogo).then(function(){return Promise.all([up('produtos','loja_id,ean',L.produtos),up('lotes','id',L.lotes),up('pere_itens','loja_id,cod',L.pere_itens),up('pere_regs','id',L.pere_regs)]);})
     .then(function(){SYNC.backup=Date.now();salvarSync();var n=L.produtos.length+L.lotes.length+L.pere_itens.length+L.pere_regs.length;if(document.querySelector('#abas button.on')&&document.querySelector('#abas button.on').dataset.v==='aj')contaCard();return n;})
