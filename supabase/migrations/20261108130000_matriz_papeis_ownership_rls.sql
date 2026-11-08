@@ -42,7 +42,7 @@ end $$;
 -- Fail closed: assistente só pode ter exatamente um vínculo de loja ativo.
 create or replace function private.membro_da(loja uuid)
 returns boolean language plpgsql stable security definer set search_path=''
-as $
+as $fn$
 declare v_papel text; v_total integer;
 begin
   v_papel := private.meu_papel();
@@ -52,7 +52,7 @@ begin
   end if;
   return exists(select 1 from public.loja_membros m where m.loja_id=loja and m.user_id=auth.uid());
 end;
-$;
+$fn$;
 revoke all on function private.membro_da(uuid) from public,anon;
 grant execute on function private.membro_da(uuid) to authenticated;
 
@@ -163,7 +163,7 @@ grant select,insert,update,delete on public.preferencias to authenticated;
 -- Server-side audit for meaningful mutations (avoids client-only forged identity).
 create or replace function private.audit_mutation()
 returns trigger language plpgsql security definer set search_path=''
-as $
+as $fn$
 declare v_user text; v_role text; v_store uuid; v_store_name text; v_old jsonb; v_new jsonb; v_key text;
 begin
   if auth.uid() is null then
@@ -184,9 +184,9 @@ begin
   values(auth.uid(),v_user,v_role,v_store,v_store_name,
     lower(tg_op)||'_'||tg_table_name,
     jsonb_build_object('table',tg_table_name,'operation',tg_op,'record_id',v_key,'old',v_old,'new',v_new));
-  return coalesce(new,old);
+  if tg_op='DELETE' then return old; else return new; end if;
 end;
-$;
+$fn$;
 revoke all on function private.audit_mutation() from public,anon,authenticated;
 
 do $
