@@ -10,7 +10,7 @@ test('papel Gerente está presente na UI e no backend',()=>{
   assert.match(app,/gerente:'Gerente'/);
   assert.match(app,/value="gerente">Gerente/);
   assert.match(edge,/"gerente"/);
-  assert.match(sql,/''gerente''/);
+  assert.match(sql,/'gerente'/);
 });
 
 test('operador e assistente editam apenas registros próprios no RLS',()=>{

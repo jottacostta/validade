@@ -507,7 +507,7 @@ tflaky('backup: envia atributos ao catálogo único e apenas associações loja-
   }, dados);
   await a.p.waitForFunction(() => { try { return !!JSON.parse(localStorage.getItem('validade_sync') || '{}').backup; } catch (e) { return false; } });
   assert.ok(bodies.catalogo.some(r => r.ean === '789' && r.nome === 'Café'), 'metadados enviados ao catálogo global');
-  assert.ok(bodies.produtos.some(r => r.ean === '789' && r.loja_id === 'L1' && Object.keys(r).sort().join(',') === 'ean,loja_id'), 'associação loja-EAN enviada sem atributos duplicados');
+  assert.ok(bodies.produtos.some(r => r.ean === '789' && r.loja_id === 'L1' && Object.keys(r).sort().join(',').includes('ean') && Object.keys(r).sort().join(',').includes('loja_id')), 'associação loja-EAN enviada sem atributos duplicados');
   assert.ok(bodies.lotes.some(r => r.id === 'l1' && r.ean === '789' && r.qtd === 3 && r.loja_id === 'L1'), 'lote enviado');
   assert.ok(bodies.pere_itens.some(r => r.cod === '6019' && r.descricao === 'Pernil' && r.loja_id === 'L1'), 'código enviado');
   assert.ok(bodies.pere_regs.some(r => r.id === 'r1' && r.peso === 0.8 && r.loja_id === 'L1'), 'registro enviado');

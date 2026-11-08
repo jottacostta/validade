@@ -563,10 +563,10 @@ function listaPere(){var q=$('qPe').value.toLowerCase(),grupos={};
     return '<div class="card"><b>'+esc(g.it.desc)+'</b><div class="ean">código '+g.cod+' • '+g.regs.length+' registro(s) • '+kg(tot)+' kg</div><table><tr><th>SIF</th><th>Peso</th><th>Validade</th><th></th></tr>'
       +g.regs.map(function(r){return '<tr data-pe="'+r.id+'"><td>'+esc(r.sif||'—')+'</td><td>'+kg(r.peso)+' kg</td><td>'+fdata(r.val)+'</td><td style="text-align:right">'+status(r.val)+'</td></tr>';}).join('')+'</table></div>';}).join('')||'<div class="vazio">Nenhum registro de perecíveis.</div>';}
 $('listaPe').onclick=function(e){var tr=e.target.closest('tr[data-pe]');if(!tr)return;var r=D.pere.regs.filter(function(x){return x.id===tr.dataset.pe;})[0];if(!r)return;
-  var papel=papelAtual(),proprio=!!(SESS&&SESS.uid&&r.created_by===SESS.uid),full=['analista','gerente','admin'].includes(papel);if(!full&&!proprio){toast('Você só pode editar seus próprios registros');return;}
+  var papel=papelAtual(),local=!sbOn()||!logado(),proprio=!!(SESS&&SESS.uid&&(r.created_by===SESS.uid||!r.created_by)),full=['analista','gerente','admin'].includes(papel);if(!local&&!full&&!proprio){toast('Você só pode editar seus próprios registros');return;}
   var it=D.pere.itens[r.cod]||{},nome=it.desc||('código '+r.cod);
   var p=prompt(nome+' • '+kg(r.peso)+' kg • validade '+fdata(r.val)+'\n\nPeso em kg (0 solicita exclusão):',String(r.peso).replace('.',','));if(p===null)return;
-  var peso=num(p);if(peso<=0){if(ehAdmin()){if(confirm('Excluir este registro como Administrador?'))adminExcluirRegistro('pere_reg',r.id);return;}if(sbOn()&&logado()){solicitarExclusao('pere_reg',r.id);return;}if(confirm('Excluir registro localmente?')){D.pere.regs=D.pere.regs.filter(function(x){return x!==r;});cancelarLembrete(r.id);salvar();listaPere();auditar('apagou_perecivel',{cod:r.cod,peso:r.peso});}return;}
+  var peso=num(p);if(peso<=0){if(ehAdmin()&&sbOn()&&logado()){if(confirm('Excluir este registro como Administrador?'))adminExcluirRegistro('pere_reg',r.id);return;}if(sbOn()&&logado()){solicitarExclusao('pere_reg',r.id);return;}if(confirm('Excluir registro localmente?')){D.pere.regs=D.pere.regs.filter(function(x){return x!==r;});cancelarLembrete(r.id);salvar();listaPere();auditar('apagou_perecivel',{cod:r.cod,peso:r.peso});}return;}
   var v=prompt('Validade (dd/mm/aaaa):',fdata(r.val));if(v===null)return;var val=lerData(v);if(!val){toast('Data inválida — nada alterado');return;}
   var sif=prompt('SIF:',r.sif||'');if(sif===null)return;
   r.peso=peso;r.val=val;r.sif=sif.trim();r.atualizado=Date.now();if(proprio&&it.created_by===SESS.uid){var desc=prompt('Descrição do código:',it.desc||'');if(desc!==null&&desc.trim())it.desc=desc.trim();}
@@ -708,10 +708,11 @@ function sincronizarLoja(){
 function agendarSincronizacaoPeriodica(){clearInterval(temporizadorSincronizacao);if(!sbOn()||!logado()||!SESS.lojaId)return;temporizadorSincronizacao=setInterval(function(){if(!document.hidden)sincronizarLoja();},20000);}
 /* ───── backup do estoque da loja na nuvem (envio; a volta vem depois) ───── */
 function linhasLocais(loja){var pr=[],lo=[],pi=[],pg=[],uid=SESS&&SESS.uid,papel=papelAtual(),global=['analista','gerente','admin'].includes(papel);
-  Object.keys(D.prod).forEach(function(ean){var p=D.prod[ean];if(global||p.created_by===uid)pr.push({loja_id:loja,ean:String(ean),nome:p.desc||detalheProduto(ean).nome||'',created_by:p.created_by||null});
-    (p.lotes||[]).forEach(function(l){if(global||l.created_by===uid)lo.push({id:l.id,loja_id:loja,ean:String(ean),lote:l.lote||'',qtd:+l.qtd||0,val:l.val||null,criado:l.criado||null,created_by:l.created_by||null});});});
-  Object.keys(D.pere.itens).forEach(function(cod){var it=D.pere.itens[cod];if(global||it.created_by===uid)pi.push({loja_id:loja,cod:String(cod),descricao:it.desc||'',sif:it.sif||'',created_by:it.created_by||null});});
-  (D.pere.regs||[]).forEach(function(r){if(global||r.created_by===uid)pg.push({id:r.id,loja_id:loja,cod:String(r.cod),sif:r.sif||'',peso:+r.peso||0,val:r.val||null,criado:r.criado||null,created_by:r.created_by||null});});
+  function meu(o){return global||!o.created_by||o.created_by===uid;}
+  Object.keys(D.prod).forEach(function(ean){var p=D.prod[ean];if(meu(p))pr.push({loja_id:loja,ean:String(ean),created_by:p.created_by||null});
+    (p.lotes||[]).forEach(function(l){if(meu(l))lo.push({id:l.id,loja_id:loja,ean:String(ean),lote:l.lote||'',qtd:+l.qtd||0,val:l.val||null,criado:l.criado||null,created_by:l.created_by||null});});});
+  Object.keys(D.pere.itens).forEach(function(cod){var it=D.pere.itens[cod];if(meu(it))pi.push({loja_id:loja,cod:String(cod),descricao:it.desc||'',sif:it.sif||'',created_by:it.created_by||null});});
+  (D.pere.regs||[]).forEach(function(r){if(meu(r))pg.push({id:r.id,loja_id:loja,cod:String(r.cod),sif:r.sif||'',peso:+r.peso||0,val:r.val||null,criado:r.criado||null,created_by:r.created_by||null});});
   return {produtos:pr,lotes:lo,pere_itens:pi,pere_regs:pg};}
 var tBackup=null,backupEmAndamento=false;
 function agendarBackup(){if(!sbOn()||!logado()||!SESS.lojaId)return;clearTimeout(tBackup);tBackup=setTimeout(backupNuvem,5000);}
