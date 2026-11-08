@@ -312,7 +312,8 @@ tflaky('conta: sair invalida token e retorna à tela de login', { skip: pular },
   const a = await abrir({ url: URL_SUPA, chave: 'validade_sessao', dados: { access_token: 'logout-token', refresh_token: 'logout-refresh', expira: Date.now()+3600000, usuario: 'joao', uid: 'u1', lojaId: 'L1', lojaNome: 'Bangu' } });
   let logoutAuthorization = '';
   await a.p.route('**/auth/v1/logout', async r => { logoutAuthorization = r.request().headers().authorization || ''; await r.fulfill({ status: 204, body: '' }); });
-  await a.p.click('#bLogoutHdr');
+  await a.p.waitForSelector('#bSairConta', { state: 'visible' });
+  await a.p.click('#bSairConta');
   await a.p.waitForFunction(() => localStorage.getItem('validade_sessao') === null);
   await a.p.waitForSelector('#conta-login', { state: 'visible' });
   assert.strictEqual(logoutAuthorization, 'Bearer logout-token');
