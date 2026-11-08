@@ -198,9 +198,11 @@ Deno.serve(async (req) => {
       if (ehGerente) {
         const { data: targetStores } = await admin.from("loja_membros").select("loja_id").eq("user_id", String(body.id || ""));
         const allowedStores = await lojasPermitidas();
-        if ((targetStores || []).some((m: { loja_id: string }) => !allowedStores.has(m.loja_id))) return json({ error: "Gerente não pode excluir usuário de loja fora do seu escopo." }, 403);
-        const { data: targetProfile } = await admin.from("perfis").select("papel").eq("id", String(body.id || "")).single();
-        if (targetProfile?.papel === "admin") return json({ error: "Gerente não pode excluir Administrador." }, 403);
+        if (!targetStores || targetStores.length === 0) return json({ error: "Não é possível excluir usuário sem vínculo de loja; valide o cadastro com Administrador." }, 403);
+        if (targetStores.some((m: { loja_id: string }) => !allowedStores.has(m.loja_id))) return json({ error: "Gerente não pode excluir usuário de loja fora do seu escopo." }, 403);
+        const { data: targetProfile, error: targetProfileErr } = await admin.from("perfis").select("papel").eq("id", String(body.id || "")).single();
+        if (targetProfileErr || !targetProfile) return json({ error: "Perfil do usuário alvo não encontrado." }, 404);
+        if (["admin", "gerente"].includes(targetProfile.papel)) return json({ error: "Gerente não pode excluir Administrador ou outro Gerente." }, 403);
       }
       const id = String(body.id || "");
       if (!id) return json({ error: "Usuário não informado." }, 400);
