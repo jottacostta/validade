@@ -168,7 +168,7 @@ declare v_user text; v_role text; v_store uuid; v_store_name text; v_old jsonb; 
 begin
   if auth.uid() is null then
     -- Edge Functions using service_role record their own actor in their server audit.
-    return coalesce(new,old);
+    if tg_op='DELETE' then return old; else return new; end if;
   end if;
   if tg_op='DELETE' then v_old:=to_jsonb(old);v_new:=null;
   elsif tg_op='INSERT' then v_old:=null;v_new:=to_jsonb(new);
