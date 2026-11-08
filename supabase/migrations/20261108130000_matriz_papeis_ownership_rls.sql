@@ -39,6 +39,23 @@ end $$;
 
 -- Helper: analista/gerente/admin têm escopo global de lojas; assistente/operador
 -- ficam limitados aos vínculos explícitos.
+-- Fail closed: assistente só pode ter exatamente um vínculo de loja ativo.
+create or replace function private.membro_da(loja uuid)
+returns boolean language plpgsql stable security definer set search_path=''
+as $
+declare v_papel text; v_total integer;
+begin
+  v_papel := private.meu_papel();
+  if v_papel='assistente' then
+    select count(*) into v_total from public.loja_membros where user_id=auth.uid();
+    if v_total <> 1 then return false; end if;
+  end if;
+  return exists(select 1 from public.loja_membros m where m.loja_id=loja and m.user_id=auth.uid());
+end;
+$;
+revoke all on function private.membro_da(uuid) from public,anon;
+grant execute on function private.membro_da(uuid) to authenticated;
+
 create or replace function private.tem_escopo_global()
 returns boolean language sql stable security definer set search_path=''
 as $$ select coalesce(private.meu_papel() = any(array['analista','gerente','admin']),false); $$;
