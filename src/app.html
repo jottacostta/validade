@@ -688,11 +688,11 @@ function sincronizarLoja(){
 }
 function agendarSincronizacaoPeriodica(){clearInterval(temporizadorSincronizacao);if(!sbOn()||!logado()||!SESS.lojaId)return;temporizadorSincronizacao=setInterval(function(){if(!document.hidden)sincronizarLoja();},20000);}
 /* ───── backup do estoque da loja na nuvem (envio; a volta vem depois) ───── */
-function linhasLocais(loja){var pr=[],lo=[],pi=[],pg=[];
-  Object.keys(D.prod).forEach(function(ean){var p=D.prod[ean];pr.push({loja_id:loja,ean:String(ean),nome:p.desc||detalheProduto(ean).nome||'',created_by:p.created_by||null});
-    (p.lotes||[]).forEach(function(l){lo.push({id:l.id,loja_id:loja,ean:String(ean),lote:l.lote||'',qtd:+l.qtd||0,val:l.val||null,criado:l.criado||null,created_by:l.created_by||null});});});
-  Object.keys(D.pere.itens).forEach(function(cod){var it=D.pere.itens[cod];pi.push({loja_id:loja,cod:String(cod),descricao:it.desc||'',sif:it.sif||'',created_by:it.created_by||null});});
-  (D.pere.regs||[]).forEach(function(r){pg.push({id:r.id,loja_id:loja,cod:String(r.cod),sif:r.sif||'',peso:+r.peso||0,val:r.val||null,criado:r.criado||null,created_by:r.created_by||null});});
+function linhasLocais(loja){var pr=[],lo=[],pi=[],pg=[],uid=SESS&&SESS.uid,papel=papelAtual(),global=['analista','gerente','admin'].includes(papel);
+  Object.keys(D.prod).forEach(function(ean){var p=D.prod[ean];if(global||p.created_by===uid)pr.push({loja_id:loja,ean:String(ean),nome:p.desc||detalheProduto(ean).nome||'',created_by:p.created_by||null});
+    (p.lotes||[]).forEach(function(l){if(global||l.created_by===uid)lo.push({id:l.id,loja_id:loja,ean:String(ean),lote:l.lote||'',qtd:+l.qtd||0,val:l.val||null,criado:l.criado||null,created_by:l.created_by||null});});});
+  Object.keys(D.pere.itens).forEach(function(cod){var it=D.pere.itens[cod];if(global||it.created_by===uid)pi.push({loja_id:loja,cod:String(cod),descricao:it.desc||'',sif:it.sif||'',created_by:it.created_by||null});});
+  (D.pere.regs||[]).forEach(function(r){if(global||r.created_by===uid)pg.push({id:r.id,loja_id:loja,cod:String(r.cod),sif:r.sif||'',peso:+r.peso||0,val:r.val||null,criado:r.criado||null,created_by:r.created_by||null});});
   return {produtos:pr,lotes:lo,pere_itens:pi,pere_regs:pg};}
 var tBackup=null,backupEmAndamento=false;
 function agendarBackup(){if(!sbOn()||!logado()||!SESS.lojaId)return;clearTimeout(tBackup);tBackup=setTimeout(backupNuvem,5000);}
