@@ -15,7 +15,7 @@ test('papel Gerente está presente na UI e no backend',()=>{
 
 test('operador e assistente editam apenas registros próprios no RLS',()=>{
   assert.match(sql,/created_by = auth\.uid\(\)/);
-  assert.match(app,/papel==='operador'\|\|papel==='assistente'/);
+  assert.match(app,/\['operador','assistente'\]\.includes\(papel\)&&proprio/);
   assert.match(app,/created_by===SESS\.uid/);
 });
 
