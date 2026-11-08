@@ -316,14 +316,72 @@ tflaky('sem Supabase configurado: card de conta fica oculto', { skip: pular }, a
 
 /* abre o app já logado (sessão posta via evaluate + reload, como os demais testes);
    setupRotas registra as rotas ANTES do reload, para o pull inicial ser interceptado */
-async function abrirLogado(setupRotas, dados) {
+async function abrirLogado(setupRotas, dados, sessaoExtra) {
   const a = await abrir({ url: URL_SUPA });
   if (setupRotas) await setupRotas(a.p);
-  await a.p.evaluate((d) => { localStorage.setItem('validade_sessao', JSON.stringify({ access_token: 'tok', refresh_token: 'ref', expira: Date.now() + 3600000, usuario: 'teste', email: 'teste@loja.validade', uid: 'u1', lojaId: 'L1', lojaNome: 'Loja Teste' })); if (d) localStorage.setItem('validade_dados', JSON.stringify(d)); }, dados);
+  await a.p.evaluate(([d, extra]) => { localStorage.setItem('validade_sessao', JSON.stringify(Object.assign({ access_token: 'tok', refresh_token: 'ref', expira: Date.now() + 3600000, usuario: 'teste', email: 'teste@loja.validade', uid: 'u1', lojaId: 'L1', lojaNome: 'Loja Teste' }, extra || {}))); if (d) localStorage.setItem('validade_dados', JSON.stringify(d)); }, [dados, sessaoExtra]);
   await a.p.reload();
   return a;
 }
 const R_PULL = /\/catalogo\?updated_at=gt/, R_LOOK = /\/catalogo\?ean=eq\./, R_PUSH = /\/catalogo\?on_conflict=ean/, R_OFF = /openfoodfacts\.org/;
+
+tflaky('sessão: renova token expirado antes de sincronizar produtos e lotes', { skip: pular }, async () => {
+  let renovacoes = 0; const autorizacoes = [];
+  const a = await abrirLogado(async p => {
+    await p.route('**/auth/v1/token*', async r => {
+      if (!r.request().url().includes('grant_type=refresh_token')) return r.continue();
+      renovacoes++;
+      await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ access_token: 'token-novo', refresh_token: 'ref-novo', expires_in: 3600, user: { id: 'u1' } }) });
+    });
+    await p.route('**/rest/v1/**', async r => {
+      autorizacoes.push(r.request().headers().authorization || '');
+      const url = new URL(r.request().url());
+      let rows = [];
+      if (r.request().method() === 'GET' && url.pathname === '/rest/v1/produtos') rows = [{ ean: '7891234567890', nome: 'Produto compartilhado', marca: '', img: '', updated_at: '2026-11-07T20:00:00Z', deleted_at: null }];
+      if (r.request().method() === 'GET' && url.pathname === '/rest/v1/lotes') rows = [{ id: 'lote-compartilhado', ean: '7891234567890', lote: 'L05', qtd: 5, val: '2026-12-01', criado: 1, updated_at: '2026-11-07T20:00:00Z', deleted_at: null }];
+      await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows) });
+    });
+  }, null, { expira: Date.now() - 1000 });
+  await a.p.waitForFunction(() => { try { return !!JSON.parse(localStorage.getItem('validade_sync') || '{}').recebido; } catch (e) { return false; } });
+  assert.ok(renovacoes >= 1, 'renovou a sessão expirada');
+  assert.ok(autorizacoes.length > 0 && autorizacoes.every(x => x === 'Bearer token-novo'), 'as chamadas de sincronização usaram o token renovado');
+  assert.strictEqual(JSON.parse(await a.p.evaluate(() => localStorage.getItem('validade_sessao'))).refresh_token, 'ref-novo');
+  const dados = await a.salvo();
+  assert.strictEqual(dados.prod['7891234567890'].nome, 'Produto compartilhado');
+  assert.strictEqual(dados.prod['7891234567890'].lotes[0].id, 'lote-compartilhado');
+  await a.p.click('nav button[data-v="prod"]');
+  assert.ok((await a.p.textContent('#v-prod')).includes('Produto compartilhado'), 'o produto da mesma loja aparece na lista');
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
+
+tflaky('sessão: renova e repete uma chamada ao receber 401', { skip: pular }, async () => {
+  let renovacoes = 0, tentativasCatalogo = 0, liberarRetry;
+  const retryConcluido = new Promise(resolve => { liberarRetry = resolve; });
+  const a = await abrirLogado(async p => {
+    await p.route('**/*', async r => {
+      const url = new URL(r.request().url());
+      if (url.pathname === '/auth/v1/token' && url.searchParams.get('grant_type') === 'refresh_token') {
+        renovacoes++;
+        return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ access_token: 'token-novo', refresh_token: 'ref-novo', expires_in: 3600, user: { id: 'u1' } }) });
+      }
+      if (url.hostname === 'test.supabase.co' && url.pathname === '/rest/v1/catalogo' && url.searchParams.has('updated_at')) {
+        tentativasCatalogo++;
+        if (tentativasCatalogo === 1) return r.fulfill({ status: 401, contentType: 'application/json', body: '{"message":"JWT expired"}' });
+        await r.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+        liberarRetry();
+        return;
+      }
+      if (url.hostname === 'test.supabase.co') return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+      return r.continue();
+    });
+  });
+  await retryConcluido;
+  assert.strictEqual(renovacoes, 1);
+  assert.strictEqual(tentativasCatalogo, 2, 'repetiu uma vez a chamada recusada');
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
 
 tflaky('catálogo: usa o nome do catálogo compartilhado (antes das fontes externas)', { skip: pular }, async () => {
   const a = await abrirLogado(async p => {
