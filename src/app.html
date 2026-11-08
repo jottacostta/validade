@@ -196,7 +196,7 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
       <label class="f" for="uUsuario">Usuário (login)</label><input id="uUsuario" autocomplete="off" autocapitalize="none" placeholder="ex.: joao.silva">
       <label class="f" for="uNome">Nome completo</label><input id="uNome" autocomplete="name">
       <label class="f" for="uSenha">Senha inicial</label><input id="uSenha" type="password" autocomplete="new-password">
-      <label class="f" for="uPapel">Papel</label><select id="uPapel"><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="admin">Administrador</option></select>
+      <label class="f" for="uPapel">Papel</label><select id="uPapel"><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option><option value="admin">Administrador</option></select>
       <div class="f">Lojas vinculadas</div><div id="uLojas" class="row" style="flex-wrap:wrap"></div>
       <button class="btn big" id="bUsuarioCriar" style="margin-top:12px">Criar usuário</button>
     </div>
@@ -719,11 +719,11 @@ $('cEye').onclick=function(){var p=$('cPass'),vis=p.type==='text';p.type=vis?'pa
 $('bVoltarLoja').onclick=fecharConta;
 $('bSairConta').onclick=sairParaLogin;
 $('bLogoutHdr').onclick=function(){if(!logado())return;if(confirm('Sair da conta?'))sairParaLogin();};
-var PAPEIS={operador:'Operador',assistente:'Assistente',analista:'Analista',admin:'Administrador'};
+var PAPEIS={operador:'Operador',assistente:'Assistente',analista:'Analista',gerente:'Gerente',admin:'Administrador'};
 function papelAtual(){return (sbOn()&&SESS&&SESS.papel)||(sbOn()?'operador':'admin');}
-function pode(acao){var p=papelAtual();if(p==='admin')return true;
+function pode(acao){var p=papelAtual();if(p==='admin'||p==='gerente')return true;
   if(acao==='registrar')return p==='operador'||p==='assistente';
-  if(acao==='editar'||acao==='ajustes'||acao==='codigos')return p==='assistente';
+  if(acao==='editar'||acao==='ajustes'||acao==='codigos')return p==='assistente'||p==='analista';
   if(acao==='admin')return false;return true;}
 function aplicarPapel(){var reg=pode('registrar'),ed=pode('editar'),aj=pode('ajustes');
   var tr=document.querySelector('#abas button[data-v=\"reg\"]');if(tr)tr.style.display=reg?'':'none';
@@ -773,7 +773,7 @@ function contaCard(){if(!sbOn()){$('cardConta').style.display='none';atualizarBo
 // ── Gestão de usuários via Edge Function ──
 function iniciarGestaoUsuarios(){
   var card=$('cardUsuarios');if(!card)return;
-  var p=papelAtual(),vis=sbOn()&&logado()&&['assistente','analista','admin'].includes(p);
+  var p=papelAtual(),vis=sbOn()&&logado()&&['assistente','analista','gerente','admin'].includes(p);
   card.style.display=vis?'':'none';if(!vis)return;
   var endpoint='/functions/v1/gerir-usuarios';
   function callGestao(body){return sbReq(endpoint,{method:'POST',body:body}).then(function(r){if(!r.ok)throw new Error(r.dados&&r.dados.error||'Falha na gestão de usuários (HTTP '+r.status+').');return r.dados||{};});}
@@ -781,11 +781,11 @@ function iniciarGestaoUsuarios(){
   function selectedStores(){return Array.from(document.querySelectorAll('#uLojas .uLoja:checked')).map(function(e){return e.value;});}
   function strongPass(s,u){var common=['123456','1234567','12345678','123456789','senha','password','qwerty','111111','000000','abc123','admin123','guanabara'];if(!s||s.length<6)return 'A senha precisa de pelo menos 6 caracteres.';if(common.includes(s.toLowerCase()))return 'Essa senha é muito comum.';if(s.toLowerCase()===u.toLowerCase())return 'A senha não pode ser igual ao usuário.';return '';}
   var cache={users:[],lojas:[]};
-  function render(){var admin=p==='admin',analista=p==='analista'||admin;
-    $('uPapel').disabled=!admin;if(!admin)$('uPapel').value='operador';
+  function render(){var admin=p==='admin',gerente=p==='gerente',analista=p==='analista'||gerente||admin;
+    $('uPapel').disabled=!(admin||analista||gerente);if(!admin){$('uPapel').querySelectorAll('option').forEach(function(o){o.disabled=['analista','gerente','admin'].includes(o.value);});if(!['operador','assistente'].includes($('uPapel').value))$('uPapel').value='operador';}
     $('usuariosForm').style.display='';
     $('listaUsuarios').innerHTML=cache.users.map(function(u){var stores=(u.lojas||[]).map(function(l){return esc(l.nome);}).join(', ')||'—';
-      return '<div class="card" style="padding:12px;margin:8px 0"><div style="font-weight:700">'+esc(u.nome||u.usuario)+'</div><div class="ean">@'+esc(u.usuario)+' · '+esc(PAPEIS[u.papel]||u.papel)+'</div><div style="font-size:12px;margin:5px 0">'+stores+'</div>'+(analista?'<div class="row"><button class="btn sec uEdit" data-id="'+esc(u.id)+'">Editar</button>'+(admin?'<button class="btn perigo uDelete" data-id="'+esc(u.id)+'">Excluir</button>':'')+'</div>':'')+'</div>';
+      return '<div class="card" style="padding:12px;margin:8px 0"><div style="font-weight:700">'+esc(u.nome||u.usuario)+'</div><div class="ean">@'+esc(u.usuario)+' · '+esc(PAPEIS[u.papel]||u.papel)+'</div><div style="font-size:12px;margin:5px 0">'+stores+'</div>'+(analista?'<div class="row"><button class="btn sec uEdit" data-id="'+esc(u.id)+'">Editar</button>'+(admin||gerente?'<button class="btn perigo uDelete" data-id="'+esc(u.id)+'">Excluir</button>':'')+'</div>':'')+'</div>';
     }).join('')||'<div class="vazio">Nenhum usuário encontrado.</div>';
     document.querySelectorAll('.uEdit').forEach(function(b){b.onclick=function(){editar(b.dataset.id);};});
     document.querySelectorAll('.uDelete').forEach(function(b){b.onclick=function(){excluir(b.dataset.id);};});
