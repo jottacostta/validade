@@ -95,6 +95,13 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
 #conta #bVoltarLoja,#conta #bSairConta{border-radius:26px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.28);color:#fff}
 #conta .vazio{color:rgba(255,255,255,.7)}
 #conta #cErro{color:#ffd9d9}
+/* Modal de edição de usuário */
+#modalEditarUsuario .box{max-width:520px}
+#editarLojas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:38vh;overflow:auto;padding:4px}
+#editarLojas label{display:flex;align-items:center;gap:8px;padding:9px;border:1px solid var(--bd);border-radius:9px;min-width:0}
+#editarLojas label span{overflow-wrap:anywhere}
+#editarLojas input{width:18px;height:18px;flex:none}#editarLojasBusca{width:100%;margin:6px 0 8px}#editarLojasAcoes{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 8px}#editarLojasAcoes button{flex:1;min-width:120px}#editarLojasResumo{font-size:12px;color:var(--mu);margin:4px 0 8px}
+@media(max-width:420px){#editarLojas{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -196,7 +203,7 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
     <div id="usuariosForm">
       <label class="f" for="uUsuario">Usuário (login)</label><input id="uUsuario" autocomplete="off" autocapitalize="none" placeholder="ex.: joao.silva">
       <label class="f" for="uNome">Nome completo</label><input id="uNome" autocomplete="name">
-      <label class="f" for="uSenha">Senha inicial</label><input id="uSenha" type="password" autocomplete="new-password">
+      <label class="f" for="uSenha">Senha inicial</label><input id="uSenha" type="password" autocomplete="new-password"><label style="display:flex;align-items:center;gap:9px;margin:8px 0 12px"><input id="uTrocaSenha" type="checkbox" style="width:18px;height:18px"> <span>Exigir troca de senha no primeiro acesso</span></label>
       <label class="f" for="uPapel">Papel</label><select id="uPapel"><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option><option value="admin">Administrador</option></select>
       <div class="f">Lojas vinculadas</div><div id="uLojas" class="row" style="flex-wrap:wrap"></div>
       <button class="btn big" id="bUsuarioCriar" style="margin-top:12px">Criar usuário</button>
@@ -240,7 +247,7 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
     <div id="cErro" class="aviso da" style="display:none;margin-top:4px;margin-bottom:12px"></div>
     <button class="btn big" id="bEntrar">Entrar</button>
   </div>
-  <div id="conta-lojas" style="display:none">
+  <div id="conta-trocaSenha" style="display:none"><h2>Primeiro acesso</h2><p style="color:rgba(255,255,255,.82)">Por segurança, crie uma nova senha para continuar.</p><div class="gate-field"><input id="cNovaSenha" type="password" autocomplete="new-password" placeholder="Nova senha" aria-label="Nova senha"></div><div class="gate-field"><input id="cConfirmaSenha" type="password" autocomplete="new-password" placeholder="Confirme a nova senha" aria-label="Confirme a nova senha"></div><div id="cTrocaErro" class="aviso da" style="display:none;margin-bottom:12px"></div><button class="btn big" id="bTrocarSenhaPrimeiroAcesso">Alterar senha</button><button class="btn sec big" id="bSairTrocaSenha" style="margin-top:8px">Sair</button></div><div id="conta-lojas" style="display:none">
     <h2>Escolha a loja</h2>
     <label class="f" for="selectLoja" style="color:rgba(255,255,255,.8)">Selecione uma unidade na lista</label>
     <select id="selectLoja" aria-label="Selecionar loja" disabled><option value="">Carregando lojas…</option></select>
@@ -636,7 +643,7 @@ function sbReq(path,opt){opt=opt||{};
 }
 function sbLogin(user,pass){return sbReq('/auth/v1/token?grant_type=password',{method:'POST',auth:false,body:{email:user+'@'+DOM_LOGIN,password:pass}})
   .then(function(r){if(!r.ok||!r.dados||!r.dados.access_token)throw new Error((r.dados&&(r.dados.error_description||r.dados.msg||r.dados.error))||'Usuário ou senha inválidos');
-    var u=r.dados.user||{};SESS={access_token:r.dados.access_token,refresh_token:r.dados.refresh_token,expira:Date.now()+((r.dados.expires_in||3600)*1000),usuario:user,email:u.email,uid:u.id,lojaId:null,lojaNome:null};salvarSess();return SESS;});}
+    var u=r.dados.user||{},meta=u.app_metadata||{};SESS={access_token:r.dados.access_token,refresh_token:r.dados.refresh_token,expira:Date.now()+((r.dados.expires_in||3600)*1000),usuario:user,email:u.email,uid:u.id,lojaId:null,lojaNome:null,forcePasswordChange:meta.force_password_change===true};salvarSess();return SESS;});}
 function sbLogout(){var token=SESS&&SESS.access_token;SESS=null;salvarSess();refreshSessaoEmAndamento=null;try{localStorage.removeItem('validade_ultima_loja');}catch(e){}if(token&&sbOn()){return fetch(CFG.supaUrl+'/auth/v1/logout',{method:'POST',headers:{apikey:CFG.supaKey,Authorization:'Bearer '+token}}).catch(function(e){console.warn('Falha ao invalidar sessão remota (sessão local já encerrada):',e);});}return Promise.resolve();}
 function sairParaLogin(){sbLogout();try{history.replaceState({loggedOut:true},'',location.href.split('#')[0]);}catch(e){}var modal=$('conta');if(modal)modal.classList.add('on');mostrarLoginForm();contaCard();atualizarBotaoLogout();atualizarGate();toast('Você saiu');}
 function sbLojas(){return sbReq('/rest/v1/lojas?select=id,nome&order=nome.asc').then(function(r){if(!r.ok)throw new Error('falha');return Array.isArray(r.dados)?r.dados:[];});}
@@ -707,11 +714,11 @@ function backupNuvem(){if(!sbOn()||!logado()||!SESS.lojaId||backupEmAndamento)re
   return up('catalogo','ean',catalogo).then(function(){return Promise.all([up('produtos','loja_id,ean',L.produtos),up('lotes','id',L.lotes),up('pere_itens','loja_id,cod',L.pere_itens),up('pere_regs','id',L.pere_regs)]);})
     .then(function(){SYNC.backup=Date.now();salvarSync();var n=L.produtos.length+L.lotes.length+L.pere_itens.length+L.pere_regs.length;if(document.querySelector('#abas button.on')&&document.querySelector('#abas button.on').dataset.v==='aj')contaCard();return n;})
     .catch(function(){return -1;}).then(function(x){backupEmAndamento=false;return x;});}
-function abrirConta(){if(!sbOn()){toast('Sincronização não configurada');return;}$('conta').classList.add('on');if(logado())mostrarLojas();else mostrarLoginForm();}
+function abrirConta(){if(!sbOn()){toast('Sincronização não configurada');return;}$('conta').classList.add('on');if(logado()){if(SESS.forcePasswordChange)mostrarTrocaSenhaPrimeiroAcesso();else mostrarLojas();}else mostrarLoginForm();}
 function fecharConta(){if(precisaLogin())return;$('conta').classList.remove('on');}
 function captchaErro(msg){var e=$('cErro');e.textContent=msg;e.style.display='';}
-function mostrarLoginForm(){$('conta-login').style.display='';$('conta-lojas').style.display='none';$('cErro').style.display='none';$('cPass').value='';$('cPass').type='password';$('cEye').classList.remove('off');setTimeout(function(){$('cUser').focus();},120);}
-function mostrarLojas(){$('conta-login').style.display='none';$('conta-lojas').style.display='';$('bVoltarLoja').style.display=(SESS&&SESS.lojaId)?'':'none';var sel=$('selectLoja'),btn=$('bSelecionarLoja');sel.disabled=true;btn.disabled=true;sel.innerHTML='<option value="">Carregando lojas…</option>';
+function mostrarLoginForm(){$('conta-login').style.display='';$('conta-lojas').style.display='none';$('conta-trocaSenha').style.display='none';$('cErro').style.display='none';$('cPass').value='';$('cPass').type='password';$('cEye').classList.remove('off');setTimeout(function(){$('cUser').focus();},120);}
+function mostrarTrocaSenhaPrimeiroAcesso(){$('conta-login').style.display='none';$('conta-lojas').style.display='none';$('conta-trocaSenha').style.display='';$('cTrocaErro').style.display='none';$('cNovaSenha').value='';$('cConfirmaSenha').value='';$('bVoltarLoja').style.display='none';setTimeout(function(){$('cNovaSenha').focus();},120);}\nfunction mostrarLojas(){if(SESS&&SESS.forcePasswordChange){mostrarTrocaSenhaPrimeiroAcesso();return;}$('conta-login').style.display='none';$('conta-trocaSenha').style.display='none';$('conta-lojas').style.display='';$('bVoltarLoja').style.display=(SESS&&SESS.lojaId)?'':'none';var sel=$('selectLoja'),btn=$('bSelecionarLoja');sel.disabled=true;btn.disabled=true;sel.innerHTML='<option value="">Carregando lojas…</option>';
   sbLojas().then(function(ls){if(!ls.length){sel.innerHTML='<option value="">Nenhuma loja vinculada</option>';return;}
     sel.innerHTML='<option value="">Selecione uma loja…</option>'+ls.map(function(l){return '<option value="'+esc(l.id)+'">'+esc(l.nome)+'</option>';}).join('');
     if(SESS&&SESS.lojaId){var atual=ls.find(function(l){return String(l.id)===String(SESS.lojaId);});if(atual)sel.value=String(atual.id);}
@@ -723,7 +730,10 @@ $('bSelecionarLoja').onclick=entrarLojaSelecionada;
 $('conta').addEventListener('click',function(e){if(e.target===$('conta'))fecharConta();});
 $('bEntrar').onclick=function(){var u=$('cUser').value.trim(),pw=$('cPass').value;if(!u||!pw){captchaErro('Preencha usuário e senha.');return;}
   $('cErro').style.display='none';$('bEntrar').disabled=true;$('bEntrar').textContent='Entrando…';
-  sbLogin(u,pw).then(function(){$('bEntrar').disabled=false;$('bEntrar').textContent='Entrar';mostrarLojas();},function(err){$('bEntrar').disabled=false;$('bEntrar').textContent='Entrar';var msg=(err&&err.message)||'Falha ao entrar';if(/invalid login credentials/i.test(msg))msg='Usuário ou senha inválidos.';else if(/network|fetch/i.test(msg))msg='Falha de conexão. Verifique sua internet e tente novamente.';captchaErro(msg);});};
+  sbLogin(u,pw).then(function(){$('bEntrar').disabled=false;$('bEntrar').textContent='Entrar';if(SESS.forcePasswordChange)mostrarTrocaSenhaPrimeiroAcesso();else mostrarLojas();},function(err){$('bEntrar').disabled=false;$('bEntrar').textContent='Entrar';var msg=(err&&err.message)||'Falha ao entrar';if(/invalid login credentials/i.test(msg))msg='Usuário ou senha inválidos.';else if(/network|fetch/i.test(msg))msg='Falha de conexão. Verifique sua internet e tente novamente.';captchaErro(msg);});};
+$('bTrocarSenhaPrimeiroAcesso').onclick=function(){var nova=$('cNovaSenha').value,conf=$('cConfirmaSenha').value;if(nova.length<6){$('cTrocaErro').textContent='A senha precisa ter pelo menos 6 caracteres.';$('cTrocaErro').style.display='';return;}if(nova!==conf){$('cTrocaErro').textContent='As senhas não conferem.';$('cTrocaErro').style.display='';return;}
+$('bTrocarSenhaPrimeiroAcesso').disabled=true;sbReq('/functions/v1/gerir-usuarios',{method:'POST',body:{acao:'trocar_senha_primeiro_acesso',senha:nova}}).then(function(r){if(!r.ok)throw new Error(r.dados&&r.dados.error||'Não foi possível alterar a senha.');var user=SESS.usuario;sbLogout();$('cUser').value=user;mostrarLoginForm();toast('Senha alterada. Entre novamente com a nova senha.');}).catch(function(e){$('cTrocaErro').textContent=e.message;$('cTrocaErro').style.display='';}).finally(function(){$('bTrocarSenhaPrimeiroAcesso').disabled=false;});};
+$('bSairTrocaSenha').onclick=function(){sbLogout();mostrarLoginForm();toast('Você saiu');};
 $('cPass').onkeydown=function(e){if(e.key==='Enter')$('bEntrar').click();};
 $('cEye').onclick=function(){var p=$('cPass'),vis=p.type==='text';p.type=vis?'password':'text';this.classList.toggle('off',vis);this.setAttribute('aria-label',vis?'Mostrar senha':'Ocultar senha');};
 $('bVoltarLoja').onclick=fecharConta;
@@ -760,8 +770,8 @@ function salvarTokenCosmos(v){
       .then(function(r){toast(r&&r.ok?(v?'Seu token do Cosmos salvo':'Token removido'):'⚠️ Não salvou o token na nuvem');},
             function(){toast('⚠️ Não foi possível salvar o token na nuvem');});
   }else{D.aj.cosmos=v;salvar();toast(v?'Token do Cosmos salvo':'Token removido');}}
-function precisaLogin(){return sbOn()&&(!logado()||!SESS.lojaId);}\nfunction protegerVoltaPosLogout(){if(sbOn()&&!logado()){ir('reg');$('conta').classList.add('on');mostrarLoginForm();atualizarBotaoLogout();}}\nwindow.addEventListener('pageshow',protegerVoltaPosLogout);window.addEventListener('popstate',protegerVoltaPosLogout);
-function atualizarGate(){if(precisaLogin()){$('conta').classList.add('on');if(logado())mostrarLojas();else mostrarLoginForm();}}
+function precisaLogin(){return sbOn()&&(!logado()||(SESS&&SESS.forcePasswordChange)||!SESS.lojaId);}\nfunction protegerVoltaPosLogout(){if(sbOn()&&!logado()){ir('reg');$('conta').classList.add('on');mostrarLoginForm();atualizarBotaoLogout();}}\nwindow.addEventListener('pageshow',protegerVoltaPosLogout);window.addEventListener('popstate',protegerVoltaPosLogout);
+function atualizarGate(){if(precisaLogin()){$('conta').classList.add('on');if(logado()){if(SESS.forcePasswordChange)mostrarTrocaSenhaPrimeiroAcesso();else mostrarLojas();}else mostrarLoginForm();}}
 function fdataHora(ms){try{var d=new Date(ms);return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
 function ehAdmin(){return papelAtual()==='admin';}
 function auditar(acao,detalhe){if(!sbOn()||!logado())return;try{sbReq('/rest/v1/auditoria',{method:'POST',headers:{Prefer:'return=minimal'},body:[{user_id:SESS.uid||null,usuario:SESS.usuario||SESS.email||'',papel:SESS.papel||null,loja_id:SESS.lojaId||null,loja_nome:SESS.lojaNome||null,acao:acao,detalhe:detalhe||{}}]}).catch(function(){});}catch(e){}}
