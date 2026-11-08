@@ -670,10 +670,10 @@ function sincronizarLoja(){
     var produtos=res[0],lotes=res[1],itens=res[2],regs=res[3],n=0;
     produtos.forEach(function(row){var ean=String(row.ean);if(row.deleted_at){delete D.prod[ean];return;}var p=D.prod[ean]||(D.prod[ean]={lotes:[]});if(!Array.isArray(p.lotes))p.lotes=[];if(row.nome&&!p.desc)p.desc=row.nome;if(row.created_by)p.created_by=row.created_by;n++;});
     lotes.forEach(function(row){var p=D.prod[String(row.ean)]||(D.prod[String(row.ean)]={lotes:[]});if(!Array.isArray(p.lotes))p.lotes=[];if(row.deleted_at){p.lotes=p.lotes.filter(function(x){return String(x.id)!==String(row.id);});return;}
-      var l=p.lotes.find(function(x){return String(x.id)===String(row.id);}),obj={id:row.id,lote:row.lote||'',qtd:Number(row.qtd)||0,val:row.val||'',criado:row.criado||null,atualizado:row.updated_at?Date.parse(row.updated_at):null};
+      var l=p.lotes.find(function(x){return String(x.id)===String(row.id);}),obj={id:row.id,lote:row.lote||'',qtd:Number(row.qtd)||0,val:row.val||'',criado:row.criado||null,created_by:row.created_by||null,atualizado:row.updated_at?Date.parse(row.updated_at):null};
       if(l){Object.assign(l,obj);}else p.lotes.push(obj);n++;});
-    itens.forEach(function(row){if(row.deleted_at){delete D.pere.itens[String(row.cod)];return;}D.pere.itens[String(row.cod)]={desc:row.descricao||'',sif:row.sif||''};n++;});
-    regs.forEach(function(row){var ix=D.pere.regs.findIndex(function(x){return String(x.id)===String(row.id);});if(row.deleted_at){if(ix>=0)D.pere.regs.splice(ix,1);return;}var reg={id:row.id,cod:String(row.cod),sif:row.sif||'',peso:Number(row.peso)||0,val:row.val||'',criado:row.criado||null},ix=D.pere.regs.findIndex(function(x){return String(x.id)===String(row.id);});if(ix>=0)D.pere.regs[ix]=reg;else D.pere.regs.push(reg);n++;});
+    itens.forEach(function(row){if(row.deleted_at){delete D.pere.itens[String(row.cod)];return;}D.pere.itens[String(row.cod)]={desc:row.descricao||'',sif:row.sif||'',created_by:row.created_by||null};n++;});
+    regs.forEach(function(row){var ix=D.pere.regs.findIndex(function(x){return String(x.id)===String(row.id);});if(row.deleted_at){if(ix>=0)D.pere.regs.splice(ix,1);return;}var reg={id:row.id,cod:String(row.cod),sif:row.sif||'',peso:Number(row.peso)||0,val:row.val||'',criado:row.criado||null,created_by:row.created_by||null},ix=D.pere.regs.findIndex(function(x){return String(x.id)===String(row.id);});if(ix>=0)D.pere.regs[ix]=reg;else D.pere.regs.push(reg);n++;});
     try{localStorage.setItem(K,JSON.stringify(D));}catch(e){
       if(e&&e.name==='QuotaExceededError'){
         try{Object.keys(D.cat||{}).forEach(function(k){if(D.cat[k]&&D.cat[k].img)D.cat[k].img='';});localStorage.setItem(K,JSON.stringify(D));toast('⚠️ Espaço liberado (imagens removidas do cache). Sincronização concluída.');return n;}catch(e2){}
@@ -689,10 +689,10 @@ function sincronizarLoja(){
 function agendarSincronizacaoPeriodica(){clearInterval(temporizadorSincronizacao);if(!sbOn()||!logado()||!SESS.lojaId)return;temporizadorSincronizacao=setInterval(function(){if(!document.hidden)sincronizarLoja();},20000);}
 /* ───── backup do estoque da loja na nuvem (envio; a volta vem depois) ───── */
 function linhasLocais(loja){var pr=[],lo=[],pi=[],pg=[];
-  Object.keys(D.prod).forEach(function(ean){var p=D.prod[ean];pr.push({loja_id:loja,ean:String(ean),nome:p.desc||detalheProduto(ean).nome||''});
-    (p.lotes||[]).forEach(function(l){lo.push({id:l.id,loja_id:loja,ean:String(ean),lote:l.lote||'',qtd:+l.qtd||0,val:l.val||null,criado:l.criado||null});});});
-  Object.keys(D.pere.itens).forEach(function(cod){var it=D.pere.itens[cod];pi.push({loja_id:loja,cod:String(cod),descricao:it.desc||'',sif:it.sif||''});});
-  (D.pere.regs||[]).forEach(function(r){pg.push({id:r.id,loja_id:loja,cod:String(r.cod),sif:r.sif||'',peso:+r.peso||0,val:r.val||null,criado:r.criado||null});});
+  Object.keys(D.prod).forEach(function(ean){var p=D.prod[ean];pr.push({loja_id:loja,ean:String(ean),nome:p.desc||detalheProduto(ean).nome||'',created_by:p.created_by||null});
+    (p.lotes||[]).forEach(function(l){lo.push({id:l.id,loja_id:loja,ean:String(ean),lote:l.lote||'',qtd:+l.qtd||0,val:l.val||null,criado:l.criado||null,created_by:l.created_by||null});});});
+  Object.keys(D.pere.itens).forEach(function(cod){var it=D.pere.itens[cod];pi.push({loja_id:loja,cod:String(cod),descricao:it.desc||'',sif:it.sif||'',created_by:it.created_by||null});});
+  (D.pere.regs||[]).forEach(function(r){pg.push({id:r.id,loja_id:loja,cod:String(r.cod),sif:r.sif||'',peso:+r.peso||0,val:r.val||null,criado:r.criado||null,created_by:r.created_by||null});});
   return {produtos:pr,lotes:lo,pere_itens:pi,pere_regs:pg};}
 var tBackup=null,backupEmAndamento=false;
 function agendarBackup(){if(!sbOn()||!logado()||!SESS.lojaId)return;clearTimeout(tBackup);tBackup=setTimeout(backupNuvem,5000);}
