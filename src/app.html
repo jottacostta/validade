@@ -438,7 +438,7 @@ document.addEventListener('click',function(e){var tr=e.target.closest('tr[data-i
   var proprio=!!(SESS&&SESS.uid&&l.created_by===SESS.uid),papel=papelAtual(),podeEditar=['analista','gerente','admin'].includes(papel) || (['operador','assistente'].includes(papel)&&proprio);
   if(!podeEditar){toast('Você só pode editar suas próprias inserções');return;}
   var q=prompt('Lote '+(l.lote||'—')+' • validade '+fdata(l.val)+'\n\nQuantidade (0 solicita exclusão):',l.qtd);if(q===null)return;q=num(q);
-  if(q<=0){if(sbOn()&&logado()){solicitarExclusao('lote',l.id).then(function(ok){if(ok)carregarSolicitacoesExclusao();});return;}
+  if(q<=0){if(ehAdmin()){if(confirm('Excluir este lote como Administrador?'))adminExcluirRegistro('lote',l.id);return;}if(sbOn()&&logado()){solicitarExclusao('lote',l.id).then(function(ok){if(ok)carregarSolicitacoesExclusao();});return;}
     if(confirm('Excluir lote localmente?')){p.lotes=p.lotes.filter(function(x){return x!==l;});cancelarLembrete(l.id);auditar('apagou_lote',{ean:tr.dataset.ean,lote:l.lote});}}
   else {l.qtd=q;var val=prompt('Validade (AAAA-MM-DD):',l.val||'');if(val!==null&&/^\\d{4}-\\d{2}-\\d{2}$/.test(val))l.val=val;
     var desc=prompt('Descrição do produto:',(p.desc||detalheProduto(tr.dataset.ean).nome||''));if(desc!==null&&desc.trim())p.desc=desc.trim();
@@ -550,7 +550,7 @@ $('listaPe').onclick=function(e){var tr=e.target.closest('tr[data-pe]');if(!tr)r
   var papel=papelAtual(),proprio=!!(SESS&&SESS.uid&&r.created_by===SESS.uid),full=['analista','gerente','admin'].includes(papel);if(!full&&!proprio){toast('Você só pode editar seus próprios registros');return;}
   var it=D.pere.itens[r.cod]||{},nome=it.desc||('código '+r.cod);
   var p=prompt(nome+' • '+kg(r.peso)+' kg • validade '+fdata(r.val)+'\n\nPeso em kg (0 solicita exclusão):',String(r.peso).replace('.',','));if(p===null)return;
-  var peso=num(p);if(peso<=0){if(sbOn()&&logado()){solicitarExclusao('pere_reg',r.id);return;}if(confirm('Excluir registro localmente?')){D.pere.regs=D.pere.regs.filter(function(x){return x!==r;});cancelarLembrete(r.id);salvar();listaPere();auditar('apagou_perecivel',{cod:r.cod,peso:r.peso});}return;}
+  var peso=num(p);if(peso<=0){if(ehAdmin()){if(confirm('Excluir este registro como Administrador?'))adminExcluirRegistro('pere_reg',r.id);return;}if(sbOn()&&logado()){solicitarExclusao('pere_reg',r.id);return;}if(confirm('Excluir registro localmente?')){D.pere.regs=D.pere.regs.filter(function(x){return x!==r;});cancelarLembrete(r.id);salvar();listaPere();auditar('apagou_perecivel',{cod:r.cod,peso:r.peso});}return;}
   var v=prompt('Validade (dd/mm/aaaa):',fdata(r.val));if(v===null)return;var val=lerData(v);if(!val){toast('Data inválida — nada alterado');return;}
   var sif=prompt('SIF:',r.sif||'');if(sif===null)return;
   r.peso=peso;r.val=val;r.sif=sif.trim();r.atualizado=Date.now();if(proprio&&it.created_by===SESS.uid){var desc=prompt('Descrição do código:',it.desc||'');if(desc!==null&&desc.trim())it.desc=desc.trim();}
@@ -814,6 +814,18 @@ function processarSolicitacoesOffline(){
   });},Promise.resolve()).then(function(){if(enviados)carregarSolicitacoesExclusao();return enviados;});
 }
 window.addEventListener('online',function(){processarSolicitacoesOffline();});
+function adminExcluirRegistro(tipo,registroId){
+  if(!ehAdmin()||!sbOn()||!logado()||!SESS.lojaId){toast('Operação exclusiva do Administrador autenticado.');return Promise.resolve(false);}
+  var loja=encodeURIComponent(SESS.lojaId),now=new Date().toISOString(),url,extra=[];
+  if(tipo==='produto'){url='/rest/v1/produtos?loja_id=eq.'+loja+'&ean=eq.'+encodeURIComponent(registroId);extra.push('/rest/v1/lotes?loja_id=eq.'+loja+'&ean=eq.'+encodeURIComponent(registroId));}
+  else if(tipo==='lote')url='/rest/v1/lotes?loja_id=eq.'+loja+'&id=eq.'+encodeURIComponent(registroId);
+  else if(tipo==='pere_reg')url='/rest/v1/pere_regs?loja_id=eq.'+loja+'&id=eq.'+encodeURIComponent(registroId);
+  else if(tipo==='pere_item'){url='/rest/v1/pere_itens?loja_id=eq.'+loja+'&cod=eq.'+encodeURIComponent(registroId);extra.push('/rest/v1/pere_regs?loja_id=eq.'+loja+'&cod=eq.'+encodeURIComponent(registroId));}
+  else return Promise.resolve(false);
+  return sbReq(url,{method:'PATCH',body:{deleted_at:now}}).then(function(r){if(!r.ok)throw new Error('Falha ao excluir registro');return extra.reduce(function(p,u){return p.then(function(){return sbReq(u,{method:'PATCH',body:{deleted_at:now}}).then(function(x){if(!x.ok)throw new Error('Falha ao tombstonar registros vinculados');});});},Promise.resolve());})
+    .then(function(){auditar('admin_exclusao_tombstone',{tipo:tipo,registro_id:registroId,loja_id:SESS.lojaId});return sincronizarLoja();})
+    .then(function(){toast('Registro excluído (tombstone)');return true;}).catch(function(e){toast(e.message||'Falha ao excluir');return false;});
+}
 function solicitarExclusao(tipo,registroId){
   if(!sbOn()||!logado()||!SESS.lojaId){toast('Entre na conta para solicitar aprovação.');return Promise.resolve(false);}
   var motivo=prompt('Motivo para solicitar a exclusão:');if(motivo===null)return Promise.resolve(false);motivo=motivo.trim();if(motivo.length<3){toast('Informe um motivo com pelo menos 3 caracteres.');return Promise.resolve(false);}
