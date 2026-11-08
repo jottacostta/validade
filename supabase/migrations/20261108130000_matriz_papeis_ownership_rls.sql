@@ -150,6 +150,16 @@ $$;
 revoke all on function public.revisar_solicitacao_exclusao(uuid,boolean,text) from public,anon;
 grant execute on function public.revisar_solicitacao_exclusao(uuid,boolean,text) to authenticated;
 
+-- Administrador conserva acesso irrestrito ao catálogo compartilhado e preferências.
+drop policy if exists catalogo_del_admin on public.catalogo;
+create policy catalogo_del_admin on public.catalogo for delete to authenticated
+using (private.meu_papel()='admin');
+
+drop policy if exists preferencias_admin_all on public.preferencias;
+create policy preferencias_admin_all on public.preferencias for all to authenticated
+using (private.meu_papel()='admin') with check (private.meu_papel()='admin');
+grant select,insert,update,delete on public.preferencias to authenticated;
+
 -- Server-side audit for meaningful mutations (avoids client-only forged identity).
 create or replace function private.audit_mutation()
 returns trigger language plpgsql security definer set search_path=''
