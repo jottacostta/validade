@@ -106,12 +106,19 @@ begin
   if r.status <> 'pendente' then raise exception 'Solicitação já revisada'; end if;
   if not p_aprovar and (p_resposta is null or length(trim(p_resposta)) < 3) then raise exception 'Informe o motivo da rejeição'; end if;
   if p_aprovar then
-    if r.tipo='produto' then update public.produtos set deleted_at=now() where loja_id=r.loja_id and ean=r.registro_id and deleted_at is null;
+    if r.tipo='produto' then
+      update public.produtos set deleted_at=now() where loja_id=r.loja_id and ean=r.registro_id and deleted_at is null;
+      if not found then raise exception 'Produto já removido ou não encontrado'; end if;
+      -- Tombstone em cascata para lotes evita que o pull recrie o produto local.
+      update public.lotes set deleted_at=now() where loja_id=r.loja_id and ean=r.registro_id and deleted_at is null;
     elsif r.tipo='lote' then update public.lotes set deleted_at=now() where loja_id=r.loja_id and id=r.registro_id and deleted_at is null;
-    elsif r.tipo='pere_item' then update public.pere_itens set deleted_at=now() where loja_id=r.loja_id and cod=r.registro_id and deleted_at is null;
+    elsif r.tipo='pere_item' then
+      update public.pere_itens set deleted_at=now() where loja_id=r.loja_id and cod=r.registro_id and deleted_at is null;
+      if not found then raise exception 'Código perecível já removido ou não encontrado'; end if;
+      update public.pere_regs set deleted_at=now() where loja_id=r.loja_id and cod=r.registro_id and deleted_at is null;
     elsif r.tipo='pere_reg' then update public.pere_regs set deleted_at=now() where loja_id=r.loja_id and id=r.registro_id and deleted_at is null;
     end if;
-    if not found then raise exception 'Registro já removido ou não encontrado'; end if;
+    if r.tipo not in ('produto','pere_item') and not found then raise exception 'Registro já removido ou não encontrado'; end if;
   end if;
   update public.solicitacoes_exclusao set status=case when p_aprovar then 'aprovada' else 'rejeitada' end,
     revisor_id=auth.uid(),resposta=nullif(trim(p_resposta),''),revisado_em=now() where id=p_id;
