@@ -727,7 +727,8 @@ function abrirConta(){if(!sbOn()){toast('Sincronização não configurada');retu
 function fecharConta(){if(precisaLogin())return;$('conta').classList.remove('on');}
 function captchaErro(msg){var e=$('cErro');e.textContent=msg;e.style.display='';}
 function mostrarLoginForm(){$('conta-login').style.display='';$('conta-lojas').style.display='none';$('conta-trocaSenha').style.display='none';$('cErro').style.display='none';$('cPass').value='';$('cPass').type='password';$('cEye').classList.remove('off');setTimeout(function(){$('cUser').focus();},120);}
-function mostrarTrocaSenhaPrimeiroAcesso(){$('conta-login').style.display='none';$('conta-lojas').style.display='none';$('conta-trocaSenha').style.display='';$('cTrocaErro').style.display='none';$('cNovaSenha').value='';$('cConfirmaSenha').value='';$('bVoltarLoja').style.display='none';setTimeout(function(){$('cNovaSenha').focus();},120);}\nfunction mostrarLojas(){if(SESS&&SESS.forcePasswordChange){mostrarTrocaSenhaPrimeiroAcesso();return;}$('conta-login').style.display='none';$('conta-trocaSenha').style.display='none';$('conta-lojas').style.display='';$('bVoltarLoja').style.display=(SESS&&SESS.lojaId)?'':'none';var sel=$('selectLoja'),btn=$('bSelecionarLoja');sel.disabled=true;btn.disabled=true;sel.innerHTML='<option value="">Carregando lojas…</option>';
+function mostrarTrocaSenhaPrimeiroAcesso(){$('conta-login').style.display='none';$('conta-lojas').style.display='none';$('conta-trocaSenha').style.display='';$('cTrocaErro').style.display='none';$('cNovaSenha').value='';$('cConfirmaSenha').value='';$('bVoltarLoja').style.display='none';setTimeout(function(){$('cNovaSenha').focus();},120);}
+function mostrarLojas(){if(SESS&&SESS.forcePasswordChange){mostrarTrocaSenhaPrimeiroAcesso();return;}$('conta-login').style.display='none';$('conta-trocaSenha').style.display='none';$('conta-lojas').style.display='';$('bVoltarLoja').style.display=(SESS&&SESS.lojaId)?'':'none';var sel=$('selectLoja'),btn=$('bSelecionarLoja');sel.disabled=true;btn.disabled=true;sel.innerHTML='<option value="">Carregando lojas…</option>';
   sbLojas().then(function(ls){if(!ls.length){sel.innerHTML='<option value="">Nenhuma loja vinculada</option>';return;}
     sel.innerHTML='<option value="">Selecione uma loja…</option>'+ls.map(function(l){return '<option value="'+esc(l.id)+'">'+esc(l.nome)+'</option>';}).join('');
     if(SESS&&SESS.lojaId){var atual=ls.find(function(l){return String(l.id)===String(SESS.lojaId);});if(atual)sel.value=String(atual.id);}
@@ -779,7 +780,8 @@ function salvarTokenCosmos(v){
       .then(function(r){toast(r&&r.ok?(v?'Seu token do Cosmos salvo':'Token removido'):'⚠️ Não salvou o token na nuvem');},
             function(){toast('⚠️ Não foi possível salvar o token na nuvem');});
   }else{D.aj.cosmos=v;salvar();toast(v?'Token do Cosmos salvo':'Token removido');}}
-function precisaLogin(){return sbOn()&&(!logado()||(SESS&&SESS.forcePasswordChange)||!SESS.lojaId);}\nfunction protegerVoltaPosLogout(){if(sbOn()&&!logado()){ir('reg');$('conta').classList.add('on');mostrarLoginForm();atualizarBotaoLogout();}}\nwindow.addEventListener('pageshow',protegerVoltaPosLogout);window.addEventListener('popstate',protegerVoltaPosLogout);
+function precisaLogin(){return sbOn()&&(!logado()||(SESS&&SESS.forcePasswordChange)||!SESS.lojaId);}
+function protegerVoltaPosLogout(){if(sbOn()&&!logado()){ir('reg');$('conta').classList.add('on');mostrarLoginForm();atualizarBotaoLogout();}}\nwindow.addEventListener('pageshow',protegerVoltaPosLogout);window.addEventListener('popstate',protegerVoltaPosLogout);
 function atualizarGate(){if(precisaLogin()){$('conta').classList.add('on');if(logado()){if(SESS.forcePasswordChange)mostrarTrocaSenhaPrimeiroAcesso();else mostrarLojas();}else mostrarLoginForm();}}
 function fdataHora(ms){try{var d=new Date(ms);return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
 function ehAdmin(){return papelAtual()==='admin';}
@@ -876,7 +878,8 @@ function carregarLojasAdmin(){
 }
 $('bLojaNova').onclick=function(){var nome=$('lojaNovaNome').value.trim();if(!nome){toast('Informe o nome da loja');return;}sbReq('/rest/v1/lojas',{method:'POST',headers:{Prefer:'return=minimal'},body:{nome:nome}}).then(function(r){if(!r.ok)throw new Error('Falha ao criar loja');$('lojaNovaNome').value='';auditar('criou_loja',{nome:nome});carregarLojasAdmin();toast('Loja criada');}).catch(function(e){toast(e.message);});};
 $('bLojasAdminRefresh').onclick=carregarLojasAdmin;
-\n// ── Gestão de usuários via Edge Function ──
+
+// ── Gestão de usuários via Edge Function ──
 function iniciarGestaoUsuarios(){
   var card=$('cardUsuarios');if(!card)return;
   var p=papelAtual(),vis=sbOn()&&logado()&&['assistente','analista','gerente','admin'].includes(p);
