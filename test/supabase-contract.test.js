@@ -24,3 +24,16 @@ test('frontend libera inserção para Operador, Assistente, Analista, Gerente e 
   assert.match(app, /if\(acao==='registrar'\)return \['operador','assistente','analista','gerente'\]\.includes\(p\);/);
   assert.match(app, /function aplicarPapel\(\)\{var reg=pode\('registrar'\)/);
 });
+
+test('registro de lote exige sessão e grava direto no Supabase antes de atualizar cache', () => {
+  assert.match(app, /function inserirLoteSQL\(ean,nome,reg\)/);
+  assert.match(app, /\/rest\/v1\/lotes/);
+  assert.match(app, /Lote confirmado no Supabase/);
+  assert.match(app, /Falha SQL:/);
+});
+
+test('registro de perecível grava cadastro e movimento diretamente no Supabase', () => {
+  assert.match(app, /\/rest\/v1\/pere_itens\?on_conflict=loja_id,cod/);
+  assert.match(app, /\/rest\/v1\/pere_regs/);
+  assert.match(app, /Salvo no Supabase/);
+});
