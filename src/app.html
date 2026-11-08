@@ -204,6 +204,7 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
     <div class="row" style="margin-top:12px"><button class="btn sec" id="bUsuarioRefresh">Atualizar lista</button></div>
     <div id="listaUsuarios" style="margin-top:12px"><div class="vazio">Carregue a lista para começar.</div></div>
   </div>
+  <div class="card" id="cardLojasAdmin" style="display:none"><h2>Administração de lojas</h2><p style="font-size:13px;color:var(--mu)">Cadastro global de unidades (Administrador).</p><label class="f" for="lojaNovaNome">Nome da loja</label><input id="lojaNovaNome" placeholder="ex.: Filial 31"><button class="btn big" id="bLojaNova" style="margin-top:8px">Criar loja</button><div id="listaLojasAdmin" style="margin-top:12px"></div><button class="btn sec" id="bLojasAdminRefresh" style="margin-top:8px">Atualizar lojas</button></div>
   <div class="card"><h2>Backup</h2>
     <div class="row"><button class="btn sec" id="bExp">💾 Exportar backup</button><label class="btn sec" for="fImp">📥 Importar backup</label></div>
     <input type="file" id="fImp" accept=".json,application/json" style="display:none">
@@ -743,7 +744,7 @@ function aplicarPapel(){var reg=pode('registrar'),ed=pode('editar'),aj=pode('aju
   if(!reg){var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='reg')ir('prod');}}
 function carregarPapel(){if(!sbOn()||!logado())return Promise.resolve();
   carregarPrefs();
-  return sbReq('/rest/v1/perfis?select=papel,nome&limit=1').then(function(r){var d=r.ok&&Array.isArray(r.dados)&&r.dados[0];if(d){SESS.papel=d.papel;SESS.nome=d.nome;salvarSess();}aplicarPapel();if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();return d;},function(){aplicarPapel();if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();});}
+  return sbReq('/rest/v1/perfis?select=papel,nome&limit=1').then(function(r){var d=r.ok&&Array.isArray(r.dados)&&r.dados[0];if(d){SESS.papel=d.papel;SESS.nome=d.nome;salvarSess();}aplicarPapel();if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();carregarLojasAdmin();return d;},function(){aplicarPapel();if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();carregarLojasAdmin();});}
 /* ── token do Cosmos por usuário ──
    Com Supabase: cada usuário guarda o seu token em public.preferencias (RLS: só a própria linha),
    então ele vale em qualquer aparelho. Sem Supabase (modo local), usa D.aj.cosmos. */
@@ -830,6 +831,20 @@ function revisarSolicitacaoExclusao(id,aprovar){
     .catch(function(e){toast(e.message||'Falha ao revisar solicitação');});
 }
 $('bSolicitacoesRefresh').onclick=carregarSolicitacoesExclusao;
+\n
+// ── CRUD de lojas (somente Administrador; RLS no Supabase) ──
+function carregarLojasAdmin(){
+  var card=$('cardLojasAdmin');if(!card)return;var vis=sbOn()&&logado()&&ehAdmin();card.style.display=vis?'':'none';if(!vis)return;
+  $('listaLojasAdmin').innerHTML='<div class="vazio"><span class="gira"></span> carregando lojas…</div>';
+  sbReq('/rest/v1/lojas?select=id,nome&order=nome.asc').then(function(r){
+    if(!r.ok||!Array.isArray(r.dados))throw new Error('Falha ao consultar lojas');
+    $('listaLojasAdmin').innerHTML=r.dados.map(function(l){return '<div class="card" style="padding:10px;margin:8px 0"><b>'+esc(l.nome)+'</b><div class="ean">'+esc(l.id)+'</div><div class="row" style="margin-top:8px"><button class="btn sec" data-loja-edit="'+esc(l.id)+'" data-nome="'+esc(l.nome)+'">Renomear</button><button class="btn perigo" data-loja-del="'+esc(l.id)+'" data-nome="'+esc(l.nome)+'">Excluir</button></div></div>';}).join('')||'<div class="vazio">Nenhuma loja cadastrada.</div>';
+    document.querySelectorAll('[data-loja-edit]').forEach(function(b){b.onclick=function(){var nome=prompt('Novo nome da loja:',b.dataset.nome);if(nome===null||!nome.trim())return;sbReq('/rest/v1/lojas?id=eq.'+encodeURIComponent(b.dataset.lojaEdit),{method:'PATCH',body:{nome:nome.trim()}}).then(function(r){if(!r.ok)throw new Error('Falha ao renomear');auditar('renomeou_loja',{loja_id:b.dataset.lojaEdit,nome:nome.trim()});carregarLojasAdmin();}).catch(function(e){toast(e.message);});};});
+    document.querySelectorAll('[data-loja-del]').forEach(function(b){b.onclick=function(){if(!confirm('Excluir a loja '+b.dataset.nome+'? Essa operação pode remover vínculos e dados relacionados por cascade.'))return;sbReq('/rest/v1/lojas?id=eq.'+encodeURIComponent(b.dataset.lojaDel),{method:'DELETE'}).then(function(r){if(!r.ok)throw new Error('Falha ao excluir loja');auditar('excluiu_loja',{loja_id:b.dataset.lojaDel,nome:b.dataset.nome});carregarLojasAdmin();}).catch(function(e){toast(e.message);});};});
+  }).catch(function(e){$('listaLojasAdmin').innerHTML='<div class="vazio">'+esc(e.message)+'</div>';});
+}
+$('bLojaNova').onclick=function(){var nome=$('lojaNovaNome').value.trim();if(!nome){toast('Informe o nome da loja');return;}sbReq('/rest/v1/lojas',{method:'POST',headers:{Prefer:'return=minimal'},body:{nome:nome}}).then(function(r){if(!r.ok)throw new Error('Falha ao criar loja');$('lojaNovaNome').value='';auditar('criou_loja',{nome:nome});carregarLojasAdmin();toast('Loja criada');}).catch(function(e){toast(e.message);});};
+$('bLojasAdminRefresh').onclick=carregarLojasAdmin;
 \n// ── Gestão de usuários via Edge Function ──
 function iniciarGestaoUsuarios(){
   var card=$('cardUsuarios');if(!card)return;
