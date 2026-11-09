@@ -137,6 +137,72 @@ nav.abas button{font-size:11px;min-height:62px;color:#9fb4c7;gap:3px}nav.abas bu
 @media(max-width:360px){.home-shortcuts{gap:8px}.home-shortcut{padding:12px;min-height:125px}.home-cta{padding:14px;gap:10px}.home-cta strong{font-size:18px}.operator-hello strong{font-size:17px}}
 @media(min-width:600px){.home-cta{min-height:125px}}
 
+
+/* Tela inicial — aderência à referência aprovada */
+header .hdr-in{min-height:112px;gap:16px}
+header .hdr-logo{width:174px;height:112px;max-width:36vw;object-fit:contain;border:0;border-radius:0;background:transparent}
+header .hdr-divider{width:2px;height:78px;background:rgba(255,255,255,.82);flex:none}
+header .hdr-brand-copy h1{font-size:clamp(20px,5.2vw,30px);line-height:1.1;white-space:nowrap}
+header .hdr-brand-copy p#slogan{font-size:clamp(16px,4.5vw,23px);margin-top:5px;color:#fff}
+header .header-bell{position:relative;flex:none;margin-left:auto;border:0;background:transparent;color:#fff;font-size:42px;line-height:1;padding:10px}
+header .header-bell b{position:absolute;right:0;top:0;min-width:25px;height:25px;border-radius:50%;display:grid;place-items:center;background:#f32635;color:#fff;font-size:14px;font-weight:900}
+#v-home{padding:10px 0 0}
+#v-home .operator-hello{background:transparent;border:0;border-radius:0;padding:8px 26px 18px;margin:0 0 8px;gap:20px}
+#v-home .operator-avatar{width:82px;height:82px;flex:0 0 82px;border:0;font-size:0;position:relative}
+#v-home .operator-avatar:before{content:"";position:absolute;width:24px;height:24px;border-radius:50%;background:#fff;top:18px}
+#v-home .operator-avatar:after{content:"";position:absolute;width:43px;height:27px;border-radius:24px 24px 18px 18px;background:#fff;bottom:14px}
+#v-home .operator-hello strong{font-size:clamp(24px,6vw,34px);font-weight:850}
+#v-home .operator-hello small{display:block;font-size:clamp(17px,4.6vw,24px);color:#e5f1ff;margin-top:5px}
+#v-home .home-cta{min-height:142px;padding:18px 24px;gap:20px;border-radius:28px;border-width:2px}
+#v-home .home-cta .home-cta-icon{width:112px;height:104px;min-width:112px;display:grid;place-items:center;border:3px solid #52baff;border-radius:30px;background:linear-gradient(145deg,#168ff5,#0064c9);font-size:0}
+#v-home .home-cta .home-cta-icon:before{content:"▥";font-size:68px;line-height:1;color:#fff}
+#v-home .home-cta .home-cta-copy{border-left:2px solid rgba(255,255,255,.85);padding-left:22px}
+#v-home .home-cta strong{font-size:clamp(25px,6vw,36px);line-height:1.15}
+#v-home .home-cta small{font-size:clamp(16px,4.2vw,23px);margin-top:7px}
+#v-home .home-cta .home-arrow{font-size:0}
+#v-home .home-cta .home-arrow:before{content:"➜";font-size:48px}
+#v-home .home-shortcuts{gap:16px;margin:18px 0 20px}
+#v-home .home-shortcut{min-height:174px;align-items:center;text-align:center;justify-content:center;padding:16px 12px;border-radius:28px;background:linear-gradient(145deg,#142f49,#0b2034);border:2px solid #294967}
+#v-home .home-shortcut .shortcut-icon{font-size:56px;line-height:1.1}
+#v-home .home-shortcut strong{font-size:clamp(18px,4.7vw,26px)}
+#v-home .home-shortcut small{font-size:clamp(14px,3.8vw,19px);color:#d1deeb}
+#v-home .home-shortcut .shortcut-badge{right:25%;top:8px;min-width:40px;height:40px;font-size:22px}
+#v-home .home-recent{padding:0;border-radius:28px;border:2px solid #294967;background:linear-gradient(145deg,#142f49,#0b2034)}
+#v-home .home-recent-head{padding:16px 22px 12px;margin:0;border-bottom:1px solid #34536e}
+#v-home .home-recent-head h2{font-size:clamp(22px,5.3vw,30px)}
+#v-home .home-recent-head button{font-size:clamp(16px,4vw,22px);color:#16a4ff;font-weight:600}
+#v-home .home-recent-row{padding:15px 20px;min-height:112px;grid-template-columns:minmax(0,1fr) auto;gap:12px;border-top:1px solid #34536e}
+#v-home .home-recent-row strong{font-size:clamp(16px,4.2vw,22px)}
+#v-home .home-recent-row small{font-size:clamp(13px,3.5vw,18px);color:#d1deeb}
+#v-home .home-recent-row .home-date{font-size:clamp(14px,3.8vw,19px)}
+#v-home .home-recent-row .home-status{font-size:clamp(13px,3.5vw,18px);padding:6px 12px;background:#087b20;color:#fff}
+nav.abas{min-height:100px;padding:9px 5px calc(9px + env(safe-area-inset-bottom));grid-template-columns:repeat(5,minmax(0,1fr))}
+nav.abas button{font-size:clamp(12px,3.4vw,17px);min-height:86px;gap:4px;color:#f1f6fc}
+nav.abas button span{font-size:36px;line-height:1.2}
+nav.abas button.on{border-radius:28px;background:linear-gradient(145deg,#087ff0,#064a9b);outline:2px solid #149fff;outline-offset:-2px}
+@media(max-width:420px){
+ header .hdr-in{min-height:88px;gap:10px}
+ header .hdr-logo{width:116px;height:86px;max-width:32vw}
+ header .hdr-divider{height:62px}
+ header .header-bell{font-size:34px;padding:6px}
+ #v-home .operator-hello{padding:8px 10px 16px;gap:14px}
+ #v-home .operator-avatar{width:66px;height:66px;flex-basis:66px}
+ #v-home .operator-avatar:before{width:20px;height:20px;top:13px}
+ #v-home .operator-avatar:after{width:35px;height:22px;bottom:10px}
+ #v-home .home-cta{min-height:116px;padding:12px;gap:12px;border-radius:22px}
+ #v-home .home-cta .home-cta-icon{width:72px;height:72px;min-width:72px;border-radius:20px}
+ #v-home .home-cta .home-cta-icon:before{font-size:48px}
+ #v-home .home-cta .home-cta-copy{padding-left:12px}
+ #v-home .home-cta .home-arrow:before{font-size:34px}
+ #v-home .home-shortcut{min-height:138px;border-radius:20px;padding:12px 7px}
+ #v-home .home-shortcut .shortcut-icon{font-size:42px}
+ #v-home .home-recent{border-radius:20px}
+ #v-home .home-recent-head{padding:12px}
+ #v-home .home-recent-row{padding:12px;min-height:94px}
+ nav.abas button{min-height:72px}
+ nav.abas button span{font-size:28px}
+}
+
 /* Refinamento das áreas internas — padrão visual Guanabara */
 #v-prod,#v-pere,#v-alertas,#v-aj{padding-bottom:12px}
 #v-prod>.tiles{gap:9px;margin:2px 0 16px}
@@ -240,16 +306,15 @@ header p{font-size:14px;line-height:1.25}
 </head>
 <body>
 <div id="splash"><div class="sp-logo"><img id="splashLogo" alt="" style="display:none"><span id="splashIni">📅</span></div><div class="sp-nome">/*NOME_HTML*/</div><div class="sp-sub">Controle de validade e perecíveis</div><span class="gira"></span><div class="barra-am"></div></div>
-<header><div class="hdr-in"><img id="hdrLogo" alt="Supermercados Guanabara" class="hdr-logo" style="display:none"><div class="hdr-brand-copy" style="min-width:0"><h1>/*NOME_HTML*/</h1><p id="slogan">Lotes, validades e perecíveis</p><span class="operator-role-pill" id="operatorRolePill">♙ Área do Operador</span><p id="lojaAtualLabel" class="ean" style="margin:3px 0 0"></p></div><button id="bLogoutHdr" class="hdr-logout" type="button">Sair</button></div></header>
+<header><div class="hdr-in"><img id="hdrLogo" alt="Supermercados Guanabara" class="hdr-logo" style="display:none"><span class="hdr-divider" aria-hidden="true"></span><div class="hdr-brand-copy" style="min-width:0"><h1>Controle de Validade</h1><p id="slogan">Área do Operador</p><span class="operator-role-pill" id="operatorRolePill" hidden>♙ Área do Operador</span><p id="lojaAtualLabel" class="ean" style="margin:3px 0 0;display:none"></p></div><button class="header-bell" id="homeBell" type="button" aria-label="Abrir notificações">♧<b id="homeBellBadge" style="display:none">0</b></button><button id="bLogoutHdr" class="hdr-logout" type="button">Sair</button></div></header>
 <main>
 
 <!-- ═════════ REGISTRAR ═════════ -->
 
 <section class="vista on" id="v-home">
-  <div class="operator-hello"><div class="operator-avatar" aria-hidden="true">👤</div><div><strong id="homeGreeting">Olá, Operador!</strong><small id="homeStore">Loja não selecionada</small></div><button class="home-bell" id="homeBell" type="button" aria-label="Abrir notificações">🔔<b id="homeBellBadge" style="display:none">0</b></button></div>
-  <div class="home-section-title">O que deseja fazer?</div>
+  <div class="operator-hello"><div class="operator-avatar" aria-hidden="true">●</div><div><strong id="homeGreeting">Olá, Operador!</strong><small id="homeStore">Operador · Filial não selecionada</small></div></div>
   <button class="home-cta" id="homeRegister" type="button"><span class="home-cta-icon" aria-hidden="true">▥</span><span class="home-cta-copy"><strong>Registrar produto</strong><small>Escanear código ou etiqueta</small></span><span class="home-arrow" aria-hidden="true">›</span></button>
-  <div class="home-shortcuts"><button class="home-shortcut" id="homeMyRecords" type="button"><span class="shortcut-icon">📦</span><strong>Meus registros</strong><small>Consultar lançamentos realizados</small></button><button class="home-shortcut" id="homeAlerts" type="button"><span class="shortcut-icon">🔔</span><strong>Alertas</strong><small>Vencidos e próximos do vencimento</small><span class="shortcut-badge" id="homeAlertsBadge" style="display:none">0</span></button></div>
+  <div class="home-shortcuts"><button class="home-shortcut" id="homeMyRecords" type="button"><span class="shortcut-icon">📦</span><strong>Meus registros</strong><small>Consulte seus lançamentos</small></button><button class="home-shortcut" id="homeAlerts" type="button"><span class="shortcut-icon">🔔</span><strong>Alertas</strong><small>Vencidos e a vencer</small><span class="shortcut-badge" id="homeAlertsBadge" style="display:none">0</span></button></div>
   <div class="card home-recent"><div class="home-recent-head"><h2>Últimos registros</h2><button id="homeSeeAll" type="button">Ver todos ›</button></div><div id="homeRecentList"><div class="vazio">Carregando registros…</div></div></div>
 </section>
 <section class="vista" id="v-reg">
@@ -379,7 +444,7 @@ header p{font-size:14px;line-height:1.25}
 </section>
 </main>
 
-<nav class="abas" id="abas"><button class="on" data-v="home"><span>⌂</span>Início</button><button data-v="prod"><span>📦</span>Produtos</button><button data-v="pere"><span>🥩</span>Perecíveis</button><button data-v="alertas"><span>🔔</span>Alertas <b id="alertBadge" style="display:none"></b></button><button data-v="aj"><span>⚙️</span>Ajustes</button></nav>
+<nav class="abas" id="abas"><button class="on" data-v="home"><span>⌂</span>Início</button><button data-v="reg"><span>▥</span>Registrar</button><button data-v="prod"><span>▤</span>Registros</button><button data-v="alertas"><span>♧</span>Alertas <b id="alertBadge" style="display:none"></b></button><button data-v="aj"><span>♙</span>Perfil</button></nav>
 
 <div id="modalEditarUsuario" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloEditarUsuario">
   <div class="box"><h2 id="tituloEditarUsuario">Editar usuário</h2>
@@ -502,7 +567,7 @@ $('homeAlerts').onclick=function(){ir('alertas');};$('homeBell').onclick=functio
 $('homeRecentList').onclick=function(e){if(e.target.closest('[data-home-record]'))ir('prod');};
 /* ───── navegação ───── */
 function ir(v){document.querySelectorAll('.vista').forEach(function(s){s.classList.toggle('on',s.id==='v-'+v);});
-  var sub={home:(CFG.slogan||'Lotes, validades e perecíveis'),reg:'Registrar produto',prod:'Meus registros',pere:'Perecíveis',alertas:'Alertas e notificações',aj:'Configurações'};if($('slogan'))$('slogan').textContent=sub[v]||CFG.slogan||'Lotes, validades e perecíveis';
+  var sub={home:'Área do Operador',reg:'Registrar produto',prod:'Meus registros',pere:'Perecíveis',alertas:'Alertas e notificações',aj:'Configurações'};if($('slogan'))$('slogan').textContent=sub[v]||CFG.slogan||'Lotes, validades e perecíveis';
   document.querySelectorAll('#abas button').forEach(function(b){b.classList.toggle('on',b.dataset.v===(v==='reg'?'home':v));});
   if(v==='home')renderHome();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();}if(v==='aj'){renderPerfilOperador();ajustes();carregarSolicitacoesExclusao();}window.scrollTo(0,0);}
 $('abas').onclick=function(e){var b=e.target.closest('button');if(b)ir(b.dataset.v);};
