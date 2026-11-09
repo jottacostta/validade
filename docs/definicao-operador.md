@@ -26,7 +26,7 @@ Definir o comportamento da área Operador, respeitando o layout já existente. O
 | Histórico | Histórico **pessoal** do Operador, referente às suas próprias ações/registros. |
 | Solicitação de exclusão | Aprovação por **Gerente ou Administrador**. |
 | Após cadastro | Retornar automaticamente ao leitor para novo registro. |
-| Alertas de vencimento | Operador poderá configurar alertas de validade e horários preferidos para recebê-los; detalhes a definir em conjunto. |
+| Alertas de vencimento | Operador configura antecedência e horários dos alertas; canais iniciais sem custo: push e notificações internas, além de calendário quando tecnicamente possível. |
 
 A consulta ampla da loja não concede permissão de edição sobre registros de terceiros. A autorização de edição deve ser validada no backend/Supabase, não apenas escondendo controles na interface.
 
@@ -83,38 +83,39 @@ Lista definida pelo usuário:
 - Idealmente registrar usuário, data/hora, ação, valores anteriores e posteriores e justificativa, quando aplicável.
 - A consulta geral da loja não deve ampliar automaticamente o escopo do histórico pessoal.
 
-## Ajustes e alertas de vencimento — em discussão
+## Ajustes e alertas de vencimento — requisitos confirmados
 
-### Requisito confirmado
-- Operador poderá configurar alertas para ser avisado quando produtos/lotes estiverem próximos do vencimento.
-- Operador escolhe os critérios de antecedência e os horários preferidos para receber as notificações.
-- Investigar integração com agenda/calendário do celular e envio de mensagens por WhatsApp.
+### Canais aprovados sem custo de WhatsApp
+- **Push notifications** para o celular, por Web Push/PWA, sujeito a suporte do navegador/SO e permissão do usuário.
+- **Notificações dentro do Validade** (central de notificações).
+- **Calendário/agenda do celular**, a ser avaliado como integração ou exportação de eventos. Não prometer sincronização automática universal.
 
-### Proposta inicial para discussão (não aprovada)
-- Configurar antecedência do alerta por intervalos, por exemplo: 7, 3 e 1 dia antes do vencimento, ou personalizar os dias.
-- Configurar horários de entrega (por exemplo, início do turno e/ou outro horário escolhido).
-- Escolher dias da semana e canal de notificação.
-- Permitir ativar/desativar cada canal.
-- Alertas devem incluir produto, lote/código, setor, validade e loja, respeitando acesso autorizado.
-- Evitar alertas duplicados para o mesmo item, regra e período; permitir marcar como lido.
-- O Operador pode consultar e alterar suas próprias preferências.
+**WhatsApp está excluído**: não implementar, não integrar e não incorrer em custos de WhatsApp.
 
-### Canais e limitações a avaliar
-- **Notificação dentro do sistema:** canal básico, vinculado à conta do Operador.
-- **Notificação push:** possível, mas exige suporte de notificações do navegador/app, permissão do dispositivo e infraestrutura de envio.
-- **Agenda/calendário do celular:** possível avaliar exportação/integração (ex.: evento ou arquivo de calendário). A sincronização automática depende do sistema operacional e permissões; não presumir que o site possa escrever diretamente em qualquer agenda.
-- **WhatsApp:** possível somente por integração oficial/serviço autorizado (ex.: WhatsApp Business Platform ou provedor). Exige número confirmado, consentimento, configuração de templates quando aplicável, credenciais seguras e custos/limites do fornecedor. Não prometer envio direto pelo front-end nem usar automação não oficial.
-- Preferências do Operador devem ser armazenadas de forma segura; agendamento e envio de notificações precisam ocorrer em backend/serviço confiável, não depender de a tela estar aberta.
-- O mecanismo de alerta deve consultar validade no banco, usar timezone adequado (loja/usuário) e registrar status de entrega/falha.
+### Preferências do Operador
+- Definir quantos dias antes da validade deseja ser avisado (intervalos sugeridos: 7, 3 e 1 dia, mas o padrão ainda precisa ser confirmado).
+- Escolher horários de entrega das notificações.
+- Escolher dias da semana, se aplicável.
+- Selecionar setores ou itens monitorados, ou todos os setores.
+- Ativar/desativar canais individualmente.
+- Consultar e alterar preferências próprias.
 
-### Decisões ainda necessárias
-1. Quais antecedências padrão? (ex.: 7, 3 e 1 dia, configuráveis, ou escolha livre).
-2. Operador configura alertas para todos os produtos da loja ou apenas setores/itens selecionados?
-3. Horário de envio: um horário diário, múltiplos horários ou horário por alerta?
-4. Dias da semana: todos os dias ou apenas dias selecionados?
-5. Canais desejados na primeira versão: notificação dentro do sistema, push, calendário, WhatsApp?
-6. Alertas são individuais por Operador ou devem seguir também configurações gerais da loja?
-7. O WhatsApp será um recurso futuro (fase 2), após validação de custos e requisitos oficiais?
+### Requisitos técnicos
+- Push requer suporte PWA/Service Worker, Web Push e permissão do dispositivo; confirmar no repositório se a infraestrutura já existe.
+- Agendamento e envio devem ocorrer em backend/serviço confiável, não depender de a tela estar aberta.
+- Preferências devem estar associadas ao usuário autenticado e loja.
+- Alertas consultam validade no banco, usam timezone apropriado e registram status de envio/falha.
+- Evitar notificações duplicadas para o mesmo lote, regra e janela de alerta.
+- Notificações devem incluir produto, lote/código, setor, validade e loja, respeitando autorização.
+- O calendário pode exigir ação do usuário (adicionar evento/arquivo .ics); não assumir que o Web App pode gravar diretamente na agenda nativa em todos os dispositivos.
+
+### Decisões ainda pendentes
+1. Antecedências padrão: 7/3/1 dias ou personalização livre?
+2. Alertas para todos os setores ou somente setores selecionados?
+3. Um horário diário ou múltiplos horários configuráveis?
+4. Todos os dias ou dias da semana selecionados?
+5. Preferências pessoais do Operador ou também regras padrão definidas pela loja?
+6. Calendário: evento por lote ou resumo diário de vencimentos?
 
 ## Fluxo de registro
 
@@ -141,7 +142,8 @@ Lista definida pelo usuário:
 - Setor é obrigatório em ambos os fluxos e só aceita os seis valores oficiais.
 - Após salvar, o leitor retorna automaticamente.
 - Layout existente é preservado; nenhuma tela inicial alternativa é criada.
-- Alertas respeitam preferências do Operador, não duplicam indevidamente e são enviados por serviço confiável mesmo quando o usuário não está com a tela aberta.
+- Alertas respeitam preferências, não duplicam indevidamente e são enviados por serviço confiável quando o usuário não está com a tela aberta.
+- WhatsApp não faz parte do escopo.
 - Nenhuma alteração de comportamento dos outros perfis nesta etapa.
 
 ## Fora do escopo desta definição
