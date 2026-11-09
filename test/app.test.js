@@ -272,6 +272,20 @@ tflaky('OCR preenche descrição e lote (SIF) ao escanear a etiqueta', { skip: p
   await a.fechar();
 });
 
+tflaky('mobile: sem rolagem horizontal nas telas com tabela (360px)', { skip: pular }, async () => {
+  const a = await abrir({ opcoes: { viewport: { width: 360, height: 740 } }, dados: {
+    prod: { '7891000315507': { nome: 'Café Torrado e Moído Nome Bem Comprido Para Testar', lotes: [lote('x', '2031-01-01', 5, 'L1')] } },
+    pere: { itens: { '1246': { desc: 'Pernil Suíno Fracionado Descrição Grande', sif: '876-040326' } }, regs: [{ id: 'r', cod: '1246', sif: '876-040326', peso: 0.33, val: '2026-11-09' }] } } });
+  const semOverflow = async () => a.p.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
+  await a.p.fill('#tCodigo', '7891000315507'); await a.p.click('#bBuscar');
+  await a.p.waitForSelector('#cardProd', { state: 'visible' });           // tabela de lotes
+  assert.ok(await semOverflow(), 'tela Registrar/produto não pode rolar horizontalmente');
+  await a.p.click('nav button[data-v="pere"]'); await a.p.click('#subPere button[data-s="lista"]');
+  await a.p.waitForFunction(() => document.querySelector('#listaPe table'));
+  assert.ok(await semOverflow(), 'tela Perecíveis não pode rolar horizontalmente');
+  await a.fechar();
+});
+
 tflaky('OCR desligado: não mexe na descrição nem no SIF', { skip: pular }, async () => {
   const a = await abrir({ dados: { aj: { dig: 5, valor: 'preco', ocr: false }, pere: { itens: {}, regs: [] } },
     antes: p => p.addInitScript(`
