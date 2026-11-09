@@ -213,6 +213,56 @@ nav.abas button span svg{width:38px;height:38px;fill:none;stroke:currentColor;st
 #v-home .home-recent-meta b{font-size:34px;font-weight:400;color:#fff}
 #v-home .home-recent-row .home-status{margin:0;border-radius:24px;white-space:nowrap}
 
+
+/* Escala responsiva baseada nas proporções da referência vertical */
+header .hdr-in{min-height:clamp(66px,18vw,112px)}
+header .hdr-logo{width:clamp(68px,20vw,174px);height:clamp(64px,18vw,112px)}
+header .hdr-divider{height:clamp(48px,14vw,78px)}
+header .hdr-brand-copy h1{font-size:clamp(17px,5.2vw,30px)}
+header .hdr-brand-copy p#slogan{font-size:clamp(14px,4.5vw,23px)}
+header .header-bell{font-size:clamp(30px,8vw,42px)}
+header .header-bell svg{width:clamp(32px,10vw,46px);height:clamp(32px,10vw,46px)}
+#v-home .operator-hello{padding:clamp(8px,2.2vw,18px) clamp(10px,2.6vw,26px) clamp(12px,3vw,22px);gap:clamp(12px,3vw,20px)}
+#v-home .operator-avatar{width:clamp(46px,12vw,82px);height:clamp(46px,12vw,82px);flex-basis:clamp(46px,12vw,82px)}
+#v-home .operator-avatar:before{width:clamp(16px,3vw,24px);height:clamp(16px,3vw,24px);top:22%}
+#v-home .operator-avatar:after{width:53%;height:33%;bottom:17%}
+#v-home .operator-hello strong{font-size:clamp(21px,6vw,34px)}
+#v-home .operator-hello small{font-size:clamp(14px,4.5vw,24px)}
+#v-home .home-cta{min-height:clamp(68px,18vw,142px);padding:clamp(10px,2.8vw,24px);gap:clamp(10px,2vw,20px);border-radius:clamp(18px,3vw,28px)}
+#v-home .home-cta .home-cta-icon{width:clamp(54px,15vw,112px);height:clamp(52px,14vw,104px);min-width:clamp(54px,15vw,112px);border-radius:clamp(16px,3vw,30px)}
+#v-home .home-cta .home-cta-icon:before{font-size:clamp(38px,9vw,68px)}
+#v-home .home-cta .home-cta-copy{padding-left:clamp(10px,2.2vw,22px)}
+#v-home .home-cta strong{font-size:clamp(19px,6vw,36px)}
+#v-home .home-cta small{font-size:clamp(13px,4.2vw,23px)}
+#v-home .home-cta .home-arrow:before{font-size:clamp(30px,8vw,48px)}
+#v-home .home-shortcuts{gap:clamp(9px,1.6vw,16px);margin:clamp(12px,2vw,18px) 0 clamp(14px,2vw,20px)}
+#v-home .home-shortcut{min-height:clamp(86px,22vw,174px);padding:clamp(10px,1.6vw,16px) clamp(7px,1.2vw,12px);border-radius:clamp(16px,2.8vw,28px)}
+#v-home .home-shortcut .shortcut-icon{font-size:clamp(34px,5.5vw,56px)}
+#v-home .home-shortcut strong{font-size:clamp(15px,4.7vw,26px)}
+#v-home .home-shortcut small{font-size:clamp(11px,3.8vw,19px)}
+#v-home .home-shortcut .shortcut-badge{right:18%;min-width:clamp(24px,4vw,40px);height:clamp(24px,4vw,40px);font-size:clamp(13px,2.2vw,22px)}
+#v-home .home-recent{border-radius:clamp(18px,2.8vw,28px)}
+#v-home .home-recent-head{padding:clamp(10px,1.6vw,16px) clamp(12px,2.2vw,22px)}
+#v-home .home-recent-head h2{font-size:clamp(18px,5.3vw,30px)}
+#v-home .home-recent-head button{font-size:clamp(13px,4vw,22px)}
+#v-home .home-recent-row{min-height:clamp(64px,11vw,112px);padding:clamp(9px,1.5vw,15px) clamp(10px,2vw,20px)}
+#v-home .home-recent-row strong{font-size:clamp(14px,4.2vw,22px)}
+#v-home .home-recent-row small{font-size:clamp(11px,3.5vw,18px)}
+#v-home .home-recent-row .home-date{font-size:clamp(12px,3.8vw,19px)}
+#v-home .home-recent-row .home-status{font-size:clamp(11px,3.5vw,18px);padding:clamp(4px,0.6vw,6px) clamp(7px,1.2vw,12px)}
+nav.abas{min-height:clamp(72px,18vw,100px);padding:7px 5px calc(7px + env(safe-area-inset-bottom))}
+nav.abas button{min-height:clamp(60px,15vw,86px);font-size:clamp(10px,3.4vw,17px)}
+nav.abas button span svg{width:clamp(26px,7vw,38px);height:clamp(26px,7vw,38px)}
+@media(max-width:420px){
+ header .hdr-in{gap:8px}
+ header .hdr-divider{height:clamp(46px,14vw,62px)}
+ header .header-bell{padding:4px}
+ #v-home .home-cta{gap:9px}
+ #v-home .home-cta .home-cta-copy{padding-left:9px}
+ #v-home .home-shortcut .shortcut-icon{font-size:clamp(32px,10vw,42px)}
+ nav.abas button span svg{width:27px;height:27px}
+}
+
 /* Refinamento das áreas internas — padrão visual Guanabara */
 #v-prod,#v-pere,#v-alertas,#v-aj{padding-bottom:12px}
 #v-prod>.tiles{gap:9px;margin:2px 0 16px}
