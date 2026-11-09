@@ -118,7 +118,8 @@ CONTEXTO.md                          # este arquivo
 - Gatilhos: `public.ao_criar_usuario()` (cria linha em `perfis` ao cadastrar no Auth)
   e `public.protege_papel()` (só admin pode mudar `papel`). Sem `execute` para anon/auth.
 - **RLS por papel** (resumo): operador/assistente registram na própria loja;
-  assistente edita/apaga na própria loja; analista e admin leem tudo; admin faz tudo.
+  assistente/analista/gerente registram e editam; analista/gerente/admin leem tudo;
+  admin faz tudo. (Decisão aprovada: **analista pode registrar dados** — PR #17.)
 
 O estado vivo do banco está refletido em `supabase/schema.sql` e nas migrations.
 O verificador de segurança (Supabase advisors) está **limpo**, exceto 1 item que só
@@ -179,12 +180,14 @@ Chaves no localStorage: `validade_dados` (D, dados do app), `validade_sessao` (S
 
 ## 8. Hierarquia de usuários (RBAC) — MATRIZ DE PERMISSÕES
 
-Papéis: `operador`, `assistente`, `analista`, `admin` (superuser).
+Papéis: `operador`, `assistente`, `analista`, `gerente`, `admin` (superuser).
+> Nota: há também o papel **`gerente`** (poderes próximos de analista: registra, edita,
+> gere usuários; não é admin). A tabela abaixo foca em operador/assistente/analista/admin.
 
 | Ação | operador | assistente | analista | admin |
 |---|:--:|:--:|:--:|:--:|
-| Registrar lotes/perecíveis (na sua loja) | ✅ | ✅ | ❌(só lê) | ✅ |
-| Editar/cadastrar códigos de perecíveis | ❌ | ✅ | ❌ | ✅ |
+| Registrar lotes/perecíveis (na sua loja) | ✅ | ✅ | ✅ | ✅ |
+| Editar/cadastrar códigos de perecíveis | ❌ | ✅ | ✅ | ✅ |
 | Ler tudo (todas as lojas) | ❌ | ❌ | ✅ | ✅ |
 | **Criar usuários** | ❌ | ✅ | ✅ | ✅ |
 | **Editar usuário (nome + senha)** | ❌ | ❌ | ✅ | ✅ |

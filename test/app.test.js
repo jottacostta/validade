@@ -533,11 +533,13 @@ tflaky('gate: sem sessão, exige login ao abrir (tela de login bloqueia o sistem
   await a.fechar();
 });
 
-tflaky('papel analista: esconde a aba Registrar (só leitura)', { skip: pular }, async () => {
+tflaky('papel analista: pode registrar dados (regra aprovada, PR #17)', { skip: pular }, async () => {
   const a = await abrirLogado(p => rotasBase(p, 'analista'));
   await a.p.waitForFunction(() => { try { return JSON.parse(localStorage.getItem('validade_sessao')).papel === 'analista'; } catch (e) { return false; } });
-  assert.strictEqual(await a.p.isVisible('nav button[data-v="reg"]'), false);
-  assert.strictEqual(await a.p.isVisible('#bSalvarLote'), false);
+  // Decisão de produto (B): analista REGISTRA dados — aba Registrar e botão de
+  // escanear ficam disponíveis (o #bSalvarLote só aparece com um produto aberto).
+  assert.strictEqual(await a.p.isVisible('nav button[data-v="reg"]'), true);
+  assert.strictEqual(await a.p.isVisible('#bEscanear'), true);
   await a.fechar();
 });
 
