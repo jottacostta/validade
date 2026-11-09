@@ -397,6 +397,7 @@ $('homeAlerts').onclick=function(){ir('alertas');};$('homeBell').onclick=functio
 $('homeRecentList').onclick=function(e){if(e.target.closest('[data-home-record]'))ir('prod');};
 /* ───── navegação ───── */
 function ir(v){document.querySelectorAll('.vista').forEach(function(s){s.classList.toggle('on',s.id==='v-'+v);});
+  var sub={home:(CFG.slogan||'Lotes, validades e perecíveis'),reg:'Registrar produto',prod:'Meus registros',pere:'Perecíveis',alertas:'Alertas e notificações',aj:'Configurações'};if($('slogan'))$('slogan').textContent=sub[v]||CFG.slogan||'Lotes, validades e perecíveis';
   document.querySelectorAll('#abas button').forEach(function(b){b.classList.toggle('on',b.dataset.v===(v==='reg'?'home':v));});
   if(v==='home')renderHome();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();}if(v==='aj'){ajustes();carregarSolicitacoesExclusao();}window.scrollTo(0,0);}
 $('abas').onclick=function(e){var b=e.target.closest('button');if(b)ir(b.dataset.v);};
