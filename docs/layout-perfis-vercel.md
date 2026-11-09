@@ -64,15 +64,19 @@ Busca e filtros compactos; cards priorizam nome do produto e validade, depois lo
 ### Alertas
 Lista acionável com produto, lote, validade e contexto; vencido vermelho, próximo âmbar, normal neutro/verde, sempre acompanhados por texto/ícone. Não prometer push, calendário ou integração não implementada.
 
-## Área Supervisor
+## Área Analista
 
-**Conceitual, sujeito a confirmação de permissões e features reais. Não criar funcionalidades a partir da imagem.**
+**Conceitual, sujeito a confirmação de permissões e funcionalidades reais. Não criar funcionalidades a partir da imagem.**
 
 ### Painel
 Header e filial; indicadores somente se dados/queries já existirem; cards compactos; atalhos para pendências e relatórios que realmente existam.
 
-### Equipe
-Lista apenas de colaboradores visíveis ao perfil, dados autorizados e atividade existente. Não criar ranking, scoring ou avaliação de desempenho sem requisito aprovado.
+### Análise operacional
+- Visão analítica de registros, lotes, validade e alertas existentes, conforme permissões e consultas aprovadas.
+- Busca, filtros e agrupamentos apenas por dimensões suportadas (ex.: período, setor, status ou loja).
+- Tabelas compactas com ordenação e paginação quando necessárias; no celular, cards legíveis.
+- Indicadores e comparações devem vir de dados reais e critérios documentados.
+- Não criar ranking, scoring ou avaliação de desempenho de colaboradores sem requisito aprovado.
 
 ### Solicitações
 Estados pendente/aprovada/recusada somente se o backend suportar. Card com produto/lote/solicitante/data/motivo/status. Aprovar/recusar só com permissão; confirmação e justificativa conforme regra. Mostrar resultado apenas após resposta do servidor.
@@ -136,7 +140,7 @@ Relatórios reais, filtros suportados e exportações implementadas. Respeitar e
 
 ## Área do Gerente
 
-**Objetivo:** oferecer visão gerencial da loja, com foco em situação, prioridades e acompanhamento. Esta área deve ser distinta do Supervisor (rotina operacional) e do Administrador (configuração e gestão de acesso).
+**Objetivo:** oferecer visão gerencial da loja, com foco em situação, prioridades e acompanhamento. Esta área deve ser distinta do Analista (análise detalhada) e do Administrador (configuração e gestão de acesso).
 
 > Os indicadores e ações abaixo são candidatos de layout, não métricas ou permissões confirmadas. Antes de construir, validar requisitos, consultas, escopo de loja e acesso do perfil Gerente. Não adicionar dados ou KPIs fictícios.
 
@@ -166,7 +170,7 @@ Relatórios reais, filtros suportados e exportações implementadas. Respeitar e
 
 ### Diferença entre perfis
 - **Operador:** executa registro e consulta seu trabalho.
-- **Supervisor:** acompanha operação/equipe e trata tarefas operacionais autorizadas.
+- **Analista:** examina dados operacionais, filtros, tendências e relatórios autorizados.
 - **Gerente:** acompanha indicadores, riscos e prioridades da loja.
 - **Administrador:** administra estrutura, usuários, permissões e configurações do sistema.
 - **Assistente:** interface conversacional de apoio; não é um perfil que concede acesso adicional.
@@ -216,5 +220,5 @@ Componentes equivalentes devem compartilhar tokens, espaçamento, radius, tipogr
 
 ## Mockups
 
-As imagens geradas para Operador, Supervisor e Administrador são **referências de composição/estética**. Elas contêm textos e dados ilustrativos (ex.: números, nomes, filial e contagens); esses valores não devem ser copiados como dados reais. Implementar layout e conteúdo real do sistema, não reproduzir dados fictícios.
+As imagens geradas para Operador, Assistente, Analista, Gerente e Administrador são **referências de composição/estética**. Elas contêm textos e dados ilustrativos (ex.: números, nomes, filial e contagens); esses valores não devem ser copiados como dados reais. Implementar layout e conteúdo real do sistema, não reproduzir dados fictícios.
 
