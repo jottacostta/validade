@@ -76,6 +76,11 @@ test('perecível usa RPC atômica para item + registro e propaga setor/informant
   assert.match(migration, /insert into public\.pere_regs/);
 });
 
+test('RPCs exigem setor válido, mas trigger aceita NULL de clientes legados durante rollout', () => {
+  assert.match(migration, /if p_setor is null or p_setor not in \('Açougue','Laticínios','Padaria','Salgados','FLV','Mercearia'\)/);
+  assert.match(migration, /if new\.setor is not null and new\.setor not in \('Açougue','Laticínios','Padaria','Salgados','FLV','Mercearia'\)/);
+});
+
 test('alertas internos são escopados à loja e só o destinatário pode ler/marcar como lidos', () => {
   assert.match(app, /\/rest\/v1\/notificacoes\?select=id,tipo,titulo,mensagem,payload,criado,lida_em&loja_id=eq\./);
   assert.match(migration, /create table if not exists public\.notificacoes/);

@@ -6,9 +6,9 @@ alter table public.lotes add column if not exists created_by_nome text;
 alter table public.pere_regs add column if not exists setor text;
 alter table public.pere_regs add column if not exists created_by_nome text;
 
-comment on column public.lotes.setor is 'Setor informado no registro; legado pode permanecer NULL; novos registros são validados pela RPC.';
+comment on column public.lotes.setor is 'Setor informado no registro; clientes legados podem omitir durante rollout; novas gravações via RPC exigem setor válido.';
 comment on column public.lotes.created_by_nome is 'Snapshot do nome do autor definido pelo servidor, nunca pelo cliente.';
-comment on column public.pere_regs.setor is 'Setor informado no registro; legado pode permanecer NULL; novos registros são validados pela RPC.';
+comment on column public.pere_regs.setor is 'Setor informado no registro; clientes legados podem omitir durante rollout; novas gravações via RPC exigem setor válido.';
 comment on column public.pere_regs.created_by_nome is 'Snapshot do nome do autor definido pelo servidor, nunca pelo cliente.';
 
 -- O trigger anterior já seta created_by. Substituí-lo para proteger também o snapshot.
@@ -53,7 +53,9 @@ create or replace function private.validar_setor_registro()
 returns trigger language plpgsql set search_path=''
 as $$
 begin
-  if new.setor is null or new.setor not in ('Açougue','Laticínios','Padaria','Salgados','FLV','Mercearia') then
+  -- O app antigo ainda pode enviar inserts diretos sem setor durante a publicação.
+  -- As RPCs abaixo rejeitam NULL e validam o conjunto completo para todo cadastro novo.
+  if new.setor is not null and new.setor not in ('Açougue','Laticínios','Padaria','Salgados','FLV','Mercearia') then
     raise exception 'Setor obrigatório ou inválido';
   end if;
   return new;
