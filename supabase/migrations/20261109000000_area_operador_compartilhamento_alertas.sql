@@ -56,7 +56,7 @@ begin
   -- O app antigo ainda pode enviar inserts diretos sem setor durante a publicação.
   -- As RPCs abaixo rejeitam NULL e validam o conjunto completo para todo cadastro novo.
   if new.setor is not null and new.setor not in ('Açougue','Laticínios','Padaria','Salgados','FLV','Mercearia') then
-    raise exception 'Setor obrigatório ou inválido';
+    raise exception 'Setor inválido';
   end if;
   return new;
 end;
@@ -69,9 +69,9 @@ drop trigger if exists pere_regs_validar_setor on public.pere_regs;
 create trigger pere_regs_validar_setor before insert on public.pere_regs
   for each row execute function private.validar_setor_registro();
 
--- Não confiar em INSERT direto para criar os campos novos: somente as RPCs de registro.
--- As policies antigas de INSERT continuam necessárias a outros fluxos já existentes;
--- RLS não é ampliado e as RPCs impõem os campos e a membresia no servidor.
+-- Novas gravações do frontend usam as RPCs, que validam setor, campos e vínculo à loja.
+-- INSERT direto continua temporariamente compatível com clientes legados; o trigger protege autoria
+-- e rejeita setores inválidos não nulos. As policies/RLS existentes não são ampliadas.
 
 create or replace function public.registrar_lote(
   p_id text,p_loja_id uuid,p_ean text,p_nome text,p_lote text,p_qtd numeric,p_val date,p_setor text
