@@ -116,23 +116,25 @@ tflaky('lembretes: mudar dias reagenda, desligar cancela, apagar tudo cancela', 
   await a.fechar();
 });
 
-tflaky('lote repetido: pergunta a quantidade final, já somada', { skip: pular }, async () => {
-  const a = await abrir({ dados: { prod: { '7891000315507': { nome: 'Café', lotes: [lote('x', '2031-01-01', 5, 'L1')] } } } });
-  const salvarLote = async qtd => {
-    await a.p.fill('#tCodigo', '7891000315507'); await a.p.click('#bBuscar');
-    await a.p.waitForSelector('#cardProd', { state: 'visible' });
-    await a.p.waitForFunction(() => document.getElementById('pNome').value !== '');
-    await a.p.fill('#pLote', 'l1'); await a.p.fill('#pQtd', String(qtd)); await a.p.fill('#pVal', '2031-01-01');
-    await a.p.click('#bSalvarLote');
-  };
-  a.respostas.push(true); await salvarLote(3);           // aceita o padrão (somado)
-  assert.strictEqual(a.dialogos.at(-1).padrao, '8');
-  assert.strictEqual((await a.salvo()).prod['7891000315507'].lotes[0].qtd, 8);
-  a.respostas.push('3'); await salvarLote(3);            // troca para substituir
-  assert.strictEqual((await a.salvo()).prod['7891000315507'].lotes[0].qtd, 3);
-  a.respostas.push(null); await salvarLote(4);           // cancela: nada muda
+tflaky('lote novo é salvo; lote duplicado (mesmo lote+validade) é rejeitado', { skip: pular }, async () => {
+  // Comportamento atual (PR #18): salva no Supabase; duplicado é rejeitado
+  // (atualizar quantidade passa a ser feito pela edição do lote).
+  const a = await abrirRegistro(rotasRegistro, { prod: { '7891000315507': { nome: 'Café', lotes: [lote('x', '2031-01-01', 5, 'L1')] } }, cat: {}, pere: { itens: {}, regs: [] } });
+  await a.p.fill('#tCodigo', '7891000315507'); await a.p.click('#bBuscar');
+  await a.p.waitForSelector('#cardProd', { state: 'visible' });
+  await a.p.waitForFunction(() => document.getElementById('pNome').value !== '');
+  // lote NOVO (L2) → salvo
+  await a.p.fill('#pLote', 'l2'); await a.p.fill('#pQtd', '3'); await a.p.fill('#pVal', '2031-02-01');
+  await a.p.click('#bSalvarLote');
+  await a.p.waitForFunction(() => { try { return JSON.parse(localStorage.getItem('validade_dados')).prod['7891000315507'].lotes.length === 2; } catch (e) { return false; } });
+  // lote DUPLICADO (mesmo L1 + 2031-01-01) → rejeitado, nada muda
+  await a.p.fill('#pLote', 'l1'); await a.p.fill('#pQtd', '9'); await a.p.fill('#pVal', '2031-01-01');
+  await a.p.click('#bSalvarLote');
+  await a.p.waitForTimeout(400);
   const ls = (await a.salvo()).prod['7891000315507'].lotes;
-  assert.deepStrictEqual([ls.length, ls[0].qtd], [1, 3]);
+  assert.strictEqual(ls.length, 2, 'duplicado não cria novo lote');
+  assert.ok(ls.some(l => l.lote === 'L1' && l.qtd === 5), 'lote existente permanece com qtd 5');
+  assert.ok(ls.some(l => l.lote === 'L2' && l.qtd === 3), 'lote novo L2 foi salvo');
   await a.fechar();
 });
 
@@ -170,12 +172,13 @@ tflaky('slogan da configuração aparece no cabeçalho', { skip: pular }, async 
 
 tflaky('lê etiqueta GS1 (DataMatrix) e preenche os perecíveis', { skip: pular }, async () => {
   // simula o leitor nativo devolvendo o conteúdo do DataMatrix da etiqueta (peso 0,576 kg, validade 08/11/26)
-  const a = await abrir({ dados: { pere: { itens: {}, regs: [] } }, antes: p => p.addInitScript(() => {
+  const cap = {};
+  const a = await abrirRegistro(p => rotasRegistro(p, cap), { pere: { itens: {}, regs: [] } }, p => p.addInitScript(() => {
     window.BarcodeDetector = class {
       static getSupportedFormats() { return Promise.resolve(['data_matrix', 'ean_13']); }
       detect() { return Promise.resolve([{ rawValue: '010789123456789517261108' + '3103000576', format: 'data_matrix' }]); }
     };
-  }) });
+  }));
   await a.p.click('nav button[data-v="pere"]');
   await a.p.click('#bEscanearBal');
   await a.p.waitForSelector('#cardPe', { state: 'visible' });
@@ -189,12 +192,11 @@ tflaky('lê etiqueta GS1 (DataMatrix) e preenche os perecíveis', { skip: pular 
   await a.p.fill('#peSif', '01259');
   await a.p.click('#bSalvarPe');
   await a.p.waitForFunction(() => document.getElementById('cardPe').style.display === 'none');
-  const d = await a.salvo();
-  const reg = d.pere.regs[0];
-  assert.strictEqual(reg.peso, 0.576);
-  assert.strictEqual(reg.val, '2026-11-08');
-  assert.strictEqual(d.pere.itens[reg.cod].desc, 'Picanha Suína Fracionada');
-  // ao reler a mesma etiqueta, a descrição já vem preenchida
+  // o registro vai para o Supabase (payload capturado)
+  assert.strictEqual(cap.pere_regs[0].peso, 0.576);
+  assert.strictEqual(cap.pere_regs[0].val, '2026-11-08');
+  assert.strictEqual(cap.pere_itens[0].descricao, 'Picanha Suína Fracionada');
+  // ao reler a mesma etiqueta, a descrição já vem preenchida (D em memória)
   await a.p.click('#bEscanearBal');
   await a.p.waitForFunction(() => document.getElementById('peDesc').value === 'Picanha Suína Fracionada');
   assert.deepStrictEqual(a.erros, []);
@@ -203,13 +205,14 @@ tflaky('lê etiqueta GS1 (DataMatrix) e preenche os perecíveis', { skip: pular 
 
 tflaky('GS1 com etiqueta de balança embutida no GTIN: extrai código 6019 e peso do (3103)', { skip: pular }, async () => {
   // etiqueta do lombo: (01)02060190009984 (17)261108 (3103)000312 ; loja usa dig=5
-  const a = await abrir({ dados: { aj: { dig: 5, valor: 'preco' }, pere: { itens: {}, regs: [] } },
-    antes: p => p.addInitScript(() => {
+  const cap = {};
+  const a = await abrirRegistro(p => rotasRegistro(p, cap), { aj: { dig: 5, valor: 'preco' }, pere: { itens: {}, regs: [] } },
+    p => p.addInitScript(() => {
       window.BarcodeDetector = class {
         static getSupportedFormats() { return Promise.resolve(['data_matrix']); }
         detect() { return Promise.resolve([{ rawValue: '0102060190009984' + '17261108' + '3103000312', format: 'data_matrix' }]); }
       };
-    }) });
+    }));
   await a.p.click('nav button[data-v="pere"]');
   await a.p.click('#bEscanearBal');
   await a.p.waitForSelector('#cardPe', { state: 'visible' });
@@ -221,18 +224,18 @@ tflaky('GS1 com etiqueta de balança embutida no GTIN: extrai código 6019 e pes
   await a.p.fill('#peDesc', 'Lombo Fracionado Bife');
   await a.p.click('#bSalvarPe');
   await a.p.waitForFunction(() => document.getElementById('cardPe').style.display === 'none');
-  const d = await a.salvo();
-  assert.strictEqual(d.pere.regs[0].cod, '6019');
-  assert.strictEqual(d.pere.regs[0].peso, 0.312);
-  assert.strictEqual(d.pere.itens['6019'].desc, 'Lombo Fracionado Bife');
+  assert.strictEqual(String(cap.pere_regs[0].cod), '6019');
+  assert.strictEqual(cap.pere_regs[0].peso, 0.312);
+  assert.strictEqual(cap.pere_itens[0].descricao, 'Lombo Fracionado Bife');
   assert.deepStrictEqual(a.erros, []);
   await a.fechar();
 });
 
 tflaky('OCR preenche descrição e lote (SIF) ao escanear a etiqueta', { skip: pular }, async () => {
   const OCRTEXT = 'PERNIL FRACIONADO\\nSEARA RESERVA ks\\nCARNE RESFRIADA DE SUINO SEM OSSO - PERNIL\\nDATA: 05/11/26 VALIDADE: 08/11/26\\nLOTE: 876-040326\\n';
-  const a = await abrir({ dados: { aj: { dig: 5, valor: 'preco', ocr: true }, pere: { itens: {}, regs: [] } },
-    antes: p => p.addInitScript(`
+  const cap = {};
+  const a = await abrirRegistro(p => rotasRegistro(p, cap), { aj: { dig: 5, valor: 'preco', ocr: true }, pere: { itens: {}, regs: [] } },
+    p => p.addInitScript(`
       window.BarcodeDetector = class {
         static getSupportedFormats(){ return Promise.resolve(['data_matrix']); }
         detect(){ return Promise.resolve([{ rawValue: '0102031950017263'+'17261108'+'3103000864', format: 'data_matrix' }]); }
@@ -244,7 +247,7 @@ tflaky('OCR preenche descrição e lote (SIF) ao escanear a etiqueta', { skip: p
           terminate: async () => {},
         }),
       };
-    `) });
+    `));
   await a.p.click('nav button[data-v="pere"]');
   await a.p.click('#bEscanearBal');
   await a.p.waitForSelector('#cardPe', { state: 'visible' });
@@ -255,10 +258,9 @@ tflaky('OCR preenche descrição e lote (SIF) ao escanear a etiqueta', { skip: p
   await a.p.waitForFunction(() => document.getElementById('peSif').value === '876-040326');
   await a.p.click('#bSalvarPe');
   await a.p.waitForFunction(() => document.getElementById('cardPe').style.display === 'none');
-  const d = await a.salvo();
-  assert.strictEqual(d.pere.itens['3195'].desc, 'Pernil Fracionado');
-  assert.strictEqual(d.pere.regs[0].sif, '876-040326');
-  assert.strictEqual(d.pere.regs[0].peso, 0.864);
+  assert.strictEqual(cap.pere_itens[0].descricao, 'Pernil Fracionado');
+  assert.strictEqual(cap.pere_regs[0].sif, '876-040326');
+  assert.strictEqual(cap.pere_regs[0].peso, 0.864);
   assert.deepStrictEqual(a.erros, []);
   await a.fechar();
 });
@@ -355,6 +357,34 @@ async function abrirLogado(setupRotas, dados, sessaoExtra) {
   await a.p.evaluate(([d, extra]) => { localStorage.setItem('validade_sessao', JSON.stringify(Object.assign({ access_token: 'tok', refresh_token: 'ref', expira: Date.now() + 3600000, usuario: 'teste', email: 'teste@loja.validade', uid: 'u1', lojaId: 'L1', lojaNome: 'Loja Teste' }, extra || {}))); if (d) localStorage.setItem('validade_dados', JSON.stringify(d)); }, [dados, sessaoExtra]);
   await a.p.reload();
   return a;
+}
+/* Como abrirLogado, porém injeta o leitor nativo/OCR (antes) ANTES de carregar,
+   para os testes de scanner. Desde o PR #18 o registro salva direto no Supabase,
+   então estes testes rodam logados e com as rotas de salvar mockadas. */
+async function abrirRegistro(setupRotas, dados, antes) {
+  const a = await abrir({ url: URL_SUPA, antes });
+  if (setupRotas) await setupRotas(a.p);
+  await a.p.evaluate((d) => {
+    localStorage.setItem('validade_sessao', JSON.stringify({ access_token: 'tok', refresh_token: 'ref', expira: Date.now() + 3600000, usuario: 'teste', email: 'teste@loja.validade', uid: 'u1', papel: 'operador', nome: 'Teste', lojaId: 'L1', lojaNome: 'Loja Teste' }));
+    if (d) localStorage.setItem('validade_dados', JSON.stringify(d));
+  }, dados);
+  await a.p.reload();
+  return a;
+}
+/* Mocks do Supabase para o fluxo de registro logado (salvar lote/perecível, pull, auditoria…).
+   `cap` (opcional) coleta os corpos enviados por tabela, para os testes verificarem o payload. */
+async function rotasRegistro(p, cap) {
+  cap = cap || {};
+  await p.route(/\/rest\/v1\/perfis/, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ papel: 'operador', nome: 'Teste' }]) }));
+  await p.route(/\/rest\/v1\/catalogo/, r => { const m = r.request().method(); r.fulfill({ status: m === 'GET' ? 200 : 201, contentType: 'application/json', body: m === 'GET' ? '[]' : '' }); });
+  for (const t of ['produtos', 'lotes', 'pere_itens', 'pere_regs', 'auditoria', 'preferencias', 'lojas', 'loja_membros']) {
+    await p.route(new RegExp('/rest/v1/' + t + '(\\?|$)'), r => {
+      const m = r.request().method();
+      if (m !== 'GET') { try { (cap[t] = cap[t] || []).push(...r.request().postDataJSON()); } catch (e) {} }
+      r.fulfill({ status: m === 'GET' ? 200 : 201, contentType: 'application/json', body: m === 'GET' ? '[]' : '' });
+    });
+  }
+  return cap;
 }
 const R_PULL = /\/catalogo\?updated_at=gt/, R_LOOK = /\/catalogo\?ean=eq\./, R_PUSH = /\/catalogo\?on_conflict=ean/, R_OFF = /openfoodfacts\.org/;
 
