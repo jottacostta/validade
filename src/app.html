@@ -196,11 +196,51 @@ nav.abas button{font-size:11px;min-height:62px;color:#9fb4c7;gap:3px}nav.abas bu
  #v-pere .sub button{font-size:11px;padding-inline:2px}
 }
 
+
+/* Telas Operador — refinamento de fidelidade e comportamento */
+.hdr-in{min-height:76px;gap:14px}.hdr-logo{width:78px;height:70px;object-fit:contain;background:transparent;border:0;border-radius:0;flex:none}
+.hdr-brand-copy{border-left:2px solid rgba(255,255,255,.9);padding-left:14px}
+header h1{font-size:clamp(19px,5.2vw,26px);line-height:1.12;letter-spacing:-.45px}
+header p{font-size:14px;line-height:1.25}
+.operator-role-pill{font-size:12px;padding:5px 13px}
+#v-prod .page-heading,#v-pere .page-heading{display:none}
+#v-prod .tiles .tile{position:relative;background:linear-gradient(145deg,#123a58,#0a2136);border-color:#2a5b7c}
+#v-prod .tiles .tile:nth-child(1):before,#v-prod .tiles .tile:nth-child(2):before,#v-prod .tiles .tile:nth-child(3):before,#v-prod .tiles .tile:nth-child(4):before{display:block;font-size:19px;margin-bottom:2px}
+#v-prod .tiles .tile:nth-child(1):before{content:"▤"}#v-prod .tiles .tile:nth-child(2):before{content:"✓";color:#28d477}#v-prod .tiles .tile:nth-child(3):before{content:"◷";color:#ffb22c}#v-prod .tiles .tile:nth-child(4):before{content:"⚠";color:#ff5961}
+#v-prod #qProd,#v-pere #qPe{min-height:52px;border:1px solid #39749a;background:#0b263d;border-radius:14px}
+#v-prod #fSetorProd,#v-pere #fSetorPe{min-height:46px;background:#0b263d;border:1px solid #39749a}
+#v-prod #listaProd .card,#v-pere #listaPe .card{background:linear-gradient(120deg,#102f49,#0a2034);border:1px solid #2e6285;border-radius:17px;box-shadow:0 5px 15px #0002}
+#v-prod #listaProd table,#v-pere #listaPe table{border-collapse:separate;border-spacing:0 5px}
+#v-prod #listaProd tr[data-id],#v-pere #listaPe tr[data-pe]{background:rgba(4,20,34,.48);border:1px solid #315a78}
+#v-prod #listaProd tr[data-id] td,#v-pere #listaPe tr[data-pe] td{border:0;padding:8px 5px}
+#v-prod #listaProd tr[data-id]:active,#v-pere #listaPe tr[data-pe]:active{background:#17466a}
+#v-alertas .notification-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 14px;padding:4px;background:#091d30;border:1px solid #284b68;border-radius:15px}
+.notification-tabs button{min-width:0;border:0;border-radius:11px;padding:10px 4px;background:transparent;color:#c6d9e9;font:700 12px system-ui;white-space:nowrap}
+.notification-tabs button.on{background:linear-gradient(135deg,#0785f3,#0755b5);color:#fff;box-shadow:0 3px 10px #0068d644}
+.notification-tabs button span{display:inline-grid;place-items:center;min-width:18px;height:18px;margin-left:2px;border-radius:99px;background:#ffffff20;font-size:10px}
+.notification-item{width:100%;display:grid;grid-template-columns:42px minmax(0,1fr) auto 14px;gap:10px;align-items:center;text-align:left;margin:8px 0;padding:12px;border:1px solid #315773;border-radius:15px;background:linear-gradient(130deg,#102f49,#0a2035);color:#f3f7fc}
+.notification-item.da{border-left:5px solid #ff3547}.notification-item.wa{border-left:5px solid #ffb323}.notification-item.info{border-left:5px solid #11a6ff}
+.notification-icon{width:40px;height:46px;display:grid;place-items:center;border-radius:11px;background:#0755a5;font-size:23px}
+.notification-item.da .notification-icon{background:#8e1d2d}.notification-item.wa .notification-icon{background:#79500a}.notification-item.info .notification-icon{background:#07558b}
+.notification-copy{min-width:0;display:flex;flex-direction:column;gap:3px}.notification-copy b{font-size:14px}.notification-copy>span{font-size:12px;line-height:1.35;color:#d8e7f4}.notification-copy small{font-size:10px;color:#9db6ca}
+.notification-state{font-size:10px;font-weight:800;color:#ffe17b;white-space:nowrap}.notification-arrow{font-size:23px}
+.notification-actions{margin-top:12px}.notification-actions .btn{flex:1 1 140px;min-height:44px}
+.operator-profile-card{background:linear-gradient(140deg,#103653,#091f33);border-color:#2c6287}
+.operator-profile-top{display:flex;align-items:center;gap:14px;padding:4px 0 16px;border-bottom:1px solid #2a4e69}
+.operator-profile-avatar{width:76px;height:76px;flex:none;display:grid;place-items:center;border-radius:50%;background:linear-gradient(140deg,#168cff,#0755b5);border:2px solid #6bc4ff;font-size:38px}
+.operator-profile-identity{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}.operator-profile-identity strong{font-size:22px;overflow-wrap:anywhere}.operator-profile-identity>span:not(.st){font-size:13px;color:#b9d0e2;overflow-wrap:anywhere}
+.operator-profile-data{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.operator-profile-data>div{padding:11px 2px;border-bottom:1px solid #274963;min-width:0}
+.operator-profile-data small{display:block;color:#9fb9ce;font-size:11px}.operator-profile-data b{display:block;font-size:13px;margin-top:3px;overflow-wrap:anywhere}
+.operator-profile-actions{margin-top:14px}.operator-profile-actions .btn{flex:1 1 130px}
+@media(max-width:380px){.hdr-logo{width:62px;height:62px}.hdr-brand-copy{padding-left:10px}.notification-tabs button{font-size:10px}.notification-item{grid-template-columns:34px minmax(0,1fr) 12px;padding:9px;gap:8px}.notification-icon{width:34px;height:40px}.notification-state{grid-column:2;justify-self:start}.notification-arrow{grid-column:3;grid-row:1/3}}
+@media(prefers-reduced-motion:reduce){.vista.on{animation:none}*{scroll-behavior:auto!important;transition:none!important}}
+
 </style>
 </head>
 <body>
 <div id="splash"><div class="sp-logo"><img id="splashLogo" alt="" style="display:none"><span id="splashIni">📅</span></div><div class="sp-nome">/*NOME_HTML*/</div><div class="sp-sub">Controle de validade e perecíveis</div><span class="gira"></span><div class="barra-am"></div></div>
-<header><div class="hdr-in"><img id="hdrLogo" alt="" class="hdr-logo" style="display:none"><div style="min-width:0"><h1>/*NOME_HTML*/</h1><p id="slogan">Lotes, validades e perecíveis</p><span class="operator-role-pill" id="operatorRolePill">♙ Área do Operador</span><p id="lojaAtualLabel" class="ean" style="margin:3px 0 0"></p></div><button id="bLogoutHdr" class="hdr-logout" type="button">Sair</button></div></header>
+<header><div class="hdr-in"><img id="hdrLogo" alt="Supermercados Guanabara" class="hdr-logo" style="display:none"><div class="hdr-brand-copy" style="min-width:0"><h1>/*NOME_HTML*/</h1><p id="slogan">Lotes, validades e perecíveis</p><span class="operator-role-pill" id="operatorRolePill">♙ Área do Operador</span><p id="lojaAtualLabel" class="ean" style="margin:3px 0 0"></p></div><button id="bLogoutHdr" class="hdr-logout" type="button">Sair</button></div></header>
 <main>
 
 <!-- ═════════ REGISTRAR ═════════ -->
@@ -289,13 +329,14 @@ nav.abas button{font-size:11px;min-height:62px;color:#9fb4c7;gap:3px}nav.abas bu
 <section class="vista" id="v-alertas">
   <div class="page-heading"><h2>Central de alertas</h2><p>Priorize os vencimentos e acompanhe as notificações da unidade</p></div>
   <div class="card"><h2>Alertas da loja</h2><p style="margin:0;color:var(--mu);font-size:13px">Validades recebidas do Supabase para a loja ativa. Os alertas internos são compartilhados com todos os usuários vinculados.</p><div id="alertasResumo" class="tiles" style="margin-top:12px"></div><div id="listaAlertasValidade"></div></div>
-  <div class="card"><h2>Notificações</h2><div id="listaNotificacoes"><div class="vazio">Carregando notificações…</div></div><button class="btn sec" id="bLerNotificacoes" type="button" style="margin-top:10px">Marcar notificações como lidas</button></div>
+  <div class="card" id="cardNotificacoes"><h2>Suas notificações</h2><div class="notification-tabs" id="notificationTabs" role="tablist" aria-label="Filtrar notificações"><button type="button" class="on" data-notif-filter="all" aria-pressed="true">Todas <span id="notifCountAll">0</span></button><button type="button" data-notif-filter="alerts" aria-pressed="false">⚠ Alertas <span id="notifCountAlerts">0</span></button><button type="button" data-notif-filter="system" aria-pressed="false">ⓘ Sistema <span id="notifCountSystem">0</span></button><button type="button" data-notif-filter="news" aria-pressed="false">Avisos <span id="notifCountNews">0</span></button></div><div id="listaNotificacoes"><div class="vazio">Carregando notificações…</div></div><div class="row notification-actions"><button class="btn sec" id="bLerNotificacoes" type="button">✓ Marcar todas como lidas</button><button class="btn sec" id="bAtualizarNotificacoes" type="button">↻ Atualizar</button></div></div>
   <div class="card"><h2>Push neste aparelho</h2><p id="pushStatus" style="font-size:13px;color:var(--mu)">Verificando suporte…</p><button class="btn" id="bPushAtivar" type="button">Ativar notificações push</button><button class="btn sec" id="bPushDesativar" type="button" style="display:none">Desativar push neste aparelho</button></div>
 </section>
 
 <!-- ═════════ AJUSTES ═════════ -->
 <section class="vista" id="v-aj">
-  <div class="page-heading"><h2>Configurações</h2><p>Preferências, conta, sincronização e administração do sistema</p></div>
+  <div class="page-heading"><h2>Configurações e perfil</h2><p>Dados do operador, preferências, segurança e administração</p></div>
+  <div class="card operator-profile-card" id="operatorProfileCard"><div class="operator-profile-top"><div class="operator-profile-avatar" aria-hidden="true">👤</div><div class="operator-profile-identity"><strong id="profileName">Operador</strong><span id="profileLogin">—</span><span class="st ok" id="profileStatus">Sessão ativa</span></div></div><div class="operator-profile-data"><div><small>Loja / Filial</small><b id="profileStore">Não selecionada</b></div><div><small>Função</small><b id="profileRole">Operador</b></div><div><small>Setor de atuação</small><b id="profileSector">Não informado</b></div><div><small>Dispositivo</small><b id="profileDevice">Navegador</b></div></div><div class="row operator-profile-actions"><button class="btn sec" id="profileAccount" type="button">Conta e segurança</button><button class="btn perigo" id="profileLogout" type="button">Sair da conta</button></div></div>
   <div class="card"><h2>Etiqueta da balança</h2>
     <p style="margin:0;font-size:13px;color:var(--mu)">Etiquetas de balança (EAN-13) começam com <b>2</b>: 2 + código do produto (6 posições, com zeros de preenchimento) + valor (5 dígitos) + dígito verificador.</p>
     <div class="g2"><div><label class="f" for="aDig">Dígitos do código</label><select id="aDig"><option value="4">4 dígitos (2 CCCC 00 VVVVV D)</option><option value="5">5 dígitos (2 CCCCC 0 VVVVV D)</option><option value="6">6 dígitos (2 CCCCCC VVVVV D)</option></select></div>
@@ -463,7 +504,7 @@ $('homeRecentList').onclick=function(e){if(e.target.closest('[data-home-record]'
 function ir(v){document.querySelectorAll('.vista').forEach(function(s){s.classList.toggle('on',s.id==='v-'+v);});
   var sub={home:(CFG.slogan||'Lotes, validades e perecíveis'),reg:'Registrar produto',prod:'Meus registros',pere:'Perecíveis',alertas:'Alertas e notificações',aj:'Configurações'};if($('slogan'))$('slogan').textContent=sub[v]||CFG.slogan||'Lotes, validades e perecíveis';
   document.querySelectorAll('#abas button').forEach(function(b){b.classList.toggle('on',b.dataset.v===(v==='reg'?'home':v));});
-  if(v==='home')renderHome();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();}if(v==='aj'){ajustes();carregarSolicitacoesExclusao();}window.scrollTo(0,0);}
+  if(v==='home')renderHome();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();}if(v==='aj'){renderPerfilOperador();ajustes();carregarSolicitacoesExclusao();}window.scrollTo(0,0);}
 $('abas').onclick=function(e){var b=e.target.closest('button');if(b)ir(b.dataset.v);};
 function mostrarEscolhaRegistro(){atual=null;$('cardProd').style.display='none';$('cardRegScan').style.display='none';$('regEscolha').style.display='';$('pLote').value='';$('pQtd').value='';$('pVal').value='';$('pSetor').value='';$('tCodigo').value='';}
 $('bTipoIndustrial').onclick=function(){$('regEscolha').style.display='none';$('cardRegScan').style.display='';$('tCodigo').focus();};
@@ -780,7 +821,18 @@ function cancelarTodos(){todosRegistros().forEach(function(x){cancelarLembrete(x
 function reagendarTodos(){todosRegistros().forEach(function(x){cancelarLembrete(x.reg.id);lembrete(x.reg,x.nome);});}
 
 /* Alertas derivados do catálogo sincronizado: todos os membros da loja veem os mesmos registros. */
-var notificacoesCache=[];
+var notificacoesCache=[],filtroNotificacoes='all';
+function categoriaNotificacao(n){var t=String(n&&n.tipo||'').toLowerCase();if(/validade|venc|expir|alert/.test(t))return 'alerts';if(/sistema|system|atualiz|update|sync/.test(t))return 'system';return 'news';}
+function renderListaNotificacoes(){
+  var dados=notificacoesCache,counts={all:dados.length,alerts:0,system:0,news:0};
+  dados.forEach(function(n){counts[categoriaNotificacao(n)]++;});
+  [['all','notifCountAll'],['alerts','notifCountAlerts'],['system','notifCountSystem'],['news','notifCountNews']].forEach(function(x){var e=$(x[1]);if(e)e.textContent=counts[x[0]];});
+  var tabs=$('notificationTabs');if(tabs)tabs.querySelectorAll('[data-notif-filter]').forEach(function(b){var on=b.dataset.notifFilter===filtroNotificacoes;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
+  var visiveis=dados.filter(function(n){return filtroNotificacoes==='all'||categoriaNotificacao(n)===filtroNotificacoes;});
+  $('listaNotificacoes').innerHTML=visiveis.map(function(n){var p=n.payload||{},cat=categoriaNotificacao(n),classe=cat==='alerts'?'da':cat==='system'?'info':'wa';return '<button type="button" class="notification-item '+classe+'" data-notif="'+esc(n.id)+'" aria-label="'+esc(n.titulo)+'"><span class="notification-icon" aria-hidden="true">'+(cat==='alerts'?'⚠':cat==='system'?'ⓘ':'✦')+'</span><span class="notification-copy"><b>'+esc(n.titulo)+'</b><span>'+esc(n.mensagem)+'</span><small>'+esc(p.nome||'')+(p.setor?' · '+esc(p.setor):'')+' · '+fdataHora(Date.parse(n.criado))+'</small></span><span class="notification-state">'+(!n.lida_em?'Não lida':'Lida')+'</span><span class="notification-arrow" aria-hidden="true">›</span></button>';}).join('')||'<div class="vazio">Nenhuma notificação nesta categoria.</div>';
+}
+$('notificationTabs').onclick=function(e){var b=e.target.closest('[data-notif-filter]');if(!b)return;filtroNotificacoes=b.dataset.notifFilter;renderListaNotificacoes();};
+$('bAtualizarNotificacoes').onclick=carregarNotificacoes;
 function renderAlertas(){
   var itens=todosRegistros().map(function(x){var n=dias(x.reg.val);return {reg:x.reg,nome:x.nome,dias:n};})
     .filter(function(x){return x.dias!==null&&x.dias<=D.aj.dias;})
@@ -790,12 +842,12 @@ function renderAlertas(){
   if($('listaAlertasValidade'))$('listaAlertasValidade').innerHTML=itens.map(function(x){var r=x.reg,detail=r.lote?'Lote '+r.lote:(r.sif?'SIF '+r.sif:'Registro '+r.id);return '<div class="aviso '+(x.dias<0?'da':'wa')+'"><b>'+esc(x.nome)+'</b><div>'+esc(detail)+' · '+proveniencia(r)+'</div><div>Validade: '+fdata(r.val)+' · '+(x.dias<0?'vencido há '+(-x.dias)+' dia(s)':x.dias===0?'vence hoje':'vence em '+x.dias+' dia(s)')+'</div></div>';}).join('')||'<div class="vazio">Nenhuma validade vencida ou próxima dentro do limite configurado.</div>';
   atualizarBadgeAlertas();
 }
-function atualizarBadgeAlertas(){var b=$('alertBadge');if(!b)return;var pend=notificacoesCache.filter(function(n){return !n.lida_em;}).length,local=todosRegistros().filter(function(x){var n=dias(x.reg.val);return n!==null&&n<=D.aj.dias;}).length,qt=Math.max(pend,local);b.textContent=qt>99?'99+':String(qt);b.style.display=qt?'inline-flex':'none';}
+function atualizarBadgeAlertas(){var b=$('alertBadge');if(!b)return;var pend=notificacoesCache.filter(function(n){return !n.lida_em;}).length,local=todosRegistros().filter(function(x){var n=dias(x.reg.val);return n!==null&&n<=D.aj.dias;}).length,qt=Math.max(pend,local);b.textContent=qt>99?'99+':String(qt);b.style.display=qt?'inline-flex':'none';var hb=$('homeBellBadge'),ha=$('homeAlertsBadge');[hb,ha].forEach(function(x){if(x){x.textContent=qt>99?'99+':String(qt);x.style.display=qt?'':'none';}});}
 function carregarNotificacoes(){if(!sbOn()||!logado()||!SESS.lojaId){$('listaNotificacoes').innerHTML='<div class="vazio">Entre e selecione uma loja para carregar notificações compartilhadas.</div>';return Promise.resolve([]);}
   $('listaNotificacoes').innerHTML='<div class="vazio"><span class="gira"></span> carregando…</div>';
   return sbReq('/rest/v1/notificacoes?select=id,tipo,titulo,mensagem,payload,criado,lida_em&loja_id=eq.'+encodeURIComponent(SESS.lojaId)+'&order=criado.desc&limit=50').then(function(r){
     if(!r.ok)throw erroSQL(r,'notificações');notificacoesCache=Array.isArray(r.dados)?r.dados:[];
-    $('listaNotificacoes').innerHTML=notificacoesCache.map(function(n){var p=n.payload||{};return '<div class="aviso '+(n.tipo==='validade_vencida'?'da':'wa')+'" data-notif="'+esc(n.id)+'"><b>'+esc(n.titulo)+'</b> '+(!n.lida_em?'<span class="st ok">nova</span>':'')+'<div>'+esc(n.mensagem)+'</div><div class="ean">'+esc(p.nome||'')+(p.setor?' · '+esc(p.setor):'')+(p.loja?' · '+esc(p.loja):'')+' · '+fdataHora(Date.parse(n.criado))+'</div></div>';}).join('')||'<div class="vazio">Nenhuma notificação enviada pelo serviço ainda. Os alertas visuais de validade aparecem acima.</div>';
+    renderListaNotificacoes();
     atualizarBadgeAlertas();return notificacoesCache;
   }).catch(function(e){$('listaNotificacoes').innerHTML='<div class="aviso wa">As notificações do servidor ainda não estão disponíveis. Os alertas visuais sincronizados continuam ativos. ('+esc(e.message||'erro')+')</div>';return [];});}
 $('bLerNotificacoes').onclick=function(){var ids=notificacoesCache.filter(function(n){return !n.lida_em;}).map(function(n){return n.id;});if(!ids.length){toast('Não há notificações novas');return;}
@@ -1031,7 +1083,19 @@ window.addEventListener('pageshow',protegerVoltaPosLogout);window.addEventListen
 function atualizarGate(){if(precisaLogin()){$('conta').classList.add('on');if(logado()){if(SESS.forcePasswordChange)mostrarTrocaSenhaPrimeiroAcesso();else mostrarLojas();}else mostrarLoginForm();}}
 function fdataHora(ms){try{var d=new Date(ms);return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
 function ehAdmin(){return papelAtual()==='admin';}
-function atualizarContextoLoja(){var e=$('lojaAtualLabel');if(!e)return;e.textContent=logado()?((SESS.nome||SESS.usuario||'Usuário')+(SESS.lojaNome?' · '+SESS.lojaNome:'')):'';}
+function atualizarContextoLoja(){var e=$('lojaAtualLabel');if(e)e.textContent=logado()?((SESS.nome||SESS.usuario||'Usuário')+(SESS.lojaNome?' · '+SESS.lojaNome:'')):'';renderPerfilOperador();}
+function renderPerfilOperador(){
+  var nome=SESS&&(SESS.nome||SESS.usuario||SESS.email)||'Operador',papel=SESS&&SESS.papel||papelAtual(),loja=SESS&&SESS.lojaNome||'Não selecionada';
+  if($('profileName'))$('profileName').textContent=nome;
+  if($('profileLogin'))$('profileLogin').textContent=SESS&&(SESS.usuario||SESS.email)||'Conta local';
+  if($('profileStore'))$('profileStore').textContent=loja;
+  if($('profileRole'))$('profileRole').textContent=(PAPEIS&&PAPEIS[papel])||papel||'Operador';
+  if($('profileSector'))$('profileSector').textContent=SESS&&(SESS.setor||SESS.setorNome)||'Não informado';
+  if($('profileDevice'))$('profileDevice').textContent=/Android/i.test(navigator.userAgent)?'Android':/iPhone|iPad/i.test(navigator.userAgent)?'iOS':'Navegador';
+  if($('profileStatus'))$('profileStatus').textContent=logado()?'Sessão ativa':'Modo local';
+}
+$('profileAccount').onclick=function(){var c=$('cardConta');if(c){c.style.display='';c.scrollIntoView({behavior:'smooth',block:'start'});}};
+$('profileLogout').onclick=function(){if(logado()&&confirm('Deseja sair da conta?'))sairParaLogin();};
 function auditar(acao,detalhe){if(!sbOn()||!logado())return;try{sbReq('/rest/v1/auditoria',{method:'POST',headers:{Prefer:'return=minimal'},body:[{user_id:SESS.uid||null,usuario:SESS.usuario||SESS.email||'',papel:SESS.papel||null,loja_id:SESS.lojaId||null,loja_nome:SESS.lojaNome||null,acao:acao,detalhe:detalhe||{}}]}).catch(function(){});}catch(e){}}
 function auditoriaCard(){var c=$('cardAuditoria');if(!c)return;if(!sbOn()||!ehAdmin()){c.style.display='none';return;}c.style.display='';
   $('listaAud').innerHTML='<div class="vazio"><span class="gira"></span> carregando…</div>';
