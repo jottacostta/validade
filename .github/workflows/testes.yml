@@ -1,0 +1,20 @@
+name: testes
+on:
+  push:
+  pull_request:
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: dist/ em dia com src/
+        # painel.html é um retrato do estado do git (nº de commits, último hash),
+        # então muda a cada commit e não pode ser verificado aqui; checamos só o app.
+        run: node build.js && git diff --exit-code dist/validade.html dist/APP_VALIDADE.js
+      - run: npm test

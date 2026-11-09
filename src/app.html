@@ -475,6 +475,7 @@ $('bSalvarLote').onclick=function(){if(!pode('registrar')){toast('Seu perfil nã
     else{reg.created_by_nome='Usuário local';p.lotes.push(reg);}
     D.cat[atual]=Object.assign({},D.cat[atual]||{},{nome:nome});salvar();lembrete(ex||reg,nome);toast('Salvo neste aparelho');listaProdutos();mostrarEscolhaRegistro();return;
   }
+  if(ex){toast('Este lote e validade já estão cadastrados nesta loja. Edite o registro existente.');return;}
   var b=$('bSalvarLote');b.disabled=true;b.textContent='⏳ Salvando no SQL…';
   var eanSalvo=atual;
   inserirLoteSQL(eanSalvo,nome,reg).then(function(serverRow){
