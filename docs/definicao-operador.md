@@ -26,7 +26,7 @@ Definir o comportamento da área Operador, respeitando o layout já existente. O
 | Histórico | Histórico **pessoal** do Operador, referente às suas próprias ações/registros. |
 | Solicitação de exclusão | Aprovação por **Gerente ou Administrador**. |
 | Após cadastro | Retornar automaticamente ao leitor para novo registro. |
-| Alertas de vencimento | Operador configura antecedência e horários dos alertas; canais iniciais sem custo: push e notificações internas, além de calendário quando tecnicamente possível. |
+| Alertas de vencimento | Operador configura antecedência e horários; push e notificações internas são canais candidatos, e calendário será avaliado quando tecnicamente possível. Disponibilidade, dependências e custos operacionais precisam ser confirmados; WhatsApp está excluído. |
 
 A consulta ampla da loja não concede permissão de edição sobre registros de terceiros. A autorização de edição deve ser validada no backend/Supabase, não apenas escondendo controles na interface.
 
@@ -53,6 +53,17 @@ Lista definida pelo usuário:
 - Setor deve ser selecionado em lista, sem digitação livre.
 - Não adicionar setores fora da lista sem autorização.
 - O filtro de setor na consulta deve usar os mesmos valores usados no registro.
+
+## Pontos a detalhar antes da implementação
+
+Os requisitos abaixo ainda não especificam decisões suficientes para implementação. Devem ser confirmados sem alterar as regras já declaradas como confirmadas:
+
+- **Sequência de navegação:** a área abre no leitor e oferece a escolha entre industrializados e perecíveis, mas ainda não define se a câmera inicia antes da escolha nem em qual componente essa escolha aparece.
+- **Vínculo do setor:** confirmar se o setor pertence a cada lote/registro, ao produto ou a outra entidade. A escolha deve permitir que o mesmo produto tenha lotes em setores diferentes, se esse for o comportamento desejado.
+- **Autoria e registros existentes:** usar a identidade autenticada estável do backend para determinar autoria, e não um nome de usuário editável. Definir como tratar registros antigos sem autoria e como preservar valores anteriores em auditoria.
+- **Duplicidade e reenvio:** distinguir repetição técnica da mesma requisição (por exemplo, retry após timeout) de um novo registro legítimo. Definir a chave de idempotência e as regras de unicidade do negócio sem bloquear lotes distintos.
+- **Aprovação de exclusão:** detalhar transições de estado, notificações, cancelamento da solicitação e prevenção de autoaprovação, mantendo a aprovação por Gerente ou Administrador.
+- **Alertas:** definir comportamento quando push não for suportado ou autorizado, disponibilidade das notificações internas, dependências de calendário e custos de infraestrutura/serviços antes de assumir compromisso de custo.
 
 ## Back-end / Supabase
 
@@ -85,7 +96,7 @@ Lista definida pelo usuário:
 
 ## Ajustes e alertas de vencimento — requisitos confirmados
 
-### Canais aprovados sem custo de WhatsApp
+### Canais considerados inicialmente — WhatsApp excluído
 - **Push notifications** para o celular, por Web Push/PWA, sujeito a suporte do navegador/SO e permissão do usuário.
 - **Notificações dentro do Validade** (central de notificações).
 - **Calendário/agenda do celular**, a ser avaliado como integração ou exportação de eventos. Não prometer sincronização automática universal.
@@ -99,6 +110,7 @@ Lista definida pelo usuário:
 - Selecionar setores ou itens monitorados, ou todos os setores.
 - Ativar/desativar canais individualmente.
 - Consultar e alterar preferências próprias.
+- Confirmar disponibilidade por plataforma, dependências e custos operacionais; não prometer que push, central interna ou calendário terão custo zero.
 
 ### Requisitos técnicos
 - Push requer suporte PWA/Service Worker, Web Push e permissão do dispositivo; confirmar no repositório se a infraestrutura já existe.
@@ -160,7 +172,7 @@ Esta seção é um handoff operacional para qualquer agente de IA que assumir a 
 
 ### Antes de iniciar qualquer trabalho
 1. Leia integralmente este documento (`docs/definicao-operador.md`).
-2. Leia `AGENTS.md), README e demais instruções/documentação aplicáveis no repositório. Se houver instruções específicas em diretórios, respeite também essas instruções.
+2. Leia `AGENTS.md`, `README.md` e demais instruções/documentação aplicáveis no repositório. Se houver instruções específicas em diretórios, respeite também essas instruções.
 3. Examine a implementação atual, arquitetura, componentes, rotas, autenticação, schema Supabase, políticas RLS, migrations e testes relevantes antes de propor ou alterar código.
 4. Identifique o comportamento existente e a causa do problema antes de modificar algo. Não presuma que uma implementação está ausente apenas porque não foi localizada superficialmente.
 5. Diferencie explicitamente: requisito confirmado, decisão pendente, hipótese técnica e comportamento já existente.
