@@ -555,7 +555,7 @@ function renderHome(){
  var loja=(SESS&&SESS.lojaNome)||'Loja não selecionada';
  if($('homeGreeting'))$('homeGreeting').textContent='Olá, '+nome+'!';
  var roleTxt=(SESS&&SESS.papel&&PAPEIS&&PAPEIS[SESS.papel])||'Operador';if($('operatorRolePill'))$('operatorRolePill').textContent='♙ Área do '+roleTxt;
- if($('homeStore'))$('homeStore').textContent=loja;
+ if($('homeStore'))$('homeStore').textContent=((SESS&&SESS.papel&&PAPEIS&&PAPEIS[SESS.papel])||'Operador')+' · '+loja;
  var nAlert=todosRegistros().filter(function(x){var n=dias(x.reg.val);return n!==null&&n<=D.aj.dias;}).length;
  ['homeBellBadge','homeAlertsBadge'].forEach(function(id){var b=$(id);if(b){b.textContent=nAlert>99?'99+':String(nAlert);b.style.display=nAlert?'':'none';}});
  var rows=todosRegistros().slice().sort(function(a,b){return new Date(b.reg.criado||b.reg.criado_em||b.reg.created_at||0)-new Date(a.reg.criado||a.reg.criado_em||a.reg.created_at||0);}).slice(0,3);
@@ -568,7 +568,7 @@ $('homeRecentList').onclick=function(e){if(e.target.closest('[data-home-record]'
 /* ───── navegação ───── */
 function ir(v){document.querySelectorAll('.vista').forEach(function(s){s.classList.toggle('on',s.id==='v-'+v);});
   var sub={home:'Área do Operador',reg:'Registrar produto',prod:'Meus registros',pere:'Perecíveis',alertas:'Alertas e notificações',aj:'Configurações'};if($('slogan'))$('slogan').textContent=sub[v]||CFG.slogan||'Lotes, validades e perecíveis';
-  document.querySelectorAll('#abas button').forEach(function(b){b.classList.toggle('on',b.dataset.v===(v==='reg'?'home':v));});
+  document.querySelectorAll('#abas button').forEach(function(b){b.classList.toggle('on',b.dataset.v===v);});
   if(v==='home')renderHome();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();}if(v==='aj'){renderPerfilOperador();ajustes();carregarSolicitacoesExclusao();}window.scrollTo(0,0);}
 $('abas').onclick=function(e){var b=e.target.closest('button');if(b)ir(b.dataset.v);};
 function mostrarEscolhaRegistro(){atual=null;$('cardProd').style.display='none';$('cardRegScan').style.display='none';$('regEscolha').style.display='';$('pLote').value='';$('pQtd').value='';$('pVal').value='';$('pSetor').value='';$('tCodigo').value='';}
