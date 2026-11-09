@@ -38,7 +38,7 @@ test('sync aplica tombstones recebidos para remover dados locais',()=>{
 
 test('solicitações de exclusão ficam na fila offline e são reenviadas ao reconectar',()=>{
   assert.match(app,/SYNC\.pendingExclusoes/);
-  assert.match(app,/window\.addEventListener\('online',function\(\)\{processarSolicitacoesOffline\(\);\}\)/);
+  assert.match(app,/window\.addEventListener\('online',function\(\)\{processarSolicitacoesOffline\(\);/);
   assert.match(app,/solicitante_id===SESS\.uid/);
 });
 

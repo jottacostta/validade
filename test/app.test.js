@@ -288,6 +288,50 @@ tflaky('mobile: sem rolagem horizontal nas telas com tabela (360px)', { skip: pu
   await a.fechar();
 });
 
+/* Rotas de registro com um interruptor de rede: abort() simula falta de internet. */
+async function rotasRede(p, estado) {
+  const resp = (r) => { const m = r.request().method(); if (m === 'GET') return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }); return estado.online ? r.fulfill({ status: 201, body: '' }) : r.abort(); };
+  await p.route(/\/rest\/v1\/perfis/, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ papel: 'operador', nome: 'Teste' }]) }));
+  await p.route(/\/rest\/v1\/catalogo/, resp);
+  for (const rpc of ['registrar_lote', 'registrar_perecivel']) await p.route(new RegExp('/rest/v1/rpc/' + rpc + '$'), r => estado.online ? r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ created_by: 'u1', created_by_nome: 'Teste', criado: Date.now() }) }) : r.abort('internetdisconnected'));
+  for (const t of ['produtos', 'lotes', 'pere_itens', 'pere_regs', 'auditoria', 'preferencias', 'lojas', 'loja_membros']) await p.route(new RegExp('/rest/v1/' + t + '(\\?|$)'), resp);
+}
+
+tflaky('offline: perecível salva no aparelho sem rede e sincroniza ao reconectar', { skip: pular }, async () => {
+  const net = { online: false };
+  const a = await abrirRegistro(p => rotasRede(p, net), { aj: { dig: 5, valor: 'preco' }, pere: { itens: {}, regs: [] } },
+    p => p.addInitScript(() => { window.BarcodeDetector = class { static getSupportedFormats() { return Promise.resolve(['data_matrix']); } detect() { return Promise.resolve([{ rawValue: '0102060190009984' + '17261108' + '3103000312', format: 'data_matrix' }]); } }; }));
+  await a.p.click('nav button[data-v="pere"]'); await a.p.click('#bEscanearBal');
+  await a.p.waitForSelector('#cardPe', { state: 'visible' });
+  await a.p.waitForFunction(() => document.getElementById('pePeso').value !== '');
+  await a.p.fill('#peDesc', 'Lombo Fracionado');
+  await a.p.selectOption('#peSetor', 'Açougue');
+  await a.p.click('#bSalvarPe');
+  // sem rede: cartão fecha e o registro fica salvo no aparelho, marcado como pendente
+  await a.p.waitForFunction(() => document.getElementById('cardPe').style.display === 'none');
+  await a.p.waitForFunction(() => { try { const d = JSON.parse(localStorage.getItem('validade_dados')); return d.pere.regs.length === 1 && String(d.pere.regs[0].cod) === '6019'; } catch (e) { return false; } });
+  assert.ok((await a.p.evaluate(() => (JSON.parse(localStorage.getItem('validade_sync')) || {}).pendentes || 0)) >= 1, 'marca pendente');
+  // volta a internet → dispara "online" → sincroniza e zera pendentes
+  net.online = true;
+  await a.p.evaluate(() => window.dispatchEvent(new Event('online')));
+  await a.p.waitForFunction(() => { try { return (JSON.parse(localStorage.getItem('validade_sync')) || {}).pendentes === 0; } catch (e) { return false; } });
+  await a.fechar();
+});
+
+tflaky('offline: lote salva no aparelho sem rede e marca pendente', { skip: pular }, async () => {
+  const net = { online: false };
+  const a = await abrirRegistro(p => rotasRede(p, net), { prod: { '7891000315507': { nome: 'Café', lotes: [] } }, cat: {}, pere: { itens: {}, regs: [] } });
+  await a.p.click('nav button[data-v="reg"]'); await a.p.click('#bTipoIndustrial');
+  await a.p.fill('#tCodigo', '7891000315507'); await a.p.click('#bBuscar');
+  await a.p.waitForSelector('#cardProd', { state: 'visible' });
+  await a.p.waitForFunction(() => document.getElementById('pNome').value === 'Café');
+  await a.p.fill('#pLote', 'l9'); await a.p.fill('#pQtd', '2'); await a.p.fill('#pVal', '2031-01-01'); await a.p.selectOption('#pSetor', 'Mercearia');
+  await a.p.click('#bSalvarLote');
+  await a.p.waitForFunction(() => { try { const d = JSON.parse(localStorage.getItem('validade_dados')); return d.prod['7891000315507'] && d.prod['7891000315507'].lotes.some(l => l.lote === 'L9'); } catch (e) { return false; } });
+  assert.ok((await a.p.evaluate(() => (JSON.parse(localStorage.getItem('validade_sync')) || {}).pendentes || 0)) >= 1, 'marca pendente');
+  await a.fechar();
+});
+
 tflaky('OCR desligado: não mexe na descrição nem no SIF', { skip: pular }, async () => {
   const a = await abrir({ dados: { aj: { dig: 5, valor: 'preco', ocr: false }, pere: { itens: {}, regs: [] } },
     antes: p => p.addInitScript(`
