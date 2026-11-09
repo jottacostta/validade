@@ -1,21 +1,22 @@
 # Definição funcional — Área do Operador
 
-**Status:** definição funcional em andamento. As decisões confirmadas abaixo devem ser preservadas na implementação. Esta documentação não autoriza mudanças de layout ou migrations de produção.
+**Status:** definição funcional em andamento. O usuário autorizou a redefinição do front-end, com a Área do Operador como referência visual. A especificação está em docs/layout-area-operador.md e a implementação incremental na PR #29. Esta autorização não abrange migrations nem alterações de produção.
 
 ## Objetivo
 
-Definir o comportamento da área Operador, respeitando o layout já existente. O Supabase/PostgreSQL é a fonte oficial dos dados; o navegador não deve ser requisito para persistência.
+Definir o comportamento da área Operador. A nova direção visual é o design Guanabara aprovado: dashboard Início, navegação inferior persistente e fluxo de registro em telas internas. A Área do Operador será a base do design system das demais áreas. Supabase/PostgreSQL continua como fonte oficial dos dados.
 
-## Tela inicial e navegação — confirmado
+## Tela inicial e navegação — redefinição visual aprovada
 
-- Ao entrar na área do Operador, a tela inicial já abre diretamente no **modo leitor de código**.
-- No fluxo inicial, o Operador escolhe entre **Produtos industrializados** e **Produtos perecíveis**.
-- Não criar dashboard/painel inicial alternativo nem redesenhar o layout já definido.
-- Após concluir um cadastro com sucesso, o leitor retorna automaticamente para permitir novo registro.
-- Mostrar confirmação somente após resposta positiva do Supabase.
-- Em erro, exibir mensagem útil e preservar os dados preenchidos.
-- Impedir submissão duplicada enquanto a requisição estiver em andamento.
-- Mostrar claramente usuário autenticado e loja ativa, conforme layout existente.
+- A área do Operador inicia no dashboard Início conforme mockup aprovado.
+- Dashboard: saudação, loja/filial, sino de notificações, CTA Registrar produto, atalhos Meus registros/Alertas e últimos registros.
+- Navegação inferior: Início, Produtos, Perecíveis, Alertas e Ajustes.
+- CTA Registrar produto abre a escolha Industrializado/Perecível; a câmera só inicia após ação explícita.
+- Após commit confirmado pelo Supabase, exibir tela de confirmação com resumo do registro.
+- A confirmação oferece Novo registro (retorna à escolha de tipo) e Ver meus registros. Não retornar automaticamente ao scanner.
+- Mostrar sucesso somente após resposta positiva do Supabase; em erro preservar os campos e impedir submissão duplicada.
+- Mostrar usuário autenticado, papel e loja ativa.
+- Seguir docs/layout-area-operador.md; dados do mockup são ilustrativos.
 
 ## Funcionalidades e permissões — decisões confirmadas
 
@@ -25,7 +26,7 @@ Definir o comportamento da área Operador, respeitando o layout já existente. O
 | Meus Registros | Operador pode editar **somente os registros criados por ele**. |
 | Histórico | Histórico **pessoal** do Operador, referente às suas próprias ações/registros. |
 | Solicitação de exclusão | Aprovação por **Gerente ou Administrador**. |
-| Após cadastro | Retornar automaticamente ao leitor para novo registro. |
+| Após cadastro | Mostrar confirmação; usuário escolhe novo registro ou consultar registros. |
 | Alertas de vencimento | Operador configura antecedência e horários; push e notificações internas são canais candidatos, e calendário será avaliado quando tecnicamente possível. Disponibilidade, dependências e custos operacionais precisam ser confirmados; WhatsApp está excluído. |
 
 A consulta ampla da loja não concede permissão de edição sobre registros de terceiros. A autorização de edição deve ser validada no backend/Supabase, não apenas escondendo controles na interface.
@@ -58,7 +59,7 @@ Lista definida pelo usuário:
 
 Os requisitos abaixo ainda não especificam decisões suficientes para implementação. Devem ser confirmados sem alterar as regras já declaradas como confirmadas:
 
-- **Sequência de navegação:** a área abre no leitor e oferece a escolha entre industrializados e perecíveis, mas ainda não define se a câmera inicia antes da escolha nem em qual componente essa escolha aparece.
+- **Sequência de navegação:** dashboard e escolha de tipo estão definidos visualmente; permissões da câmera, scanner e fallback manual seguem requisitos técnicos e acessibilidade.
 - **Vínculo do setor:** confirmar se o setor pertence a cada lote/registro, ao produto ou a outra entidade. A escolha deve permitir que o mesmo produto tenha lotes em setores diferentes, se esse for o comportamento desejado.
 - **Autoria e registros existentes:** usar a identidade autenticada estável do backend para determinar autoria, e não um nome de usuário editável. Definir como tratar registros antigos sem autoria e como preservar valores anteriores em auditoria.
 - **Duplicidade e reenvio:** distinguir repetição técnica da mesma requisição (por exemplo, retry após timeout) de um novo registro legítimo. Definir a chave de idempotência e as regras de unicidade do negócio sem bloquear lotes distintos.
@@ -131,15 +132,15 @@ Os requisitos abaixo ainda não especificam decisões suficientes para implement
 
 ## Fluxo de registro
 
-1. A área do Operador abre no leitor de código.
-2. Operador escolhe Industrializados ou Perecíveis.
-3. Identifica/busca o produto ou perecível.
+1. Operador entra no dashboard Início.
+2. Aciona Registrar produto e escolhe Industrializado ou Perecível.
+3. Identifica/busca produto por scanner ou entrada manual.
 4. Preenche dados obrigatórios e seleciona setor oficial.
-5. Front-end valida campos e envia requisição autenticada.
+5. Front-end valida e envia requisição autenticada.
 6. Supabase valida sessão, loja, papel e permissões.
 7. Banco confirma a transação.
-8. UI exibe sucesso e retorna automaticamente ao leitor.
-9. Em falha, UI mostra erro e preserva os campos para correção/reenvio; não confirma registro.
+8. UI exibe confirmação com resumo e ações Novo registro / Ver meus registros.
+9. Em falha, UI preserva os campos para correção/reenvio; não confirma registro.
 
 ## Critérios de aceite
 
@@ -152,8 +153,8 @@ Os requisitos abaixo ainda não especificam decisões suficientes para implement
 - Erros de validação, RLS, rede e conflito são distinguíveis.
 - UI não depende de localStorage para confirmar registros.
 - Setor é obrigatório em ambos os fluxos e só aceita os seis valores oficiais.
-- Após salvar, o leitor retorna automaticamente.
-- Layout existente é preservado; nenhuma tela inicial alternativa é criada.
+- Após salvar, exibir confirmação; o usuário escolhe novo registro ou consulta.
+- Dashboard, navegação e estilo seguem mockup Guanabara aprovado e docs/layout-area-operador.md.
 - Alertas respeitam preferências, não duplicam indevidamente e são enviados por serviço confiável quando o usuário não está com a tela aberta.
 - WhatsApp não faz parte do escopo.
 - Nenhuma alteração de comportamento dos outros perfis nesta etapa.
@@ -178,7 +179,7 @@ Esta seção é um handoff operacional para qualquer agente de IA que assumir a 
 5. Diferencie explicitamente: requisito confirmado, decisão pendente, hipótese técnica e comportamento já existente.
 
 ### Restrições de escopo
-- Preserve o layout e os componentes existentes. Não faça redesign, não crie dashboard/home alternativo e não altere ícones ou identidade visual sem autorização expressa.
+- Siga o layout Guanabara aprovado em docs/layout-area-operador.md e PR #29. O usuário autorizou redesign do front-end; não altere regras de negócio, permissões ou backend por inferência.
 - Trabalhe somente na área Operador, salvo autorização explícita para outras áreas/perfis.
 - Não altere regras de negócio, permissões, setores oficiais ou fluxos definidos neste documento sem autorização.
 - Não invente requisitos para decisões pendentes. Quando uma decisão funcional for necessária, registre a pergunta e solicite confirmação.
