@@ -603,7 +603,12 @@ function abrirProduto(ean){
 function mostrarImg(u){var i=$('pImg');if(u){i.src=u;i.style.display='block';i.onerror=function(){i.style.display='none';};}else i.style.display='none';}
 $('bBuscar').onclick=function(){var c=$('tCodigo').value.replace(/\D/g,'');if(c){$('tCodigo').value='';tratarCodigo(c,'prod');}};
 $('tCodigo').onkeydown=function(e){if(e.key==='Enter')$('bBuscar').click();};
-function erroSQL(r,contexto){var d=r&&r.dados,msg=d&&(d.message||d.error_description||d.msg||d.error);return new Error((msg||('HTTP '+(r&&r.status||'sem resposta')))+(d&&d.details?' — '+d.details:'')+(d&&d.hint?' — '+d.hint:''));}
+function erroSQL(r,contexto){var d=r&&r.dados,msg=d&&(d.message||d.error_description||d.msg||d.error);var e=new Error((msg||('HTTP '+(r&&r.status||'sem resposta')))+(d&&d.details?' — '+d.details:'')+(d&&d.hint?' — '+d.hint:''));e.servidor=true;return e;}
+/* Offline-first: distingue FALTA DE REDE (fetch não completou / navegador offline) de
+   ERRO DO SERVIDOR (o Supabase respondeu com erro). Só na falta de rede caímos para o
+   localStorage; erro do servidor é mostrado ao usuário. */
+function ehSemRede(e){if(navigator.onLine===false)return true;if(!e||e.servidor)return false;var m=((e.name||'')+' '+(e.message||''));return /TypeError|AbortError|NetworkError|Failed to fetch|load failed|network/i.test(m);}
+function marcarPendente(n){SYNC.pendentes=(SYNC.pendentes||0)+(n||1);salvarSync();var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='aj')contaCard();}
 function inserirLoteSQL(ean,nome,reg){
   if(!sbOn()||!logado()||!SESS.lojaId)return Promise.reject(new Error('Entre na conta e selecione uma loja antes de registrar.'));
   var loja=SESS.lojaId;
@@ -624,7 +629,14 @@ $('bSalvarLote').onclick=function(){if(!pode('registrar')){toast('Seu perfil nã
     D.cat[atual]=Object.assign({},D.cat[atual]||{},{nome:nome});p.lotes.push(reg);
     toast('Lote confirmado no Supabase ✔');auditar('registrou_lote',{ean:atual,lote:lote,qtd:qtd,val:val});lembrete(reg,nome);vib(40);
     $('pLote').value='';$('pQtd').value='';$('pVal').value='';lotesDoAtual();listaProdutos();$('pLote').focus();
-  }).catch(function(e){toast('Falha SQL: '+(e.message||'erro desconhecido'));console.error('Falha ao inserir lote no Supabase',e);})
+  }).catch(function(e){
+    if(ehSemRede(e)){
+      D.cat[atual]=Object.assign({},D.cat[atual]||{},{nome:nome});p.lotes.push(reg);salvar();
+      lembrete(reg,nome);marcarPendente(1);vib(40);
+      toast('Sem internet — lote salvo no aparelho. Sincroniza ao reconectar ✔');
+      $('pLote').value='';$('pQtd').value='';$('pVal').value='';lotesDoAtual();listaProdutos();$('pLote').focus();
+    }else{toast('Falha SQL: '+(e.message||'erro desconhecido'));console.error('Falha ao inserir lote no Supabase',e);}
+  })
   .finally(function(){b.disabled=false;b.textContent='💾 Salvar lote';});};
 function lotesDoAtual(){var p=D.prod[atual];if(!p||!p.lotes.length){$('pLotes').innerHTML='';return;}
   $('pLotes').innerHTML='<table><tr><th>Lote</th><th>Qtd</th><th>Validade</th><th></th></tr>'+ordenar(p.lotes).map(function(l){return '<tr data-id="'+l.id+'" data-ean="'+atual+'"><td><b>'+esc(l.lote||'—')+'</b></td><td>'+l.qtd+'</td><td>'+fdata(l.val)+'</td><td style="text-align:right">'+status(l.val)+'</td></tr>';}).join('')+'</table>';}
@@ -732,7 +744,14 @@ $('bSalvarPe').onclick=function(){if(!pode('registrar')){toast('Seu perfil não 
     var it=D.pere.itens[peAtual]||(D.pere.itens[peAtual]={desc:desc,sif:sif});it.desc=desc;it.sif=sif;D.pere.regs.push(r);
     lembrete(r,desc);auditar('registrou_perecivel',{cod:peAtual,peso:peso,val:val});toast('Salvo no Supabase ✔ '+kg(peso)+' kg');vib(40);
     $('pePeso').value='';$('peVal').value='';$('peInfo').innerHTML='';$('cardPe').style.display='none';peAtual=null;listaPere();
-  }).catch(function(e){toast('Falha SQL: '+(e.message||'erro desconhecido'));console.error('Falha ao salvar perecível no Supabase',e);})
+  }).catch(function(e){
+    if(ehSemRede(e)){
+      var it=D.pere.itens[peAtual]||(D.pere.itens[peAtual]={desc:desc,sif:sif});it.desc=desc;it.sif=sif;D.pere.regs.push(r);salvar();
+      lembrete(r,desc);marcarPendente(1);vib(40);
+      toast('Sem internet — salvo no aparelho. Sincroniza ao reconectar ✔');
+      $('pePeso').value='';$('peVal').value='';$('peInfo').innerHTML='';$('cardPe').style.display='none';peAtual=null;listaPere();
+    }else{toast('Falha SQL: '+(e.message||'erro desconhecido'));console.error('Falha ao salvar perecível no Supabase',e);}
+  })
   .finally(function(){b.disabled=false;b.textContent='💾 Salvar';});};
 $('bAddCod').onclick=function(){if(!pode('codigos')){toast('Só assistente/admin cadastra códigos');return;}var c=norm($('cCod').value),d=$('cDesc').value.trim();if(!c||!d){toast('Preencha código e descrição');return;}
   D.pere.itens[c]={desc:d,sif:$('cSif').value.trim(),created_by:SESS&&SESS.uid||null};salvar();auditar('cadastrou_codigo',{cod:c,desc:d});$('cCod').value='';$('cDesc').value='';$('cSif').value='';toast('Código '+c+' cadastrado ✔');listaCodigos();};
@@ -912,7 +931,7 @@ function backupNuvem(){if(!sbOn()||!logado()||!SESS.lojaId||backupEmAndamento)re
     return sbReq('/rest/v1/'+tabela+'?on_conflict='+conflito,{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:payload}).then(function(r){if(!r.ok)throw new Error('Falha ao enviar '+tabela+' (HTTP '+r.status+')');return r;});}
   var catalogo=L.produtos.map(function(r){var c=detalheProduto(r.ean);return c.nome?{ean:r.ean,nome:c.nome,marca:c.marca||'',img:c.img||''}:null;}).filter(Boolean);
   return up('catalogo','ean',catalogo).then(function(){return Promise.all([up('produtos','loja_id,ean',L.produtos),up('lotes','id',L.lotes),up('pere_itens','loja_id,cod',L.pere_itens),up('pere_regs','id',L.pere_regs)]);})
-    .then(function(){SYNC.backup=Date.now();salvarSync();var n=L.produtos.length+L.lotes.length+L.pere_itens.length+L.pere_regs.length;if(document.querySelector('#abas button.on')&&document.querySelector('#abas button.on').dataset.v==='aj')contaCard();return n;})
+    .then(function(){SYNC.backup=Date.now();SYNC.pendentes=0;salvarSync();var n=L.produtos.length+L.lotes.length+L.pere_itens.length+L.pere_regs.length;if(document.querySelector('#abas button.on')&&document.querySelector('#abas button.on').dataset.v==='aj')contaCard();return n;})
     .catch(function(){return -1;}).then(function(x){backupEmAndamento=false;return x;});}
 function abrirConta(){if(!sbOn()){toast('Sincronização não configurada');return;}$('conta').classList.add('on');if(logado()){if(SESS.forcePasswordChange)mostrarTrocaSenhaPrimeiroAcesso();else mostrarLojas();}else mostrarLoginForm();}
 function fecharConta(){if(precisaLogin())return;$('conta').classList.remove('on');}
@@ -991,7 +1010,7 @@ function auditoriaCard(){var c=$('cardAuditoria');if(!c)return;if(!sbOn()||!ehAd
 function atualizarBotaoLogout(){var b=$('bLogoutHdr');if(!b)return;b.style.display=(sbOn()&&logado())?'':'none';}
 function contaCard(){if(!sbOn()){$('cardConta').style.display='none';atualizarBotaoLogout();return;}$('cardConta').style.display='';
   atualizarBotaoLogout();
-  if(logado()){$('contaInfo').innerHTML='<div style="font-size:14px">Operador: <b>'+esc(SESS.usuario||SESS.email||'')+'</b>'+(SESS.papel?' <span class="st ok">'+esc(PAPEIS[SESS.papel]||SESS.papel)+'</span>':'')+'</div>'+(SESS.lojaNome?'<div style="font-size:14px;margin-top:4px">Loja atual: <b>'+esc(SESS.lojaNome)+'</b></div>':'<div class="aviso wa" style="margin-top:8px">Escolha a loja onde está atuando.</div>')+'<div class="row" style="margin-top:12px"><button class="btn sec" id="bTrocarLoja">'+(SESS.lojaNome?'Trocar loja':'Escolher loja')+'</button><button class="btn sec" id="bSair2">Sair</button></div>'+(SESS.lojaNome?'<p style="margin:10px 0 0;font-size:12px;color:var(--mu)">Backup na nuvem: '+(SYNC.backup?'último '+fdataHora(SYNC.backup):'enviando…')+'</p>':'');
+  if(logado()){$('contaInfo').innerHTML='<div style="font-size:14px">Operador: <b>'+esc(SESS.usuario||SESS.email||'')+'</b>'+(SESS.papel?' <span class="st ok">'+esc(PAPEIS[SESS.papel]||SESS.papel)+'</span>':'')+'</div>'+(SESS.lojaNome?'<div style="font-size:14px;margin-top:4px">Loja atual: <b>'+esc(SESS.lojaNome)+'</b></div>':'<div class="aviso wa" style="margin-top:8px">Escolha a loja onde está atuando.</div>')+'<div class="row" style="margin-top:12px"><button class="btn sec" id="bTrocarLoja">'+(SESS.lojaNome?'Trocar loja':'Escolher loja')+'</button><button class="btn sec" id="bSair2">Sair</button></div>'+(SESS.lojaNome?'<p style="margin:10px 0 0;font-size:12px;color:var(--mu)">Backup na nuvem: '+(SYNC.backup?'último '+fdataHora(SYNC.backup):'enviando…')+'</p>':'')+((SYNC.pendentes>0)?'<div class="aviso wa" style="margin-top:8px">📴 '+SYNC.pendentes+' registro(s) salvos no aparelho aguardando internet para sincronizar.</div>':'');
     $('bTrocarLoja').onclick=abrirConta;$('bSair2').onclick=sairParaLogin;}
   else{$('contaInfo').innerHTML='<p style="margin:0 0 10px;font-size:13px;color:var(--mu)">Entre para sincronizar os dados entre aparelhos e lojas.</p><button class="btn big" id="bEntrarAj">Entrar</button>';$('bEntrarAj').onclick=abrirConta;}}
 
@@ -1029,7 +1048,7 @@ function processarSolicitacoesOffline(){
       .catch(function(){/* keep in queue; no data loss on transient network failure */});
   });},Promise.resolve()).then(function(){if(enviados)carregarSolicitacoesExclusao();return enviados;});
 }
-window.addEventListener('online',function(){processarSolicitacoesOffline();});
+window.addEventListener('online',function(){processarSolicitacoesOffline();if(SYNC.pendentes>0){toast('Conexão de volta — sincronizando…');backupNuvem().then(function(x){if(x>=0)toast('Tudo sincronizado ✔');});}});
 function adminExcluirRegistro(tipo,registroId){
   if(!ehAdmin()||!sbOn()||!logado()||!SESS.lojaId){toast('Operação exclusiva do Administrador autenticado.');return Promise.resolve(false);}
   var loja=encodeURIComponent(SESS.lojaId),now=new Date().toISOString(),url,extra=[];
