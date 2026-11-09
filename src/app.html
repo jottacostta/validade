@@ -146,7 +146,7 @@ nav.abas button{font-size:11px;min-height:62px;color:#9fb4c7;gap:3px}nav.abas bu
 <!-- ═════════ REGISTRAR ═════════ -->
 
 <section class="vista on" id="v-home">
-  <div class="operator-hello"><div class="operator-avatar" aria-hidden="true">👤</div><div><strong id="homeGreeting">Olá, Operador!</strong><small id="homeStore">Loja não selecionada</small></div><button class="home-bell" id="homeBell" type="button" aria-label="Abrir notificações">♧<b id="homeBellBadge" style="display:none">0</b></button></div>
+  <div class="operator-hello"><div class="operator-avatar" aria-hidden="true">👤</div><div><strong id="homeGreeting">Olá, Operador!</strong><small id="homeStore">Loja não selecionada</small></div><button class="home-bell" id="homeBell" type="button" aria-label="Abrir notificações">🔔<b id="homeBellBadge" style="display:none">0</b></button></div>
   <div class="home-section-title">O que deseja fazer?</div>
   <button class="home-cta" id="homeRegister" type="button"><span class="home-cta-icon" aria-hidden="true">▥</span><span class="home-cta-copy"><strong>Registrar produto</strong><small>Escanear código ou etiqueta</small></span><span class="home-arrow" aria-hidden="true">›</span></button>
   <div class="home-shortcuts"><button class="home-shortcut" id="homeMyRecords" type="button"><span class="shortcut-icon">📦</span><strong>Meus registros</strong><small>Consultar lançamentos realizados</small></button><button class="home-shortcut" id="homeAlerts" type="button"><span class="shortcut-icon">🔔</span><strong>Alertas</strong><small>Vencidos e próximos do vencimento</small><span class="shortcut-badge" id="homeAlertsBadge" style="display:none">0</span></button></div>
@@ -381,7 +381,7 @@ mostrarDias();
 
 
 function renderHome(){
- var nome=(SESS&&(SESS.nome||SESS.usuario||SESS.email))||'Operador';nome=String(nome).split(/[\\s@]/)[0]||'Operador';
+ var nome=(SESS&&(SESS.nome||SESS.usuario||SESS.email))||'Operador';nome=String(nome).split(/[\s@]/)[0]||'Operador';
  var loja=(SESS&&SESS.lojaNome)||'Loja não selecionada';
  if($('homeGreeting'))$('homeGreeting').textContent='Olá, '+nome+'!';
  var roleTxt=(SESS&&SESS.papel&&PAPEIS&&PAPEIS[SESS.papel])||'Operador';if($('operatorRolePill'))$('operatorRolePill').textContent='♙ Área do '+roleTxt;
