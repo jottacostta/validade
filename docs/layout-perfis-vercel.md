@@ -96,6 +96,81 @@ Agrupar cadastros já existentes (setores, produtos, fornecedores/categorias ape
 ### Relatórios
 Relatórios reais, filtros suportados e exportações implementadas. Respeitar escopo por loja.
 
+
+## Área do Assistente (IA)
+
+**Objetivo:** oferecer uma experiência conversacional para orientar o usuário dentro do Controle de Validade, sem substituir telas, permissões, regras ou decisões humanas.
+
+> A interface é uma proposta. Antes de implementar, confirmar se o assistente, suas fontes de dados, ações e permissões já estão aprovados e disponíveis. Não simular respostas com dados reais nem inventar integração/IA.
+
+### Tela principal
+- Header compacto “Assistente” e identificação do perfil/loja quando autorizada.
+- Mensagem inicial curta e contextual.
+- Área central de conversa com mensagens do usuário e do assistente claramente diferenciadas.
+- Composer fixo na parte inferior, acima da safe area e do teclado.
+- Campo de texto multilinha, botão enviar e indicador de processamento.
+- Sugestões de perguntas rápidas apenas se forem suportadas (ex.: “Como registrar um produto?”, “Quais são meus alertas?”).
+
+### Aparência da conversa
+- Mensagens do usuário alinhadas à direita; assistente à esquerda.
+- Cards/respostas com contraste e largura confortável para leitura.
+- Respostas longas com títulos, listas e etapas.
+- Links/botões de ação devem ser explícitos e nunca executar ações críticas sem confirmação.
+- Estados: inicial, enviando, resposta, erro, sem conexão e limite/indisponibilidade.
+- Permitir copiar resposta e iniciar nova conversa se esses recursos estiverem disponíveis.
+
+### Contexto e segurança
+- O assistente só pode consultar informações que o usuário atual tem permissão para ver.
+- Respeitar filial, perfil, autoria e políticas do backend.
+- Não expor dados de outros usuários/lojas.
+- Não permitir que instruções conversacionais contornem autorização, validação ou RLS.
+- Se não souber ou não tiver acesso, declarar isso e orientar o caminho correto; não inventar informação.
+- Ações que alterem registros devem exigir confirmação explícita e usar APIs autorizadas; não executar apenas por texto sem confirmação.
+- Mostrar quando a resposta depende de dados atualizados ou de uma consulta real, se aplicável.
+
+### Mobile
+- Composer permanece acessível com teclado aberto.
+- Mensagens não ficam escondidas atrás da navegação.
+- Scroll automático somente quando apropriado, sem interromper leitura de mensagens antigas.
+- Botão de enviar acessível por toque; evitar ícones pequenos.
+
+## Área do Gerente
+
+**Objetivo:** oferecer visão gerencial da loja, com foco em situação, prioridades e acompanhamento. Esta área deve ser distinta do Supervisor (rotina operacional) e do Administrador (configuração e gestão de acesso).
+
+> Os indicadores e ações abaixo são candidatos de layout, não métricas ou permissões confirmadas. Antes de construir, validar requisitos, consultas, escopo de loja e acesso do perfil Gerente. Não adicionar dados ou KPIs fictícios.
+
+### Painel gerencial
+- Header com “Visão Gerencial”, loja e usuário, conforme dados autorizados.
+- Filtros de período/área somente se suportados.
+- Cards de indicadores reais e aprovados, por exemplo: produtos/lotes monitorados, vencidos, próximos do vencimento e pendências abertas.
+- Destaque visual para exceções que demandam ação.
+- Tendência/gráfico somente se houver histórico confiável; preferir cards/listas no mobile.
+
+### Prioridades e acompanhamento
+- Lista ordenada por criticidade (critério funcional aprovado), com produto/lote, setor, prazo/status e ação disponível.
+- Separar “Atenção imediata”, “Acompanhar” e “Situação regular” apenas se as regras atuais suportarem.
+- Exibir origem/atualização dos dados quando necessário.
+- Evitar ranking individual de funcionários ou métricas de produtividade sem requisito e aprovação.
+
+### Relatórios gerenciais
+- Acesso a relatórios autorizados.
+- Filtros por período, setor e loja apenas quando backend suportar.
+- Exportações somente se implementadas e permitidas.
+- Respeitar isolamento por filial e permissões do gerente.
+
+### Ações
+- A interface deve priorizar consulta e acompanhamento.
+- Aprovação, exclusão, alteração de cadastro ou outras ações de impacto só aparecem quando autorizadas por requisito e backend.
+- Confirmar ações importantes e exibir resultado somente após resposta do servidor.
+
+### Diferença entre perfis
+- **Operador:** executa registro e consulta seu trabalho.
+- **Supervisor:** acompanha operação/equipe e trata tarefas operacionais autorizadas.
+- **Gerente:** acompanha indicadores, riscos e prioridades da loja.
+- **Administrador:** administra estrutura, usuários, permissões e configurações do sistema.
+- **Assistente:** interface conversacional de apoio; não é um perfil que concede acesso adicional.
+
 ## Componentes reutilizáveis
 
 Auditar e reaproveitar: Header, bottom navigation, botões primário/secundário, action cards, KPI cards, product/lot cards, alert cards, search, filter chips, badges, modal, toast, loading/skeleton, empty/error states.
