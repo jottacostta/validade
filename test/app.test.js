@@ -290,10 +290,18 @@ tflaky('mobile: sem rolagem horizontal nas telas com tabela (360px)', { skip: pu
 
 /* Rotas de registro com um interruptor de rede: abort() simula falta de internet. */
 async function rotasRede(p, estado) {
-  const resp = (r) => { const m = r.request().method(); if (m === 'GET') return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }); return estado.online ? r.fulfill({ status: 201, body: '' }) : r.abort(); };
+  estado.rpcs = estado.rpcs || []; estado.upserts = estado.upserts || [];
+  const resp = (r) => { const m = r.request().method(), u = new URL(r.request().url()); if (m === 'GET') return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    try { estado.upserts.push({ tabela: u.pathname.split('/').pop(), body: r.request().postDataJSON() }); } catch (e) {}
+    return estado.online ? r.fulfill({ status: 201, body: '' }) : r.abort(); };
   await p.route(/\/rest\/v1\/perfis/, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ papel: 'operador', nome: 'Teste' }]) }));
   await p.route(/\/rest\/v1\/catalogo/, resp);
-  for (const rpc of ['registrar_lote', 'registrar_perecivel']) await p.route(new RegExp('/rest/v1/rpc/' + rpc + '$'), r => estado.online ? r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ created_by: 'u1', created_by_nome: 'Teste', criado: Date.now() }) }) : r.abort('internetdisconnected'));
+  for (const rpc of ['registrar_lote', 'registrar_perecivel']) await p.route(new RegExp('/rest/v1/rpc/' + rpc + '$'), r => {
+    let payload = null; try { payload = r.request().postDataJSON(); } catch (e) {}
+    const forcarFalha = (estado.falhaRpcIds || []).includes(payload && payload.p_id);
+    estado.rpcs.push({ rpc, payload, online: estado.online, forcarFalha });
+    return estado.online && !forcarFalha ? r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ created_by: 'u1', created_by_nome: 'Teste', criado: Date.now() }) }) : r.abort('internetdisconnected');
+  });
   for (const t of ['produtos', 'lotes', 'pere_itens', 'pere_regs', 'auditoria', 'preferencias', 'lojas', 'loja_membros']) await p.route(new RegExp('/rest/v1/' + t + '(\\?|$)'), resp);
 }
 
@@ -311,14 +319,21 @@ tflaky('offline: perecível salva no aparelho sem rede e sincroniza ao reconecta
   await a.p.waitForFunction(() => document.getElementById('cardPe').style.display === 'none');
   await a.p.waitForFunction(() => { try { const d = JSON.parse(localStorage.getItem('validade_dados')); return d.pere.regs.length === 1 && String(d.pere.regs[0].cod) === '6019'; } catch (e) { return false; } });
   assert.ok((await a.p.evaluate(() => (JSON.parse(localStorage.getItem('validade_sync')) || {}).pendentes || 0)) >= 1, 'marca pendente');
-  // volta a internet → dispara "online" → sincroniza e zera pendentes
+  const fila = await a.p.evaluate(() => (JSON.parse(localStorage.getItem('validade_sync')) || {}).filaRegistros || []);
+  assert.strictEqual(fila.length, 1); assert.strictEqual(fila[0].tipo, 'perecivel'); assert.strictEqual(fila[0].payload.p_setor, 'Açougue');
+  // reiniciar comprova que o registro e o payload RPC continuam duráveis no aparelho
+  await a.p.reload(); await a.p.waitForSelector('#abas button[data-v="aj"]', { state: 'visible' });
+  await a.p.waitForFunction(() => { const s = JSON.parse(localStorage.getItem('validade_sync') || '{}'); return s.filaRegistros && s.filaRegistros.length === 1; });
+  // volta a internet → dispara "online" → repete a RPC original e zera pendências
   net.online = true;
   await a.p.evaluate(() => window.dispatchEvent(new Event('online')));
-  await a.p.waitForFunction(() => { try { return (JSON.parse(localStorage.getItem('validade_sync')) || {}).pendentes === 0; } catch (e) { return false; } });
+  await a.p.waitForFunction(() => { try { const s = JSON.parse(localStorage.getItem('validade_sync') || '{}'); return s.pendentes === 0 && (!s.filaRegistros || s.filaRegistros.length === 0); } catch (e) { return false; } });
+  assert.ok(net.rpcs.some(x => x.online && x.rpc === 'registrar_perecivel' && x.payload.p_id === fila[0].payload.p_id), 'reconectou repetindo a RPC original com o mesmo ID');
+  assert.ok(!net.upserts.some(x => x.tabela === 'pere_regs' && Array.isArray(x.body) && x.body.some(r => r.id === fila[0].payload.p_id)), 'não duplica pelo upsert REST genérico');
   await a.fechar();
 });
 
-tflaky('offline: lote salva no aparelho sem rede e marca pendente', { skip: pular }, async () => {
+tflaky('offline: lote salva fila RPC durável e reproduz RPC idempotente após reconexão', { skip: pular }, async () => {
   const net = { online: false };
   const a = await abrirRegistro(p => rotasRede(p, net), { prod: { '7891000315507': { nome: 'Café', lotes: [] } }, cat: {}, pere: { itens: {}, regs: [] } });
   await a.p.click('nav button[data-v="reg"]'); await a.p.click('#bTipoIndustrial');
@@ -329,6 +344,47 @@ tflaky('offline: lote salva no aparelho sem rede e marca pendente', { skip: pula
   await a.p.click('#bSalvarLote');
   await a.p.waitForFunction(() => { try { const d = JSON.parse(localStorage.getItem('validade_dados')); return d.prod['7891000315507'] && d.prod['7891000315507'].lotes.some(l => l.lote === 'L9'); } catch (e) { return false; } });
   assert.ok((await a.p.evaluate(() => (JSON.parse(localStorage.getItem('validade_sync')) || {}).pendentes || 0)) >= 1, 'marca pendente');
+  const fila = await a.p.evaluate(() => (JSON.parse(localStorage.getItem('validade_sync')) || {}).filaRegistros || []);
+  assert.strictEqual(fila.length, 1); assert.strictEqual(fila[0].tipo, 'lote'); assert.strictEqual(fila[0].payload.p_setor, 'Mercearia');
+  await a.p.reload(); await a.p.waitForSelector('#abas button[data-v="aj"]', { state: 'visible' });
+  await a.p.waitForFunction(() => { const s = JSON.parse(localStorage.getItem('validade_sync') || '{}'); return s.filaRegistros && s.filaRegistros.length === 1; });
+  net.online = true; await a.p.evaluate(() => window.dispatchEvent(new Event('online')));
+  await a.p.waitForFunction(() => { try { const s = JSON.parse(localStorage.getItem('validade_sync') || '{}'); return s.pendentes === 0 && (!s.filaRegistros || s.filaRegistros.length === 0); } catch (e) { return false; } });
+  const replay = net.rpcs.filter(x => x.online && x.rpc === 'registrar_lote');
+  assert.strictEqual(replay.length, 1, 'reconexão reproduz exatamente uma RPC');
+  assert.strictEqual(replay[0].payload.p_id, fila[0].payload.p_id);
+  assert.strictEqual(replay[0].payload.p_loja_id, 'L1');
+  assert.strictEqual(replay[0].payload.p_lote, 'L9');
+  assert.ok(!net.upserts.some(x => x.tabela === 'lotes' && Array.isArray(x.body) && x.body.some(r => r.id === fila[0].payload.p_id)), 'não duplica pelo upsert REST genérico');
+  await a.fechar();
+});
+
+tflaky('offline: falha individual mantém seu item e não impede os próximos RPCs', { skip: pular }, async () => {
+  const loteId = 'lote-pendente-1', pereId = 'pere-pendente-2', ean = '7891000315507';
+  const net = { online: true, falhaRpcIds: [loteId] };
+  const a = await abrirRegistro(p => rotasRede(p, net), {});
+  await a.p.waitForFunction(() => { const s = JSON.parse(localStorage.getItem('validade_sync') || '{}'); return s.recebido && s.backup; });
+  const dados = {
+    prod: { [ean]: { lotes: [{ id: loteId, lote: 'L1', qtd: 2, val: '2031-01-01', setor: 'Mercearia', created_by: 'u1' }] } },
+    cat: { [ean]: { nome: 'Café' } },
+    pere: { itens: { '6019': { desc: 'Lombo', sif: '' } }, regs: [{ id: pereId, cod: '6019', sif: '', peso: 0.4, val: '2031-02-01', setor: 'Açougue', created_by: 'u1' }] }
+  };
+  const fila = [
+    { tipo: 'lote', uid: 'u1', payload: { p_id: loteId, p_loja_id: 'L1', p_ean: ean, p_nome: 'Café', p_lote: 'L1', p_qtd: 2, p_val: '2031-01-01', p_setor: 'Mercearia' } },
+    { tipo: 'perecivel', uid: 'u1', payload: { p_id: pereId, p_loja_id: 'L1', p_cod: '6019', p_descricao: 'Lombo', p_sif: '', p_peso: 0.4, p_val: '2031-02-01', p_setor: 'Açougue' } }
+  ];
+  await a.p.evaluate(([d, q]) => { localStorage.setItem('validade_dados', JSON.stringify(d)); localStorage.setItem('validade_sync', JSON.stringify({ pendentes: q.length, filaRegistros: q })); }, [dados, fila]);
+  await a.p.reload(); await a.p.waitForSelector('#abas button[data-v="aj"]', { state: 'visible' });
+  await a.p.waitForFunction(() => { const s = JSON.parse(localStorage.getItem('validade_sync') || '{}'); return s.pendentes === 1 && s.filaRegistros && s.filaRegistros.length === 1; }, null, { timeout: 10000 });
+  const restou = await a.p.evaluate(() => JSON.parse(localStorage.getItem('validade_sync')).filaRegistros[0]);
+  assert.strictEqual(restou.payload.p_id, loteId, 'preserva exatamente o RPC que falhou');
+  assert.ok(net.rpcs.some(x => x.rpc === 'registrar_lote' && x.forcarFalha && x.payload.p_id === loteId));
+  assert.ok(net.rpcs.some(x => x.rpc === 'registrar_perecivel' && !x.forcarFalha && x.payload.p_id === pereId), 'processa o próximo RPC apesar da falha anterior');
+  const regs = await a.p.evaluate(() => JSON.parse(localStorage.getItem('validade_dados')).pere.regs);
+  assert.strictEqual(regs.find(x => x.id === pereId).rpcConfirmado, true, 'marca como confirmada somente a linha aceita pelo servidor');
+  net.falhaRpcIds = [];
+  await a.p.evaluate(() => window.dispatchEvent(new Event('online')));
+  await a.p.waitForFunction(() => { const s = JSON.parse(localStorage.getItem('validade_sync') || '{}'); return s.pendentes === 0 && (!s.filaRegistros || s.filaRegistros.length === 0); });
   await a.fechar();
 });
 

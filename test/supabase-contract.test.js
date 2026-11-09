@@ -4,6 +4,7 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const app = fs.readFileSync(path.join(root, 'src/app.html'), 'utf8');
 const migration = fs.readFileSync(path.join(root, 'supabase/migrations/20261109000000_area_operador_compartilhamento_alertas.sql'), 'utf8');
+const offlineRpcMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261109123000_offline_rpc_idempotency.sql'), 'utf8');
 const rolesMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261108130000_matriz_papeis_ownership_rls.sql'), 'utf8');
 const reviewerHardening = fs.readFileSync(path.join(root, 'supabase/migrations/20261109122158_harden_review_role_null.sql'), 'utf8');
 const personalTokenPolicy = fs.readFileSync(path.join(root, 'supabase/migrations/20261109122302_restrict_personal_cosmos_token_access.sql'), 'utf8');
@@ -74,6 +75,22 @@ test('perecível usa RPC atômica para item + registro e propaga setor/informant
   assert.match(migration, /create or replace function public\.registrar_perecivel/);
   assert.match(migration, /insert into public\.pere_itens/);
   assert.match(migration, /insert into public\.pere_regs/);
+});
+
+test('fila offline repete as RPCs originais e migration permite retry idempotente por ID/loja/autoria/payload', () => {
+  assert.match(app, /SYNC\.filaRegistros/);
+  assert.match(app, /function processarFilaRegistros\(loja\)/);
+  assert.match(app, /return processarFilaRegistros\(loja\)\.then/);
+  assert.match(app, /filaTemRegistro\('lote',l\.id,loja\)/);
+  assert.match(app, /filaTemRegistro\('perecivel',r\.id,loja\)/);
+  assert.match(offlineRpcMigration, /pg_advisory_xact_lock/);
+  assert.match(offlineRpcMigration, /v_exist\.loja_id=p_loja_id/);
+  assert.match(offlineRpcMigration, /v_exist\.created_by=auth\.uid\(\)/);
+  assert.match(offlineRpcMigration, /v_exist\.setor=p_setor/);
+  assert.match(offlineRpcMigration, /Identificador de lote já utilizado por outro registro/);
+  assert.match(offlineRpcMigration, /Identificador perecível já utilizado por outro registro/);
+  assert.match(offlineRpcMigration, /revoke all on function public\.registrar_lote/);
+  assert.match(offlineRpcMigration, /revoke all on function public\.registrar_perecivel/);
 });
 
 test('RPCs exigem setor válido, mas trigger aceita NULL de clientes legados durante rollout', () => {

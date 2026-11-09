@@ -469,12 +469,18 @@ function erroSQL(r,contexto){var d=r&&r.dados,msg=d&&(d.message||d.error_descrip
    ERRO DO SERVIDOR (o Supabase respondeu com erro). Só na falta de rede caímos para o
    localStorage; erro do servidor é mostrado ao usuário. */
 function ehSemRede(e){if(navigator.onLine===false)return true;if(!e||e.servidor)return false;var m=((e.name||'')+' '+(e.message||''));return /TypeError|AbortError|NetworkError|Failed to fetch|load failed|network|net::ERR_(FAILED|ABORTED|INTERNET_DISCONNECTED|NETWORK_CHANGED|NAME_NOT_RESOLVED|TUNNEL_CONNECTION_FAILED|CONNECTION)/i.test(m);}
-function marcarPendente(n){SYNC.pendentes=(SYNC.pendentes||0)+(n||1);salvarSync();var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='aj')contaCard();}
-function inserirLoteSQL(ean,nome,reg){
+function filaRegistroKey(x){return x&&x.tipo+':'+String(x.uid||'')+':'+String(x.payload&&x.payload.p_loja_id||'')+':'+String(x.payload&&x.payload.p_id||'');}
+function filaTemRegistro(tipo,id,loja){return (Array.isArray(SYNC.filaRegistros)?SYNC.filaRegistros:[]).some(function(x){return x&&x.tipo===tipo&&String(x.payload&&x.payload.p_id)===String(id)&&(!loja||String(x.payload&&x.payload.p_loja_id)===String(loja));});}
+function marcarPendente(n,item){var q=Array.isArray(SYNC.filaRegistros)?SYNC.filaRegistros:[],adicionou=true;
+  if(item){var k=filaRegistroKey(item);if(q.some(function(x){return filaRegistroKey(x)===k;}))adicionou=false;else q.push(item);SYNC.filaRegistros=q;}
+  if(adicionou)SYNC.pendentes=(+SYNC.pendentes||0)+(n||1);salvarSync();var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='aj')contaCard();}
+function payloadLoteSQL(ean,nome,reg,lojaId){return {p_id:String(reg.id),p_loja_id:lojaId||SESS.lojaId,p_ean:String(ean),p_nome:nome,p_lote:reg.lote,p_qtd:reg.qtd,p_val:reg.val,p_setor:reg.setor};}
+function inserirLoteSQL(ean,nome,reg,lojaId){
   if(!sbOn()||!logado()||!SESS.lojaId)return Promise.reject(new Error('Entre na conta e selecione uma loja antes de registrar.'));
-  return sbReq('/rest/v1/rpc/registrar_lote',{method:'POST',body:{p_id:reg.id,p_loja_id:SESS.lojaId,p_ean:String(ean),p_nome:nome,p_lote:reg.lote,p_qtd:reg.qtd,p_val:reg.val,p_setor:reg.setor}})
+  return sbReq('/rest/v1/rpc/registrar_lote',{method:'POST',body:payloadLoteSQL(ean,nome,reg,lojaId)})
     .then(function(r){if(!r.ok)throw erroSQL(r,'lote');return r.dados||{};});
 }
+function inserirPerecivelSQL(payload){return sbReq('/rest/v1/rpc/registrar_perecivel',{method:'POST',body:payload});}
 $('bSalvarLote').onclick=function(){if(!pode('registrar')){toast('Seu perfil não registra produtos');return;}if(!atual)return;var nome=$('pNome').value.trim(),lote=$('pLote').value.trim().toUpperCase(),qtd=num($('pQtd').value),val=$('pVal').value,setor=$('pSetor').value;
   if(!nome){toast('Digite o nome do produto');$('pNome').focus();return;}if(!lote){toast('Informe o lote');$('pLote').focus();return;}if(qtd<=0){toast('A quantidade deve ser maior que zero');$('pQtd').focus();return;}if(!val){toast('Informe a validade');$('pVal').focus();return;}if(!SETORES.includes(setor)){$('pSetor').focus();toast('Selecione um dos setores oficiais');return;}
   if(sbOn()&&(!logado()||!SESS.lojaId)){toast('Faça login e selecione uma loja para salvar no SQL.');return;}
@@ -487,15 +493,15 @@ $('bSalvarLote').onclick=function(){if(!pode('registrar')){toast('Seu perfil nã
   }
   if(ex){toast('Este lote e validade já estão cadastrados nesta loja. Edite o registro existente.');return;}
   var b=$('bSalvarLote');b.disabled=true;b.textContent='⏳ Salvando no SQL…';
-  var eanSalvo=atual;
-  inserirLoteSQL(eanSalvo,nome,reg).then(function(serverRow){
-    D.cat[eanSalvo]=Object.assign({},D.cat[eanSalvo]||{},{nome:nome});reg.created_by=SESS.uid;reg.created_by_nome=serverRow.created_by_nome||SESS.nome||SESS.usuario;reg.criado=serverRow.criado||reg.criado;p.lotes.push(reg);
+  var eanSalvo=atual,lojaSalva=SESS.lojaId;
+  inserirLoteSQL(eanSalvo,nome,reg,lojaSalva).then(function(serverRow){
+    D.cat[eanSalvo]=Object.assign({},D.cat[eanSalvo]||{},{nome:nome});reg.created_by=serverRow.created_by||SESS.uid;reg.created_by_nome=serverRow.created_by_nome||SESS.nome||SESS.usuario;reg.criado=serverRow.criado||reg.criado;reg.rpcConfirmado=true;p.lotes.push(reg);
     salvar();lembrete(reg,nome);toast('Lote confirmado no Supabase ✔');auditar('registrou_lote',{ean:eanSalvo,lote:lote,qtd:qtd,val:val,setor:setor});vib(40);
     listaProdutos();mostrarEscolhaRegistro();
   }).catch(function(e){
     if(ehSemRede(e)){
       D.cat[eanSalvo]=Object.assign({},D.cat[eanSalvo]||{},{nome:nome});reg.created_by=SESS.uid;reg.created_by_nome=SESS.nome||SESS.usuario||'Usuário';p.lotes.push(reg);salvar();
-      lembrete(reg,nome);marcarPendente(1);vib(40);
+      lembrete(reg,nome);marcarPendente(1,{tipo:'lote',uid:SESS.uid,payload:payloadLoteSQL(eanSalvo,nome,reg,lojaSalva)});vib(40);
       toast('Sem internet — lote salvo no aparelho. Sincroniza ao reconectar ✔');
       listaProdutos();mostrarEscolhaRegistro();
     }else{toast('Falha SQL: '+(e.message||'erro desconhecido'));console.error('Falha ao inserir lote no Supabase',e);}
@@ -510,7 +516,7 @@ document.addEventListener('click',function(e){var tr=e.target.closest('tr[data-i
   var q=prompt('Lote '+(l.lote||'—')+' • validade '+fdata(l.val)+'\n\nQuantidade (0 solicita exclusão):',l.qtd);if(q===null)return;q=num(q);
   if(q<=0){if(ehAdmin()){if(confirm('Excluir este lote como Administrador?'))adminExcluirRegistro('lote',l.id);return;}if(sbOn()&&logado()){solicitarExclusao('lote',l.id).then(function(ok){if(ok)carregarSolicitacoesExclusao();});return;}
     if(confirm('Excluir lote localmente?')){p.lotes=p.lotes.filter(function(x){return x!==l;});cancelarLembrete(l.id);auditar('apagou_lote',{ean:tr.dataset.ean,lote:l.lote});}}
-  else {l.qtd=q;var val=prompt('Validade (AAAA-MM-DD):',l.val||'');if(val!==null&&/^\\d{4}-\\d{2}-\\d{2}$/.test(val))l.val=val;
+  else {l.rpcConfirmado=false;l.qtd=q;var val=prompt('Validade (AAAA-MM-DD):',l.val||'');if(val!==null&&/^\\d{4}-\\d{2}-\\d{2}$/.test(val))l.val=val;
     var desc=prompt('Descrição do produto:',(p.desc||detalheProduto(tr.dataset.ean).nome||''));if(desc!==null&&desc.trim())p.desc=desc.trim();
     l.atualizado=Date.now();auditar('editou_lote_proprio',{ean:tr.dataset.ean,id:l.id,qtd:q,val:l.val,descricao:p.desc||''});}
   salvar();lotesDoAtual();listaProdutos();});
@@ -603,15 +609,16 @@ $('bSalvarPe').onclick=function(){if(!pode('registrar')){toast('Seu perfil não 
   var r={id:uid(),cod:peAtual,sif:sif,peso:peso,val:val,setor:setor,criado:Date.now()},loja=SESS&&SESS.lojaId,b=$('bSalvarPe'),codSalvo=peAtual;
   if(!sbOn()){var localItem=D.pere.itens[codSalvo]||(D.pere.itens[codSalvo]={desc:desc,sif:sif});r.created_by_nome='Usuário local';D.pere.regs.push(r);salvar();lembrete(r,desc);toast('Salvo neste aparelho ✔ '+kg(peso)+' kg');$('pePeso').value='';$('peVal').value='';$('peSetor').value='';$('peInfo').innerHTML='';$('cardPe').style.display='none';peAtual=null;listaPere();return;}
   b.disabled=true;b.textContent='⏳ Salvando no SQL…';
-  sbReq('/rest/v1/rpc/registrar_perecivel',{method:'POST',body:{p_id:r.id,p_loja_id:loja,p_cod:codSalvo,p_descricao:desc,p_sif:sif,p_peso:peso,p_val:val,p_setor:setor}})
+  var payloadPerecivel={p_id:String(r.id),p_loja_id:loja,p_cod:codSalvo,p_descricao:desc,p_sif:sif,p_peso:peso,p_val:val,p_setor:setor};
+  inserirPerecivelSQL(payloadPerecivel)
   .then(function(x){if(!x.ok)throw erroSQL(x,'registro perecível');var serverRow=x.dados||{};
-    var it=D.pere.itens[codSalvo]||(D.pere.itens[codSalvo]={desc:serverRow.descricao||desc,sif:serverRow.sif||sif});it.desc=serverRow.descricao||it.desc||desc;it.sif=serverRow.sif!=null?serverRow.sif:(it.sif||sif);r.created_by=SESS.uid;r.created_by_nome=serverRow.created_by_nome||SESS.nome||SESS.usuario;r.criado=serverRow.criado||r.criado;D.pere.regs.push(r);salvar();lembrete(r,it.desc);
+    var it=D.pere.itens[codSalvo]||(D.pere.itens[codSalvo]={desc:serverRow.descricao||desc,sif:serverRow.sif||sif});it.desc=serverRow.descricao||it.desc||desc;it.sif=serverRow.sif!=null?serverRow.sif:(it.sif||sif);r.created_by=serverRow.created_by||SESS.uid;r.created_by_nome=serverRow.created_by_nome||SESS.nome||SESS.usuario;r.criado=serverRow.criado||r.criado;r.rpcConfirmado=true;D.pere.regs.push(r);salvar();lembrete(r,it.desc);
     auditar('registrou_perecivel',{cod:codSalvo,peso:peso,val:val,setor:setor});toast('Salvo no Supabase ✔ '+kg(peso)+' kg');vib(40);
     $('pePeso').value='';$('peVal').value='';$('peSetor').value='';$('peInfo').innerHTML='';$('cardPe').style.display='none';peAtual=null;listaPere();
   }).catch(function(e){
     if(ehSemRede(e)){
       var it=D.pere.itens[codSalvo]||(D.pere.itens[codSalvo]={desc:desc,sif:sif});it.desc=desc;it.sif=sif;it.created_by=SESS.uid;r.created_by=SESS.uid;r.created_by_nome=SESS.nome||SESS.usuario||'Usuário';D.pere.regs.push(r);salvar();
-      lembrete(r,desc);marcarPendente(1);vib(40);
+      lembrete(r,desc);marcarPendente(1,{tipo:'perecivel',uid:SESS.uid,payload:payloadPerecivel});vib(40);
       toast('Sem internet — salvo no aparelho. Sincroniza ao reconectar ✔');
       $('pePeso').value='';$('peVal').value='';$('peSetor').value='';$('peInfo').innerHTML='';$('cardPe').style.display='none';peAtual=null;listaPere();
     }else{toast('Falha SQL: '+(e.message||'erro desconhecido'));console.error('Falha ao salvar perecível no Supabase',e);}
@@ -640,7 +647,7 @@ $('listaPe').onclick=function(e){var tr=e.target.closest('tr[data-pe]');if(!tr)r
   var peso=num(p);if(peso<=0){if(ehAdmin()&&sbOn()&&logado()){if(confirm('Excluir este registro como Administrador?'))adminExcluirRegistro('pere_reg',r.id);return;}if(sbOn()&&logado()){solicitarExclusao('pere_reg',r.id);return;}if(confirm('Excluir registro localmente?')){D.pere.regs=D.pere.regs.filter(function(x){return x!==r;});cancelarLembrete(r.id);salvar();listaPere();auditar('apagou_perecivel',{cod:r.cod,peso:r.peso});}return;}
   var v=prompt('Validade (dd/mm/aaaa):',fdata(r.val));if(v===null)return;var val=lerData(v);if(!val){toast('Data inválida — nada alterado');return;}
   var sif=prompt('SIF:',r.sif||'');if(sif===null)return;
-  r.peso=peso;r.val=val;r.sif=sif.trim();r.atualizado=Date.now();if(proprio&&it.created_by===SESS.uid){var desc=prompt('Descrição do código:',it.desc||'');if(desc!==null&&desc.trim())it.desc=desc.trim();}
+  r.rpcConfirmado=false;r.peso=peso;r.val=val;r.sif=sif.trim();r.atualizado=Date.now();if(proprio&&it.created_by===SESS.uid){var desc=prompt('Descrição do código:',it.desc||'');if(desc!==null&&desc.trim())it.desc=desc.trim();}
   salvar();cancelarLembrete(r.id);lembrete(r,nome);listaPere();toast('Registro atualizado ✔');};
 /* dd/mm/aaaa, dd/mm/aa ou aaaa-mm-dd → 'aaaa-mm-dd' (null se a data não existir) */
 function lerData(t){t=String(t||'').trim();var m=/^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t),a,me,di;
@@ -798,10 +805,10 @@ function sincronizarLoja(){
     var produtos=res[0],lotes=res[1],itens=res[2],regs=res[3],n=0;
     produtos.forEach(function(row){var ean=String(row.ean);if(row.deleted_at){delete D.prod[ean];return;}var p=D.prod[ean]||(D.prod[ean]={lotes:[]});if(!Array.isArray(p.lotes))p.lotes=[];if(row.created_by)p.created_by=row.created_by;n++;});
     lotes.forEach(function(row){if(row.deleted_at){var existing=D.prod[String(row.ean)];if(existing&&Array.isArray(existing.lotes))existing.lotes=existing.lotes.filter(function(x){return String(x.id)!==String(row.id);});return;}var p=D.prod[String(row.ean)]||(D.prod[String(row.ean)]={lotes:[]});if(!Array.isArray(p.lotes))p.lotes=[];
-      var l=p.lotes.find(function(x){return String(x.id)===String(row.id);}),obj={id:row.id,lote:row.lote||'',qtd:Number(row.qtd)||0,val:row.val||'',setor:row.setor||null,criado:row.criado||null,created_by:row.created_by||null,created_by_nome:row.created_by_nome||null,atualizado:row.updated_at?Date.parse(row.updated_at):null};
+      var l=p.lotes.find(function(x){return String(x.id)===String(row.id);}),obj={id:row.id,lote:row.lote||'',qtd:Number(row.qtd)||0,val:row.val||'',setor:row.setor||null,criado:row.criado||null,created_by:row.created_by||null,created_by_nome:row.created_by_nome||null,atualizado:row.updated_at?Date.parse(row.updated_at):null,rpcConfirmado:true};
       if(l){Object.assign(l,obj);}else p.lotes.push(obj);n++;});
     itens.forEach(function(row){if(row.deleted_at){delete D.pere.itens[String(row.cod)];return;}D.pere.itens[String(row.cod)]={desc:row.descricao||'',sif:row.sif||'',created_by:row.created_by||null};n++;});
-    regs.forEach(function(row){var ix=D.pere.regs.findIndex(function(x){return String(x.id)===String(row.id);});if(row.deleted_at){if(ix>=0)D.pere.regs.splice(ix,1);return;}var reg={id:row.id,cod:String(row.cod),sif:row.sif||'',peso:Number(row.peso)||0,val:row.val||'',setor:row.setor||null,criado:row.criado||null,created_by:row.created_by||null,created_by_nome:row.created_by_nome||null},ix=D.pere.regs.findIndex(function(x){return String(x.id)===String(row.id);});if(ix>=0)D.pere.regs[ix]=reg;else D.pere.regs.push(reg);n++;});
+    regs.forEach(function(row){var ix=D.pere.regs.findIndex(function(x){return String(x.id)===String(row.id);});if(row.deleted_at){if(ix>=0)D.pere.regs.splice(ix,1);return;}var reg={id:row.id,cod:String(row.cod),sif:row.sif||'',peso:Number(row.peso)||0,val:row.val||'',setor:row.setor||null,criado:row.criado||null,created_by:row.created_by||null,created_by_nome:row.created_by_nome||null,rpcConfirmado:true},ix=D.pere.regs.findIndex(function(x){return String(x.id)===String(row.id);});if(ix>=0)D.pere.regs[ix]=Object.assign(D.pere.regs[ix],reg);else D.pere.regs.push(reg);n++;});
     try{localStorage.setItem(K,JSON.stringify(D));}catch(e){
       if(e&&e.name==='QuotaExceededError'){
         try{Object.keys(D.cat||{}).forEach(function(k){if(D.cat[k]&&D.cat[k].img)D.cat[k].img='';});localStorage.setItem(K,JSON.stringify(D));toast('⚠️ Espaço liberado (imagens removidas do cache). Sincronização concluída.');return n;}catch(e2){}
@@ -818,26 +825,36 @@ function agendarSincronizacaoPeriodica(){clearInterval(temporizadorSincronizacao
 function sincronizarAoRetornar(){if(sbOn()&&logado()&&SESS.lojaId&&!document.hidden)catalogoPull().then(sincronizarLoja);}
 document.addEventListener('visibilitychange',function(){if(!document.hidden)sincronizarAoRetornar();});window.addEventListener('online',sincronizarAoRetornar);window.addEventListener('focus',sincronizarAoRetornar);
 /* ───── backup do estoque da loja na nuvem (envio; a volta vem depois) ───── */
+function processarFilaRegistros(loja){var q=Array.isArray(SYNC.filaRegistros)?SYNC.filaRegistros.slice():[],done=[],falhas=0,uid=SESS&&SESS.uid;
+  return q.reduce(function(promise,item){return promise.then(function(){if(!item||item.uid!==uid||!item.payload||String(item.payload.p_loja_id)!==String(loja))return;
+    var p=item.payload,req;if(item.tipo==='lote')req=inserirLoteSQL(p.p_ean,p.p_nome,{id:p.p_id,lote:p.p_lote,qtd:p.p_qtd,val:p.p_val,setor:p.p_setor},p.p_loja_id);
+    else if(item.tipo==='perecivel')req=inserirPerecivelSQL(p).then(function(r){if(!r.ok)throw erroSQL(r,'registro perecível');return r.dados||{};});
+    else{falhas++;return;}
+    return req.then(function(serverRow){var id=String(p.p_id);
+      if(item.tipo==='lote'){var prod=D.prod[String(p.p_ean)],reg=prod&&prod.lotes&&prod.lotes.find(function(x){return String(x.id)===id;});if(reg){reg.created_by=serverRow.created_by||uid;reg.created_by_nome=serverRow.created_by_nome||SESS.nome||SESS.usuario;reg.criado=serverRow.criado||reg.criado;reg.rpcConfirmado=true;}}
+      else{var pere=D.pere.regs.find(function(x){return String(x.id)===id;});if(pere){pere.created_by=serverRow.created_by||uid;pere.created_by_nome=serverRow.created_by_nome||SESS.nome||SESS.usuario;pere.criado=serverRow.criado||pere.criado;pere.rpcConfirmado=true;}}
+      var key=filaRegistroKey(item);SYNC.filaRegistros=(Array.isArray(SYNC.filaRegistros)?SYNC.filaRegistros:[]).filter(function(x){return filaRegistroKey(x)!==key;});SYNC.pendentes=Math.max(0,(+SYNC.pendentes||0)-1);salvarSync();salvar();done.push(item.tipo+':'+id);
+    }).catch(function(){falhas++;});});},Promise.resolve()).then(function(){return {ids:done,falhas:falhas};});}
 function linhasLocais(loja){var pr=[],lo=[],pi=[],pg=[],uid=SESS&&SESS.uid,papel=papelAtual(),global=['analista','gerente','admin'].includes(papel);
   function meu(o){return global||!o.created_by||o.created_by===uid;}
   Object.keys(D.prod).forEach(function(ean){var p=D.prod[ean];if(meu(p))pr.push({loja_id:loja,ean:String(ean),created_by:p.created_by||null});
-    (p.lotes||[]).forEach(function(l){if(meu(l))lo.push({id:l.id,loja_id:loja,ean:String(ean),lote:l.lote||'',qtd:+l.qtd||0,val:l.val||null,setor:l.setor||null,criado:l.criado||null,created_by:l.created_by||null});});});
+    (p.lotes||[]).forEach(function(l){if(meu(l)&&!l.rpcConfirmado&&!filaTemRegistro('lote',l.id,loja))lo.push({id:l.id,loja_id:loja,ean:String(ean),lote:l.lote||'',qtd:+l.qtd||0,val:l.val||null,setor:l.setor||null,criado:l.criado||null,created_by:l.created_by||null});});});
   Object.keys(D.pere.itens).forEach(function(cod){var it=D.pere.itens[cod];if(meu(it))pi.push({loja_id:loja,cod:String(cod),descricao:it.desc||'',sif:it.sif||'',created_by:it.created_by||null});});
-  (D.pere.regs||[]).forEach(function(r){if(meu(r))pg.push({id:r.id,loja_id:loja,cod:String(r.cod),sif:r.sif||'',peso:+r.peso||0,val:r.val||null,setor:r.setor||null,criado:r.criado||null,created_by:r.created_by||null});});
+  (D.pere.regs||[]).forEach(function(r){if(meu(r)&&!r.rpcConfirmado&&!filaTemRegistro('perecivel',r.id,loja))pg.push({id:r.id,loja_id:loja,cod:String(r.cod),sif:r.sif||'',peso:+r.peso||0,val:r.val||null,setor:r.setor||null,criado:r.criado||null,created_by:r.created_by||null});});
   return {produtos:pr,lotes:lo,pere_itens:pi,pere_regs:pg};}
 var tBackup=null,backupEmAndamento=false;
 function agendarBackup(){if(!sbOn()||!logado()||!SESS.lojaId)return;clearTimeout(tBackup);tBackup=setTimeout(backupNuvem,5000);}
 function backupNuvem(){if(!sbOn()||!logado()||!SESS.lojaId||backupEmAndamento)return Promise.resolve(0);
-  backupEmAndamento=true;var L=linhasLocais(SESS.lojaId);
+  backupEmAndamento=true;var loja=SESS.lojaId;
   function up(tabela,conflito,rows){if(!rows.length)return Promise.resolve();
     // created_by é identidade definida pelo trigger do banco; não enviar em upsert,
     // para evitar tentar sobrescrever autoria imutável (inclusive com null).
     var payload=rows.map(function(row){var clean=Object.assign({},row);delete clean.created_by;delete clean.created_by_nome;return clean;});
     return sbReq('/rest/v1/'+tabela+'?on_conflict='+conflito,{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:payload}).then(function(r){if(!r.ok)throw new Error('Falha ao enviar '+tabela+' (HTTP '+r.status+')');return r;});}
-  var catalogo=L.produtos.map(function(r){var c=detalheProduto(r.ean);return c.nome?{ean:r.ean,nome:c.nome,marca:c.marca||'',img:c.img||''}:null;}).filter(Boolean);
-  return up('catalogo','ean',catalogo).then(function(){return Promise.all([up('produtos','loja_id,ean',L.produtos),up('lotes','id',L.lotes),up('pere_itens','loja_id,cod',L.pere_itens),up('pere_regs','id',L.pere_regs)]);})
-    .then(function(){SYNC.backup=Date.now();SYNC.pendentes=0;salvarSync();var n=L.produtos.length+L.lotes.length+L.pere_itens.length+L.pere_regs.length;if(document.querySelector('#abas button.on')&&document.querySelector('#abas button.on').dataset.v==='aj')contaCard();return n;})
-    .catch(function(){return -1;}).then(function(x){backupEmAndamento=false;return x;});}
+  return processarFilaRegistros(loja).then(function(replay){var L=linhasLocais(loja),catalogo=L.produtos.map(function(r){var c=detalheProduto(r.ean);return c.nome?{ean:r.ean,nome:c.nome,marca:c.marca||'',img:c.img||''}:null;}).filter(Boolean);
+    return up('catalogo','ean',catalogo).then(function(){return Promise.all([up('produtos','loja_id,ean',L.produtos),up('lotes','id',L.lotes),up('pere_itens','loja_id,cod',L.pere_itens),up('pere_regs','id',L.pere_regs)]);})
+      .then(function(){SYNC.backup=Date.now();SYNC.pendentes=Array.isArray(SYNC.filaRegistros)?SYNC.filaRegistros.length:0;salvarSync();var n=L.produtos.length+L.lotes.length+L.pere_itens.length+L.pere_regs.length;if(document.querySelector('#abas button.on')&&document.querySelector('#abas button.on').dataset.v==='aj')contaCard();return replay.falhas?-1:n;});
+  }).catch(function(){return -1;}).then(function(x){backupEmAndamento=false;return x;});}
 function abrirConta(){if(!sbOn()){toast('Sincronização não configurada');return;}$('conta').classList.add('on');if(logado()){if(SESS.forcePasswordChange)mostrarTrocaSenhaPrimeiroAcesso();else mostrarLojas();}else mostrarLoginForm();}
 function fecharConta(){if(precisaLogin())return;$('conta').classList.remove('on');}
 function captchaErro(msg){var e=$('cErro');e.textContent=msg;e.style.display='';}
