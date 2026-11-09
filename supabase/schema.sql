@@ -329,3 +329,33 @@ from (values
 where not exists (
   select 1 from public.lojas l where upper(trim(l.nome)) = unidades.nome
 );
+
+
+-- Área do operador: autoria/setor, notificações privadas e subscriptions Web Push.
+-- A migration versionada também define RPCs, triggers de proteção e grants completos.
+alter table public.lotes add column if not exists setor text;
+alter table public.lotes add column if not exists created_by uuid references auth.users(id) on delete set null;
+alter table public.lotes add column if not exists created_by_nome text;
+alter table public.pere_regs add column if not exists setor text;
+alter table public.pere_regs add column if not exists created_by uuid references auth.users(id) on delete set null;
+alter table public.pere_regs add column if not exists created_by_nome text;
+
+create table if not exists public.notificacoes (
+  id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade,
+  loja_id uuid not null references public.lojas(id) on delete cascade, dedupe_key text not null,
+  tipo text not null, titulo text not null, mensagem text not null, payload jsonb not null default '{}'::jsonb,
+  criado timestamptz not null default now(), lida_em timestamptz,
+  constraint notificacoes_user_dedupe_unique unique(user_id,dedupe_key)
+);
+create table if not exists public.push_subscriptions (
+  id uuid primary key default gen_random_uuid(), owner_id uuid not null references auth.users(id) on delete cascade,
+  endpoint text not null unique,
+  p256dh text not null, auth text not null, created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.notificacoes enable row level security;
+alter table public.push_subscriptions enable row level security;
+comment on column public.lotes.setor is 'Setor validado no servidor para registros novos; legado pode permanecer NULL.';
+comment on column public.lotes.created_by_nome is 'Snapshot da autoria definido pelo servidor e imutável.';
+comment on column public.pere_regs.setor is 'Setor validado no servidor para registros novos; legado pode permanecer NULL.';
+comment on column public.pere_regs.created_by_nome is 'Snapshot da autoria definido pelo servidor e imutável.';

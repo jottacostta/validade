@@ -53,7 +53,7 @@ tflaky('migra a chave antiga e junta UPC-A de 12 com 13 dígitos', { skip: pular
   assert.deepStrictEqual(Object.keys(d.prod), ['0012345678905']);
   assert.strictEqual(d.prod['0012345678905'].lotes.length, 2);
   assert.deepStrictEqual(Object.keys(d.cat), ['0012345678905']);
-  await a.p.fill('#tCodigo', '012345678905'); await a.p.click('#bBuscar');
+  await a.p.click('#bTipoIndustrial'); await a.p.fill('#tCodigo', '012345678905'); await a.p.click('#bBuscar');
   assert.strictEqual(await a.p.textContent('#pEan'), '0012345678905');
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
@@ -119,10 +119,11 @@ tflaky('lembretes: mudar dias reagenda, desligar cancela, apagar tudo cancela', 
 tflaky('lote repetido: pergunta a quantidade final, já somada', { skip: pular }, async () => {
   const a = await abrir({ dados: { prod: { '7891000315507': { nome: 'Café', lotes: [lote('x', '2031-01-01', 5, 'L1')] } } } });
   const salvarLote = async qtd => {
+    await a.p.click('#bTipoIndustrial');
     await a.p.fill('#tCodigo', '7891000315507'); await a.p.click('#bBuscar');
     await a.p.waitForSelector('#cardProd', { state: 'visible' });
     await a.p.waitForFunction(() => document.getElementById('pNome').value !== '');
-    await a.p.fill('#pLote', 'l1'); await a.p.fill('#pQtd', String(qtd)); await a.p.fill('#pVal', '2031-01-01');
+    await a.p.fill('#pLote', 'l1'); await a.p.fill('#pQtd', String(qtd)); await a.p.fill('#pVal', '2031-01-01'); await a.p.selectOption('#pSetor','Açougue');
     await a.p.click('#bSalvarLote');
   };
   a.respostas.push(true); await salvarLote(3);           // aceita o padrão (somado)
@@ -187,6 +188,7 @@ tflaky('lê etiqueta GS1 (DataMatrix) e preenche os perecíveis', { skip: pular 
   // cadastra a descrição e salva o registro
   await a.p.fill('#peDesc', 'Picanha Suína Fracionada');
   await a.p.fill('#peSif', '01259');
+  await a.p.selectOption('#peSetor','Açougue');
   await a.p.click('#bSalvarPe');
   await a.p.waitForFunction(() => document.getElementById('cardPe').style.display === 'none');
   const d = await a.salvo();
@@ -219,6 +221,7 @@ tflaky('GS1 com etiqueta de balança embutida no GTIN: extrai código 6019 e pes
   assert.strictEqual(await a.p.inputValue('#peVal'), '2026-11-08');   // validade do (17)
   assert.ok((await a.p.textContent('#peInfo')).includes('9,98'), 'mostra o preço R$9,98 embutido');
   await a.p.fill('#peDesc', 'Lombo Fracionado Bife');
+  await a.p.selectOption('#peSetor','Açougue');
   await a.p.click('#bSalvarPe');
   await a.p.waitForFunction(() => document.getElementById('cardPe').style.display === 'none');
   const d = await a.salvo();
@@ -253,6 +256,7 @@ tflaky('OCR preenche descrição e lote (SIF) ao escanear a etiqueta', { skip: p
   assert.strictEqual(await a.p.inputValue('#pePeso'), '0.864');
   await a.p.waitForFunction(() => document.getElementById('peDesc').value === 'Pernil Fracionado');
   await a.p.waitForFunction(() => document.getElementById('peSif').value === '876-040326');
+  await a.p.selectOption('#peSetor','Açougue');
   await a.p.click('#bSalvarPe');
   await a.p.waitForFunction(() => document.getElementById('cardPe').style.display === 'none');
   const d = await a.salvo();
@@ -425,6 +429,7 @@ tflaky('catálogo: usa o nome do catálogo compartilhado (antes das fontes exter
     await p.route(R_PUSH, r => r.fulfill({ status: 201, body: '' }));
     await p.route(R_OFF, r => r.fulfill({ status: 200, body: '{"status":0}' }));
   });
+  await a.p.click('#bTipoIndustrial');
   await a.p.fill('#tCodigo', '7891000315507'); await a.p.click('#bBuscar');
   await a.p.waitForFunction(() => document.getElementById('pNome').value === 'Café Pilão 500g');
   assert.ok((await a.p.textContent('#pStatus')).includes('catálogo'));
@@ -440,6 +445,7 @@ tflaky('catálogo: não achou local, acha no Open Food Facts e envia para o cat�
     await p.route(R_PUSH, async r => { try { pushBody = r.request().postDataJSON(); } catch (e) {} await r.fulfill({ status: 201, body: '' }); });
     await p.route(R_OFF, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 1, product: { product_name: 'Biscoito X', brands: 'MarcaY', image_front_small_url: '' } }) }));
   });
+  await a.p.click('#bTipoIndustrial');
   await a.p.fill('#tCodigo', '7899999999999'); await a.p.click('#bBuscar');
   await a.p.waitForFunction(() => document.getElementById('pNome').value === 'Biscoito X');
   await a.p.waitForTimeout(300);
@@ -522,6 +528,97 @@ async function rotasBase(p, papel) {
   for (const t of ['produtos', 'lotes', 'pere_itens', 'pere_regs']) await p.route(new RegExp('/rest/v1/' + t + '\\?on_conflict'), r => r.fulfill({ status: 201, body: '' }));
 }
 
+tflaky('sincronização por loja: Jonatas vê o lote de William com setor e autoria', { skip: pular }, async () => {
+  const a = await abrirLogado(async p => {
+    await p.route('**/rest/v1/**', async r => {
+      const u = new URL(r.request().url()), method = r.request().method();
+      let rows = [];
+      if (u.pathname === '/rest/v1/perfis') rows = [{ papel: 'operador', nome: 'Jonatas' }];
+      if (method === 'GET' && u.pathname === '/rest/v1/catalogo' && u.searchParams.has('updated_at')) rows = [{ ean: '7891234567890', nome: 'Produto compartilhado', marca: '', img: '', updated_at: '2026-11-07T20:00:00Z' }];
+      if (method === 'GET' && u.pathname === '/rest/v1/produtos') rows = [{ ean: '7891234567890', updated_at: '2026-11-07T20:00:00Z', deleted_at: null }];
+      if (method === 'GET' && u.pathname === '/rest/v1/lotes') rows = [{ id: 'lote-william', ean: '7891234567890', lote: 'FL05-W', qtd: 7, val: '2026-12-10', setor: 'Açougue', criado: 1, created_by: 'u1', created_by_nome: 'William', updated_at: '2026-11-07T20:00:00Z', deleted_at: null }];
+      return r.fulfill({ status: method === 'GET' ? 200 : 201, contentType: 'application/json', body: JSON.stringify(rows) });
+    });
+  }, null, { uid: 'u2', usuario: 'jonatas', nome: 'Jonatas' });
+  await a.p.waitForFunction(() => { try { return !!JSON.parse(localStorage.getItem('validade_sync') || '{}').recebido; } catch (e) { return false; } });
+  await a.p.click('nav button[data-v="prod"]');
+  const texto = await a.p.textContent('#listaProd');
+  assert.ok(texto.includes('Produto compartilhado'));
+  assert.ok(texto.includes('Açougue'));
+  assert.ok(texto.includes('informado por William'));
+  assert.ok((await a.p.textContent('#lojaAtualLabel')).includes('Jonatas'));
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
+
+tflaky('cadastro do operador: lote e perecível enviam setor à RPC e armazenam autoria do servidor', { skip: pular }, async () => {
+  const chamadas = {};
+  const a = await abrirLogado(async p => {
+    await p.route('**/rest/v1/**', async r => {
+      const u = new URL(r.request().url()), method = r.request().method();
+      if (u.pathname === '/rest/v1/perfis') return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ papel: 'operador', nome: 'Jonatas' }]) });
+      if (u.pathname === '/rest/v1/rpc/registrar_lote') {
+        chamadas.lote = r.request().postDataJSON();
+        return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ created_by: 'u1', created_by_nome: 'Jonatas', criado: 1794170000000 }) });
+      }
+      if (u.pathname === '/rest/v1/rpc/registrar_perecivel') {
+        chamadas.perecivel = r.request().postDataJSON();
+        return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ created_by: 'u1', created_by_nome: 'Jonatas', descricao: 'Pernil', sif: 'SIF-1', criado: 1794170000001 }) });
+      }
+      if (method === 'GET') return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+      return r.fulfill({ status: 201, body: '' });
+    });
+  }, { cat: { '7891234567890': { nome: 'Arroz' } } });
+  await a.p.click('#bTipoIndustrial');
+  await a.p.fill('#tCodigo', '7891234567890'); await a.p.click('#bBuscar');
+  await a.p.waitForFunction(() => document.getElementById('pNome').value === 'Arroz');
+  await a.p.fill('#pLote', 'L-W'); await a.p.fill('#pQtd', '4'); await a.p.fill('#pVal', '2026-12-20'); await a.p.selectOption('#pSetor', 'Mercearia');
+  await a.p.click('#bSalvarLote');
+  await a.p.waitForFunction(() => { const d=JSON.parse(localStorage.getItem('validade_dados')); return !!(d.prod['7891234567890']&&d.prod['7891234567890'].lotes.length); });
+  assert.strictEqual(chamadas.lote.p_setor, 'Mercearia');
+  assert.strictEqual(chamadas.lote.p_loja_id, 'L1');
+  assert.strictEqual((await a.salvo()).prod['7891234567890'].lotes[0].created_by_nome, 'Jonatas');
+
+  await a.p.click('nav button[data-v="pere"]');
+  await a.p.fill('#tCodBal', '6019'); await a.p.click('#bBuscarBal');
+  await a.p.fill('#peDesc', 'Pernil'); await a.p.fill('#peSif', 'SIF-1'); await a.p.fill('#pePeso', '0.650'); await a.p.fill('#peVal', '2026-12-18'); await a.p.selectOption('#peSetor', 'Açougue');
+  await a.p.click('#bSalvarPe');
+  await a.p.waitForFunction(() => { const d=JSON.parse(localStorage.getItem('validade_dados')); return d.pere.regs.length===1; });
+  assert.strictEqual(chamadas.perecivel.p_setor, 'Açougue');
+  assert.strictEqual(chamadas.perecivel.p_cod, '6019');
+  assert.strictEqual((await a.salvo()).pere.regs[0].created_by_nome, 'Jonatas');
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
+
+tflaky('compatibilidade de migration: mantém leitura quando as colunas novas ainda não existem', { skip: pular }, async () => {
+  let fallbackLote = 0, fallbackPere = 0;
+  const a = await abrirLogado(async p => {
+    await p.route('**/rest/v1/**', async r => {
+      const u = new URL(r.request().url()), method = r.request().method();
+      if (u.pathname === '/rest/v1/perfis') return r.fulfill({ status: 200, contentType: 'application/json', body: '[{"papel":"operador","nome":"Jonatas"}]' });
+      if (method === 'GET' && u.pathname === '/rest/v1/catalogo') return r.fulfill({ status: 200, contentType: 'application/json', body: '[{"ean":"7891234567890","nome":"Produto legado","updated_at":"2026-11-07T20:00:00Z"}]' });
+      if (method === 'GET' && u.pathname === '/rest/v1/lotes' && u.searchParams.get('select').includes('setor')) return r.fulfill({ status: 400, contentType: 'application/json', body: '{"code":"PGRST204","message":"Could not find the setor column of lotes in the schema cache"}' });
+      if (method === 'GET' && u.pathname === '/rest/v1/lotes') { fallbackLote++; return r.fulfill({ status: 200, contentType: 'application/json', body: '[{"id":"old-lot","ean":"7891234567890","lote":"LEGADO","qtd":2,"val":"2026-12-10","created_by":"u1","updated_at":"2026-11-07T20:00:00Z","deleted_at":null}]' }); }
+      if (method === 'GET' && u.pathname === '/rest/v1/pere_regs' && u.searchParams.get('select').includes('setor')) return r.fulfill({ status: 400, contentType: 'application/json', body: '{"code":"PGRST204","message":"Could not find the setor column of pere_regs in the schema cache"}' });
+      if (method === 'GET' && u.pathname === '/rest/v1/pere_regs') { fallbackPere++; return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }); }
+      if (method === 'GET') return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+      return r.fulfill({ status: 201, body: '' });
+    });
+  });
+  await a.p.waitForFunction(() => { try { return !!JSON.parse(localStorage.getItem('validade_sync') || '{}').recebido; } catch (e) { return false; } });
+  assert.strictEqual(fallbackLote, 1);
+  assert.strictEqual(fallbackPere, 1);
+  const d = await a.salvo();
+  assert.strictEqual(d.prod['7891234567890'].lotes[0].lote, 'LEGADO');
+  await a.p.click('nav button[data-v="prod"]');
+  const texto = await a.p.textContent('#listaProd');
+  assert.ok(texto.includes('Produto legado'));
+  assert.ok(texto.includes('Setor não informado'));
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
+
 tflaky('gate: sem sessão, exige login ao abrir (tela de login bloqueia o sistema)', { skip: pular }, async () => {
   const a = await abrir({ url: URL_SUPA });
   await a.p.waitForSelector('#conta', { state: 'visible' });
@@ -533,11 +630,11 @@ tflaky('gate: sem sessão, exige login ao abrir (tela de login bloqueia o sistem
   await a.fechar();
 });
 
-tflaky('papel analista: esconde a aba Registrar (só leitura)', { skip: pular }, async () => {
+tflaky('papel analista: mantém acesso à aba Registrar conforme a matriz existente', { skip: pular }, async () => {
   const a = await abrirLogado(p => rotasBase(p, 'analista'));
   await a.p.waitForFunction(() => { try { return JSON.parse(localStorage.getItem('validade_sessao')).papel === 'analista'; } catch (e) { return false; } });
-  assert.strictEqual(await a.p.isVisible('nav button[data-v="reg"]'), false);
-  assert.strictEqual(await a.p.isVisible('#bSalvarLote'), false);
+  assert.strictEqual(await a.p.isVisible('nav button[data-v="reg"]'), true);
+  assert.strictEqual(await a.p.isVisible('#bTipoIndustrial'), true);
   await a.fechar();
 });
 
