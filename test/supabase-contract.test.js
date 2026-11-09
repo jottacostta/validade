@@ -5,6 +5,9 @@ const root = path.join(__dirname, '..');
 const app = fs.readFileSync(path.join(root, 'src/app.html'), 'utf8');
 const migration = fs.readFileSync(path.join(root, 'supabase/migrations/20261109000000_area_operador_compartilhamento_alertas.sql'), 'utf8');
 const rolesMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261108130000_matriz_papeis_ownership_rls.sql'), 'utf8');
+const reviewerHardening = fs.readFileSync(path.join(root, 'supabase/migrations/20261109122158_harden_review_role_null.sql'), 'utf8');
+const personalTokenPolicy = fs.readFileSync(path.join(root, 'supabase/migrations/20261109122302_restrict_personal_cosmos_token_access.sql'), 'utf8');
+const foreignKeyIndexes = fs.readFileSync(path.join(root, 'supabase/migrations/20261109122348_index_audit_and_creator_foreign_keys.sql'), 'utf8');
 const edge = fs.readFileSync(path.join(root, 'supabase/functions/alertas/index.ts'), 'utf8');
 const build = fs.readFileSync(path.join(root, 'build.js'), 'utf8');
 
@@ -33,6 +36,23 @@ test('matriz de papéis do banco aceita gerente e concede insert a papéis globa
   assert.match(rolesMigration, /check \(papel in \('operador','assistente','analista','gerente','admin'\)\)/);
   assert.match(rolesMigration, /private\.tem_escopo_global\(\).*private\.meu_papel\(\) <> ''admin''/);
   assert.match(rolesMigration, /array\['analista','gerente','admin'\]/);
+});
+
+test('revisão de exclusão falha fechado sem perfil ou papel', () => {
+  assert.match(reviewerHardening, /coalesce\(v_papel,''\) not in \('assistente','analista','gerente','admin'\)/);
+  assert.match(reviewerHardening, /not coalesce\(private\.tem_escopo_global\(\),false\) and not private\.membro_da\(r\.loja_id\)/);
+  assert.match(reviewerHardening, /revoke all on function public\.revisar_solicitacao_exclusao\(uuid,boolean,text\) from public,anon/);
+});
+
+test('tokens pessoais do Cosmos continuam visíveis somente ao próprio usuário', () => {
+  assert.match(personalTokenPolicy, /drop policy if exists preferencias_admin_all on public\.preferencias/);
+  assert.match(personalTokenPolicy, /somente pelo próprio usuário autenticado/);
+});
+
+test('FKs de autoria e auditoria possuem índices dedicados', () => {
+  for (const index of ['auditoria_user_id_fk_idx', 'produtos_created_by_fk_idx', 'lotes_created_by_fk_idx', 'pere_itens_created_by_fk_idx', 'pere_regs_created_by_fk_idx', 'solicitacoes_exclusao_revisor_id_fk_idx']) {
+    assert.match(foreignKeyIndexes, new RegExp('create index if not exists ' + index));
+  }
 });
 
 test('lote é gravado atomicamente por RPC, incluindo catálogo, associação, setor e autoria do servidor', () => {
