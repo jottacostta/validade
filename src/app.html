@@ -203,6 +203,16 @@ nav.abas button.on{border-radius:28px;background:linear-gradient(145deg,#087ff0,
  nav.abas button span{font-size:28px}
 }
 
+
+header .header-bell svg{width:46px;height:46px;display:block}
+nav.abas button span svg{width:38px;height:38px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;display:block}
+#v-home .home-recent-row{grid-template-columns:minmax(0,1fr) auto}
+#v-home .home-recent-info{min-width:0}
+#v-home .home-recent-info small{line-height:1.55}
+#v-home .home-recent-meta{display:flex;align-items:center;gap:10px}
+#v-home .home-recent-meta b{font-size:34px;font-weight:400;color:#fff}
+#v-home .home-recent-row .home-status{margin:0;border-radius:24px;white-space:nowrap}
+
 /* Refinamento das áreas internas — padrão visual Guanabara */
 #v-prod,#v-pere,#v-alertas,#v-aj{padding-bottom:12px}
 #v-prod>.tiles{gap:9px;margin:2px 0 16px}
@@ -306,7 +316,7 @@ header p{font-size:14px;line-height:1.25}
 </head>
 <body>
 <div id="splash"><div class="sp-logo"><img id="splashLogo" alt="" style="display:none"><span id="splashIni">📅</span></div><div class="sp-nome">/*NOME_HTML*/</div><div class="sp-sub">Controle de validade e perecíveis</div><span class="gira"></span><div class="barra-am"></div></div>
-<header><div class="hdr-in"><img id="hdrLogo" alt="Supermercados Guanabara" class="hdr-logo" style="display:none"><span class="hdr-divider" aria-hidden="true"></span><div class="hdr-brand-copy" style="min-width:0"><h1>Controle de Validade</h1><p id="slogan">Área do Operador</p><span class="operator-role-pill" id="operatorRolePill" hidden>♙ Área do Operador</span><p id="lojaAtualLabel" class="ean" style="margin:3px 0 0;display:none"></p></div><button class="header-bell" id="homeBell" type="button" aria-label="Abrir notificações">♧<b id="homeBellBadge" style="display:none">0</b></button><button id="bLogoutHdr" class="hdr-logout" type="button">Sair</button></div></header>
+<header><div class="hdr-in"><img id="hdrLogo" alt="Supermercados Guanabara" class="hdr-logo" style="display:none"><span class="hdr-divider" aria-hidden="true"></span><div class="hdr-brand-copy" style="min-width:0"><h1>Controle de Validade</h1><p id="slogan">Área do Operador</p><span class="operator-role-pill" id="operatorRolePill" hidden>♙ Área do Operador</span><p id="lojaAtualLabel" class="ean" style="margin:3px 0 0;display:none"></p></div><button class="header-bell" id="homeBell" type="button" aria-label="Abrir notificações"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><b id="homeBellBadge" style="display:none">0</b></button><button id="bLogoutHdr" class="hdr-logout" type="button">Sair</button></div></header>
 <main>
 
 <!-- ═════════ REGISTRAR ═════════ -->
@@ -444,7 +454,7 @@ header p{font-size:14px;line-height:1.25}
 </section>
 </main>
 
-<nav class="abas" id="abas"><button class="on" data-v="home"><span>⌂</span>Início</button><button data-v="reg"><span>▥</span>Registrar</button><button data-v="prod"><span>▤</span>Registros</button><button data-v="alertas"><span>♧</span>Alertas <b id="alertBadge" style="display:none"></b></button><button data-v="aj"><span>♙</span>Perfil</button></nav>
+<nav class="abas" id="abas"><button class="on" data-v="home"><span><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span>Início</button><button data-v="reg"><span><svg viewBox="0 0 24 24"><path d="M4 3v18M8 5v14M12 3v18M16 5v14M20 3v18"/></svg></span>Registrar</button><button data-v="prod"><span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg></span>Registros</button><button data-v="alertas"><span><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></span>Alertas <b id="alertBadge" style="display:none"></b></button><button data-v="aj"><span><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2z"/></svg></span>Perfil</button></nav>
 
 <div id="modalEditarUsuario" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloEditarUsuario">
   <div class="box"><h2 id="tituloEditarUsuario">Editar usuário</h2>
@@ -559,7 +569,7 @@ function renderHome(){
  var nAlert=todosRegistros().filter(function(x){var n=dias(x.reg.val);return n!==null&&n<=D.aj.dias;}).length;
  ['homeBellBadge','homeAlertsBadge'].forEach(function(id){var b=$(id);if(b){b.textContent=nAlert>99?'99+':String(nAlert);b.style.display=nAlert?'':'none';}});
  var rows=todosRegistros().slice().sort(function(a,b){return new Date(b.reg.criado||b.reg.criado_em||b.reg.created_at||0)-new Date(a.reg.criado||a.reg.criado_em||a.reg.created_at||0);}).slice(0,3);
- if($('homeRecentList'))$('homeRecentList').innerHTML=rows.map(function(x){var r=x.reg,n=dias(r.val),cls=n<0?'expired':n<=D.aj.dias?'warn':'ok',tag=n<0?'Vencido':n===0?'Vence hoje':n<=D.aj.dias?n+' dias':'OK';return '<button type="button" class="home-recent-row" data-home-record="'+esc(r.id)+'" style="width:100%;text-align:left;background:none;border:0;color:inherit"><span><strong>'+esc(x.nome)+'</strong><small>Lote '+esc(r.lote||r.sif||'—')+' · '+esc(r.setor||'Setor não informado')+'</small></span><span class="home-date">'+fdata(r.val)+'<span class="home-status '+cls+'">'+tag+'</span></span></button>';}).join('')||'<div class="vazio">Nenhum registro encontrado. Comece escaneando um produto.</div>';
+ if($('homeRecentList'))$('homeRecentList').innerHTML=rows.map(function(x){var r=x.reg,n=dias(r.val),cls=n<0?'expired':n<=D.aj.dias?'warn':'ok',tag=n<0?'Vencido':n===0?'Vence hoje':n<=D.aj.dias?n+' dias':'OK';return '<button type="button" class="home-recent-row" data-home-record="'+esc(r.id)+'" style="width:100%;text-align:left;background:none;border:0;color:inherit"><span class="home-recent-info"><strong>'+esc(x.nome)+'</strong><small>Lote: '+esc(r.lote||r.sif||'—')+'<br>Val.: '+fdata(r.val)+'</small></span><span class="home-recent-meta"><span class="home-status '+cls+'">'+tag+'</span><b aria-hidden="true">›</b></span></button>';}).join('')||'<div class="vazio">Nenhum registro encontrado. Comece escaneando um produto.</div>';
 }
 $('homeRegister').onclick=function(){mostrarEscolhaRegistro();ir('reg');};
 $('homeMyRecords').onclick=function(){ir('prod');};$('homeSeeAll').onclick=function(){ir('prod');};
