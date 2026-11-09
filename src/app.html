@@ -136,6 +136,66 @@ nav.abas button{font-size:11px;min-height:62px;color:#9fb4c7;gap:3px}nav.abas bu
 .page-heading{margin:4px 2px 14px}.page-heading h2{font-size:22px;font-weight:850;margin:0}.page-heading p{margin:3px 0 0;color:#a9bfd2;font-size:13px}
 @media(max-width:360px){.home-shortcuts{gap:8px}.home-shortcut{padding:12px;min-height:125px}.home-cta{padding:14px;gap:10px}.home-cta strong{font-size:18px}.operator-hello strong{font-size:17px}}
 @media(min-width:600px){.home-cta{min-height:125px}}
+
+/* Refinamento das áreas internas — padrão visual Guanabara */
+#v-prod,#v-pere,#v-alertas,#v-aj{padding-bottom:12px}
+#v-prod>.tiles{gap:9px;margin:2px 0 16px}
+#v-prod>.tiles .tile{min-height:82px;display:flex;flex-direction:column;justify-content:center;gap:3px}
+#v-prod>.tiles .tile b{font-size:clamp(21px,6vw,27px);line-height:1.1}
+#v-prod>#qProd{height:52px;padding-left:16px;background:#0b2032;border-color:#31536f;box-shadow:inset 0 1px 2px #0003}
+#v-prod>#fSetorProd,#v-pere #fSetorPe{margin-bottom:12px}
+#v-prod .chips{gap:8px;margin:4px 0 14px;padding:2px 1px 8px}
+#v-prod .chip{padding:9px 15px;border-radius:12px;font-size:12px}
+#v-prod #listaProd,#v-pere #listaCod,#v-pere #listaPe{background:linear-gradient(145deg,#0d263b,#091c2d);border:1px solid #294b67;border-radius:18px;padding:5px 14px;margin:10px 0 14px;min-height:54px}
+#v-prod #listaProd .vazio,#v-pere #listaCod .vazio,#v-pere #listaPe .vazio{padding:28px 12px}
+#v-prod #listaProd table,#v-pere #listaCod table,#v-pere #listaPe table{margin:0}
+#v-prod #listaProd th,#v-pere #listaCod th,#v-pere #listaPe th{color:#9dbbd3;padding:10px 6px}
+#v-prod #listaProd td,#v-pere #listaCod td,#v-pere #listaPe td{padding:12px 6px}
+#v-prod>.row,#v-pere .row{gap:9px}
+#v-prod>.row .btn,#v-pere .row .btn{min-height:46px}
+#v-pere .sub{position:sticky;top:8px;z-index:5;grid-template-columns:repeat(3,minmax(0,1fr));padding:5px;gap:5px;box-shadow:0 5px 18px #0003}
+#v-pere .sub button{min-height:42px;font-size:13px;border-radius:11px}
+#v-pere .card{padding:17px;margin-bottom:13px}
+#v-pere .card>h2{display:flex;align-items:center;gap:8px}
+#v-pere #pe-reg>.card:first-child{background:linear-gradient(145deg,#103b5b,#0b2942);border-color:#28618a}
+#v-pere #pe-reg>.card:first-child .btn{min-height:54px}
+#v-pere #cardPe{border-color:#2873a7;box-shadow:0 8px 26px #0069b533}
+#v-pere #cardPe .ean,#v-pere #peCod{display:inline-flex;background:#071827;border:1px solid #2b4e68;border-radius:9px;padding:7px 10px;margin-bottom:8px}
+#v-pere #peInfo{margin-top:10px}
+#v-alertas>.card{padding:18px;margin-bottom:14px}
+#v-alertas>.card>h2{font-size:18px;display:flex;align-items:center;gap:9px}
+#v-alertas>.card>h2:before{content:"";width:4px;height:20px;border-radius:4px;background:var(--am)}
+#v-alertas #alertasResumo{gap:8px}
+#v-alertas #alertasResumo .tile{min-height:76px}
+#v-alertas #listaAlertasValidade,#v-alertas #listaNotificacoes{margin-top:12px}
+#v-alertas #listaNotificacoes .vazio{background:#0a1d2d;border:1px dashed #35536b;border-radius:13px}
+#v-alertas #bLerNotificacoes,#v-alertas #bPushAtivar,#v-alertas #bPushDesativar{min-height:46px}
+#v-alertas #pushStatus{padding:12px 13px;background:#091d2e;border:1px solid #294b67;border-radius:12px}
+#v-aj>.card{padding:18px;margin-bottom:14px;position:relative;overflow:hidden}
+#v-aj>.card>h2{font-size:17px;padding-bottom:11px;margin-bottom:12px;border-bottom:1px solid #294a64}
+#v-aj>.card>p{line-height:1.55}
+#v-aj>.card input:not([type=checkbox]),#v-aj>.card select{margin-bottom:3px}
+#v-aj>.card input[type=checkbox]{accent-color:#ffdf00}
+#v-aj .row{gap:9px}
+#v-aj .row .btn{min-height:46px}
+#v-aj #cardConta,#v-aj #cardAuditoria,#v-aj #cardSolicitacoes,#v-aj #cardUsuarios,#v-aj #cardLojasAdmin{border-color:#2d6287;background:linear-gradient(145deg,#102f49,#0a2033)}
+#v-aj #cardUsuarios>h2,#v-aj #cardAuditoria>h2{color:#f6fbff}
+#v-aj #cardUsuarios #usuariosForm{padding:13px;background:#091d2e;border:1px solid #294b67;border-radius:14px}
+#v-aj #listaUsuarios,#v-aj #listaAud,#v-aj #listaSolicitacoes,#v-aj #listaLojasAdmin{overflow-x:auto}
+#v-aj #cardUsuarios .btn,#v-aj #cardLojasAdmin .btn{min-height:46px}
+#v-aj .btn.perigo{background:#521d29;border-color:#8e3543;color:#ffdce0}
+@media(min-width:700px){
+ #v-prod>.tiles{grid-template-columns:repeat(4,minmax(0,1fr))}
+ #v-alertas,#v-aj,#v-pere,#v-prod{max-width:760px;margin-inline:auto}
+ #v-aj>.card{padding:22px}
+}
+@media(max-width:420px){
+ #v-prod>.tiles .tile{padding:10px 5px}
+ #v-prod>.tiles .tile small{font-size:10px}
+ #v-aj>.card,#v-alertas>.card{padding:14px}
+ #v-pere .sub button{font-size:11px;padding-inline:2px}
+}
+
 </style>
 </head>
 <body>
@@ -175,6 +235,7 @@ nav.abas button{font-size:11px;min-height:62px;color:#9fb4c7;gap:3px}nav.abas bu
 
 <!-- ═════════ PRODUTOS ═════════ -->
 <section class="vista" id="v-prod">
+  <div class="page-heading"><h2>Produtos e validades</h2><p>Acompanhe o estoque, os lotes e os prazos de vencimento da loja</p></div>
   <div class="tiles"><div class="tile"><b id="tProd">0</b><small>produtos</small></div><div class="tile"><b id="tLotes">0</b><small>lotes</small></div>
     <div class="tile da"><b id="tVenc">0</b><small>vencidos</small></div><div class="tile wa"><b id="tAlerta">0</b><small>a vencer</small></div></div>
   <input id="qProd" type="search" placeholder="🔎 Buscar produto, código ou lote" style="margin-bottom:10px">
@@ -186,6 +247,7 @@ nav.abas button{font-size:11px;min-height:62px;color:#9fb4c7;gap:3px}nav.abas bu
 
 <!-- ═════════ PERECÍVEIS ═════════ -->
 <section class="vista" id="v-pere">
+  <div class="page-heading"><h2>Gestão de perecíveis</h2><p>Registre etiquetas, consulte códigos e acompanhe os lançamentos</p></div>
   <div class="sub" id="subPere"><button class="on" data-s="reg">Registrar</button><button data-s="cad">Códigos</button><button data-s="lista">Registros</button></div>
   <div id="pe-reg">
     <div class="card">
@@ -225,6 +287,7 @@ nav.abas button{font-size:11px;min-height:62px;color:#9fb4c7;gap:3px}nav.abas bu
 
 <!-- ═════════ ALERTAS COMPARTILHADOS ═════════ -->
 <section class="vista" id="v-alertas">
+  <div class="page-heading"><h2>Central de alertas</h2><p>Priorize os vencimentos e acompanhe as notificações da unidade</p></div>
   <div class="card"><h2>Alertas da loja</h2><p style="margin:0;color:var(--mu);font-size:13px">Validades recebidas do Supabase para a loja ativa. Os alertas internos são compartilhados com todos os usuários vinculados.</p><div id="alertasResumo" class="tiles" style="margin-top:12px"></div><div id="listaAlertasValidade"></div></div>
   <div class="card"><h2>Notificações</h2><div id="listaNotificacoes"><div class="vazio">Carregando notificações…</div></div><button class="btn sec" id="bLerNotificacoes" type="button" style="margin-top:10px">Marcar notificações como lidas</button></div>
   <div class="card"><h2>Push neste aparelho</h2><p id="pushStatus" style="font-size:13px;color:var(--mu)">Verificando suporte…</p><button class="btn" id="bPushAtivar" type="button">Ativar notificações push</button><button class="btn sec" id="bPushDesativar" type="button" style="display:none">Desativar push neste aparelho</button></div>
@@ -232,6 +295,7 @@ nav.abas button{font-size:11px;min-height:62px;color:#9fb4c7;gap:3px}nav.abas bu
 
 <!-- ═════════ AJUSTES ═════════ -->
 <section class="vista" id="v-aj">
+  <div class="page-heading"><h2>Configurações</h2><p>Preferências, conta, sincronização e administração do sistema</p></div>
   <div class="card"><h2>Etiqueta da balança</h2>
     <p style="margin:0;font-size:13px;color:var(--mu)">Etiquetas de balança (EAN-13) começam com <b>2</b>: 2 + código do produto (6 posições, com zeros de preenchimento) + valor (5 dígitos) + dígito verificador.</p>
     <div class="g2"><div><label class="f" for="aDig">Dígitos do código</label><select id="aDig"><option value="4">4 dígitos (2 CCCC 00 VVVVV D)</option><option value="5">5 dígitos (2 CCCCC 0 VVVVV D)</option><option value="6">6 dígitos (2 CCCCCC VVVVV D)</option></select></div>
