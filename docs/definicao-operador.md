@@ -1,87 +1,126 @@
 # Definição funcional — Área do Operador
 
-**Status:** proposta inicial para discussão. Não representa autorização para implementar regras ainda não aprovadas.
+**Status:** definição funcional em andamento. As decisões confirmadas abaixo devem ser preservadas na implementação. Esta documentação não autoriza mudanças de layout ou migrations de produção.
 
 ## Objetivo
 
-Definir, separadamente dos demais perfis, o comportamento da área Operador no front-end e no back-end. O Supabase/PostgreSQL é a fonte oficial dos dados de estoque; o navegador não deve ser requisito para persistência.
+Definir o comportamento da área Operador, respeitando o layout já existente. O Supabase/PostgreSQL é a fonte oficial dos dados; o navegador não deve ser requisito para persistência.
 
-## Escopo do Operador
+## Tela inicial e navegação — confirmado
 
-### Front-end
-- Tela Registrar: localizar produto por EAN, pesquisa manual ou scanner.
-- Mostrar nome do produto e dados relevantes do catálogo.
-- Formulário de lote: lote, quantidade, validade e setor.
-- Formulário de perecível: descrição/código, SIF quando aplicável, peso, validade e setor.
-- O setor é obrigatório nos dois fluxos e deve ser selecionado em lista, sem digitação livre.
-- Lista oficial de setores definida pelo usuário: **Açougue, Laticínios, Padaria, Salgados, FLV e Mercearia**.
-- Não adicionar setores fora dessa lista sem autorização.
+- Ao entrar na área do Operador, a tela inicial já abre diretamente no **modo leitor de código**.
+- No fluxo inicial, o Operador escolhe entre **Produtos industrializados** e **Produtos perecíveis**.
+- Não criar dashboard/painel inicial alternativo nem redesenhar o layout já definido.
+- Após concluir um cadastro com sucesso, o leitor retorna automaticamente para permitir novo registro.
 - Mostrar confirmação somente após resposta positiva do Supabase.
-- Em erro, exibir mensagem útil retornada pelo backend e manter os campos preenchidos.
-- Mostrar claramente a loja ativa e o usuário autenticado.
+- Em erro, exibir mensagem útil e preservar os dados preenchidos.
 - Impedir submissão duplicada enquanto a requisição estiver em andamento.
-- Consulta de registros deve respeitar o escopo da loja autorizada.
-- O filtro por setor na consulta deve usar os mesmos setores selecionados no registro.
+- Mostrar claramente usuário autenticado e loja ativa, conforme layout existente.
 
-### Back-end / Supabase
-- Autenticação obrigatória e sessão JWT do usuário.
-- Validar no banco papel, usuário e loja autorizada; não confiar apenas no front-end.
-- Todas as operações de estoque devem ser vinculadas a `loja_id`.
-- Aplicar RLS para impedir leitura/escrita em lojas não autorizadas.
-- O catálogo compartilhado (`catalogo`) não deve ser confundido com estoque por loja (`produtos`, `lotes`).
-- O setor deve ser persistido como valor/identificador consistente, validado no backend. Preferir referência a cadastro normalizado de setores, caso exista no schema.
-- Registrar autoria e timestamps quando suportados pelo schema.
-- Nunca usar `service_role` no cliente.
-- Considerar RPC transacional para inserir produto/associação e lote atomicamente, evitando gravação parcial.
-- Falhas devem retornar códigos/mensagens claros; a UI só confirma após commit.
+## Funcionalidades e permissões — decisões confirmadas
 
-## Matriz de permissões — proposta inicial
-
-| Ação | Operador |
+| Funcionalidade | Regra |
 |---|---|
-| Consultar catálogo de produtos | Permitido |
-| Registrar lote na loja vinculada | Permitido |
-| Registrar perecível na loja vinculada | Permitido |
-| Consultar estoque/lotes da loja vinculada | Permitido, sujeito à definição de UI |
-| Alterar lote já existente | **A definir** |
-| Excluir lote ou produto | **Não permitido por padrão** |
-| Consultar outra loja | **Não permitido** |
-| Administrar usuários, lojas ou permissões | Não permitido |
+| Consulta | Operador visualiza **todos os registros da loja em que está cadastrado**, independentemente de quem os registrou. |
+| Meus Registros | Operador pode editar **somente os registros criados por ele**. |
+| Histórico | Histórico **pessoal** do Operador, referente às suas próprias ações/registros. |
+| Solicitação de exclusão | Aprovação por **Gerente ou Administrador**. |
+| Após cadastro | Retornar automaticamente ao leitor para novo registro. |
 
-## Fluxos propostos
+A consulta ampla da loja não concede permissão de edição sobre registros de terceiros. A autorização de edição deve ser validada no backend/Supabase, não apenas escondendo controles na interface.
 
-1. Login e seleção de loja autorizada.
-2. Operador escolhe registro convencional ou perecível.
-3. Busca/identifica produto ou perecível.
-4. Seleciona um dos setores oficiais: Açougue, Laticínios, Padaria, Salgados, FLV ou Mercearia.
-5. Front-end valida campos obrigatórios.
-6. Envia requisição ao Supabase com sessão JWT.
-7. Banco aplica RLS e valida loja e setor.
-8. Banco confirma transação.
-9. UI exibe sucesso e atualiza a lista a partir da resposta/consulta ao banco.
-10. Em falha, UI mostra erro e preserva o formulário; não registra sucesso localmente.
+## Registro de produtos
+
+### Industrializados / convencionais
+- Localizar produto por EAN, leitor ou pesquisa manual.
+- Registrar lote, quantidade, validade e setor.
+- O setor é obrigatório.
+
+### Perecíveis
+- Registrar descrição/código, SIF quando aplicável, peso, validade e setor.
+- O setor é obrigatório.
+
+### Setores oficiais
+Lista definida pelo usuário:
+1. Açougue
+2. Laticínios
+3. Padaria
+4. Salgados
+5. FLV
+6. Mercearia
+
+- Setor deve ser selecionado em lista, sem digitação livre.
+- Não adicionar setores fora da lista sem autorização.
+- O filtro de setor na consulta deve usar os mesmos valores usados no registro.
+
+## Back-end / Supabase
+
+- Autenticação obrigatória e sessão JWT.
+- Validar no banco papel, usuário e loja autorizada; não confiar apenas no front-end.
+- Todas as operações de estoque devem estar vinculadas a `loja_id`.
+- RLS deve impedir leitura/escrita em lojas não autorizadas.
+- O catálogo compartilhado (`catalogo`) não deve ser confundido com estoque por loja (`produtos`, `lotes`).
+- Setor deve ser persistido de forma consistente e validado no backend. Preferir referência normalizada, caso exista no schema.
+- Registrar autoria e timestamps.
+- Nunca usar `service_role` no cliente.
+- Considerar RPC transacional para inserir/associar produto e lote atomicamente, evitando gravação parcial.
+- Erros devem retornar mensagens/códigos claros; a UI só confirma após commit.
+- Consulta da loja pode ser ampla, mas edição deve restringir-se aos registros criados pelo Operador autenticado.
+
+## Solicitação de exclusão — regra confirmada, detalhes a definir
+
+- Operador não deve excluir fisicamente registros diretamente.
+- Deve enviar solicitação de exclusão/cancelamento com justificativa obrigatória.
+- A solicitação pode ser aprovada por Gerente **ou** Administrador.
+- Recomenda-se cancelamento lógico com trilha de auditoria, preservando histórico.
+- Definir posteriormente estados (pendente/aprovada/rejeitada/cancelada), notificações e tratamento após aprovação.
+
+## Histórico pessoal
+
+- Exibir as ações/registros associados ao Operador autenticado.
+- Histórico deve ser persistido no backend; não usar localStorage como fonte de auditoria.
+- Idealmente registrar usuário, data/hora, ação, valores anteriores e posteriores e justificativa, quando aplicável.
+- A consulta geral da loja não deve ampliar automaticamente o escopo do histórico pessoal.
+
+## Ajustes — em discussão
+
+Nenhuma configuração de Ajustes foi aprovada ainda. A proposta deve ser discutida antes de implementar.
+
+Princípios:
+- Preferências visuais e operacionais não podem alterar permissões, loja vinculada ou papel do usuário.
+- Preferências locais podem persistir no dispositivo; dados operacionais e de auditoria devem permanecer no Supabase.
+- Evitar configurações que dupliquem regras do motor ou permitam contornar validações.
+
+## Fluxo de registro
+
+1. A área do Operador abre no leitor de código.
+2. Operador escolhe Industrializados ou Perecíveis.
+3. Identifica/busca o produto ou perecível.
+4. Preenche dados obrigatórios e seleciona setor oficial.
+5. Front-end valida campos e envia requisição autenticada.
+6. Supabase valida sessão, loja, papel e permissões.
+7. Banco confirma a transação.
+8. UI exibe sucesso e retorna automaticamente ao leitor.
+9. Em falha, UI mostra erro e preserva os campos para correção/reenvio; não confirma registro.
 
 ## Critérios de aceite
 
-- Operador não consegue consultar nem modificar registros de outra loja, inclusive chamando REST diretamente.
+- Operador consulta todos os registros da própria loja, mas não de outras lojas.
+- Operador só edita registros criados por ele; backend rejeita tentativa de editar registro de outro usuário.
+- Histórico pessoal não inclui ações de terceiros.
+- Solicitação de exclusão requer justificativa e pode ser aprovada por Gerente ou Administrador.
 - Registro só é considerado salvo após confirmação do PostgreSQL.
 - Requisições repetidas não geram duplicidade silenciosa.
-- Erros de validação, RLS, rede e conflito são distinguíveis na interface.
-- A UI não depende de localStorage para confirmar um registro.
-- Testes cobrem acesso permitido e negado para o papel Operador.
+- Erros de validação, RLS, rede e conflito são distinguíveis.
+- UI não depende de localStorage para confirmar registros.
 - Setor é obrigatório em ambos os fluxos e só aceita os seis valores oficiais.
-- Setor registrado corresponde aos filtros de consulta e relatórios.
+- Após salvar, o leitor retorna automaticamente.
+- Layout existente é preservado; nenhuma tela inicial alternativa é criada.
 - Nenhuma alteração de comportamento dos outros perfis nesta etapa.
 
-## Decisões pendentes de Jonatas
-
-1. Operador pode **editar quantidade/validade de lote existente**, ou apenas cadastrar e consultar?
-2. Operador pode visualizar o histórico completo de lotes da própria loja ou somente os registros que ele criou?
-3. Deve existir cancelamento/estorno de registro? Se sim, preferir trilha de auditoria e cancelamento lógico, não exclusão física.
-
-## Fora do escopo desta PR
+## Fora do escopo desta definição
 
 - Implementação de código de produção.
 - Alterações nas áreas Assistente, Analista, Gerente ou Administrador.
 - Alterações ou execução de migrations no Supabase.
-- Mudanças na matriz de permissões dos outros papéis.
+- Mudanças de layout sem autorização.
