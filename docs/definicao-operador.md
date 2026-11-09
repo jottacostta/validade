@@ -152,3 +152,55 @@ Lista definida pelo usuário:
 - Alterações nas áreas Assistente, Analista, Gerente ou Administrador.
 - Alterações ou execução de migrations no Supabase.
 - Mudanças de layout sem autorização.
+
+
+## Instruções obrigatórias para agentes de IA — continuidade do projeto
+
+Esta seção é um handoff operacional para qualquer agente de IA que assumir a implementação ou revisão desta área. Ela complementa os requisitos funcionais acima; não substitui as regras do repositório.
+
+### Antes de iniciar qualquer trabalho
+1. Leia integralmente este documento (`docs/definicao-operador.md`).
+2. Leia `AGENTS.md), README e demais instruções/documentação aplicáveis no repositório. Se houver instruções específicas em diretórios, respeite também essas instruções.
+3. Examine a implementação atual, arquitetura, componentes, rotas, autenticação, schema Supabase, políticas RLS, migrations e testes relevantes antes de propor ou alterar código.
+4. Identifique o comportamento existente e a causa do problema antes de modificar algo. Não presuma que uma implementação está ausente apenas porque não foi localizada superficialmente.
+5. Diferencie explicitamente: requisito confirmado, decisão pendente, hipótese técnica e comportamento já existente.
+
+### Restrições de escopo
+- Preserve o layout e os componentes existentes. Não faça redesign, não crie dashboard/home alternativo e não altere ícones ou identidade visual sem autorização expressa.
+- Trabalhe somente na área Operador, salvo autorização explícita para outras áreas/perfis.
+- Não altere regras de negócio, permissões, setores oficiais ou fluxos definidos neste documento sem autorização.
+- Não invente requisitos para decisões pendentes. Quando uma decisão funcional for necessária, registre a pergunta e solicite confirmação.
+- Não implemente WhatsApp.
+- Não execute migrations, alterações de schema, políticas RLS ou mudanças de dados em produção sem autorização expressa. Para mudanças de banco, apresente antes o plano, impacto e ambiente alvo.
+- Nunca exponha credenciais, tokens, chaves privadas ou `service_role` no frontend, commits, logs ou documentação.
+
+### Processo de desenvolvimento
+1. Explique brevemente o diagnóstico e o escopo proposto antes de alterações relevantes.
+2. Faça mudanças pequenas, isoladas e rastreáveis; evite refatorações não relacionadas.
+3. Crie/atualize testes para os comportamentos afetados, incluindo autorização, isolamento por loja, autoria, validação e erros quando aplicável.
+4. Execute os testes documentados no repositório e as verificações pertinentes (lint, build, testes automatizados e CI). Não declare testes aprovados sem executar e observar o resultado.
+5. Corrija falhas introduzidas ou relacionadas antes de considerar o trabalho concluído. Não ignore falhas de CI nem desative testes para obter aprovação.
+6. Abra ou atualize uma PR para revisão. Não faça merge até que os checks exigidos estejam verdes e haja autorização explícita do usuário para merge.
+7. Não encerre acompanhamento enquanto houver checks, workflows ou testes relevantes em execução, salvo se o usuário pedir para parar.
+
+### Entrega e registro
+Ao concluir cada etapa, informe:
+- diagnóstico e causa identificada;
+- arquivos alterados e resumo objetivo;
+- decisões tomadas e decisões ainda pendentes;
+- testes executados e resultado real (incluindo falhas ou limitações);
+- PR/commit relacionado;
+- riscos, dependências e próximo passo recomendado.
+
+Atualize a documentação quando uma decisão funcional for confirmada ou quando a implementação divergir do comportamento documentado. Não registre hipótese como decisão aprovada.
+
+### Checklist de continuidade
+- [ ] Ler este documento e as instruções do repositório.
+- [ ] Inspecionar implementação atual antes de editar.
+- [ ] Confirmar que o trabalho está dentro do escopo autorizado.
+- [ ] Não inventar nem alterar requisitos pendentes.
+- [ ] Validar autenticação, loja, papel e autoria no backend quando aplicável.
+- [ ] Testar casos positivos, negativos e de erro relevantes.
+- [ ] Executar testes/build/CI e registrar resultados.
+- [ ] Abrir/atualizar PR; aguardar checks e autorização antes do merge.
+- [ ] Documentar mudanças, limitações e pendências.
