@@ -1,6 +1,8 @@
 # Configurar alertas internos e push
 
-Este guia descreve a configuração **posterior**, após revisão e autorização para aplicar a migration e publicar a Edge Function. Nesta entrega, nenhum SQL foi aplicado em banco remoto, nenhuma Function foi publicada e nenhum Cron foi criado.
+Este guia descreve a configuração posterior dos alertas e Web Push. Estado verificado em 2026-11-09: as migrations de solicitações de exclusão e matriz de papéis/ownership já foram aplicadas ao Supabase. A migration de associação catálogo/produto (`20261107120000_produtos_como_associacao.sql`) e a migration desta área (`20261109000000_area_operador_compartilhamento_alertas.sql`) ainda não foram aplicadas; nenhuma Edge Function foi publicada e nenhum Cron foi criado.
+
+As migrations remotas de papéis foram aplicadas como versões `20261109121203_solicitacoes_exclusao_com_aprovacao` e `20261109121652_matriz_papeis_ownership_rls`. A migration de associação de produtos e a migration do Operador devem aguardar a publicação do frontend compatível: a versão atualmente publicada ainda envia `nome` para `produtos` e não envia setor em novos lotes/perecíveis. Aplicar essas duas migrations antes do frontend atualizado interromperia cadastros.
 
 ## O que será configurado
 
@@ -19,7 +21,7 @@ Gere as chaves VAPID localmente com ferramenta confiável instalada no seu compu
 
 ## Publicação após autorização
 
-1. Faça backup e revisão da migration, confira se todas as migrations anteriores requeridas foram aplicadas e programe janela apropriada.
+1. Faça backup e revisão das migrations, confirme a publicação do frontend compatível e confira a sequência/estado das migrations no projeto; programe janela apropriada.
 2. **Somente com autorização explícita**, aplique as migrations versionadas pelo fluxo de deploy de banco aprovado.
 3. **Somente com autorização explícita**, faça deploy de `supabase/functions/alertas` preservando o gateway JWT padrão (não configurar `verify_jwt = false`).
 4. Cadastre os secrets acima no projeto Supabase correto. Não exponha service role nem chave VAPID privada ao navegador.

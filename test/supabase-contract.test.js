@@ -4,6 +4,7 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const app = fs.readFileSync(path.join(root, 'src/app.html'), 'utf8');
 const migration = fs.readFileSync(path.join(root, 'supabase/migrations/20261109000000_area_operador_compartilhamento_alertas.sql'), 'utf8');
+const rolesMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261108130000_matriz_papeis_ownership_rls.sql'), 'utf8');
 const edge = fs.readFileSync(path.join(root, 'supabase/functions/alertas/index.ts'), 'utf8');
 const build = fs.readFileSync(path.join(root, 'build.js'), 'utf8');
 
@@ -26,6 +27,12 @@ test('perfis autorizados a cadastrar e campos de setor validados no cliente', ()
   assert.match(app, /if\(acao==='registrar'\)return \['operador','assistente','analista','gerente'\]\.includes\(p\);/);
   assert.match(app, /SETORES\.includes\(setor\)/);
   assert.match(app, /p_setor:setor/);
+});
+
+test('matriz de papéis do banco aceita gerente e concede insert a papéis globais', () => {
+  assert.match(rolesMigration, /check \(papel in \('operador','assistente','analista','gerente','admin'\)\)/);
+  assert.match(rolesMigration, /private\.tem_escopo_global\(\).*private\.meu_papel\(\) <> ''admin''/);
+  assert.match(rolesMigration, /array\['analista','gerente','admin'\]/);
 });
 
 test('lote é gravado atomicamente por RPC, incluindo catálogo, associação, setor e autoria do servidor', () => {

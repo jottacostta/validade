@@ -277,6 +277,8 @@ tflaky('mobile: sem rolagem horizontal nas telas com tabela (360px)', { skip: pu
     prod: { '7891000315507': { nome: 'Café Torrado e Moído Nome Bem Comprido Para Testar', lotes: [lote('x', '2031-01-01', 5, 'L1')] } },
     pere: { itens: { '1246': { desc: 'Pernil Suíno Fracionado Descrição Grande', sif: '876-040326' } }, regs: [{ id: 'r', cod: '1246', sif: '876-040326', peso: 0.33, val: '2026-11-09' }] } } });
   const semOverflow = async () => a.p.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
+  await a.p.click('nav button[data-v="reg"]');
+  await a.p.click('#bTipoIndustrial');
   await a.p.fill('#tCodigo', '7891000315507'); await a.p.click('#bBuscar');
   await a.p.waitForSelector('#cardProd', { state: 'visible' });           // tabela de lotes
   assert.ok(await semOverflow(), 'tela Registrar/produto não pode rolar horizontalmente');

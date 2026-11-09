@@ -180,13 +180,13 @@ grant select, insert, update on public.catalogo to authenticated;
 -- ============================================================================
 
 -- ============================================================================
--- PAPÉIS (hierarquia): operador < assistente < analista < admin
+-- PAPÉIS (hierarquia): operador < assistente < analista/gerente < admin
 -- Aplicado ao vivo via MCP; aqui para reproduzir do zero (rode após o bloco acima).
 -- ============================================================================
 create table if not exists public.perfis (
   id uuid primary key references auth.users(id) on delete cascade,
   nome text,
-  papel text not null default 'operador' check (papel in ('operador','assistente','analista','admin')),
+  papel text not null default 'operador' check (papel in ('operador','assistente','analista','gerente','admin')),
   criado timestamptz not null default now()
 );
 alter table public.perfis enable row level security;
