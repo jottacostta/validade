@@ -111,6 +111,7 @@ nav.abas #alertBadge{font-size:10px;line-height:16px;background:var(--da);color:
 @media(max-width:420px){#editarLojas{grid-template-columns:1fr}}
 
 /* Guanabara Operator Design System v1 */
+.operator-role-pill{display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:5px 12px;border-radius:999px;background:#ffdf00;color:#062b54;font-size:12px;font-weight:900;letter-spacing:.1px;box-shadow:0 2px 8px #0002}
 :root{--bg:#061321;--sf:#0d2235;--sf2:#102b43;--bd:#244967;--ink:#f3f7fc;--mu:#a8bfd2;--c:#0878e8;--c2:#123d70;--c3:#064a91;--am:#ffdf00;--ok:#19c46a;--okl:#0e3929;--wa:#ffad21;--wal:#47300a;--da:#ff3b45;--dal:#471a24;color-scheme:dark}
 body{background:radial-gradient(120% 70% at 50% -10%,#123b66 0%,#071a2c 48%,#04101c 100%);color:var(--ink);padding-bottom:calc(94px + env(safe-area-inset-bottom))}
 header{background:linear-gradient(120deg,#052653 0%,#0755a5 65%,#087be8 100%);border-bottom:5px solid var(--am);padding:calc(12px + env(safe-area-inset-top)) 16px 14px;box-shadow:0 8px 22px #0004}
@@ -139,7 +140,7 @@ nav.abas button{font-size:11px;min-height:62px;color:#9fb4c7;gap:3px}nav.abas bu
 </head>
 <body>
 <div id="splash"><div class="sp-logo"><img id="splashLogo" alt="" style="display:none"><span id="splashIni">📅</span></div><div class="sp-nome">/*NOME_HTML*/</div><div class="sp-sub">Controle de validade e perecíveis</div><span class="gira"></span><div class="barra-am"></div></div>
-<header><div class="hdr-in"><img id="hdrLogo" alt="" class="hdr-logo" style="display:none"><div style="min-width:0"><h1>/*NOME_HTML*/</h1><p id="slogan">Lotes, validades e perecíveis</p><p id="lojaAtualLabel" class="ean" style="margin:3px 0 0"></p></div><button id="bLogoutHdr" class="hdr-logout" type="button">Sair</button></div></header>
+<header><div class="hdr-in"><img id="hdrLogo" alt="" class="hdr-logo" style="display:none"><div style="min-width:0"><h1>/*NOME_HTML*/</h1><p id="slogan">Lotes, validades e perecíveis</p><span class="operator-role-pill" id="operatorRolePill">♙ Área do Operador</span><p id="lojaAtualLabel" class="ean" style="margin:3px 0 0"></p></div><button id="bLogoutHdr" class="hdr-logout" type="button">Sair</button></div></header>
 <main>
 
 <!-- ═════════ REGISTRAR ═════════ -->
@@ -383,6 +384,7 @@ function renderHome(){
  var nome=(SESS&&(SESS.nome||SESS.usuario||SESS.email))||'Operador';nome=String(nome).split(/[\\s@]/)[0]||'Operador';
  var loja=(SESS&&SESS.lojaNome)||'Loja não selecionada';
  if($('homeGreeting'))$('homeGreeting').textContent='Olá, '+nome+'!';
+ var roleTxt=(SESS&&SESS.papel&&PAPEIS&&PAPEIS[SESS.papel])||'Operador';if($('operatorRolePill'))$('operatorRolePill').textContent='♙ Área do '+roleTxt;
  if($('homeStore'))$('homeStore').textContent=loja;
  var nAlert=todosRegistros().filter(function(x){var n=dias(x.reg.val);return n!==null&&n<=D.aj.dias;}).length;
  ['homeBellBadge','homeAlertsBadge'].forEach(function(id){var b=$(id);if(b){b.textContent=nAlert>99?'99+':String(nAlert);b.style.display=nAlert?'':'none';}});
@@ -860,7 +862,7 @@ function sincronizarLoja(){
       console.warn('Falha ao persistir dados recebidos na sincronização:',e);
       throw e;
     }
-    renderAlertas();var abaAtiva=document.querySelector('#abas button.on');if(abaAtiva){if(abaAtiva.dataset.v==='prod')listaProdutos();else if(abaAtiva.dataset.v==='pere')subPere(subAtual);else if(abaAtiva.dataset.v==='alertas')carregarNotificacoes();else if(abaAtiva.dataset.v==='aj')contaCard();}
+    renderAlertas();var abaAtiva=document.querySelector('#abas button.on');if(abaAtiva){if(abaAtiva.dataset.v==='home')renderHome();if(abaAtiva.dataset.v==='prod')listaProdutos();else if(abaAtiva.dataset.v==='pere')subPere(subAtual);else if(abaAtiva.dataset.v==='alertas')carregarNotificacoes();else if(abaAtiva.dataset.v==='aj')contaCard();}
     SYNC.loja=SESS.lojaId;SYNC.recebido=Date.now();salvarSync();return n;
   }).catch(function(e){console.warn('Sincronização da loja falhou:',e);return -1;}).then(function(n){sincronizacaoEmAndamento=false;return n;},function(e){sincronizacaoEmAndamento=false;throw e;});
 }
@@ -910,7 +912,7 @@ function mostrarLojas(){if(SESS&&SESS.forcePasswordChange){mostrarTrocaSenhaPrim
     sel.disabled=false;btn.disabled=!sel.value;
   },function(){sel.innerHTML='<option value="">Falha ao carregar lojas</option>';});
   sel.onchange=function(){btn.disabled=!sel.value;};}
-function entrarLojaSelecionada(){var sel=$('selectLoja'),id=sel.value,l=sel.options[sel.selectedIndex];if(!id||!l||!SESS)return;SESS.lojaId=id;SESS.lojaNome=l.textContent;salvarSess();salvarUltimaLoja();carregarPapel();fecharConta();toast('Loja: '+SESS.lojaNome);catalogoPull().then(function(n){if(n)toast('Catálogo: +'+n+' produto'+(n>1?'s':''));return sincronizarLoja();}).then(function(n){if(n>0)toast('Dados compartilhados atualizados');backupNuvem();});agendarSincronizacaoPeriodica();auditar('entrou_na_loja');var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='aj')contaCard();}
+function entrarLojaSelecionada(){var sel=$('selectLoja'),id=sel.value,l=sel.options[sel.selectedIndex];if(!id||!l||!SESS)return;SESS.lojaId=id;SESS.lojaNome=l.textContent;salvarSess();salvarUltimaLoja();carregarPapel();fecharConta();toast('Loja: '+SESS.lojaNome);catalogoPull().then(function(n){if(n)toast('Catálogo: +'+n+' produto'+(n>1?'s':''));return sincronizarLoja();}).then(function(n){if(n>0)toast('Dados compartilhados atualizados');backupNuvem();});agendarSincronizacaoPeriodica();auditar('entrou_na_loja');renderHome();var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='aj')contaCard();}
 $('bSelecionarLoja').onclick=entrarLojaSelecionada;
 $('conta').addEventListener('click',function(e){if(e.target===$('conta'))fecharConta();});
 $('bEntrar').onclick=function(){var u=$('cUser').value.trim(),pw=$('cPass').value;if(!u||!pw){captchaErro('Preencha usuário e senha.');return;}
