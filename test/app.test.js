@@ -550,6 +550,28 @@ tflaky('papel operador: Registrar visível; códigos (cadastro) escondido', { sk
   await a.fechar();
 });
 
+tflaky('papel: carregarPapel busca o PRÓPRIO perfil (filtra por id), não o de outro usuário', { skip: pular }, async () => {
+  // admin/analista/gerente enxergam vários perfis via RLS; sem filtro por id o
+  // limit=1 pegaria o papel de outra pessoa. A rota devolve o papel conforme o id pedido.
+  let pediuId = null;
+  const a = await abrirLogado(async p => {
+    await p.route(R_PULL, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.route(R_PERFIL, r => {
+      const url = r.request().url();
+      pediuId = /[?&]id=eq\.([^&]+)/.exec(url);
+      const u = pediuId && decodeURIComponent(pediuId[1]);
+      // se filtrou pelo próprio uid (u1) → admin; senão devolve OUTRO (analista)
+      const papel = u === 'u1' ? 'admin' : 'analista';
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ papel, nome: papel }]) });
+    });
+    for (const t of ['produtos', 'lotes', 'pere_itens', 'pere_regs']) await p.route(new RegExp('/rest/v1/' + t + '\\?on_conflict'), r => r.fulfill({ status: 201, body: '' }));
+  });
+  await a.p.waitForFunction(() => { try { return JSON.parse(localStorage.getItem('validade_sessao')).papel === 'admin'; } catch (e) { return false; } });
+  assert.ok(pediuId, 'a requisição de perfis precisa filtrar por id=eq.<uid>');
+  assert.strictEqual(decodeURIComponent(pediuId[1]), 'u1');
+  await a.fechar();
+});
+
 tflaky('gestão de usuários: assistente visualiza card, cria operador e envia payload ao endpoint', { skip: pular }, async () => {
   let payloadCriar=null;
   const a=await abrirLogado(async p=>{

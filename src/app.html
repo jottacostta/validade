@@ -791,7 +791,10 @@ function aplicarPapel(){var reg=pode('registrar'),ed=pode('editar'),aj=pode('aju
   if(!reg){var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='reg')ir('prod');}}
 function carregarPapel(){if(!sbOn()||!logado())return Promise.resolve();
   carregarPrefs();
-  return sbReq('/rest/v1/perfis?select=papel,nome&limit=1').then(function(r){var d=r.ok&&Array.isArray(r.dados)&&r.dados[0];if(d){SESS.papel=d.papel;SESS.nome=d.nome;salvarSess();}aplicarPapel();if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();return d;},function(){aplicarPapel();if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();});}
+  /* Filtra pelo próprio id: admin/analista/gerente enxergam vários perfis (RLS),
+     então sem o filtro o limit=1 traria o papel de OUTRO usuário. */
+  var alvo='/rest/v1/perfis?select=papel,nome'+((SESS&&SESS.uid)?'&id=eq.'+encodeURIComponent(SESS.uid):'')+'&limit=1';
+  return sbReq(alvo).then(function(r){var d=r.ok&&Array.isArray(r.dados)&&r.dados[0];if(d){SESS.papel=d.papel;SESS.nome=d.nome;salvarSess();}aplicarPapel();if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();return d;},function(){aplicarPapel();if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();});}
 /* ── token do Cosmos por usuário ──
    Com Supabase: cada usuário guarda o seu token em public.preferencias (RLS: só a própria linha),
    então ele vale em qualquer aparelho. Sem Supabase (modo local), usa D.aj.cosmos. */
