@@ -852,6 +852,22 @@ tflaky('papel: carregarPapel busca o PRÓPRIO perfil (filtra por id), não o de 
   await a.fechar();
 });
 
+tflaky('papel admin remoto substitui sessão antiga de Operador e restaura a central administrativa', { skip: pular }, async () => {
+  const a = await abrirLogado(p => rotasBase(p, 'admin'), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador', nome: 'admin' });
+  await a.p.waitForFunction(() => { try { return JSON.parse(localStorage.getItem('validade_sessao')).papel === 'admin'; } catch (e) { return false; } });
+  assert.strictEqual(await a.p.isVisible('#homeRegister'), true, 'permissões atualizadas de admin permitem registrar');
+  assert.strictEqual(await a.p.textContent('#homeStore'), 'Administrador · Loja Teste', 'home deve atualizar o papel exibido');
+  assert.strictEqual(await a.p.locator('#operatorRolePill').textContent(), 'Área do Administrador', 'cabeçalho deve refletir o papel confirmado');
+  await a.p.click('nav button[data-v="aj"]');
+  assert.strictEqual(await a.p.textContent('#sysMenuTitle'), 'Ajustes do Sistema');
+  assert.strictEqual(await a.p.isVisible('#sysMenu [data-sys-open="lojas"]'), true, 'admin recupera administração de lojas');
+  assert.strictEqual(await a.p.isVisible('#sysMenu [data-sys-open="catalogo"]'), true, 'admin recupera administração do catálogo');
+  assert.strictEqual(await a.p.isVisible('#sysMenu [data-sys-open="auditoria"]'), true, 'admin recupera auditoria');
+  assert.strictEqual(await a.p.isVisible('#sysMenu [data-sys-open="op-preferencias"]'), false, 'menu exclusivo de Operador não aparece para admin');
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
+
 tflaky('gestão de usuários: assistente visualiza card, cria operador e envia payload ao endpoint', { skip: pular }, async () => {
   let payloadCriar=null;
   const a=await abrirLogado(async p=>{

@@ -1963,7 +1963,19 @@ function carregarPapel(){if(!sbOn()||!logado())return Promise.resolve();
   /* Filtra pelo próprio id: admin/analista/gerente enxergam vários perfis (RLS),
      então sem o filtro o limit=1 traria o papel de OUTRO usuário. */
   var alvo='/rest/v1/perfis?select=papel,nome'+((SESS&&SESS.uid)?'&id=eq.'+encodeURIComponent(SESS.uid):'')+'&limit=1';
-  return sbReq(alvo).then(function(r){var d=r.ok&&Array.isArray(r.dados)&&r.dados[0];if(d){SESS.papel=d.papel;SESS.nome=d.nome;salvarSess();}aplicarPapel();if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();return d;},function(){aplicarPapel();if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();});}
+  return sbReq(alvo).then(function(r){var d=r.ok&&Array.isArray(r.dados)&&r.dados[0];if(d){SESS.papel=d.papel;SESS.nome=d.nome;salvarSess();}
+    else if(r.ok){SESS.papel=null;salvarSess();}
+    atualizarInterfacePapel();return d;},function(){aplicarPapel();if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();});}
+function atualizarInterfacePapel(){
+  aplicarPapel();atualizarBotaoLogout();atualizarContextoLoja();
+  if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();
+  if(vistaAtual==='home')renderHome();
+  if(vistaAtual==='aj'){
+    var destino=ajVista;
+    if(destino==='system'||destino==='settings')destino=podeVerMenuAjustes()?'system':'settings';
+    mostrarVistaAjustes(destino);ajustes();
+  }
+}
 /* ── token do Cosmos por usuário ──
    Com Supabase: cada usuário guarda o seu token em public.preferencias (RLS: só a própria linha),
    então ele vale em qualquer aparelho. Sem Supabase (modo local), usa D.aj.cosmos. */
