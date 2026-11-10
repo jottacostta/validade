@@ -480,6 +480,39 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 .pager button{display:flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:1px solid #3c6a8e;border-radius:12px;background:#0a2136;color:#fff;font:600 clamp(14px,3.9vw,17px) system-ui}
 .pager button:disabled{opacity:.45}.pager .ico{width:20px;height:20px;stroke-width:2.4}.pager-info{color:#fff;font-size:clamp(14px,3.9vw,17px)}
 #v-prod>.row .btn,#pe-lista>.row .btn{display:flex;align-items:center;justify-content:center;min-height:46px}
+
+/* ───── Configurações, Perfil, Alterar Senha, Sobre e Buscar (referências Guanabara) ───── */
+.sys-card>h3{display:flex;align-items:center;gap:10px;margin:0 0 4px;padding-bottom:8px;border-bottom:1px solid #2c5373;font-size:clamp(17px,4.8vw,21px)}.sys-card>h3 .ico{width:26px;height:26px}
+.sys-row{display:grid;grid-template-columns:28px minmax(0,1fr) minmax(0,1.1fr);align-items:center;gap:8px;padding:8px 0;border-top:1px solid #2c5373}.sys-card>h3+.sys-row,.about-row h3+.sys-row{border-top:0}
+.sys-row .ico{width:22px;height:22px}.sys-row span{font-size:clamp(14px,3.9vw,17px)}.sys-row b{font-weight:500;font-size:clamp(14px,3.9vw,17px);overflow-wrap:anywhere}
+.pref-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid #2c5373;cursor:pointer}.sys-card>h3+.pref-row{border-top:0}
+.pref-row>.ico{width:30px;height:30px}.pref-row>span{flex:1;min-width:0}.pref-row b{display:block;font-size:clamp(15px,4.2vw,18px)}.pref-row small,.opt-row small{display:block;color:#d5e3f0;font-size:clamp(12px,3.4vw,15px);font-weight:400}
+.switch{appearance:none;-webkit-appearance:none;flex:none;position:relative;width:58px!important;height:32px;padding:0!important;border:0!important;border-radius:999px!important;background:#2f5475!important;cursor:pointer;transition:background .15s}
+.switch:after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:left .15s}
+.switch:checked{background:#0a7ef0!important}.switch:checked:after{left:29px}
+.opt-row b{display:block;font-weight:700}.sys-card .opt-row{border:0;border-top:1px solid #2c5373;border-radius:0;background:transparent;margin-top:0;padding:8px 2px;min-height:58px}.sys-card>h3+.opt-row{border-top:0}
+#cfgSair{margin:0 0 16px}.adv-title{margin:6px 2px 10px;color:#cfe0ef;font-size:15px}
+.profile-head{display:flex;align-items:center;gap:16px}
+.profile-avatar{display:flex;align-items:center;justify-content:center;flex:none;width:clamp(72px,21vw,96px);height:clamp(72px,21vw,96px);border:2px solid #7cc4ff;border-radius:50%;background:linear-gradient(160deg,#0a8cff,#0756c4);color:#fff}.profile-avatar .ico{width:60%;height:60%;fill:#fff;stroke:none}
+.profile-id{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;padding-left:14px;border-left:1px solid #5d87ab}.profile-id strong{font-size:clamp(20px,5.8vw,26px);overflow-wrap:anywhere}.profile-id>span:not(.chip){font-size:clamp(14px,3.9vw,17px);color:#e3edf7}
+.profile-logout{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;border:1.5px solid #f04a55;background:#0a2136;color:#fff}
+.pw-head{display:flex;align-items:center;gap:14px;margin:-2px 0 6px;padding-bottom:12px;border-bottom:1px solid #2c5373}.pw-head h2{margin:0;font-size:clamp(20px,5.6vw,25px)}.pw-head p{margin:2px 0 0;color:#d5e3f0;font-size:clamp(13px,3.7vw,16px)}
+.pw-head-ico{display:flex;align-items:center;justify-content:center;flex:none;width:64px;height:64px;border-radius:14px;background:linear-gradient(160deg,#0a8cff,#0756c4);color:#ffdf00}.pw-head-ico .ico{width:36px;height:36px;stroke-width:2.2}
+.pw-card label.f{font-size:clamp(15px,4.2vw,18px);font-weight:700;color:#fff;margin:12px 0 6px}
+.pw-field{display:flex;align-items:center;gap:6px;padding:0 6px 0 12px;border:1px solid #5d87ab;border-radius:13px;background:#0b2238}.pw-field>.ico{width:24px;height:24px}
+.pw-field input{flex:1;min-width:0;min-height:50px;border:0;background:transparent}.pw-field button{display:flex;padding:8px;border:0;background:none;color:#fff}.pw-field button.on{color:#7cc4ff}
+.tip-box{display:flex;align-items:flex-start;gap:12px;margin:14px 0;padding:12px 14px;border:1px solid #3c6a8e;border-radius:14px;background:#0d3157;color:#fff;font-size:clamp(13px,3.7vw,16px)}.tip-box>.ico{width:30px;height:30px}.tip-box ul{margin:4px 0 0;padding-left:18px}
+.pw-actions .btn{display:flex;align-items:center;justify-content:center;min-height:52px}.pw-actions .btn.sec{border:1.5px solid #fff;background:#0a2a47;color:#fff}
+.about-top{display:flex;align-items:center;gap:14px}.about-top h2{margin:0;font-size:clamp(21px,6vw,27px)}.about-top p{margin:2px 0 8px;color:#bfe0ff;font-size:clamp(13px,3.7vw,16px)}
+.about-app{display:flex;align-items:center;justify-content:center;flex:none;width:clamp(72px,21vw,94px);height:clamp(72px,21vw,94px);border-radius:18px;background:linear-gradient(160deg,#0a8cff,#0756c4);color:#fff}.about-app .ico{width:60%;height:60%}
+.about-ver{display:inline-flex;align-items:center;border:1px solid #7cc4ff;border-radius:999px;overflow:hidden;font-size:clamp(13px,3.7vw,16px)}.about-ver em{font-style:normal;font-weight:800;padding:5px 12px;background:#ffdf00;color:#1a1400}.about-ver b{padding:5px 14px}
+.about-row{display:flex;align-items:flex-start;gap:12px}.about-row h3{margin:0 0 4px;font-size:clamp(18px,5vw,22px)}.about-row p{margin:0;font-size:clamp(13px,3.7vw,16px);line-height:1.35}
+.about-ico{display:flex;align-items:center;justify-content:center;flex:none;width:52px;height:52px;border-radius:13px;background:#ffd21f;color:#1a1400}.about-ico .ico{width:30px;height:30px;stroke-width:2.2}
+.about-feats{display:grid;grid-template-columns:repeat(4,1fr);margin-top:12px;padding-top:10px;border-top:1px solid #2c5373}.about-feats span{display:flex;flex-direction:column;align-items:center;gap:4px;padding:0 4px;border-left:1px solid #2c5373;text-align:center;font-size:clamp(11px,3.1vw,14px)}.about-feats span:first-child{border-left:0}.about-feats .ico{width:28px;height:28px}
+.busca-head{display:flex;align-items:center;gap:10px;margin:0 0 10px;padding:10px 14px;border:1px solid #2c5373;border-radius:14px;background:#0d2a44;font:800 clamp(16px,4.5vw,20px) system-ui}
+.busca-card .alert-thumb{width:clamp(60px,17vw,76px);height:clamp(60px,17vw,76px)}.busca-card .alert-copy small{white-space:normal}.busca-card{align-items:flex-start}.busca-card .chip,.busca-card .chev{align-self:center}
+#v-prod .operator-toolbar #bAbrirBusca .ico{width:24px;height:24px}
+.notification-tabs .ico{width:1.1em;height:1.1em;vertical-align:-.2em;margin-right:3px}.notification-actions .btn{display:flex;align-items:center;justify-content:center}
 </style>
 </head>
 <body>
@@ -567,7 +600,7 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 <!-- ═════════ PRODUTOS ═════════ -->
 <section class="vista" id="v-prod">
   <div class="operator-page-intro"><span class="operator-page-icon amber" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg></span><div><h2>Meus Registros</h2><p>Consulte, pesquise e gerencie os produtos registrados por você.</p></div></div>
-  <div class="operator-toolbar"><input id="qProd" type="search" placeholder="Pesquise por produto, lote ou código de barras"><button class="btn sec" id="bBuscaProduto" type="button" aria-label="Escanear código de barras"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V4h3M18 4h3v3M21 17v3h-3M6 20H3v-3M6 12h12M8 9v6M11 8v8M14 10v4M17 9v6"/></svg></button></div>
+  <div class="operator-toolbar"><input id="qProd" type="search" placeholder="Pesquise por produto, lote ou código de barras"><button class="btn sec" id="bAbrirBusca" type="button" aria-label="Buscar em todos os registros"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.3-4.3"/></svg></button><button class="btn sec" id="bBuscaProduto" type="button" aria-label="Escanear código de barras"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V4h3M18 4h3v3M21 17v3h-3M6 20H3v-3M6 12h12M8 9v6M11 8v8M14 10v4M17 9v6"/></svg></button></div>
   <div class="operator-filter-row"><select id="fPeriodoProd" aria-label="Filtrar por período"><option value="">Período</option><option value="7">Últimos 7 dias</option><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select>
     <select id="fSetorProd" aria-label="Filtrar por setor"><option value="">Setor</option><option>Açougue</option><option>Laticínios</option><option>Padaria</option><option>Salgados</option><option>FLV</option><option>Mercearia</option></select>
     <select id="fSituacaoProd" aria-label="Filtrar por situação"><option value="">Situação</option><option value="validos">Válidos</option><option value="alerta">Próximos do vencimento</option><option value="vencidos">Vencidos</option></select><button class="btn-filtrar" id="bFiltrarProd" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6.2 7.5V19l-3.6-2v-4.5z"/></svg><span>Filtrar</span></button></div>
@@ -612,6 +645,14 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
     <button class="btn perigo" id="bEditDelete" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M9.5 7V4.5h5V7M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg><span>Excluir registro</span></button></div>
 </section>
 
+<section class="vista" id="v-busca">
+  <div class="operator-toolbar"><input id="qBusca" type="search" placeholder="Digite o nome, código (EAN) ou lote do produto" aria-label="Buscar produto"><button class="btn sec" id="bBuscaScan" type="button" aria-label="Escanear código de barras"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5.5a1.5 1.5 0 0 1 1.5-1.5H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M8 9v6M11 9v6M14 9v6M17 9v6"/></svg></button></div>
+  <div class="alert-filters" id="buscaFiltros" role="group" aria-label="Tipo de produto"><button type="button" class="on" data-busca="all" aria-pressed="true">Todos</button><button type="button" data-busca="lote" aria-pressed="false">Industrializados</button><button type="button" data-busca="pere" aria-pressed="false">Perecíveis</button></div>
+  <div class="busca-head"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg><span id="buscaTitulo">Resultados da busca (0)</span></div>
+  <div id="buscaResultados" class="alert-list"></div>
+  <div class="tip-box"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.5v.3"/></svg><div><b>Dicas de busca</b><br>Pesquise pelo nome do produto, código de barras (EAN) ou número do lote.</div></div>
+</section>
+
 <!-- ═════════ PERECÍVEIS ═════════ -->
 <section class="vista" id="v-pere">
   <div class="operator-page-intro"><span class="operator-page-icon" aria-hidden="true"><svg class="ico meat" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12.5c0-4.4 4.3-7.5 9.6-7.5 4.3 0 7.4 2.1 7.4 5.1 0 2.2-1.4 3.4-3.5 4.2-2 .8-3.1 1.8-4.8 3.5-1.3 1.3-3.5 1.5-5.5.5-2-1-3.2-3-3.2-5.8z"/><circle cx="14.6" cy="10" r="1.9"/></svg></span><div><h2>Registros de Perecíveis</h2><p>Acompanhe produtos, lotes e condições de armazenamento.</p></div></div>
@@ -638,7 +679,7 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 
 <!-- ═════════ ALERTAS COMPARTILHADOS ═════════ -->
 <section class="vista" id="v-alertas">
-  <div class="operator-page-intro"><span class="operator-page-icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 6-2.5 6.5-2.5 8.5h17c0-2-2.5-2.5-2.5-8.5M10 20.5h4"/></svg></span><div><h2 id="alertViewTitle">Alertas da loja</h2><p id="alertViewSubtitle">Acompanhe produtos vencidos e próximos do vencimento.</p></div></div>
+  <div class="operator-page-intro"><span class="operator-page-icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 6-2.5 6.5-2.5 8.5h17c0-2-2.5-2.5-2.5-8.5M10 20.5h4"/></svg></span><div><h2 id="alertViewTitle">Suas Notificações</h2><p id="alertViewSubtitle">Acompanhe alertas, vencimentos e avisos do sistema.</p></div></div>
   <div class="operator-tabs" id="alertViewTabs" role="tablist" aria-label="Alertas e notificações"><button class="on" type="button" data-alert-view="alerts" aria-pressed="true">Alertas</button><button type="button" data-alert-view="notifications" aria-pressed="false">Notificações</button></div>
   <div id="alertasMain">
     <div class="alert-counters">
@@ -651,17 +692,30 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
     <div id="listaAlertasValidade" class="alert-list"></div>
     <div class="row alert-actions"><button class="btn sec" id="bAlertExport" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 11l4.5 4.5 4.5-4.5M5 19.5h14"/></svg><span>Exportar relatório</span></button><button class="btn sec" id="bAlertSort" type="button" aria-expanded="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6.2 7.5V19l-3.6-2v-4.5z"/></svg><span>Filtrar / Ordenar</span></button></div>
   </div>
-  <div class="card" id="cardNotificacoes" style="display:none"><h2>Suas notificações</h2><div class="notification-tabs" id="notificationTabs" role="tablist" aria-label="Filtrar notificações"><button type="button" class="on" data-notif-filter="all" aria-pressed="true">Todas <span id="notifCountAll">0</span></button><button type="button" data-notif-filter="alerts" aria-pressed="false">⚠ Alertas <span id="notifCountAlerts">0</span></button><button type="button" data-notif-filter="system" aria-pressed="false">ⓘ Sistema <span id="notifCountSystem">0</span></button><button type="button" data-notif-filter="news" aria-pressed="false">Avisos <span id="notifCountNews">0</span></button></div><div id="listaNotificacoes"><div class="vazio">Carregando notificações…</div></div><div class="row notification-actions"><button class="btn sec" id="bLerNotificacoes" type="button">✓ Marcar todas como lidas</button><button class="btn sec" id="bAtualizarNotificacoes" type="button">↻ Atualizar</button></div></div>
+  <div class="card" id="cardNotificacoes" style="display:none"><div class="notification-tabs" id="notificationTabs" role="tablist" aria-label="Filtrar notificações"><button type="button" class="on" data-notif-filter="all" aria-pressed="true">Todas <span id="notifCountAll">0</span></button><button type="button" data-notif-filter="alerts" aria-pressed="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4zM12 10v4.5M12 17.3v.2"/></svg>Alertas <span id="notifCountAlerts">0</span></button><button type="button" data-notif-filter="system" aria-pressed="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.5v.3"/></svg>Sistema <span id="notifCountSystem">0</span></button><button type="button" data-notif-filter="news" aria-pressed="false">Avisos <span id="notifCountNews">0</span></button></div><div id="listaNotificacoes"><div class="vazio">Carregando notificações…</div></div><div class="row notification-actions"><button class="btn sec" id="bLerNotificacoes" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><span>Marcar todas como lidas</span></button><button class="btn sec" id="bAtualizarNotificacoes" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg><span>Atualizar</span></button></div></div>
   <div class="card" id="pushCard" style="display:none"><h2>Push neste aparelho</h2><p id="pushStatus" style="font-size:13px;color:var(--mu)">Verificando suporte…</p><button class="btn" id="bPushAtivar" type="button">Ativar notificações push</button><button class="btn sec" id="bPushDesativar" type="button" style="display:none">Desativar push neste aparelho</button></div>
 </section>
 
 <!-- ═════════ AJUSTES ═════════ -->
 <section class="vista" id="v-aj">
-  <div class="operator-page-intro"><span class="operator-page-icon" id="settingsViewIcon" aria-hidden="true">⚙</span><div><h2 id="settingsViewTitle">Ajustes</h2><p id="settingsViewSubtitle">Preferências, sistema e ajuda.</p></div></div>
-  <div class="operator-tabs" id="settingsTabs" role="tablist" aria-label="Perfil e ajustes"><button class="on" type="button" data-settings-view="settings" aria-pressed="true">Ajustes</button><button type="button" data-settings-view="profile" aria-pressed="false">Perfil do Operador</button></div>
+  <div class="operator-tabs" id="settingsTabs" role="tablist" aria-label="Configurações e perfil"><button class="on" type="button" data-settings-view="settings" aria-pressed="true">Configurações</button><button type="button" data-settings-view="profile" aria-pressed="false">Perfil do Operador</button></div>
   <div id="profileArea" style="display:none">
-  <div class="card operator-profile-card" id="operatorProfileCard"><div class="operator-profile-top"><div class="operator-profile-avatar" aria-hidden="true">👤</div><div class="operator-profile-identity"><strong id="profileName">Operador</strong><span id="profileLogin">—</span><span class="st ok" id="profileStatus">Sessão ativa</span></div></div><div class="operator-profile-data"><div><small>Loja / Filial</small><b id="profileStore">Não selecionada</b></div><div><small>Função</small><b id="profileRole">Operador</b></div><div><small>Setor de atuação</small><b id="profileSector">Não informado</b></div><div><small>Dispositivo</small><b id="profileDevice">Navegador</b></div></div><div class="row operator-profile-actions"><button class="btn sec" id="profileAccount" type="button">Conta e segurança</button><button class="btn perigo" id="profileLogout" type="button">Sair da conta</button></div></div>
-  </div><div id="preferencesArea">
+    <div class="card profile-head" id="operatorProfileCard"><span class="profile-avatar" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/></svg></span><div class="profile-id"><strong id="profileName">Operador</strong><span id="profileLogin">—</span><span class="chip ok" id="profileStatus">Sessão ativa</span></div></div>
+    <div class="card sys-card"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5V20h16v-9.5M3 6.5 4.5 4h15L21 6.5V8a2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0A2.2 2.2 0 0 1 3 8zM9.5 20v-5h5v5"/></svg>Dados Operacionais</h3><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5V20h16v-9.5M3 6.5 4.5 4h15L21 6.5V8a2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0A2.2 2.2 0 0 1 3 8zM9.5 20v-5h5v5"/></svg><span>Loja / Filial</span><b id="profileStore">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/></svg><span>Função</span><b id="profileRole">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4 8.5 4.2L12 12.4 3.5 8.2zM3.5 12.2 12 16.4l8.5-4.2M3.5 16.2 12 20.4l8.5-4.2"/></svg><span>Setor de Atuação</span><b id="profileSector">—</b></div></div>
+    <div class="card sys-card" id="profileSecurity"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 5.8v5.7c0 4.3 2.9 7.6 7 9 4.1-1.4 7-4.7 7-9V5.8zM9 12l2.2 2.2L15.2 10"/></svg>Conta e Segurança</h3><button class="opt-row" id="profilePassword" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2"/></svg><span><b>Alterar Senha</b><small>Troque sua senha de acesso</small></span><svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
+    <div class="card sys-card"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Atividade da Conta</h3><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9"/></svg><span>Último Acesso</span><b id="profileLastAccess">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></svg><span>Dispositivo</span><b id="profileDevice">—</b></div></div>
+    <button class="btn perigo profile-logout" id="profileLogout" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9"/></svg><span>Sair da Conta</span></button>
+  </div>
+  <div id="settingsRefArea">
+    <div class="card sys-card"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8"/></svg>Preferências</h3>
+      <label class="pref-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 6-2.5 6.5-2.5 8.5h17c0-2-2.5-2.5-2.5-8.5M10 20.5h4"/></svg><span><b>Notificações sonoras</b><small>Receber alerta com som</small></span><input type="checkbox" class="switch" id="aSom"></label>
+      <label class="pref-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="4" width="8" height="16" rx="1.8"/><path d="M4.5 8v8M2 10v4M19.5 8v8M22 10v4"/></svg><span><b>Vibração</b><small>Avisar com vibração</small></span><input type="checkbox" class="switch" id="aVibra"></label></div>
+    <div class="card sys-card"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.5v.3"/></svg>Informações do Sistema</h3><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5V20h16v-9.5M3 6.5 4.5 4h15L21 6.5V8a2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0A2.2 2.2 0 0 1 3 8zM9.5 20v-5h5v5"/></svg><span>Loja</span><b id="cfgLoja">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/></svg><span>Operador</span><b id="cfgOperador">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg><span>Versão do App</span><b id="cfgVersao">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg><span>Última sincronização</span><b id="cfgSync">—</b></div></div>
+    <div class="card sys-card"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 5.8v5.7c0 4.3 2.9 7.6 7 9 4.1-1.4 7-4.7 7-9V5.8zM9 12l2.2 2.2L15.2 10"/></svg>Suporte e Ajuda</h3><button class="opt-row" id="cfgSenha" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2"/></svg><span><b>Alterar Senha</b><small>Troque sua senha de acesso</small></span><svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button><button class="opt-row" id="cfgSobre" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.5v.3"/></svg><span><b>Sobre o Aplicativo</b><small>Saiba mais sobre o app</small></span><svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
+    <button class="btn big reg-save" id="cfgSair" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9"/></svg><span>Sair do Aplicativo</span></button>
+    <h3 class="adv-title">Configurações avançadas</h3>
+  </div>
+  <div id="preferencesArea">
   <div class="card"><h2>Etiqueta da balança</h2>
     <p style="margin:0;font-size:13px;color:var(--mu)">Etiquetas de balança (EAN-13) começam com <b>2</b>: 2 + código do produto (6 posições, com zeros de preenchimento) + valor (5 dígitos) + dígito verificador.</p>
     <div class="g2"><div><label class="f" for="aDig">Dígitos do código</label><select id="aDig"><option value="4">4 dígitos (2 CCCC 00 VVVVV D)</option><option value="5">5 dígitos (2 CCCCC 0 VVVVV D)</option><option value="6">6 dígitos (2 CCCCCC VVVVV D)</option></select></div>
@@ -679,7 +733,7 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
     <label style="display:flex;gap:10px;align-items:center;margin-top:12px;font-size:14px"><input type="checkbox" id="aNotif" style="width:22px;height:22px"> Notificação no celular antes de vencer</label>
   </div>
   <div class="card" id="cardConta" style="display:none"><h2>Conta e sincronização</h2><div id="contaInfo"></div></div>
-  <div class="card" id="cardAuditoria" style="display:none"><h2>Auditoria <span class="ean">(somente admin)</span></h2><div id="listaAud"></div><button class="btn sec" id="bAudRefresh" style="margin-top:10px">🔄 Atualizar</button></div>
+  <div class="card" id="cardAuditoria" style="display:none"><h2>Auditoria <span class="ean">(somente admin)</span></h2><div id="listaAud"></div><button class="btn sec" id="bAudRefresh" style="margin-top:10px">Atualizar</button></div>
   <div class="card" id="cardSolicitacoes" style="display:none"><h2>Solicitações de exclusão</h2><p style="font-size:13px;color:var(--mu)">Solicitações pendentes e histórico de revisão. Exclusões aprovadas são tombstones sincronizados.</p><div id="listaSolicitacoes"><div class="vazio">Carregando…</div></div><button class="btn sec" id="bSolicitacoesRefresh" style="margin-top:10px">Atualizar solicitações</button></div>
   <div class="card" id="cardUsuarios" style="display:none">
     <h2>Gestão de usuários <span class="ean">(assistente, analista e admin)</span></h2>
@@ -697,10 +751,25 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
   </div>
   <div class="card" id="cardLojasAdmin" style="display:none"><h2>Administração de lojas</h2><p style="font-size:13px;color:var(--mu)">Cadastro global de unidades (Administrador).</p><label class="f" for="lojaNovaNome">Nome da loja</label><input id="lojaNovaNome" placeholder="ex.: Filial 31"><button class="btn big" id="bLojaNova" style="margin-top:8px">Criar loja</button><div id="listaLojasAdmin" style="margin-top:12px"></div><button class="btn sec" id="bLojasAdminRefresh" style="margin-top:8px">Atualizar lojas</button></div>
   <div class="card"><h2>Backup</h2>
-    <div class="row"><button class="btn sec" id="bExp">💾 Exportar backup</button><label class="btn sec" for="fImp">📥 Importar backup</label></div>
+    <div class="row"><button class="btn sec" id="bExp">Exportar backup</button><label class="btn sec" for="fImp">Importar backup</label></div>
     <input type="file" id="fImp" accept=".json,application/json" style="display:none">
-    <button class="btn perigo big" id="bZerar" style="margin-top:12px">🗑️ Apagar todos os dados</button>
+    <button class="btn perigo big" id="bZerar" style="margin-top:12px">Apagar todos os dados</button>
   </div>
+  </div>
+  <div id="passwordArea" style="display:none">
+    <div class="card pw-card"><div class="pw-head"><span class="pw-head-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2"/></svg></span><div><h2>Troca de Senha</h2><p>Atualize sua senha de acesso ao aplicativo.</p></div></div>
+      <label class="f" for="pwAtual">Senha atual</label><div class="pw-field"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2"/></svg><input id="pwAtual" type="password" autocomplete="current-password" placeholder="Digite sua senha atual"><button type="button" data-eye="pwAtual" aria-label="Mostrar senha"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div><label class="f" for="pwNova">Nova senha</label><div class="pw-field"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2"/></svg><input id="pwNova" type="password" autocomplete="new-password" placeholder="Digite a nova senha"><button type="button" data-eye="pwNova" aria-label="Mostrar senha"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div><label class="f" for="pwConfirma">Confirmar nova senha</label><div class="pw-field"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2"/></svg><input id="pwConfirma" type="password" autocomplete="new-password" placeholder="Digite novamente a nova senha"><button type="button" data-eye="pwConfirma" aria-label="Mostrar senha"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
+      <div class="tip-box"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.5v.3"/></svg><div><b>Regras da senha:</b><ul><li>Mínimo de 6 caracteres.</li><li>Não pode ser igual ao seu usuário nem uma senha muito comum.</li></ul></div></div>
+      <div class="aviso da" id="pwErro" role="alert" hidden></div>
+      <div class="row pw-actions"><button class="btn sec" id="bPwCancelar" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg><span>Cancelar</span></button><button class="btn" id="bPwSalvar" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><span>Salvar Nova Senha</span></button></div>
+    </div>
+  </div>
+  <div id="aboutArea" style="display:none">
+    <div class="card about-top"><span class="about-app" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5.5a1.5 1.5 0 0 1 1.5-1.5H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M8 9v6M11 9v6M14 9v6M17 9v6"/></svg></span><div><h2>Controle de Validade</h2><p>Gestão de lotes, validades e perecíveis</p><span class="about-ver"><em>Versão instalada</em><b id="aboutVersao">—</b></span></div></div>
+    <div class="card about-card"><div class="about-row"><span class="about-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg></span><div><h3>Sobre o Aplicativo</h3><p>O Controle de Validade é um aplicativo corporativo desenvolvido para apoiar a rotina operacional das lojas do Supermercados Guanabara, permitindo o registro, acompanhamento e controle de lotes, datas de validade e produtos perecíveis.</p></div></div>
+      <div class="about-feats"><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5.5a1.5 1.5 0 0 1 1.5-1.5H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>Registro de produtos</span><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 6-2.5 6.5-2.5 8.5h17c0-2-2.5-2.5-2.5-8.5M10 20.5h4"/></svg>Alertas de vencimento</span><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4 8.5 4.2L12 12.4 3.5 8.2zM3.5 12.2 12 16.4l8.5-4.2M3.5 16.2 12 20.4l8.5-4.2"/></svg>Controle por lote</span><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-5M10 20V10M15 20v-8M20 20V5"/></svg>Mais segurança e redução de perdas</span></div></div>
+    <div class="card about-card"><div class="about-row"><span class="about-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/></svg></span><div><h3>Desenvolvido por</h3><p><b>Jonatas Costa</b><br>Idealizador e desenvolvedor do Controle de Validade, com foco em soluções práticas e eficientes para a operação de supermercados, unindo tecnologia, controle e prevenção de perdas.</p></div></div></div>
+    <div class="card about-card"><div class="about-row"><span class="about-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.5v.3"/></svg></span><div style="flex:1"><h3>Informações Técnicas</h3><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg><span>Versão</span><b id="aboutVersaoTec">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg><span>Última sincronização</span><b id="aboutSync">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></svg><span>Plataforma</span><b id="aboutPlataforma">—</b></div></div></div></div>
   </div>
 </section>
 </main>
@@ -795,7 +864,7 @@ function salvar(){try{localStorage.setItem(K,JSON.stringify(D));}catch(e){toast(
 function detalheProduto(ean){var cat=D.cat[ean]||{nome:'',marca:'',img:''},p=D.prod[ean];return p&&p.desc?Object.assign({},cat,{nome:p.desc}):cat;}
 function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 var tt;function toast(m){var t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(function(){t.classList.remove('on');},2200);}
-function vib(ms){try{navigator.vibrate&&navigator.vibrate(ms||40);}catch(e){}}
+function vib(ms){if(typeof D!=='undefined'&&D&&D.aj&&D.aj.vibra===false)return;try{navigator.vibrate&&navigator.vibrate(ms||40);}catch(e){}}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function hoje(){var d=new Date();d.setHours(0,0,0,0);return d;}
 function dias(v){if(!v)return null;var p=v.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);return Math.round((d-hoje())/864e5);}
@@ -828,23 +897,25 @@ $('homeAlerts').onclick=function(){ir('alertas');};$('homeBell').onclick=functio
 $('homeRecentList').onclick=function(e){if(e.target.closest('[data-home-record]'))ir('prod');};
 /* ───── navegação ───── */
 var vistaAtual='home',vistaAnterior='home',areaContextual='prod';
-var titulosTela={home:'Controle de Validade',reg:'Registrar Produto',prod:'Meus Registros',pere:'Perecíveis – Registros',alertas:'Alertas',aj:'Ajustes',detail:'Detalhe do registro',edit:'Editar registro'};
-var subtitulosTela={reg:'Produtos e perecíveis',prod:'Produtos (Industrializados)',pere:'Produtos perecíveis da loja',alertas:'Validades e notificações',aj:'Área do Operador',detail:'Informações do lote',edit:'Dados do registro'};
+var titulosTela={home:'Controle de Validade',reg:'Registrar Produto',prod:'Meus Registros',pere:'Perecíveis – Registros',alertas:'Alertas',aj:'Configurações',busca:'Buscar Produto',detail:'Detalhe do registro',edit:'Editar registro'};
+var subtitulosTela={busca:'Área do Operador',reg:'Produtos e perecíveis',prod:'Produtos (Industrializados)',pere:'Produtos perecíveis da loja',alertas:'Validades e notificações',aj:'Área do Operador',detail:'Informações do lote',edit:'Dados do registro'};
 function mostrarVisaoAlertas(v){var notif=v==='notifications';$('v-alertas').classList.toggle('alerts-view',!notif);$('alertasMain').style.display=notif?'none':'';$('cardNotificacoes').style.display=notif?'':'none';$('pushCard').style.display=notif?'':'none';
   document.querySelectorAll('#alertViewTabs [data-alert-view]').forEach(function(b){var on=b.dataset.alertView===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
   if($('screenTitle'))$('screenTitle').textContent=notif?'Notificações':'Alertas';}
-function mostrarVistaAjustes(v){var perfil=v==='profile';$('profileArea').style.display=perfil?'':'none';$('preferencesArea').style.display=perfil?'none':'';
+var ajVista='settings',AJ_TITULOS={settings:'Configurações',profile:'Perfil do Operador',password:'Alterar Senha',about:'Sobre o Aplicativo'};
+function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var m={profileArea:'profile',settingsRefArea:'settings',preferencesArea:'settings',passwordArea:'password',aboutArea:'about'};
+  Object.keys(m).forEach(function(id){$(id).style.display=m[id]===v?'':'none';});$('settingsTabs').style.display=(v==='settings'||v==='profile')?'':'none';
   document.querySelectorAll('#settingsTabs [data-settings-view]').forEach(function(b){var on=b.dataset.settingsView===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
-  if($('settingsViewIcon'))$('settingsViewIcon').textContent=perfil?'👤':'⚙';if($('settingsViewTitle'))$('settingsViewTitle').textContent=perfil?'Perfil do Operador':'Ajustes';if($('settingsViewSubtitle'))$('settingsViewSubtitle').textContent=perfil?'Dados operacionais e segurança da conta.':'Preferências, sistema e ajuda.';if($('screenTitle'))$('screenTitle').textContent=perfil?'Perfil do Operador':'Ajustes';}
+  if($('screenTitle'))$('screenTitle').textContent=AJ_TITULOS[v];if(v==='password')limparTrocaSenha();renderConfiguracoes();window.scrollTo(0,0);}
 function ir(v){var destino=$('v-'+v);if(!destino)return;if(v!==vistaAtual){vistaAnterior=vistaAtual;vistaAtual=v;}if(v==='prod'||v==='pere')areaContextual=v;
   document.querySelectorAll('.vista').forEach(function(s){s.classList.toggle('on',s===destino);});
   var interna=v!=='home',cab=document.querySelector('header .hdr-in');cab.classList.toggle('interna',interna);
   if($('screenTitle'))$('screenTitle').textContent=titulosTela[v]||'Controle de Validade';
   if($('slogan'))$('slogan').textContent=(interna&&subtitulosTela[v])||CFG.slogan||'Área do Operador';
   if($('operatorRolePill'))$('operatorRolePill').hidden=!interna;
-  document.querySelectorAll('#abas button').forEach(function(b){b.classList.toggle('on',b.dataset.v===(v==='reg'?'home':v==='detail'||v==='edit'?areaContextual:v));});
-  if(v==='home')renderHome();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();mostrarVisaoAlertas('alerts');}if(v==='aj'){renderPerfilOperador();ajustes();carregarSolicitacoesExclusao();mostrarVistaAjustes('settings');}window.scrollTo(0,0);}
-$('headerBack').onclick=function(){ir(vistaAnterior==='reg'?'home':vistaAnterior||'home');};
+  document.querySelectorAll('#abas button').forEach(function(b){b.classList.toggle('on',b.dataset.v===(v==='reg'?'home':v==='busca'?'prod':v==='detail'||v==='edit'?areaContextual:v));});
+  if(v==='home')renderHome();if(v==='busca')renderBusca();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();mostrarVisaoAlertas('alerts');}if(v==='aj'){renderPerfilOperador();ajustes();carregarSolicitacoesExclusao();mostrarVistaAjustes('settings');}window.scrollTo(0,0);}
+$('headerBack').onclick=function(){if(vistaAtual==='aj'&&(ajVista==='password'||ajVista==='about')){mostrarVistaAjustes('settings');return;}ir(vistaAnterior==='reg'?'home':vistaAnterior||'home');};
 $('abas').onclick=function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.v==='pere')subPere('lista');ir(b.dataset.v);};
 $('alertViewTabs').onclick=function(e){var b=e.target.closest('[data-alert-view]');if(b)mostrarVisaoAlertas(b.dataset.alertView);};
 $('settingsTabs').onclick=function(e){var b=e.target.closest('[data-settings-view]');if(b)mostrarVistaAjustes(b.dataset.settingsView);};
@@ -901,17 +972,17 @@ function lerProprio(fonte,soFaixa){var cv=$('cv'),W=fonte.videoWidth||fonte.natu
   if(c&&fonte.tagName==='VIDEO')achou(c,false);return c;}
 function achou(c,confiavel,fmt){
   fonteOCR=(D.aj.ocr&&fluxo)?capturarFrame($('video')):null;
-  var g=(fmt==='data_matrix'||fmt==='qr_code')?LeitorGS1.ler(c):null;if(g&&(g.peso!=null||g.gtin)){vib(80);fecharScanner();tratarGS1(g,alvoScan);return;}
+  var g=(fmt==='data_matrix'||fmt==='qr_code')?LeitorGS1.ler(c):null;if(g&&(g.peso!=null||g.gtin)){vib(80);bip();fecharScanner();tratarGS1(g,alvoScan);return;}
   c=String(c).replace(/\D/g,'');if(!c)return;
   if(!confiavel){if(c===ultimo)repet++;else{ultimo=c;repet=1;}if(repet<2)return;}
-  vib(80);fecharScanner();tratarCodigo(c,alvoScan,fmt);}
+  vib(80);bip();fecharScanner();tratarCodigo(c,alvoScan,fmt);}
 $('bFechar').onclick=fecharScanner;
 $('bLuz').onclick=function(){luz=!luz;var ok=false;
   try{if(window.Android&&Android.lanterna){ok=Android.lanterna(luz)==='OK';}}catch(e){}
   if(!ok&&fluxo){try{fluxo.getVideoTracks()[0].applyConstraints({advanced:[{torch:luz}]});ok=true;}catch(e){}}
   $('bLuz').textContent=luz?'🔦 Apagar':'🔦 Luz';};
 $('fFoto').onchange=function(e){var f=e.target.files[0];if(!f)return;e.target.value='';var img=new Image();
-  img.onload=function(){var fim=function(c,fmt){if(!c){toast('Não consegui ler — aproxime e tente de novo, ou digite o código');return;}var g=(fmt==='data_matrix'||fmt==='qr_code')?LeitorGS1.ler(c):null;fonteOCR=D.aj.ocr?img:null;vib(80);fecharScanner();if(g&&(g.peso!=null||g.gtin))tratarGS1(g,alvoScan);else tratarCodigo(String(c).replace(/\D/g,''),alvoScan,fmt);};
+  img.onload=function(){var fim=function(c,fmt){if(!c){toast('Não consegui ler — aproxime e tente de novo, ou digite o código');return;}var g=(fmt==='data_matrix'||fmt==='qr_code')?LeitorGS1.ler(c):null;fonteOCR=D.aj.ocr?img:null;vib(80);bip();fecharScanner();if(g&&(g.peso!=null||g.gtin))tratarGS1(g,alvoScan);else tratarCodigo(String(c).replace(/\D/g,''),alvoScan,fmt);};
     if(detector){detector.detect(img).then(function(r){r&&r.length?fim(r[0].rawValue,r[0].format):fim(lerProprio(img));},function(){fim(lerProprio(img));});}else fim(lerProprio(img));};
   img.src=URL.createObjectURL(f);};
 $('bEscanear').onclick=function(){abrirScanner('prod');};
@@ -932,11 +1003,11 @@ $('bEtqNovamente').onclick=function(){limparEtiquetaLida();abrirScanner('etq');}
 
 function ehBalanca(c){return c.length===13&&c.charAt(0)==='2';}
 /* etiqueta 2D (GS1): com peso vai para perecíveis; só com código vai para produtos */
-function tratarGS1(g,alvo){if(alvo==='etq'){confirmarEtiqueta({gs1:g});return;}var gt=g.gtin||'',ean=gt.length===14?gt.slice(1):(gt.length===13?gt:'');
+function tratarGS1(g,alvo){if(alvo==='etq'){confirmarEtiqueta({gs1:g});return;}if(alvo==='busca'){$('qBusca').value=norm(g.gtin||'');ir('busca');renderBusca();return;}var gt=g.gtin||'',ean=gt.length===14?gt.slice(1):(gt.length===13?gt:'');
   if(ean&&ehBalanca(ean)){abrirRegistroPerecivel();abrirPerecivel(ean,{peso:g.peso,val:g.val,preco:g.preco});return;}
   if(g.peso!=null){abrirRegistroPerecivel();abrirPerecivelGS1(g);return;}
   if(alvo==='bal')toast('Etiqueta sem peso — tratando como produto');ir('reg');abrirProduto(norm(gt));}
-function tratarCodigo(c,alvo,fmt){c=normEAN(c,fmt);if(alvo==='etq'){confirmarEtiqueta({cod:c});return;}if(ehBalanca(c)){abrirRegistroPerecivel();abrirPerecivel(c);return;}
+function tratarCodigo(c,alvo,fmt){c=normEAN(c,fmt);if(alvo==='etq'){confirmarEtiqueta({cod:c});return;}if(alvo==='busca'){$('qBusca').value=c;ir('busca');renderBusca();return;}if(ehBalanca(c)){abrirRegistroPerecivel();abrirPerecivel(c);return;}
   if(alvo==='bal'){toast('Esse não parece ser um código de balança (começa com 2)');}
   ir('reg');abrirProduto(c);}
 
@@ -1382,7 +1453,7 @@ function sbReq(path,opt){opt=opt||{};
 }
 function sbLogin(user,pass){return sbReq('/auth/v1/token?grant_type=password',{method:'POST',auth:false,body:{email:user+'@'+DOM_LOGIN,password:pass}})
   .then(function(r){if(!r.ok||!r.dados||!r.dados.access_token)throw new Error((r.dados&&(r.dados.error_description||r.dados.msg||r.dados.error))||'Usuário ou senha inválidos');
-    var u=r.dados.user||{},meta=u.app_metadata||{};SESS={access_token:r.dados.access_token,refresh_token:r.dados.refresh_token,expira:Date.now()+((r.dados.expires_in||3600)*1000),usuario:user,email:u.email,uid:u.id,lojaId:null,lojaNome:null,forcePasswordChange:meta.force_password_change===true};salvarSess();return SESS;});}
+    var u=r.dados.user||{},meta=u.app_metadata||{};SESS={access_token:r.dados.access_token,refresh_token:r.dados.refresh_token,expira:Date.now()+((r.dados.expires_in||3600)*1000),usuario:user,email:u.email,uid:u.id,loginEm:Date.now(),lojaId:null,lojaNome:null,forcePasswordChange:meta.force_password_change===true};salvarSess();return SESS;});}
 function sbLogout(){var token=SESS&&SESS.access_token;SESS=null;salvarSess();refreshSessaoEmAndamento=null;try{localStorage.removeItem('validade_ultima_loja');}catch(e){}if(token&&sbOn()){return fetch(CFG.supaUrl+'/auth/v1/logout',{method:'POST',headers:{apikey:CFG.supaKey,Authorization:'Bearer '+token}}).catch(function(e){console.warn('Falha ao invalidar sessão remota (sessão local já encerrada):',e);});}return Promise.resolve();}
 function sairParaLogin(){sbLogout();try{history.replaceState({loggedOut:true},'',location.href.split('#')[0]);}catch(e){}var modal=$('conta');if(modal)modal.classList.add('on');mostrarLoginForm();contaCard();atualizarBotaoLogout();atualizarGate();toast('Você saiu');}
 function sbLojas(){return sbReq('/rest/v1/lojas?select=id,nome&order=nome.asc').then(function(r){if(!r.ok)throw new Error('falha');return Array.isArray(r.dados)?r.dados:[];});}
@@ -1542,14 +1613,56 @@ function atualizarContextoLoja(){var e=$('lojaAtualLabel');if(e)e.textContent=lo
 function renderPerfilOperador(){
   var nome=SESS&&(SESS.nome||SESS.usuario||SESS.email)||'Operador',papel=SESS&&SESS.papel||papelAtual(),loja=SESS&&SESS.lojaNome||'Não selecionada';
   if($('profileName'))$('profileName').textContent=nome;
-  if($('profileLogin'))$('profileLogin').textContent=SESS&&(SESS.usuario||SESS.email)||'Conta local';
+  if($('profileLogin'))$('profileLogin').textContent=SESS&&(SESS.usuario||SESS.email)?'Usuário: '+(SESS.usuario||SESS.email):'Conta local';
   if($('profileStore'))$('profileStore').textContent=loja;
   if($('profileRole'))$('profileRole').textContent=(PAPEIS&&PAPEIS[papel])||papel||'Operador';
   if($('profileSector'))$('profileSector').textContent=SESS&&(SESS.setor||SESS.setorNome)||'Não informado';
-  if($('profileDevice'))$('profileDevice').textContent=/Android/i.test(navigator.userAgent)?'Android':/iPhone|iPad/i.test(navigator.userAgent)?'iOS':'Navegador';
-  if($('profileStatus'))$('profileStatus').textContent=logado()?'Sessão ativa':'Modo local';
+  if($('profileDevice'))$('profileDevice').textContent=plataforma();
+  if($('profileStatus'))$('profileStatus').textContent=logado()?((PAPEIS&&PAPEIS[papel])||'Operador')+' Ativo':'Modo local';
 }
-$('profileAccount').onclick=function(){var c=$('cardConta');if(c){c.style.display='';c.scrollIntoView({behavior:'smooth',block:'start'});}};
+/* som curto de confirmação (preferência "Notificações sonoras", guardada no aparelho) */
+var ctxSom=null;function bip(){if(D.aj.som===false)return;try{var C=window.AudioContext||window.webkitAudioContext;if(!C)return;ctxSom=ctxSom||new C();var o=ctxSom.createOscillator(),g=ctxSom.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(ctxSom.destination);o.start();o.stop(ctxSom.currentTime+.09);}catch(e){}}
+function plataforma(){return /Android/i.test(navigator.userAgent)?'Android':/iPhone|iPad/i.test(navigator.userAgent)?'iOS':'Navegador';}
+function renderConfiguracoes(){var conta=sbOn()&&logado(),ver='v'+(CFG.versao||'1.0.0'),sync=SYNC&&SYNC.backup?dataHoraRef(SYNC.backup):'Ainda não sincronizado';
+  $('aSom').checked=D.aj.som!==false;$('aVibra').checked=D.aj.vibra!==false;
+  $('cfgLoja').textContent=SESS&&SESS.lojaNome||'Não selecionada';$('cfgOperador').textContent=SESS&&(SESS.nome||SESS.usuario||SESS.email)||'Conta local';$('cfgVersao').textContent=ver;$('cfgSync').textContent=sync;
+  $('aboutVersao').textContent=ver;$('aboutVersaoTec').textContent=ver;$('aboutSync').textContent=sync;$('aboutPlataforma').textContent=plataforma();
+  $('cfgSenha').hidden=!conta;$('cfgSair').hidden=!conta;$('profileSecurity').hidden=!conta;$('profileLogout').hidden=!conta;
+  $('profileLastAccess').textContent=SESS&&SESS.loginEm?dataHoraRef(SESS.loginEm):'—';}
+$('aSom').onchange=function(){D.aj.som=this.checked;salvar();if(this.checked)bip();};
+$('aVibra').onchange=function(){D.aj.vibra=this.checked;salvar();if(this.checked)vib(60);};
+$('cfgSobre').onclick=function(){mostrarVistaAjustes('about');};
+$('cfgSenha').onclick=$('profilePassword').onclick=function(){mostrarVistaAjustes('password');};
+$('cfgSair').onclick=function(){if(logado()&&confirm('Deseja sair da conta?'))sairParaLogin();};
+/* Alterar Senha: confere a senha atual com o login do Supabase Auth e só então grava a nova. */
+function limparTrocaSenha(){['pwAtual','pwNova','pwConfirma'].forEach(function(i){$(i).value='';$(i).type='password';});$('pwErro').hidden=true;}
+document.querySelectorAll('[data-eye]').forEach(function(b){b.onclick=function(){var i=$(b.dataset.eye),vis=i.type==='text';i.type=vis?'password':'text';b.classList.toggle('on',!vis);b.setAttribute('aria-label',vis?'Mostrar senha':'Ocultar senha');};});
+$('bPwCancelar').onclick=function(){limparTrocaSenha();mostrarVistaAjustes('settings');};
+$('bPwSalvar').onclick=function(){var at=$('pwAtual').value,nv=$('pwNova').value,cf=$('pwConfirma').value,b=$('bPwSalvar'),erro=function(m){$('pwErro').textContent=m;$('pwErro').hidden=false;};$('pwErro').hidden=true;
+  if(!sbOn()||!logado()){erro('Entre na conta para alterar a senha.');return;}if(!at){erro('Digite sua senha atual.');return;}
+  if(nv.length<6){erro('A nova senha precisa ter pelo menos 6 caracteres.');return;}if(nv!==cf){erro('As senhas não conferem.');return;}
+  if(nv.toLowerCase()===String(SESS.usuario||'').toLowerCase()){erro('A senha não pode ser igual ao usuário.');return;}if(nv===at){erro('A nova senha deve ser diferente da atual.');return;}
+  rotuloBotao(b,'Salvando…',true);
+  sbReq('/auth/v1/token?grant_type=password',{method:'POST',auth:false,body:{email:SESS.email,password:at}}).then(function(r){
+    if(!r.ok||!r.dados||!r.dados.access_token){var e=new Error('A senha atual não confere.');e.atual=true;throw e;}
+    SESS.access_token=r.dados.access_token;SESS.refresh_token=r.dados.refresh_token||SESS.refresh_token;SESS.expira=Date.now()+((r.dados.expires_in||3600)*1000);salvarSess();
+    return sbReq('/auth/v1/user',{method:'PUT',body:{password:nv}});
+  }).then(function(r){if(!r.ok)throw new Error((r.dados&&(r.dados.msg||r.dados.error_description||r.dados.message||r.dados.error))||'Não foi possível alterar a senha.');
+    auditar('alterou_senha',{});limparTrocaSenha();mostrarVistaAjustes('settings');toast('Senha alterada com sucesso');
+  }).catch(function(e){erro(e&&e.message||'Não foi possível alterar a senha.');}).finally(function(){rotuloBotao(b,'Salvar Nova Senha',false);});};
+/* Buscar Produto: procura nos registros de industrializados e perecíveis já carregados. */
+var buscaTipo='all';
+function renderBusca(){var q=$('qBusca').value.trim().toLowerCase(),itens=registrosAlerta().filter(function(x){if(buscaTipo!=='all'&&x.tipo!==buscaTipo)return false;
+    return !q||[x.nome,x.ean||x.reg.cod,x.reg.lote||x.reg.sif,x.reg.setor].join(' ').toLowerCase().indexOf(q)>=0;}).sort(function(a,b){return (a.reg.val||'9').localeCompare(b.reg.val||'9');});
+  document.querySelectorAll('#buscaFiltros [data-busca]').forEach(function(b){var on=b.dataset.busca===buscaTipo;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
+  $('buscaTitulo').textContent='Resultados da busca ('+itens.length+')';
+  $('buscaResultados').innerHTML=itens.slice(0,40).map(function(x){var selo=seloValidade(x.reg.val),n=x.dias;
+    return '<button type="button" class="alert-card busca-card" '+(x.tipo==='lote'?'data-detail-lote="'+esc(x.id)+'" data-ean="'+esc(x.ean)+'"':'data-detail-pere="'+esc(x.id)+'"')+'><span class="alert-thumb">'+miniatura(x.img,x.tipo)+'</span><span class="alert-copy"><b>'+esc(x.nome)+'</b><small>'+(x.tipo==='lote'?'EAN: '+esc(x.ean):'PLU: '+esc(x.reg.cod))+'</small><small>Setor: '+esc(x.reg.setor||'Não informado')+'</small><small>'+esc(x.ref)+'</small><small>Validade: '+fdata(x.reg.val)+(n===null?'':n<0?' (vencido há '+(-n)+' dia'+(n<-1?'s':'')+')':' ('+n+' dia'+(n===1?'':'s')+')')+'</small></span><span class="chip '+selo.c+'">'+chipHtml(selo)+'</span>'+ic('chev','chev')+'</button>';}).join('')
+    ||'<div class="operator-empty">'+(q?'Nenhum registro encontrado para esta busca.':'Nenhum registro ainda.')+'</div>';}
+$('qBusca').oninput=renderBusca;
+$('buscaFiltros').onclick=function(e){var b=e.target.closest('[data-busca]');if(!b)return;buscaTipo=b.dataset.busca;renderBusca();};
+$('bAbrirBusca').onclick=function(){$('qBusca').value=$('qProd').value;buscaTipo='all';ir('busca');};
+$('bBuscaScan').onclick=function(){abrirScanner('busca');};
 $('profileLogout').onclick=function(){if(logado()&&confirm('Deseja sair da conta?'))sairParaLogin();};
 function auditar(acao,detalhe){if(!sbOn()||!logado())return;try{sbReq('/rest/v1/auditoria',{method:'POST',headers:{Prefer:'return=minimal'},body:[{user_id:SESS.uid||null,usuario:SESS.usuario||SESS.email||'',papel:SESS.papel||null,loja_id:SESS.lojaId||null,loja_nome:SESS.lojaNome||null,acao:acao,detalhe:detalhe||{}}]}).catch(function(){});}catch(e){}}
 function auditoriaCard(){var c=$('cardAuditoria');if(!c)return;if(!sbOn()||!ehAdmin()){c.style.display='none';return;}c.style.display='';

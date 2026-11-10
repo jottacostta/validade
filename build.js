@@ -33,7 +33,8 @@ function montar(c) {
   const acento = /^#[0-9a-fA-F]{6}$/.test(c.acento || '') ? c.acento : '#FFC20E';
   const cfg = { cosmos: String(c.cosmos || '').trim(), nome: c.nome || 'Controle de Validade', slogan: String(c.slogan || '').trim(), zap: zap(c.whatsapp),
     dias: Math.max(1, parseInt(c.dias) || 30), dig: +c.dig || 4, valor: c.valor === 'preco' ? 'preco' : 'peso',
-    supaUrl: String(c.supaUrl || '').trim().replace(/\/$/, ''), supaKey: String(c.supaKey || '').trim(), loginDom: String(c.loginDom || 'loja.validade').trim(), logo: (String(c.logo || '').trim() || logoDataURI()) };
+    supaUrl: String(c.supaUrl || '').trim().replace(/\/$/, ''), supaKey: String(c.supaKey || '').trim(), loginDom: String(c.loginDom || 'loja.validade').trim(), logo: (String(c.logo || '').trim() || logoDataURI()),
+    versao: String(require('./package.json').version || '1.0.0') };
   if (![4, 5, 6].includes(cfg.dig)) throw new Error('dig deve ser 4, 5 ou 6');
   const html = APP.split('/*COR*/').join(cor).split('/*COR2*/').join(clarear(cor, .88)).split('/*COR3*/').join(clarear(cor, .3))
     .split('/*CORDARK*/').join(clarear(cor, .4)).split('/*ACENTO*/').join(acento)

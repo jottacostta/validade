@@ -1051,6 +1051,73 @@ tflaky('Cabeçalho: subtítulo próprio em cada tela interna; contador de alerta
   await a.fechar();
 });
 
+tflaky('Configurações: dados reais, preferências persistem e Sobre mostra a versão; voltar retorna a Configurações', { skip: pular }, async () => {
+  const a = await abrirLogado(p => rotasBase(p, 'operador'), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador', nome: 'Jonatas', lojaNome: 'Filial 31' });
+  await a.p.click('nav button[data-v="aj"]');
+  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Configurações');
+  assert.strictEqual(await a.p.textContent('#cfgLoja'), 'Filial 31');
+  // o nome exibido é o do perfil devolvido pelo servidor (rotasBase responde nome = papel)
+  await a.p.waitForFunction(() => document.getElementById('cfgOperador').textContent === 'operador');
+  const versao = 'v' + require('../package.json').version;
+  assert.strictEqual(await a.p.textContent('#cfgVersao'), versao);
+  assert.strictEqual(await a.p.isChecked('#aVibra'), true);
+  await a.p.uncheck('#aVibra'); await a.p.uncheck('#aSom');
+  assert.deepStrictEqual(await a.p.evaluate(() => { const d = JSON.parse(localStorage.getItem('validade_dados')).aj; return [d.vibra, d.som]; }), [false, false]);
+  assert.strictEqual(await a.p.isVisible('#preferencesArea'), true, 'ajustes técnicos continuam acessíveis');
+  await a.p.click('#cfgSobre');
+  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Sobre o Aplicativo');
+  assert.strictEqual(await a.p.textContent('#aboutVersao'), versao);
+  assert.strictEqual(await a.p.isVisible('#settingsRefArea'), false);
+  await a.p.click('#headerBack');
+  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Configurações');
+  assert.strictEqual(await a.p.isVisible('#settingsRefArea'), true);
+  await a.p.click('#settingsTabs [data-settings-view="profile"]');
+  assert.strictEqual((await a.p.textContent('#profileStatus')).trim(), 'Operador Ativo');
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Alterar Senha: valida, confere a senha atual no servidor e só então grava a nova', { skip: pular }, async () => {
+  const chamadas = { token: [], user: [] }; let senhaCerta = false;
+  const a = await abrirLogado(async p => { await rotasBase(p, 'operador');
+    await p.route('**/auth/v1/token?grant_type=password', r => { chamadas.token.push(r.request().postDataJSON()); senhaCerta
+      ? r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ access_token: 'tok2', refresh_token: 'ref2', expires_in: 3600, user: { id: 'u1', email: 'teste@loja.validade' } }) })
+      : r.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error_description: 'Invalid login credentials' }) }); });
+    await p.route('**/auth/v1/user', r => { chamadas.user.push({ m: r.request().method(), b: r.request().postDataJSON(), auth: r.request().headers().authorization }); r.fulfill({ status: 200, contentType: 'application/json', body: '{"id":"u1"}' }); });
+  }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador' });
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#cfgSenha');
+  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Alterar Senha');
+  await a.p.fill('#pwAtual', 'antiga1'); await a.p.fill('#pwNova', 'nova123'); await a.p.fill('#pwConfirma', 'outra123'); await a.p.click('#bPwSalvar');
+  assert.match(await a.p.textContent('#pwErro'), /não conferem/);
+  await a.p.fill('#pwConfirma', 'nova123'); await a.p.fill('#pwNova', 'abc'); await a.p.click('#bPwSalvar');
+  assert.match(await a.p.textContent('#pwErro'), /6 caracteres/);
+  assert.strictEqual(chamadas.token.length, 0, 'nada vai ao servidor enquanto o formulário é inválido');
+  await a.p.fill('#pwNova', 'nova123'); await a.p.click('#bPwSalvar');
+  await a.p.waitForFunction(() => /senha atual/i.test(document.getElementById('pwErro').textContent));
+  assert.strictEqual(chamadas.user.length, 0, 'senha atual errada não altera nada');
+  senhaCerta = true; await a.p.click('#bPwSalvar');
+  await a.p.waitForFunction(() => document.getElementById('screenTitle').textContent === 'Configurações');
+  assert.deepStrictEqual(chamadas.token[1], { email: 'teste@loja.validade', password: 'antiga1' });
+  assert.deepStrictEqual([chamadas.user[0].m, chamadas.user[0].b, chamadas.user[0].auth], ['PUT', { password: 'nova123' }, 'Bearer tok2']);
+  assert.strictEqual(await a.p.inputValue('#pwNova'), '', 'campos limpos depois de salvar');
+  await a.fechar();
+});
+
+tflaky('Buscar Produto: procura em industrializados e perecíveis e filtra por tipo', { skip: pular }, async () => {
+  const a = await abrir({ dados: { prod: { '7891000315507': { lotes: [lote('l1', '2032-12-01', 5, 'LX9')] } }, cat: { '7891000315507': { nome: 'Café Bom' } },
+    pere: { itens: { '12': { desc: 'Queijo Bom' } }, regs: [{ id: 'r1', cod: '12', sif: 'S7', peso: 1.25, val: '2032-12-01', setor: 'Laticínios' }] } } });
+  await a.p.click('nav button[data-v="prod"]'); await a.p.click('#bAbrirBusca');
+  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Buscar Produto');
+  await a.p.fill('#qBusca', 'bom');
+  assert.strictEqual(await a.p.locator('#buscaResultados .busca-card').count(), 2);
+  await a.p.click('#buscaFiltros [data-busca="pere"]');
+  assert.strictEqual(await a.p.locator('#buscaResultados .busca-card').count(), 1);
+  assert.ok((await a.p.textContent('#buscaResultados')).includes('Queijo Bom'));
+  await a.p.click('#buscaFiltros [data-busca="all"]'); await a.p.fill('#qBusca', 'LX9');
+  await a.p.click('#buscaResultados .busca-card');
+  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Detalhe do registro');
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
 tflaky('Área do Operador: abas, alertas/notificações e detalhe/edição de lote', { skip: pular }, async () => {
   const a = await abrir({ dados: {
     prod: { '7891000315507': { nome: 'Café', lotes: [lote('l1', '2032-12-01', 5, 'L1')] } },

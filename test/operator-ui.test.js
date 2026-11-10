@@ -105,3 +105,19 @@ test('Listas: paginação, botão Filtrar e nenhum emoji nas telas de registros'
   }
   assert.doesNotMatch(html, /♙/);
 });
+
+test('Ajustes: Configurações, Perfil, Alterar Senha e Sobre existem; ajustes técnicos preservados', () => {
+  const aj = html.match(/<section class="vista" id="v-aj">([\s\S]*?)<\/section>/)[1];
+  const ordem = ['id="settingsRefArea"', 'id="preferencesArea"', 'id="passwordArea"', 'id="aboutArea"'].map(t => aj.indexOf(t));
+  assert.ok(ordem.every(i => i >= 0), String(ordem)); assert.deepEqual(ordem, [...ordem].sort((a, b) => a - b));
+  for (const id of ['aSom', 'aVibra', 'cfgLoja', 'cfgOperador', 'cfgVersao', 'cfgSync', 'cfgSenha', 'cfgSobre', 'cfgSair', 'pwAtual', 'pwNova', 'pwConfirma', 'bPwSalvar', 'bPwCancelar', 'aboutVersao', 'aboutPlataforma', 'profileLastAccess', 'profilePassword',
+    'aDig', 'aValor', 'aOcr', 'aCosmos', 'aDias', 'aNotif']) assert.match(aj, new RegExp(`id="${id}"`), id);
+  assert.doesNotMatch(aj, /[\u{1F300}-\u{1FAFF}\u{2699}]/u, 'Ajustes sem emoji');
+});
+
+test('Buscar Produto e Notificações: tela de busca própria e nenhum controle sem suporte no servidor', () => {
+  for (const id of ['v-busca', 'qBusca', 'buscaFiltros', 'buscaResultados', 'bAbrirBusca']) assert.match(html, new RegExp(`id="${id}"`), id);
+  const al = html.match(/<section class="vista" id="v-alertas">([\s\S]*?)<\/section>/)[1];
+  assert.doesNotMatch(al, /Limpar/i, 'o servidor só permite marcar como lida; não há "Limpar"');
+  assert.doesNotMatch(al, /[\u{1F300}-\u{1FAFF}\u{26A0}\u{24D8}\u{2713}\u{21BB}]/u);
+});
