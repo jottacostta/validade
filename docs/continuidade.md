@@ -163,8 +163,14 @@ em `src/app.html`, dentro de `#preferencesArea`):
 4. Diretriz: "quanto mais completa a área do administrador, mais as outras áreas ganham acesso" — construir primeiro o
    administrador completo e depois liberar partes para os outros perfis.
 
-**Estado em 10/11 11:15: NENHUM CÓDIGO DA ÁREA DO ADMINISTRADOR FOI ESCRITO.** O Claude parou aqui por limite de uso.
-A branch `docs/continuidade-admin` (PR #33) contém só documentação.
+**Estado atualizado em 10/11: ETAPA 1 IMPLEMENTADA NA BRANCH `feat/area-ajustes-administrador` (PR em preparação).**
+- Menu administrativo com as 10 seções, seguindo os tokens e componentes escuros da Área do Operador.
+- Analista, gerente e administrador recebem a mesma central, com visibilidade por hierarquia: analista 5 seções, gerente 6, administrador 10.
+- As telas existentes são reaproveitadas sem mover seus elementos/IDs: cada subpágina filtra os cartões de `#preferencesArea` por `data-sec`.
+- Catálogo abre a tela já existente; Perfil e Sobre reutilizam as telas atuais; Relatórios acionam os exports já existentes (CSV/compartilhamento).
+- Recursos ainda não implementados não recebem controles falsos: relatórios consolidados, 2FA, sessões ativas, gestão de status de filiais, importação XLSX, exportação XLSX, limpeza no servidor, ambiente, suporte e documentação detalhada seguem como etapas futuras.
+- O modo offline permanece automático; nenhuma opção manual foi criada porque o motor atual não oferece esse toggle.
+- A PR #33 de documentação foi mesclada na `main`; esta implementação está em branch separada e não altera backend, migrations, RLS ou Edge Functions.
 
 **Desenho pronto para a etapa 1 (casca de navegação), ainda não implementado**
 - Em `#settingsRefArea`, no topo, um cartão `#sysMenuCard` "Ajustes do Sistema — Configurações, acessos e manutenção",
@@ -195,11 +201,11 @@ A branch `docs/continuidade-admin` (PR #33) contém só documentação.
 - A hierarquia acima é **proposta do Claude**, não foi confirmada item a item pelo Jonatas.
 
 **Etapas seguintes (cada uma em PR própria; as que mexem em banco precisam de migration + RLS + testes de contrato)**
-2. Auditoria: filtros por usuário/loja/período e exportação. Relatórios: validade por período, registros por usuário, consolidado por loja.
-3. Usuários: bloqueios e afastamentos; tela de perfis de acesso. Lojas: status ativa/inativa.
-4. Catálogo: cadastrar/editar produto, categoria, setor/subsetor, importação XLSX. Dados: exportar XLSX, limpeza no servidor.
-5. Perfil: Meus Dados editável, 2FA (Supabase Auth MFA), sessões ativas. Configuração: modo offline como opção.
-6. Perdas e avarias; agendamento de envios; ambiente (produção/staging) em Sobre.
+2. Completar Relatórios: validade por período, registros por usuário, consolidado por loja, perdas/avarias, agendamento e exportação de auditoria.
+3. Usuários: bloqueios e afastamentos; tela de perfis de acesso. Lojas: status ativa/inativa e gestão de equipes.
+4. Catálogo: cadastrar/editar produto, categoria, setor/subsetor, importação XLSX. Dados: exportar XLSX e limpeza controlada no servidor.
+5. Perfil: Meus Dados editável, 2FA (Supabase Auth MFA), sessões ativas. Configuração: parâmetros globais e integração administrável; modo offline continua automático até existir requisito/contrato técnico para alternância manual.
+6. Sobre: ambiente (produção/staging), documentação e suporte. Implementar integrações sem expor chaves privilegiadas no cliente.
 
 **Cuidados**
 - Não mover controles sem ajustar/rodar a suíte: os testes clicam em `nav button[data-v="aj"]` e usam direto `#aDias`, `#aCosmos`,
@@ -231,4 +237,20 @@ A branch `docs/continuidade-admin` (PR #33) contém só documentação.
 - 10/11 — Claude — Push: cartão de ativação movido para Configurações e visível a todos os perfis (teste cobre os 5); Notificações ganhou atalho para lá. Registrado o limite do servidor para perfis globais sem vínculo com a loja (seção 3.1.1).
 - 10/11 — Claude — Decisão: perfis globais recebem avisos de todas as lojas. Migration `alertas_escopo_global` + ajuste em `alertas/index.ts` + teste de contrato na PR #32. Nada aplicado/publicado em produção ainda.
 - 10/11 — Claude — PR #32 mesclada (`1da3e67`); migration `alertas_escopo_global` aplicada e conferida por MD5; função `alertas` v3 publicada e testada (public-key 200, dispatch 200). Pedido novo registrado: Área do Administrador (seção 7), não iniciada; imagem em `docs/referencias/area-administrador.jpg`.
-- 10/11 11:15 — Claude — **PAROU POR LIMITE DE USO.** Decisões do Jonatas sobre a Área do Administrador registradas (construir tudo; mesma área com hierarquia; visual do operador). Desenho da etapa 1 documentado na seção 7; **nenhum código da Área do Administrador foi escrito**. PR #33 (só documentação) aguarda merge. Próximo agente: começar pela etapa 1 da seção 7.
+- 10/11 — ChatGPT — Iniciada a etapa 1 da Área de Ajustes: central de dez seções, subpáginas por perfil e reaproveitamento dos componentes existentes; sem alterações de backend. PR #33 já mesclada.
+
+
+## 7.1 Especificação funcional consolidada — decisões aprovadas em 10/11/2026
+
+Documento normativo criado: `docs/especificacao-funcional-administrador.md`.
+
+Decisões confirmadas pelo proprietário:
+- **Grupos:** um usuário pode pertencer a múltiplos grupos de lojas, atribuídos pelo Administrador. Assistente e Analista ficam restritos à união das lojas de seus grupos; Gerente e Administrador têm escopo global.
+- **Permissões:** matriz padrão por perfil + exceções individuais por usuário, configuradas pelo Administrador por checkboxes. Permissão funcional e escopo territorial são dimensões separadas; exceções não podem ultrapassar o teto de autoridade nem ampliar lojas indevidamente.
+- **Aprovação:** qualquer usuário com a permissão específica pode aprovar (não é necessária aprovação cumulativa), desde que esteja autorizado para a loja e não seja o próprio solicitante.
+- **Cadastro:** Assistente cadastra Operadores no próprio escopo; Analista cadastra Operadores e Assistentes no próprio escopo; Gerente cadastra Operadores, Assistentes e Analistas em qualquer loja; Administrador cadastra todos os perfis e administra todos os grupos.
+- **Solicitações:** alteração de nome de produto pode ser aprovada por Assistente, Analista, Gerente ou Administrador; exclusão somente por Gerente ou Administrador. Exclusão deve preservar histórico, preferencialmente por inativação lógica.
+
+Essas decisões são **especificação aprovada, não funcionalidades implementadas**. A PR #34 continua sendo a primeira etapa de navegação; implementação de backend, migrations, RLS, Edge Functions e interface de gestão ocorrerá em etapas próprias.
+
+- 10/11 — ChatGPT — Criado `docs/especificacao-funcional-administrador.md` na branch `feat/area-ajustes-administrador`; decisões de grupos, permissões e aprovações consolidadas. PR #34 permanece aberta, sem merge.

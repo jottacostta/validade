@@ -103,6 +103,36 @@ nav.abas #alertBadge{font-size:10px;line-height:16px;background:var(--da);color:
 #editarLojas input{width:18px;height:18px;flex:none}#editarLojasBusca{width:100%;margin:6px 0 8px}#editarLojasAcoes{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 8px}#editarLojasAcoes button{flex:1;min-width:120px}#editarLojasResumo{font-size:12px;color:var(--mu);margin:4px 0 8px}
 @media(max-width:420px){#editarLojas{grid-template-columns:1fr}}
 
+/* Central de Ajustes — navegação administrativa no padrão Guanabara */
+#sysMenuCard{padding:0;overflow:hidden;border:2px solid #294967;border-radius:22px;background:linear-gradient(145deg,#142f49,#0b2034);box-shadow:none}
+#sysMenuCard .sys-menu-intro{padding:17px 16px 13px;border-bottom:1px solid #35536e}
+#sysMenuCard .sys-menu-intro h2{margin:0;font-size:clamp(21px,5.4vw,27px);font-weight:850}
+#sysMenuCard .sys-menu-intro p{margin:4px 0 0;color:#c1d0df;font-size:13px}
+#sysMenu{display:grid;gap:9px;padding:12px}
+#sysMenu .sys-menu-item{display:flex;align-items:center;gap:12px;width:100%;min-height:68px;padding:11px 12px;border:1px solid #31516f;border-radius:16px;background:linear-gradient(145deg,#173752,#10283e);color:#f5f8fc;text-align:left}
+#sysMenu .sys-menu-icon{display:grid;place-items:center;flex:0 0 43px;width:43px;height:43px;border-radius:13px;background:#0b4b86;color:#fff}
+#sysMenu .sys-menu-icon svg{width:25px;height:25px}
+#sysMenu .sys-menu-copy{display:block;min-width:0;flex:1}
+#sysMenu .sys-menu-copy b{display:block;font-size:15px;font-weight:850;line-height:1.2}
+#sysMenu .sys-menu-copy small{display:block;margin-top:3px;color:#c1d0df;font-size:12px;line-height:1.25}
+#sysMenu .sys-menu-chevron{width:19px;height:19px;flex:none;color:#b7d8f4}
+#sysSectionHead{display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:12px;border:1px solid #294967;border-radius:16px;background:linear-gradient(145deg,#142f49,#0c2238)}
+#sysSectionHead button{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border:1px solid #3978a9;border-radius:12px;background:#0b477f;color:#fff}
+#sysSectionHead button svg{width:22px;height:22px}
+#sysSectionHead h2{margin:0;font-size:19px;font-weight:850}
+#sysSectionHead p{margin:2px 0 0;color:#c1d0df;font-size:12px}
+#preferencesArea[data-sec-ativa="usuarios"]>.card[data-sec]:not([data-sec="usuarios"]),
+#preferencesArea[data-sec-ativa="lojas"]>.card[data-sec]:not([data-sec="lojas"]),
+#preferencesArea[data-sec-ativa="pereciveis"]>.card[data-sec]:not([data-sec="pereciveis"]),
+#preferencesArea[data-sec-ativa="auditoria"]>.card[data-sec]:not([data-sec="auditoria"]),
+#preferencesArea[data-sec-ativa="dados"]>.card[data-sec]:not([data-sec="dados"]),
+#preferencesArea[data-sec-ativa="config"]>.card[data-sec]:not([data-sec="config"]){display:none!important}
+#sysReportsPanel{padding:14px;border:1px solid #294967;border-radius:16px;background:linear-gradient(145deg,#142f49,#0c2238)}
+#sysReportsPanel h3{margin:0 0 5px;font-size:17px}
+#sysReportsPanel p{margin:0 0 12px;color:#c1d0df;font-size:13px}
+#sysReportsPanel .sys-report-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#sysReportsPanel .sys-report-actions button{min-height:48px}
+@media(max-width:360px){#sysMenu{padding:9px;gap:8px}#sysMenu .sys-menu-item{gap:9px;padding:9px}#sysMenu .sys-menu-icon{flex-basis:38px;width:38px;height:38px}}
 /* Guanabara — implementação fiel da tela inicial aprovada */
 :root{
  --bg:#031321;--sf:#10283e;--sf2:#142f49;--bd:#294967;--ink:#f5f8fc;--mu:#c1d0df;
@@ -760,6 +790,28 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 <!-- ═════════ AJUSTES ═════════ -->
 <section class="vista" id="v-aj">
   <div class="operator-tabs" id="settingsTabs" role="tablist" aria-label="Configurações e perfil"><button class="on" type="button" data-settings-view="settings" aria-pressed="true">Configurações</button><button type="button" data-settings-view="profile" aria-pressed="false">Perfil do Operador</button></div>
+  <div class="card" id="sysMenuCard" hidden>
+    <div class="sys-menu-intro"><h2>Ajustes do Sistema</h2><p>Configurações, acessos e manutenção</p></div>
+    <div id="sysMenu" aria-label="Seções administrativas"></div>
+  </div>
+  <div class="card sys-card" id="pushCard"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 6-2.5 6.5-2.5 8.5h17c0-2-2.5-2.5-2.5-8.5M10 20.5h4"/></svg>Notificações push</h3><p class="push-sub">Receba os avisos de validade neste aparelho, mesmo com o app fechado.</p><p id="pushStatus">Verificando suporte…</p><button class="btn" id="bPushAtivar" type="button">Ativar notificações push</button><button class="btn sec" id="bPushDesativar" type="button" style="display:none">Desativar push neste aparelho</button></div>
+  <div id="sysSectionHead" style="display:none">
+    <button id="sysBackToMenu" type="button" aria-label="Voltar aos ajustes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
+    <div><h2 id="sysSectionTitle">Ajustes</h2><p id="sysSectionSubtitle">Configurações do sistema</p></div>
+  </div>
+  <div id="sysSectionView" style="display:none">
+    <div id="sysReportsPanel" style="display:none">
+      <h3>Relatórios disponíveis</h3>
+      <p>Exporte os dados operacionais já disponíveis no aplicativo. Relatórios consolidados por usuário, filial e período ainda exigem implementação específica.</p>
+      <div class="sys-report-actions">
+        <button class="btn sec" type="button" data-sys-action="bCsvProd">Produtos · CSV</button>
+        <button class="btn sec" type="button" data-sys-action="bRelProd">Produtos · Relatório</button>
+        <button class="btn sec" type="button" data-sys-action="bCsvPe">Perecíveis · CSV</button>
+        <button class="btn sec" type="button" data-sys-action="bRelPe">Perecíveis · Relatório</button>
+        <button class="btn sec" type="button" data-sys-action="bAlertExport">Alertas · Exportar</button>
+      </div>
+    </div>
+  </div>
   <div id="profileArea" style="display:none">
     <div class="card profile-head" id="operatorProfileCard"><span class="profile-avatar" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/></svg></span><div class="profile-id"><strong id="profileName">Operador</strong><span id="profileLogin">—</span><span class="chip ok" id="profileStatus">Sessão ativa</span></div></div>
     <div class="card sys-card"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5V20h16v-9.5M3 6.5 4.5 4h15L21 6.5V8a2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0A2.2 2.2 0 0 1 3 8zM9.5 20v-5h5v5"/></svg>Dados Operacionais</h3><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5V20h16v-9.5M3 6.5 4.5 4h15L21 6.5V8a2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0A2.2 2.2 0 0 1 3 8zM9.5 20v-5h5v5"/></svg><span>Loja / Filial</span><b id="profileStore">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/></svg><span>Função</span><b id="profileRole">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4 8.5 4.2L12 12.4 3.5 8.2zM3.5 12.2 12 16.4l8.5-4.2M3.5 16.2 12 20.4l8.5-4.2"/></svg><span>Setor de Atuação</span><b id="profileSector">—</b></div></div>
@@ -773,32 +825,31 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
       <label class="pref-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="4" width="8" height="16" rx="1.8"/><path d="M4.5 8v8M2 10v4M19.5 8v8M22 10v4"/></svg><span><b>Vibração</b><small>Avisar com vibração</small></span><input type="checkbox" class="switch" id="aVibra"></label></div>
     <div class="card sys-card"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.5v.3"/></svg>Informações do Sistema</h3><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5V20h16v-9.5M3 6.5 4.5 4h15L21 6.5V8a2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0A2.2 2.2 0 0 1 3 8zM9.5 20v-5h5v5"/></svg><span>Loja</span><b id="cfgLoja">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/></svg><span>Operador</span><b id="cfgOperador">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg><span>Versão do App</span><b id="cfgVersao">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg><span>Última sincronização</span><b id="cfgSync">—</b></div></div>
     <div class="card sys-card"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 5.8v5.7c0 4.3 2.9 7.6 7 9 4.1-1.4 7-4.7 7-9V5.8zM9 12l2.2 2.2L15.2 10"/></svg>Suporte e Ajuda</h3><button class="opt-row" id="cfgSenha" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2"/></svg><span><b>Alterar Senha</b><small>Troque sua senha de acesso</small></span><svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button><button class="opt-row" id="cfgSobre" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.5v.3"/></svg><span><b>Sobre o Aplicativo</b><small>Saiba mais sobre o app</small></span><svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
-    <div class="card sys-card" id="pushCard"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 6-2.5 6.5-2.5 8.5h17c0-2-2.5-2.5-2.5-8.5M10 20.5h4"/></svg>Notificações push</h3><p class="push-sub">Receba os avisos de validade neste aparelho, mesmo com o app fechado.</p><p id="pushStatus">Verificando suporte…</p><button class="btn" id="bPushAtivar" type="button">Ativar notificações push</button><button class="btn sec" id="bPushDesativar" type="button" style="display:none">Desativar push neste aparelho</button></div>
-    <div class="card sys-card" id="cfgAdminCard" hidden><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 5.8v5.7c0 4.3 2.9 7.6 7 9 4.1-1.4 7-4.7 7-9V5.8zM9 12l2.2 2.2L15.2 10"/></svg>Administração</h3><button class="opt-row" id="cfgCatalogo" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11M9 8.5h6"/></svg><span><b>Catálogo de Produtos</b><small>Produtos conhecidos e seus registros</small></span><svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
+      <div class="card sys-card" id="cfgAdminCard" hidden><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 5.8v5.7c0 4.3 2.9 7.6 7 9 4.1-1.4 7-4.7 7-9V5.8zM9 12l2.2 2.2L15.2 10"/></svg>Administração</h3><button class="opt-row" id="cfgCatalogo" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11M9 8.5h6"/></svg><span><b>Catálogo de Produtos</b><small>Produtos conhecidos e seus registros</small></span><svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
     <button class="btn big reg-save" id="cfgSair" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9"/></svg><span>Sair do Aplicativo</span></button>
     <h3 class="adv-title">Configurações avançadas</h3>
   </div>
   <div id="preferencesArea">
-  <div class="card"><h2>Etiqueta da balança</h2>
+  <div class="card" data-sec="pereciveis"><h2>Etiqueta da balança</h2>
     <p style="margin:0;font-size:13px;color:var(--mu)">Etiquetas de balança (EAN-13) começam com <b>2</b>: 2 + código do produto (6 posições, com zeros de preenchimento) + valor (5 dígitos) + dígito verificador.</p>
     <div class="g2"><div><label class="f" for="aDig">Dígitos do código</label><select id="aDig"><option value="4">4 dígitos (2 CCCC 00 VVVVV D)</option><option value="5">5 dígitos (2 CCCCC 0 VVVVV D)</option><option value="6">6 dígitos (2 CCCCCC VVVVV D)</option></select></div>
     <div><label class="f" for="aValor">O valor na etiqueta é</label><select id="aValor"><option value="peso">Peso (gramas)</option><option value="preco">Preço (centavos)</option></select></div></div>
     <label style="display:flex;gap:10px;align-items:center;margin-top:12px;font-size:14px"><input type="checkbox" id="aOcr" style="width:22px;height:22px"> Ler descrição e lote por foto (OCR)</label>
     <p style="margin:6px 0 0;font-size:12px;color:var(--mu)">Ao escanear, tenta ler o nome do produto e o lote (vai para o SIF) do texto da etiqueta. Baixa um leitor (~alguns MB) na 1ª vez; depois funciona sem internet.</p>
   </div>
-  <div class="card"><h2>Busca do nome do produto</h2>
+  <div class="card" data-sec="config"><h2>Busca do nome do produto</h2>
     <p style="margin:0;font-size:13px;color:var(--mu)">Ordem da busca: <b>Cosmos</b> (cadastro brasileiro, precisa de token gratuito em cosmos.bluesoft.com.br) → Open Food / Beauty / Products Facts → você digita.</p>
     <label class="f" for="aCosmos">Seu token do Cosmos (pessoal)</label><input id="aCosmos" autocomplete="off" spellcheck="false" placeholder="cole aqui o seu token">
     <p style="margin:6px 0 0;font-size:12px;color:var(--mu)">Cada usuário usa o seu próprio token. Crie o seu grátis em cosmos.bluesoft.com.br — ele fica salvo na sua conta e vale em qualquer aparelho.</p>
   </div>
-  <div class="card"><h2>Alertas</h2>
+  <div class="card" data-sec="pereciveis"><h2>Alertas</h2>
     <label class="f" for="aDias">Avisar quando faltar (dias)</label><input id="aDias" type="number" inputmode="numeric" min="1" max="365">
     <label style="display:flex;gap:10px;align-items:center;margin-top:12px;font-size:14px"><input type="checkbox" id="aNotif" style="width:22px;height:22px"> Notificação no celular antes de vencer</label>
   </div>
-  <div class="card" id="cardConta" style="display:none"><h2>Conta e sincronização</h2><div id="contaInfo"></div></div>
-  <div class="card" id="cardAuditoria" style="display:none"><h2>Auditoria <span class="ean">(somente admin)</span></h2><div id="listaAud"></div><button class="btn sec" id="bAudRefresh" style="margin-top:10px">Atualizar</button></div>
-  <div class="card" id="cardSolicitacoes" style="display:none"><h2>Solicitações de exclusão</h2><p style="font-size:13px;color:var(--mu)">Solicitações pendentes e histórico de revisão. Exclusões aprovadas são tombstones sincronizados.</p><div id="listaSolicitacoes"><div class="vazio">Carregando…</div></div><button class="btn sec" id="bSolicitacoesRefresh" style="margin-top:10px">Atualizar solicitações</button></div>
-  <div class="card" id="cardUsuarios" style="display:none">
+  <div class="card" data-sec="config" id="cardConta" style="display:none"><h2>Conta e sincronização</h2><div id="contaInfo"></div></div>
+  <div class="card" data-sec="auditoria" id="cardAuditoria" style="display:none"><h2>Auditoria <span class="ean">(somente admin)</span></h2><div id="listaAud"></div><button class="btn sec" id="bAudRefresh" style="margin-top:10px">Atualizar</button></div>
+  <div class="card" data-sec="dados" id="cardSolicitacoes" style="display:none"><h2>Solicitações de exclusão</h2><p style="font-size:13px;color:var(--mu)">Solicitações pendentes e histórico de revisão. Exclusões aprovadas são tombstones sincronizados.</p><div id="listaSolicitacoes"><div class="vazio">Carregando…</div></div><button class="btn sec" id="bSolicitacoesRefresh" style="margin-top:10px">Atualizar solicitações</button></div>
+  <div class="card" data-sec="usuarios" id="cardUsuarios" style="display:none">
     <h2>Gestão de usuários <span class="ean">(assistente, analista e admin)</span></h2>
     <p style="font-size:13px;color:var(--mu)">Contas de acesso ao sistema. As permissões são validadas no servidor.</p>
     <div id="usuariosForm">
@@ -812,8 +863,8 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
     <div class="row" style="margin-top:12px"><button class="btn sec" id="bUsuarioRefresh">Atualizar lista</button></div>
     <div id="listaUsuarios" style="margin-top:12px"><div class="vazio">Carregue a lista para começar.</div></div>
   </div>
-  <div class="card" id="cardLojasAdmin" style="display:none"><h2>Administração de lojas</h2><p style="font-size:13px;color:var(--mu)">Cadastro global de unidades (Administrador).</p><label class="f" for="lojaNovaNome">Nome da loja</label><input id="lojaNovaNome" placeholder="ex.: Filial 31"><button class="btn big" id="bLojaNova" style="margin-top:8px">Criar loja</button><div id="listaLojasAdmin" style="margin-top:12px"></div><button class="btn sec" id="bLojasAdminRefresh" style="margin-top:8px">Atualizar lojas</button></div>
-  <div class="card"><h2>Backup</h2>
+  <div class="card" data-sec="lojas" id="cardLojasAdmin" style="display:none"><h2>Administração de lojas</h2><p style="font-size:13px;color:var(--mu)">Cadastro global de unidades (Administrador).</p><label class="f" for="lojaNovaNome">Nome da loja</label><input id="lojaNovaNome" placeholder="ex.: Filial 31"><button class="btn big" id="bLojaNova" style="margin-top:8px">Criar loja</button><div id="listaLojasAdmin" style="margin-top:12px"></div><button class="btn sec" id="bLojasAdminRefresh" style="margin-top:8px">Atualizar lojas</button></div>
+  <div class="card" data-sec="dados"><h2>Backup</h2>
     <div class="row"><button class="btn sec" id="bExp">Exportar backup</button><label class="btn sec" for="fImp">Importar backup</label></div>
     <input type="file" id="fImp" accept=".json,application/json" style="display:none">
     <button class="btn perigo big" id="bZerar" style="margin-top:12px">Apagar todos os dados</button>
@@ -1127,11 +1178,45 @@ var subtitulosTela={busca:'Área do Operador',catalogo:'Produtos e registros',re
 function mostrarVisaoAlertas(v){var notif=v==='notifications';$('v-alertas').classList.toggle('alerts-view',!notif);$('alertasMain').style.display=notif?'none':'';$('cardNotificacoes').style.display=notif?'':'none';$('pushDica').style.display=notif?'':'none';
   document.querySelectorAll('#alertViewTabs [data-alert-view]').forEach(function(b){var on=b.dataset.alertView===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
   if($('screenTitle'))$('screenTitle').textContent=notif?'Notificações':'Alertas';}
-var ajVista='settings',AJ_TITULOS={settings:'Configurações',profile:'Perfil do Operador',password:'Alterar Senha',about:'Sobre o Aplicativo'};
-function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var m={profileArea:'profile',settingsRefArea:'settings',preferencesArea:'settings',passwordArea:'password',aboutArea:'about'};
-  Object.keys(m).forEach(function(id){$(id).style.display=m[id]===v?'':'none';});$('settingsTabs').style.display=(v==='settings'||v==='profile')?'':'none';
+var ajVista='settings',sysSecAtual='',AJ_TITULOS={settings:'Configurações',profile:'Perfil e Conta',password:'Alterar Senha',about:'Sobre o Sistema',system:'Ajustes do Sistema',syssection:'Ajustes do Sistema'};
+var SYS_SECOES=[
+ {id:'perfil',titulo:'Perfil e Conta',sub:'Meus dados, senha e segurança',roles:['analista','gerente','admin'],icon:'<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/>'},
+ {id:'usuarios',titulo:'Usuários e Permissões',sub:'Cadastro, perfis e acessos',roles:['analista','gerente','admin'],icon:'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c.5-4 2.7-6 6.5-6s6 2 6.5 6M15 15c3.8-.5 5.8 1.2 6.5 4"/>'},
+ {id:'lojas',titulo:'Lojas (Filiais)',sub:'Cadastro, equipes e vínculos',roles:['admin'],icon:'<path d="M3 10 5 4h14l2 6M4 10v10h16V10M2.5 10h19M9 20v-6h6v6"/>'},
+ {id:'catalogo',titulo:'Catálogo de Produtos',sub:'Cadastro, EAN e produtos conhecidos',roles:['admin'],icon:'<path d="M4 5h16v15H4zM8 5V3h8v2M8 10h8M8 14h5"/>'},
+ {id:'pereciveis',titulo:'Perecíveis e Validade',sub:'Etiquetas, prazos e alertas',roles:['analista','gerente','admin'],icon:'<path d="M20.5 3.5c-8 0-15 3-15 10a6 6 0 0 0 6 6c7 0 10-7 9-16zM4 21c2-5 6-8 11-11"/>'},
+ {id:'relatorios',titulo:'Relatórios e Indicadores',sub:'Validade, registros e exportações',roles:['analista','gerente','admin'],icon:'<path d="M4 20V11h4v9M10 20V5h4v15M16 20V2h4v18"/>'},
+ {id:'auditoria',titulo:'Auditoria do Sistema',sub:'Histórico e rastreabilidade das ações',roles:['admin'],icon:'<path d="M12 3 5 5.8v5.7c0 4.3 2.9 7.6 7 9 4.1-1.4 7-4.7 7-9V5.8zM9 12l2.2 2.2L15.2 10"/>'},
+ {id:'config',titulo:'Configuração Geral',sub:'Notificações, parâmetros e integrações',roles:['gerente','admin'],icon:'<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="18" r="2"/>'},
+ {id:'dados',titulo:'Dados e Manutenção',sub:'Backup, restauração e sincronização',roles:['admin'],icon:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/>'},
+ {id:'sobre',titulo:'Sobre o Sistema',sub:'Versão, ambiente, documentação e suporte',roles:['analista','gerente','admin'],icon:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v.2"/>'}
+];
+function podeVerMenuSistema(){return ['analista','gerente','admin'].includes(papelAtual());}
+function renderMenuAjustes(){var menu=$('sysMenu');if(!menu)return;var p=papelAtual();menu.innerHTML=SYS_SECOES.filter(function(s){return s.roles.includes(p);}).map(function(s){return '<button class="sys-menu-item" type="button" data-sys-open="'+s.id+'"><span class="sys-menu-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">'+s.icon+'</svg></span><span class="sys-menu-copy"><b>'+s.titulo+'</b><small>'+s.sub+'</small></span><svg class="ico sys-menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>';}).join('');}
+function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var menu=podeVerMenuSistema(),ids=['profileArea','settingsRefArea','preferencesArea','passwordArea','aboutArea','sysMenuCard','sysSectionHead','sysSectionView','pushCard'];ids.forEach(function(id){if($(id))$(id).style.display='none';});
+  $('preferencesArea').removeAttribute('data-sec-ativa');$('sysReportsPanel').style.display='none';
+  if(v==='system'){$('sysMenuCard').hidden=false;$('sysMenuCard').style.display=menu?'':'none';renderMenuAjustes();}
+  else if(v==='syssection'){var item=SYS_SECOES.find(function(s){return s.id===sysSecAtual;});if(!item||!item.roles.includes(papelAtual())){mostrarVistaAjustes('system');return;}
+    $('sysSectionHead').style.display='';$('sysSectionTitle').textContent=item.titulo;$('sysSectionSubtitle').textContent=item.sub;
+    if(item.id==='config'){$('settingsRefArea').style.display='';$('preferencesArea').style.display='';$('preferencesArea').dataset.secAtiva='config';}
+    else if(['usuarios','lojas','pereciveis','auditoria','dados'].includes(item.id)){$('preferencesArea').style.display='';$('preferencesArea').dataset.secAtiva=item.id;}
+    else if(item.id==='relatorios'){$('sysSectionView').style.display='';$('sysReportsPanel').style.display='';}
+  }else{
+    var m={profileArea:'profile',settingsRefArea:'settings',preferencesArea:'settings',passwordArea:'password',aboutArea:'about'};
+    Object.keys(m).forEach(function(id){$(id).style.display=m[id]===v?'':'none';});
+    if(v==='settings'&&menu){$('sysMenuCard').hidden=false;$('sysMenuCard').style.display='';renderMenuAjustes();}
+  }
+  $('pushCard').style.display=(v==='system'||v==='settings'||v==='profile'||(v==='syssection'&&sysSecAtual==='config'))?'':'none';
+  $('settingsTabs').style.display=(v==='settings'||v==='profile')&&!menu?'':'none';
   document.querySelectorAll('#settingsTabs [data-settings-view]').forEach(function(b){var on=b.dataset.settingsView===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
-  if($('screenTitle'))$('screenTitle').textContent=AJ_TITULOS[v];if(v==='password')limparTrocaSenha();renderConfiguracoes();window.scrollTo(0,0);}
+  if($('screenTitle'))$('screenTitle').textContent=v==='system'?'Ajustes do Sistema':v==='syssection'?$('sysSectionTitle').textContent:AJ_TITULOS[v];
+  if(v==='password')limparTrocaSenha();renderConfiguracoes();window.scrollTo(0,0);}
+function abrirSecaoSistema(key){var item=SYS_SECOES.find(function(s){return s.id===key;});if(!item||!item.roles.includes(papelAtual())){toast('Acesso não autorizado a esta seção.');return;}
+  if(key==='perfil'){mostrarVistaAjustes('profile');return;}if(key==='sobre'){mostrarVistaAjustes('about');return;}if(key==='catalogo'){ir('catalogo');return;}
+  sysSecAtual=key;mostrarVistaAjustes('syssection');}
+$('sysMenu').onclick=function(e){var b=e.target.closest('[data-sys-open]');if(b)abrirSecaoSistema(b.dataset.sysOpen);};
+$('sysBackToMenu').onclick=function(){mostrarVistaAjustes('system');};
+document.querySelectorAll('[data-sys-action]').forEach(function(b){b.onclick=function(){var alvo=$(b.dataset.sysAction);if(alvo)alvo.click();else toast('Ação indisponível nesta versão.');};});
 /* Catálogo: a tela é exclusiva do administrador (restrição visual; a consulta de nomes
    por código continua valendo para todos os perfis, pois o registro depende dela). */
 function podeVerCatalogo(){return papelAtual()==='admin';}
@@ -1153,8 +1238,8 @@ function ir(v){if(v==='catalogo'&&!podeVerCatalogo()){toast('O catálogo é excl
   if($('slogan'))$('slogan').textContent=(interna&&subtitulosTela[v])||CFG.slogan||'Área do Operador';
   if($('operatorRolePill'))$('operatorRolePill').hidden=!interna;
   document.querySelectorAll('#abas button').forEach(function(b){b.classList.toggle('on',b.dataset.v===(v==='reg'?'home':v==='busca'?'prod':v==='catalogo'?'aj':v==='detail'||v==='edit'?areaContextual:v));});
-  if(v==='home')renderHome();if(v==='busca')renderBusca();if(v==='catalogo')renderCatalogo();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();mostrarVisaoAlertas('alerts');}if(v==='aj'){renderPerfilOperador();ajustes();carregarSolicitacoesExclusao();mostrarVistaAjustes('settings');}window.scrollTo(0,0);}
-$('headerBack').onclick=function(){if(vistaAtual==='aj'&&(ajVista==='password'||ajVista==='about')){mostrarVistaAjustes('settings');return;}ir(vistaAnterior==='reg'?'home':vistaAnterior||'home');};
+  if(v==='home')renderHome();if(v==='busca')renderBusca();if(v==='catalogo')renderCatalogo();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();mostrarVisaoAlertas('alerts');}if(v==='aj'){renderPerfilOperador();ajustes();carregarSolicitacoesExclusao();mostrarVistaAjustes(podeVerMenuSistema()?'system':'settings');}window.scrollTo(0,0);}
+$('headerBack').onclick=function(){if(vistaAtual==='aj'&&ajVista==='syssection'){mostrarVistaAjustes('system');return;}if(vistaAtual==='aj'&&podeVerMenuSistema()&&['password','about','profile'].includes(ajVista)){mostrarVistaAjustes('system');return;}if(vistaAtual==='aj'&&(ajVista==='password'||ajVista==='about')){mostrarVistaAjustes('settings');return;}ir(vistaAnterior==='reg'?'home':vistaAnterior||'home');};
 $('abas').onclick=function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.v==='pere')subPere('lista');ir(b.dataset.v);};
 $('alertViewTabs').onclick=function(e){var b=e.target.closest('[data-alert-view]');if(b)mostrarVisaoAlertas(b.dataset.alertView);};
 $('settingsTabs').onclick=function(e){var b=e.target.closest('[data-settings-view]');if(b)mostrarVistaAjustes(b.dataset.settingsView);};
