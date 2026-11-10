@@ -146,3 +146,10 @@ test('troca de senha voluntária passa pela função do servidor, que confere a 
   assert.match(app, /acao:'trocar_senha'/);
   assert.doesNotMatch(app, /service_role|SERVICE_ROLE/);
 });
+
+test('alertas de validade são gerados diariamente pelo agendador do banco, sem segredo embutido', () => {
+  const m = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261110020000_agendar_alertas_validade.sql'), 'utf8');
+  assert.match(m, /create extension if not exists pg_cron/);
+  assert.match(m, /cron\.schedule\(\s*'gerar-alertas-validade-diario',\s*'0 9 \* \* \*',\s*\$\$select public\.gerar_alertas_validade\(\)\$\$/);
+  assert.doesNotMatch(m, /secret|Bearer|eyJ|service_role/i);
+});
