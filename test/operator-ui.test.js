@@ -1,0 +1,55 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const html = fs.readFileSync(path.join(__dirname, '../src/app.html'), 'utf8');
+
+test('Área do Operador usa cinco abas principais e mantém o registro iniciado pela Home', () => {
+  const nav = html.match(/<nav class="abas" id="abas">([\s\S]*?)<\/nav>/);
+  assert.ok(nav, 'navegação principal encontrada');
+  const tabs = [...nav[1].matchAll(/data-v="([^"]+)"/g)].map(m => m[1]);
+  assert.deepEqual(tabs, ['home', 'prod', 'pere', 'alertas', 'aj']);
+  assert.match(html, /id="homeRegister"/);
+  assert.match(html, /function mostrarEscolhaRegistro\(\)/);
+});
+
+test('registros de produtos e perecíveis têm telas de detalhe, edição e seleção por cartão', () => {
+  for (const id of ['v-prod', 'v-pere', 'v-detail', 'v-edit']) assert.match(html, new RegExp(`id="${id}"`));
+  for (const control of ['detailContent', 'detailOtherLots', 'bDetailEdit', 'edLote', 'edVal', 'edQtd', 'edSetor', 'edSif', 'edPereVal', 'edPeso', 'edPereSetor', 'bEditDelete']) {
+    assert.match(html, new RegExp(`id="${control}"`), `controle ${control} existe`);
+  }
+  assert.match(html, /data-detail-lote=/);
+  assert.match(html, /data-edit-lote=/);
+  assert.match(html, /data-detail-pere=/);
+  assert.match(html, /data-edit-pere=/);
+});
+
+test('filtros, alertas e notificações têm destinos próprios; temperatura não é simulada', () => {
+  for (const control of ['qProd', 'fPeriodoProd', 'fSetorProd', 'fSituacaoProd', 'qPe', 'fPeriodoPe', 'fSetorPe']) {
+    assert.match(html, new RegExp(`id="${control}"`));
+  }
+  assert.match(html, /id="alertasMain"/);
+  assert.match(html, /id="cardNotificacoes"[^>]*display:none/);
+  assert.match(html, /data-alert-view="notifications"/);
+  assert.match(html, /id="fTemperaturaPe"[^>]*disabled/);
+  assert.match(html, /O contrato atual não armazena temperatura/);
+});
+
+test('listas seguem a ordem das referências e não duplicam títulos ou filtros de status', () => {
+  assert.doesNotMatch(html, /<div class="page-heading"/);
+  assert.doesNotMatch(html, /id="fProd"/);
+  const product = html.match(/<section class="vista" id="v-prod">([\s\S]*?)<\/section>/)[1];
+  const productOrder = ['id="qProd"', 'id="fPeriodoProd"', 'class="operator-summary"', 'id="listaProd"']
+    .map(token => product.indexOf(token));
+  assert.ok(productOrder.every(i => i >= 0));
+  assert.deepEqual(productOrder, [...productOrder].sort((a, b) => a - b));
+  assert.match(product, /<small>Total<\/small>[\s\S]*?<small>Válidos<\/small>/);
+
+  const perishableStart = html.indexOf('<div id="pe-lista"');
+  const perishableOrder = ['id="qPe"', 'id="fPeriodoPe"', 'class="operator-summary"', 'id="listaPe"']
+    .map(token => html.indexOf(token, perishableStart));
+  assert.ok(perishableOrder.every(i => i >= 0));
+  assert.deepEqual(perishableOrder, [...perishableOrder].sort((a, b) => a - b));
+  assert.doesNotMatch(html, /id="profileArea" style="display:none"><div class="operator-page-intro"/);
+});
