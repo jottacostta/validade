@@ -125,3 +125,32 @@ test('Edge Function valida membership e não registra endpoint ou chaves no log'
   assert.doesNotMatch(edge, /console\.(log|error|warn)\([^\n]*(endpoint|p256dh|auth)/i);
   assert.match(edge, /status === 404 \|\| status === 410/);
 });
+
+test('limpar notificações é remoção lógica do próprio destinatário (não apaga a linha nem quebra a deduplicação)', () => {
+  const m = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261110010000_notificacoes_remocao_logica.sql'), 'utf8');
+  assert.match(m, /alter table public\.notificacoes add column if not exists removida_em timestamptz/);
+  assert.match(m, /grant select,update\(lida_em,removida_em\) on public\.notificacoes to authenticated/);
+  assert.doesNotMatch(m, /grant[^;]*delete[^;]*notificacoes[^;]*to authenticated/i, 'usuário comum não ganha DELETE');
+  assert.doesNotMatch(m, /drop policy|disable row level security/i, 'políticas existentes são preservadas');
+  assert.match(app, /removida_em=is\.null/);
+});
+
+test('troca de senha voluntária passa pela função do servidor, que confere a senha atual e aplica validarSenha', () => {
+  const fn = fs.readFileSync(path.join(__dirname, '../supabase/functions/gerir-usuarios/index.ts'), 'utf8');
+  const bloco = fn.match(/if \(acao === "trocar_senha"\) \{([\s\S]*?)\n    \}\n/);
+  assert.ok(bloco, 'ação trocar_senha existe');
+  assert.match(bloco[1], /grant_type=password/, 'confere a senha atual no Auth');
+  assert.match(bloco[1], /validarSenha\(senha, usuario\)/);
+  assert.match(bloco[1], /updateUserById\(caller\.id, \{ password: senha \}\)/, 'só altera a própria conta');
+  assert.match(bloco[1], /audit\("trocou_senha"/);
+  assert.match(app, /acao:'trocar_senha'/);
+  assert.doesNotMatch(app, /service_role|SERVICE_ROLE/);
+});
+
+test('alertas de validade são gerados diariamente pelo agendador do banco, sem segredo embutido', () => {
+  const m = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261110020000_agendar_alertas_validade.sql'), 'utf8');
+  assert.match(m, /create extension if not exists pg_cron/);
+  assert.match(m, /cron\.schedule\(\s*'gerar-alertas-validade-diario',\s*'0 9 \* \* \*',\s*\$\$select public\.gerar_alertas_validade\(\)\$\$/);
+  // a chamada é local ao banco: nenhuma requisição HTTP, cabeçalho de segredo ou token na migration
+  assert.doesNotMatch(m, /net\.http_post|x-alertas-cron-secret|Bearer|eyJ/);
+});

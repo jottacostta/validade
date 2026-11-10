@@ -58,7 +58,7 @@ A implementação deve contemplar, no mínimo, os seguintes fluxos e telas repre
 4. Registro de produto perecível.
 5. Leitura de etiqueta de perecível e confirmação dos dados lidos.
 6. Meus Registros / produtos industrializados, com pesquisa, filtros, indicadores e paginação.
-7. Registros de Perecíveis, com pesquisa, filtros, temperatura, indicadores e paginação.
+7. Registros de Perecíveis, com pesquisa, filtros, indicadores e paginação. (Temperatura foi retirada do plano por decisão do proprietário em 10/11/2026.)
 8. Busca de produto, com filtros por tipo e resultados.
 9. Alertas, com categorias, contadores e listagem.
 10. Detalhe do alerta / lote.

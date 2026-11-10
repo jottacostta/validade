@@ -144,6 +144,28 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    if (acao === "trocar_senha") {
+      // Troca voluntária da própria senha: confere a senha atual no Auth e aplica
+      // as mesmas regras do primeiro acesso. Nunca altera a conta de outra pessoa.
+      const senhaAtual = String(body.senha_atual || "");
+      const senha = String(body.senha || "");
+      const usuario = (caller.email || "").split("@")[0];
+      if (!senhaAtual || !caller.email) return json({ error: "Informe a senha atual." }, 400);
+      const e1 = validarSenha(senha, usuario); if (e1) return json({ error: e1 }, 400);
+      if (senha === senhaAtual) return json({ error: "A nova senha deve ser diferente da atual." }, 400);
+      const anon = Deno.env.get("SUPABASE_ANON_KEY") || "";
+      if (!anon) return json({ error: "Função sem chave pública configurada." }, 500);
+      const conf = await fetch(SB_URL + "/auth/v1/token?grant_type=password", {
+        method: "POST", headers: { apikey: anon, "Content-Type": "application/json" },
+        body: JSON.stringify({ email: caller.email, password: senhaAtual }),
+      });
+      if (!conf.ok) return json({ error: "A senha atual não confere." }, 403);
+      const { error: trocaErr } = await admin.auth.admin.updateUserById(caller.id, { password: senha });
+      if (trocaErr) return json({ error: "Não foi possível alterar a senha. " + trocaErr.message }, 400);
+      await audit("trocou_senha", {});
+      return json({ ok: true });
+    }
+
     if (acao === "editar") {
       if (!podeEditar) return json({ error: "Sem permissão para editar usuários" }, 403);
       const id = String(body.id || "");

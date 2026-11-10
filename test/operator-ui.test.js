@@ -25,15 +25,15 @@ test('registros de produtos e perecíveis têm telas de detalhe, edição e sele
   assert.match(html, /data-edit-pere=/);
 });
 
-test('filtros, alertas e notificações têm destinos próprios; temperatura não é simulada', () => {
+test('filtros, alertas e notificações têm destinos próprios; temperatura fora do plano', () => {
   for (const control of ['qProd', 'fPeriodoProd', 'fSetorProd', 'fSituacaoProd', 'qPe', 'fPeriodoPe', 'fSetorPe']) {
     assert.match(html, new RegExp(`id="${control}"`));
   }
   assert.match(html, /id="alertasMain"/);
   assert.match(html, /id="cardNotificacoes"[^>]*display:none/);
   assert.match(html, /data-alert-view="notifications"/);
-  assert.match(html, /id="fTemperaturaPe"[^>]*disabled/);
-  assert.match(html, /O contrato atual não armazena temperatura/);
+  // decisão do proprietário (10/11/2026): temperatura saiu do plano; não há controle na tela
+  assert.doesNotMatch(html, /fTemperaturaPe|[Tt]emperatura/);
 });
 
 test('listas seguem a ordem das referências e não duplicam títulos ou filtros de status', () => {
@@ -115,10 +115,10 @@ test('Ajustes: Configurações, Perfil, Alterar Senha e Sobre existem; ajustes t
   assert.doesNotMatch(aj, /[\u{1F300}-\u{1FAFF}\u{2699}]/u, 'Ajustes sem emoji');
 });
 
-test('Buscar Produto e Notificações: tela de busca própria e nenhum controle sem suporte no servidor', () => {
+test('Buscar Produto e Notificações: tela de busca própria, Limpar e ícones desenhados', () => {
   for (const id of ['v-busca', 'qBusca', 'buscaFiltros', 'buscaResultados', 'bAbrirBusca']) assert.match(html, new RegExp(`id="${id}"`), id);
   const al = html.match(/<section class="vista" id="v-alertas">([\s\S]*?)<\/section>/)[1];
-  assert.doesNotMatch(al, /Limpar/i, 'o servidor só permite marcar como lida; não há "Limpar"');
+  assert.match(al, /id="bLimparNotificacoes"/, 'Limpar existe desde a migration de remoção lógica');
   assert.doesNotMatch(al, /[\u{1F300}-\u{1FAFF}\u{26A0}\u{24D8}\u{2713}\u{21BB}]/u);
 });
 

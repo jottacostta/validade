@@ -353,6 +353,7 @@ create table if not exists public.push_subscriptions (
   p256dh text not null, auth text not null, created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+alter table public.notificacoes add column if not exists removida_em timestamptz; -- remoção lógica ("Limpar notificações")
 alter table public.notificacoes enable row level security;
 alter table public.push_subscriptions enable row level security;
 comment on column public.lotes.setor is 'Setor validado no servidor para registros novos; legado pode permanecer NULL.';
