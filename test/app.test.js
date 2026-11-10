@@ -1310,6 +1310,59 @@ tflaky('Catálogo: administrador abre por Configurações, vê todos os produtos
   await a.fechar();
 });
 
+tflaky('Catálogo: administrador inativa e restaura item global sem apagar registros da loja', { skip: pular }, async () => {
+  const ean = '7890000000017', alteracoes = [];
+  let item = { ean, nome: 'Produto Global', marca: 'Marca', img: '', updated_at: '2026-11-10T00:00:00Z', deleted_at: null };
+  const a = await abrirLogado(async p => {
+    await rotasBase(p, 'admin');
+    await p.route(/\/rest\/v1\/catalogo(?:\?|$)/, r => {
+      const u = new URL(r.request().url()), method = r.request().method();
+      if (method === 'GET') {
+        const filtraAtivo = u.searchParams.get('deleted_at') === 'is.null';
+        const filtraInativo = u.searchParams.get('deleted_at') === 'not.is.null';
+        const visivel = (!filtraAtivo || !item.deleted_at) && (!filtraInativo || !!item.deleted_at);
+        return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(visivel ? [item] : []) });
+      }
+      if (method === 'PATCH') {
+        const body = r.request().postDataJSON();
+        alteracoes.push({ body, filtro: u.searchParams.get('deleted_at') });
+        item = Object.assign({}, item, body, { updated_at: new Date().toISOString() });
+        return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([item]) });
+      }
+      return r.fulfill({ status: 201, contentType: 'application/json', body: '[]' });
+    });
+  }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin' });
+  await a.p.waitForFunction(() => { try { return !!JSON.parse(localStorage.getItem('validade_dados')).cat['7890000000017']; } catch (e) { return false; } });
+  await a.p.click('nav button[data-v="aj"]');
+  if (await a.p.isVisible('#sysMenuCard')) await a.p.click('#sysMenu [data-sys-open="catalogo"]');
+  else await a.p.click('#cfgCatalogo');
+  await a.p.waitForSelector('#listaCatalogo [data-catalogo-inativar="7890000000017"]');
+  a.respostas.push(false);
+  await a.p.click('#listaCatalogo [data-catalogo-inativar="7890000000017"]');
+  assert.strictEqual(alteracoes.length, 0, 'cancelar a confirmação não chama o backend');
+  a.respostas.push(true);
+  await a.p.click('#listaCatalogo [data-catalogo-inativar="7890000000017"]');
+  assert.strictEqual(alteracoes[0].filtro, 'is.null');
+  assert.ok(alteracoes[0].body.deleted_at, 'inativação envia tombstone');
+  await a.p.waitForFunction(() => { try { return !!JSON.parse(localStorage.getItem('validade_dados')).cat['7890000000017'].deleted_at; } catch (e) { return false; } });
+  let dados = await a.salvo();
+  assert.ok(dados.cat[ean].deleted_at, 'tombstone persiste no cache local');
+  assert.deepStrictEqual(dados.prod, {}, 'os registros por loja não foram apagados');
+  await a.p.click('#catalogoFiltros [data-cat-filter="inactive"]');
+  await a.p.waitForSelector('#listaCatalogo [data-catalogo-restaurar="7890000000017"]');
+  assert.ok((await a.p.textContent('#listaCatalogo')).includes('Inativo global'));
+  await a.p.click('#listaCatalogo [data-catalogo-restaurar="7890000000017"]');
+  await a.p.waitForFunction(() => { try { return !JSON.parse(localStorage.getItem('validade_dados')).cat['7890000000017'].deleted_at; } catch (e) { return false; } });
+  await a.p.click('#catalogoFiltros [data-cat-filter="all"]');
+  await a.p.waitForSelector('#listaCatalogo [data-catalogo-inativar="7890000000017"]');
+  assert.strictEqual(alteracoes[1].filtro, 'not.is.null');
+  assert.strictEqual(alteracoes[1].body.deleted_at, null, 'restauração remove o tombstone');
+  dados = await a.salvo();
+  assert.ok(!dados.cat[ean].deleted_at, 'restauração também persiste no cache local');
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
+
 tflaky('Push: operador, assistente, analista, gerente e administrador ativam em Configurações', { skip: pular }, async () => {
   for (const papel of ['operador', 'assistente', 'analista', 'gerente', 'admin']) {
     const a = await abrirLogado(async p => { await rotasBase(p, papel);

@@ -44,7 +44,8 @@ create table if not exists public.catalogo (
   nome       text not null,
   marca      text default '',
   img        text default '',
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
 );
 create index if not exists catalogo_updated_idx on public.catalogo (updated_at);
 
