@@ -25,15 +25,15 @@ test('registros de produtos e perecíveis têm telas de detalhe, edição e sele
   assert.match(html, /data-edit-pere=/);
 });
 
-test('filtros, alertas e notificações têm destinos próprios; temperatura não é simulada', () => {
+test('filtros, alertas e notificações têm destinos próprios; temperatura fora do plano', () => {
   for (const control of ['qProd', 'fPeriodoProd', 'fSetorProd', 'fSituacaoProd', 'qPe', 'fPeriodoPe', 'fSetorPe']) {
     assert.match(html, new RegExp(`id="${control}"`));
   }
   assert.match(html, /id="alertasMain"/);
   assert.match(html, /id="cardNotificacoes"[^>]*display:none/);
   assert.match(html, /data-alert-view="notifications"/);
-  assert.match(html, /id="fTemperaturaPe"[^>]*disabled/);
-  assert.match(html, /O contrato atual não armazena temperatura/);
+  // decisão do proprietário (10/11/2026): temperatura saiu do plano; não há controle na tela
+  assert.doesNotMatch(html, /fTemperaturaPe|[Tt]emperatura/);
 });
 
 test('listas seguem a ordem das referências e não duplicam títulos ou filtros de status', () => {
