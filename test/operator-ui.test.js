@@ -143,11 +143,10 @@ test('Catálogo: tela própria, com entrada só em Configurações (administraç
 test('Push: a ativação fica em Configurações (todos os perfis) e sai da tela de Notificações', () => {
   const aj = html.match(/<section class="vista" id="v-aj">([\s\S]*?)<\/section>/)[1];
   const al = html.match(/<section class="vista" id="v-alertas">([\s\S]*?)<\/section>/)[1];
-  const ref = aj.slice(aj.indexOf('id="settingsRefArea"'), aj.indexOf('id="preferencesArea"'));
-  for (const id of ['pushCard', 'pushStatus', 'bPushAtivar', 'bPushDesativar']) { assert.match(ref, new RegExp(`id="${id}"`), id + ' em Configurações'); assert.doesNotMatch(al, new RegExp(`id="${id}"`), id + ' fora de Alertas'); }
-  assert.ok(ref.indexOf('id="pushCard"') < ref.indexOf('id="cfgAdminCard"'), 'push vem antes da área de administração');
+  const menu = aj.slice(aj.indexOf('id="sysMenuCard"'), aj.indexOf('id="sysSectionHead"'));
+  for (const id of ['pushCard', 'pushStatus', 'bPushAtivar', 'bPushDesativar']) { assert.match(menu, new RegExp(`id="${id}"`), id + ' disponível na entrada de Ajustes'); assert.doesNotMatch(al, new RegExp(`id="${id}"`), id + ' fora de Alertas'); }
   assert.match(al, /id="bIrPush"/, 'Notificações aponta para Configurações');
-  assert.match(aj, /<div class="card sys-card" id="pushCard">/, 'cartão de push não nasce oculto nem condicionado a perfil');
+  assert.match(html, /\$\('pushCard'\)\.style\.display=\(v==='system'\|\|v==='settings'\|\|v==='profile'/, 'push aparece no início de Ajustes/Perfil para todos os perfis');
 });
 
 test('Ajustes administrativos: menu de dez seções respeita a hierarquia dos perfis', () => {

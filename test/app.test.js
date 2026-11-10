@@ -106,12 +106,16 @@ tflaky('lembretes: mudar dias reagenda, desligar cancela, apagar tudo cancela', 
   const a = await abrir({ dados: { prod: { '7891000315507': { nome: 'B', lotes: [lote('x', '2031-01-01')] } },
     pere: { itens: { 12: { desc: 'Picanha' } }, regs: [{ id: 'r', cod: '12', peso: 1, val: '2031-01-01' }] } } });
   const zera = () => a.p.evaluate(() => { __ag = []; __ca = []; }), ver = () => a.p.evaluate(() => [__ag.slice().sort(), __ca.slice().sort()]);
-  await a.p.click('nav button[data-v="aj"]'); await zera();
+  await a.p.click('nav button[data-v="aj"]');
+  if (await a.p.isVisible('#sysMenuCard')) await a.p.click('#sysMenu [data-sys-open="pereciveis"]');
+  await zera();
   await a.p.fill('#aDias', '10'); await a.p.press('#aDias', 'Tab');
   assert.deepStrictEqual(await ver(), [['r_a', 'r_v', 'x_a', 'x_v'], ['r_a', 'r_v', 'x_a', 'x_v']]);
   await zera(); await a.p.locator('#aNotif').uncheck();
   assert.deepStrictEqual(await ver(), [[], ['r_a', 'r_v', 'x_a', 'x_v']]);
-  await zera(); a.respostas.push(true, true); await a.p.click('#bZerar');
+  await zera();
+  if (await a.p.isVisible('#sysSectionHead')) { await a.p.click('#sysBackToMenu'); await a.p.click('#sysMenu [data-sys-open="dados"]'); }
+  a.respostas.push(true, true); await a.p.click('#bZerar');
   assert.deepStrictEqual(await ver(), [[], ['r_a', 'r_v', 'x_a', 'x_v']]);
   assert.deepStrictEqual((await a.salvo()).prod, {});
   await a.fechar();
@@ -165,6 +169,7 @@ tflaky('nome do arquivo usa a data local (depois das 21h no Brasil)', { skip: pu
   const a = await abrir({ opcoes: { timezoneId: 'America/Sao_Paulo' },
     antes: p => p.clock.install({ time: new Date('2026-11-06T23:30:00-03:00') }) });
   await a.p.click('nav button[data-v="aj"]');
+  if (await a.p.isVisible('#sysMenuCard')) await a.p.click('#sysMenu [data-sys-open="dados"]');
   const [baixa] = await Promise.all([a.p.waitForEvent('download'), a.p.click('#bExp')]);
   assert.strictEqual(baixa.suggestedFilename(), 'backup_validade_2026-11-06.json');
   await a.fechar();
@@ -653,7 +658,9 @@ tflaky('produto conhecido sem lotes abre cadastro direto do cartão do Catálogo
   const a = await abrir({ dados: { prod: { [ean]: { lotes: [] } }, cat: { [ean]: { nome: 'Café', marca: 'Marca', img: '' } } } });
   await a.p.click('nav button[data-v="prod"]');
   assert.ok(!(await a.p.textContent('#listaProd')).includes('Café'), 'produto sem lote não aparece em Meus Registros');
-  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#cfgCatalogo');
+  await a.p.click('nav button[data-v="aj"]');
+  if (await a.p.isVisible('#sysMenuCard')) await a.p.click('#sysMenu [data-sys-open="catalogo"]');
+  else await a.p.click('#cfgCatalogo');
   assert.ok((await a.p.textContent('#listaCatalogo')).includes('Café'));
   await a.p.click(`#listaCatalogo [data-register-ean="${ean}"]`);
   await a.p.waitForSelector('#cardProd', { state: 'visible' });
@@ -885,6 +892,7 @@ tflaky('gestão de usuários: admin redefine a senha e pode exigir troca no pró
   });
   await a.p.waitForFunction(()=>document.getElementById('cardUsuarios').style.display!=='none');
   await a.p.click('nav button[data-v="aj"]');
+  if (await a.p.isVisible('#sysMenuCard')) await a.p.click('#sysMenu [data-sys-open="usuarios"]');
   await a.p.waitForSelector('.uEdit');
   await a.p.click('.uEdit');
   await a.p.waitForSelector('#modalEditarUsuario.on');
@@ -1095,7 +1103,7 @@ tflaky('Configurações: dados reais, preferências persistem e Sobre mostra a v
   assert.deepStrictEqual(await a.p.evaluate(() => { const d = JSON.parse(localStorage.getItem('validade_dados')).aj; return [d.vibra, d.som]; }), [false, false]);
   assert.strictEqual(await a.p.isVisible('#preferencesArea'), true, 'ajustes técnicos continuam acessíveis');
   await a.p.click('#cfgSobre');
-  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Sobre o Aplicativo');
+  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Sobre o Sistema');
   assert.strictEqual(await a.p.textContent('#aboutVersao'), versao);
   assert.strictEqual(await a.p.isVisible('#settingsRefArea'), false);
   await a.p.click('#headerBack');
@@ -1284,7 +1292,9 @@ tflaky('Catálogo: administrador abre por Configurações, vê todos os produtos
     cat: { '7891000315507': { nome: 'Café Sem Registro', marca: 'Marca A' }, '7896040703727': { nome: 'Limpador Com Registro' }, '7890000000017': { nome: 'Só no Catálogo' } }, pere: { itens: {}, regs: [] } }, { papel: 'admin' });
   await a.p.click('nav button[data-v="prod"]');
   assert.ok(!(await a.p.textContent('#listaProd')).includes('Café Sem Registro'), 'Meus Registros não mistura catálogo');
-  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#cfgCatalogo');
+  await a.p.click('nav button[data-v="aj"]');
+  if (await a.p.isVisible('#sysMenuCard')) await a.p.click('#sysMenu [data-sys-open="catalogo"]');
+  else await a.p.click('#cfgCatalogo');
   assert.strictEqual(await a.p.textContent('#screenTitle'), 'Catálogo de Produtos');
   assert.deepStrictEqual([await a.p.textContent('#tCatTotal'), await a.p.textContent('#tCatCom'), await a.p.textContent('#tCatSem')], ['3', '1', '2']);
   const txt = await a.p.textContent('#listaCatalogo');
@@ -1340,9 +1350,12 @@ tflaky('Área do Operador: abas, alertas/notificações e detalhe/edição de lo
   assert.strictEqual(await a.p.isVisible('#cardNotificacoes'), true);
   assert.strictEqual(await a.p.isVisible('#alertasMain'), false);
   await a.p.click('nav button[data-v="aj"]');
+  const menuAdmin = await a.p.isVisible('#sysMenuCard');
+  if (menuAdmin) await a.p.click('#sysMenu [data-sys-open="config"]');
   assert.strictEqual(await a.p.isVisible('#preferencesArea'), true);
   assert.strictEqual(await a.p.isVisible('#profileArea'), false);
-  await a.p.click('#settingsTabs [data-settings-view="profile"]');
+  if (menuAdmin) { await a.p.click('#sysBackToMenu'); await a.p.click('#sysMenu [data-sys-open="perfil"]'); }
+  else await a.p.click('#settingsTabs [data-settings-view="profile"]');
   assert.strictEqual(await a.p.isVisible('#profileArea'), true);
   assert.deepStrictEqual(a.erros, []);
   await a.fechar();
