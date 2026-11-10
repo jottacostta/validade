@@ -525,6 +525,31 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 .scan-actions button,.scan-actions label{display:flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:0 9px;border:1px solid #5d87ab;border-radius:999px;background:#0a2136;color:#fff;font:500 clamp(12px,3.3vw,15px) system-ui;white-space:nowrap;cursor:pointer}
 .scan-actions .ico{width:22px;height:22px}.scan-actions button.on{border-color:#ffdf00;color:#ffdf00}
 .scan-hint{margin:14px 16px;color:#c1d0df;font-size:13px;text-align:center}
+
+/* Telas estreitas (360 px): quantidade/peso ocupam a linha inteira em Editar; nada espreme o campo numérico */
+.edit-row-qty{grid-template-columns:30px minmax(0,1fr)}
+.edit-row-qty .edit-qty{grid-column:1/-1}
+.edit-row-qty .stepper{grid-template-columns:52px minmax(72px,1fr) 52px}
+.edit-row-qty .stepper button{height:46px}
+.stepper input{min-width:0;width:100%}
+.edit-actions .row{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:10px}
+.edit-actions .row .btn{white-space:nowrap;padding-left:6px;padding-right:6px;font-size:clamp(14px,4vw,18px)}
+.edit-actions .row .btn .ico{margin-right:5px}
+@media(max-width:380px){.reg-grid .stepper{grid-template-columns:36px minmax(48px,1fr) 36px;gap:2px;padding:2px}}
+
+/* ───── Auditoria de telas estreitas (360/320 px) ───── */
+.reg-prod-copy textarea{display:block;width:100%;min-height:0;resize:none;overflow:hidden;padding:4px 6px;margin-left:-6px;border:1px solid transparent;border-radius:9px;background:transparent;color:#fff;font:800 clamp(15px,4.1vw,19px)/1.2 system-ui}
+.reg-prod-copy textarea:placeholder-shown{border-color:#5d87ab;background:#0c2740;font-weight:500}
+.reg-prod-copy textarea:focus{border-color:#5d87ab;background:#0c2740;outline:0}
+#headerBack{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+#homeSeeAll{min-height:42px;display:inline-flex;align-items:center}
+.operator-record-actions button:last-child{width:30px;min-height:34px}
+.scan-actions{grid-template-columns:repeat(3,minmax(0,1fr));justify-content:stretch}
+.scan-actions button,.scan-actions label{min-width:0;padding:4px 6px;white-space:normal;text-align:center;line-height:1.15;min-height:48px}
+#v-alertas .notification-tabs{display:flex;overflow-x:auto;scrollbar-width:none}#v-alertas .notification-tabs::-webkit-scrollbar{display:none}
+.notification-tabs button{flex:1 0 auto;padding:10px 10px;font-size:13px}
+.notification-actions{display:grid!important;grid-template-columns:1fr;gap:8px}
+.notification-actions .btn{flex:none;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -563,7 +588,7 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
     </div>
     <div class="card reg-data" id="cardProd" style="display:none">
       <h2>Dados do produto</h2>
-      <div class="reg-prod"><span class="reg-thumb"><img id="pImg" alt="" style="display:none"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg></span><div class="reg-prod-copy"><input id="pNome" placeholder="Nome do produto" aria-label="Nome do produto"><div class="reg-prod-code">Código: <span class="ean" id="pEan"></span></div><div id="pStatus" class="reg-prod-status"></div></div></div>
+      <div class="reg-prod"><span class="reg-thumb"><img id="pImg" alt="" style="display:none"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg></span><div class="reg-prod-copy"><textarea id="pNome" rows="1" placeholder="Nome do produto" aria-label="Nome do produto"></textarea><div class="reg-prod-code">Código: <span class="ean" id="pEan"></span></div><div id="pStatus" class="reg-prod-status"></div></div></div>
       <div class="reg-grid">
         <div><label class="f" for="pLote">Lote *</label><input id="pLote" autocapitalize="characters" placeholder="L2345"></div>
         <div><label class="f" for="pVal">Validade *</label><input id="pVal" type="date"></div>
@@ -588,7 +613,7 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
     </div>
     <div class="card reg-data" id="cardPe" style="display:none">
       <h2>Dados do produto <em>(Perecível)</em></h2>
-      <div class="reg-prod"><span class="reg-thumb meat"><svg class="ico meat" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12.5c0-4.4 4.3-7.5 9.6-7.5 4.3 0 7.4 2.1 7.4 5.1 0 2.2-1.4 3.4-3.5 4.2-2 .8-3.1 1.8-4.8 3.5-1.3 1.3-3.5 1.5-5.5.5-2-1-3.2-3-3.2-5.8z"/><circle cx="14.6" cy="10" r="1.9"/></svg></span><div class="reg-prod-copy"><input id="peDesc" placeholder="Descrição do produto" aria-label="Descrição do produto"><div class="reg-prod-code ean" id="peCod"></div></div></div>
+      <div class="reg-prod"><span class="reg-thumb meat"><svg class="ico meat" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12.5c0-4.4 4.3-7.5 9.6-7.5 4.3 0 7.4 2.1 7.4 5.1 0 2.2-1.4 3.4-3.5 4.2-2 .8-3.1 1.8-4.8 3.5-1.3 1.3-3.5 1.5-5.5.5-2-1-3.2-3-3.2-5.8z"/><circle cx="14.6" cy="10" r="1.9"/></svg></span><div class="reg-prod-copy"><textarea id="peDesc" rows="1" placeholder="Descrição do produto" aria-label="Descrição do produto"></textarea><div class="reg-prod-code ean" id="peCod"></div></div></div>
       <div class="reg-grid">
         <div><label class="f" for="peSif">Lote / SIF</label><input id="peSif" placeholder="B12345"></div>
         <div><label class="f" for="peVal">Validade *</label><input id="peVal" type="date"></div>
@@ -642,13 +667,13 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
     <div class="edit-rows" id="editProdFields">
       <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14M7.5 5v14M10.5 5v14M14 5v14M17 5v14M20 5v14"/></svg><label for="edLote">Lote *</label><input id="edLote" autocomplete="off"></div>
       <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg><label for="edVal">Validade *</label><input id="edVal" type="date"></div>
-      <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg><label for="edQtd">Quantidade *</label><div class="edit-qty"><div class="stepper"><button type="button" id="edQtdMenos" aria-label="Diminuir quantidade"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><input id="edQtd" type="number" min="0" step="any"><button type="button" id="edQtdMais" aria-label="Aumentar quantidade"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div><span class="unit">un.</span></div></div>
+      <div class="edit-row edit-row-qty"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg><label for="edQtd">Quantidade *</label><div class="edit-qty"><div class="stepper"><button type="button" id="edQtdMenos" aria-label="Diminuir quantidade"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><input id="edQtd" type="number" min="0" step="any"><button type="button" id="edQtdMais" aria-label="Aumentar quantidade"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div><span class="unit">un.</span></div></div>
       <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5V20h16v-9.5M3 6.5 4.5 4h15L21 6.5V8a2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0A2.2 2.2 0 0 1 3 8zM9.5 20v-5h5v5"/></svg><label for="edSetor">Setor *</label><select id="edSetor"><option value="">Selecione</option><option>Açougue</option><option>Laticínios</option><option>Padaria</option><option>Salgados</option><option>FLV</option><option>Mercearia</option></select></div>
     </div>
     <div class="edit-rows" id="editPereFields" style="display:none">
       <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14M7.5 5v14M10.5 5v14M14 5v14M17 5v14M20 5v14"/></svg><label for="edSif">Lote / SIF</label><input id="edSif" autocomplete="off"></div>
       <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg><label for="edPereVal">Validade *</label><input id="edPereVal" type="text" inputmode="numeric" placeholder="dd/mm/aaaa"></div>
-      <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.5 10.5h-13zM9 9a3 3 0 0 1 6 0M12 13.5v-2"/></svg><label for="edPeso">Peso *</label><div class="edit-qty"><div class="unit-field"><input id="edPeso" type="number" min="0" step="0.001"><span>kg</span></div></div></div>
+      <div class="edit-row edit-row-qty"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.5 10.5h-13zM9 9a3 3 0 0 1 6 0M12 13.5v-2"/></svg><label for="edPeso">Peso *</label><div class="edit-qty"><div class="unit-field"><input id="edPeso" type="number" min="0" step="0.001"><span>kg</span></div></div></div>
       <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5V20h16v-9.5M3 6.5 4.5 4h15L21 6.5V8a2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0A2.2 2.2 0 0 1 3 8zM9.5 20v-5h5v5"/></svg><label for="edPereSetor">Setor *</label><select id="edPereSetor"><option value="">Selecione</option><option>Açougue</option><option>Laticínios</option><option>Padaria</option><option>Salgados</option><option>FLV</option><option>Mercearia</option></select></div>
     </div>
   </div>
@@ -952,8 +977,15 @@ function registroConcluido(o){ultimoRegistro=o.tipo;$('regTipo').style.display='
   $('regSucessoTexto').textContent=o.pendente?'Sem internet: o registro ficou guardado neste aparelho e será sincronizado ao reconectar.':(o.local?'Registro salvo neste aparelho.':'Registro confirmado no servidor.');
   $('regSucessoResumo').innerHTML='<b>'+esc(o.nome)+'</b>'+o.linhas.map(function(l){return '<small>'+esc(l)+'</small>';}).join('');
   box.style.display='';if(vistaAtual!=='reg')ir('reg');window.scrollTo(0,0);}
+window.addEventListener('resize',function(){['pNome','peDesc'].forEach(function(i){if($(i).offsetParent)ajustarAltura($(i));});});
 $('bNovoRegistro').onclick=function(){mostrarEscolhaRegistro();if(ultimoRegistro==='pere'){$('cardPe').style.display='none';regTipo('pere');}};
 $('bVerRegistros').onclick=function(){$('regSucesso').style.display='none';if(ultimoRegistro==='pere'){subPere('lista');ir('pere');}else ir('prod');};
+/* campos de nome com várias linhas: crescem conforme o texto e não aceitam quebra de linha */
+function ajustarAltura(el){el.style.height='auto';if(!el.offsetParent||!el.scrollHeight)return;el.style.height=Math.min(el.scrollHeight+2,140)+'px';}
+['pNome','peDesc'].forEach(function(id){var el=$(id),d=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value');
+  Object.defineProperty(el,'value',{configurable:true,get:function(){return d.get.call(el);},set:function(v){d.set.call(el,String(v==null?'':v).replace(/[\r\n]+/g,' '));ajustarAltura(el);}});
+  el.addEventListener('input',function(){if(/[\r\n]/.test(d.get.call(el)))el.value=d.get.call(el);else ajustarAltura(el);});
+  el.addEventListener('keydown',function(e){if(e.key==='Enter')e.preventDefault();});});
 function rotuloBotao(b,texto,ocupado){b.disabled=!!ocupado;var sp=b.querySelector('span');if(sp)sp.textContent=texto;else b.textContent=texto;}
 window.aoVoltarAndroid=function(){if($('scanner').classList.contains('on')){fecharScanner();return true;}
   var on=document.querySelector('#abas button.on');if(on&&on.dataset.v!=='home'){ir('home');return true;}if(document.querySelector('#v-reg.on')){ir('home');return true;}return false;};
@@ -1061,7 +1093,7 @@ function pesquisarWeb(ean){var u='https://www.google.com/search?q='+encodeURICom
   if(window.Android&&Android.abrirLink)Android.abrirLink(u);else window.open(u,'_blank');}
 function abrirProduto(ean){
   if(!/^\d{6,14}$/.test(ean)){toast('Código inválido');return;}
-  atual=ean;$('cardProd').style.display='block';$('pEan').textContent=ean;
+  atual=ean;$('cardProd').style.display='block',ajustarAltura($('pNome'));$('pEan').textContent=ean;
   var conhecido=D.cat[ean];
   $('pNome').value=conhecido?conhecido.nome:'';$('pLote').value='';$('pQtd').value='';$('pVal').value='';
   mostrarImg(conhecido&&conhecido.img);
@@ -1223,7 +1255,7 @@ function lerEtiqueta(c){var n=+D.aj.dig||4,cod=c.substr(1,n),v=parseInt(c.substr
 function abrirPerecivel(c,ov){ov=ov||{};var info=ehBalanca(c)?lerEtiqueta(c):{cod:norm(c),peso:null,preco:null};
   if(ov.peso!=null)info.peso=ov.peso;if(ov.preco!=null)info.preco=ov.preco;
   if(!info.cod){toast('Código inválido');return;}
-  peAtual=info.cod;var it=D.pere.itens[peAtual];$('cardPe').style.display='block';
+  peAtual=info.cod;var it=D.pere.itens[peAtual];$('cardPe').style.display='block',ajustarAltura($('peDesc'));
   $('peCod').textContent='PLU: '+peAtual+(ehBalanca(c)?' · etiqueta '+c:'');
   $('peDesc').value=it?it.desc:'';$('peSif').value=it?it.sif||'':'';$('pePeso').value=info.peso!=null?(+info.peso).toFixed(3):'';$('peVal').value=ov.val||'';
   $('peInfo').innerHTML=it?'':'<div class="aviso wa">Código ainda não cadastrado — preencha a descrição e o SIF: ele fica salvo para as próximas etiquetas.</div>';
@@ -1266,7 +1298,7 @@ function talvezOCR(){var fonte=fonteOCR;fonteOCR=null;if(!fonte||!D.aj.ocr||type
     if(fez.length){var okd=document.createElement('div');okd.className='aviso ok';okd.textContent='OCR preencheu '+fez.join(' e ')+' — confira antes de salvar.';box.appendChild(okd);}
   },function(){av.remove();/* OCR indisponível (offline ou erro): segue manual, sem alarde */});}
 function abrirPerecivelGS1(g){var cod=norm(g.gtin);if(!cod){toast('Etiqueta sem código de produto');return;}
-  peAtual=cod;var it=D.pere.itens[cod];$('cardPe').style.display='block';
+  peAtual=cod;var it=D.pere.itens[cod];$('cardPe').style.display='block',ajustarAltura($('peDesc'));
   $('peCod').textContent='Código: '+(g.gtin||cod)+(g.lote?' · lote '+g.lote:'');
   $('peDesc').value=it?it.desc:'';$('peSif').value=it?it.sif||'':'';
   $('pePeso').value=g.peso!=null?g.peso.toFixed(3):'';$('peVal').value=g.val||'';
