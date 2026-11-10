@@ -172,10 +172,13 @@ Deno.serve(async (req) => {
       if (!id) return json({ error: "Usuário não informado." }, 400);
       const { data: alvo, error: alvoErr } = await admin.from("perfis").select("papel, nome").eq("id", id).single();
       if (alvoErr || !alvo) return json({ error: "Usuário não encontrado." }, 404);
-      const usuarioEmail = (await admin.auth.admin.getUserById(id)).data?.user?.email || "";
+      const alvoUser = (await admin.auth.admin.getUserById(id)).data?.user;
+      const usuarioEmail = alvoUser?.email || "";
       const usuarioNome = usuarioEmail.split("@")[0];
+      const appMeta = (alvoUser?.app_metadata as Record<string, unknown>) || {};
       const nome = body.nome != null ? String(body.nome).trim() : null;
       const senha = body.senha != null && String(body.senha) !== "" ? String(body.senha) : null;
+      const exigirTroca = body.exigir_troca_senha === true;
       const papel = body.papel != null ? String(body.papel) : null;
       const lojas = Array.isArray(body.lojas) ? (body.lojas as unknown[]).map(String) : null;
 
@@ -198,7 +201,8 @@ Deno.serve(async (req) => {
         if (perr) return json({ error: "Não foi possível atualizar o cadastro. " + perr.message }, 400);
       }
       if (senha != null) {
-        const { error: serr } = await admin.auth.admin.updateUserById(id, { password: senha });
+        // Admin redefine a senha; opcionalmente exige que o usuário troque no próximo acesso.
+        const { error: serr } = await admin.auth.admin.updateUserById(id, { password: senha, app_metadata: { ...appMeta, force_password_change: exigirTroca } });
         if (serr) return json({ error: "Não foi possível trocar a senha. " + serr.message }, 400);
       }
       if (lojas != null) {
@@ -211,7 +215,7 @@ Deno.serve(async (req) => {
         const { error: insErr } = await admin.from("loja_membros").insert(uniq.map((lid) => ({ user_id: id, loja_id: lid })));
         if (insErr) return json({ error: "Falha ao salvar vínculos." }, 500);
       }
-      await audit("editou_usuario", { alvo: usuarioNome, trocou_senha: senha != null, papel: papel || undefined });
+      await audit("editou_usuario", { alvo: usuarioNome, trocou_senha: senha != null, exigir_troca_senha: senha != null ? exigirTroca : undefined, papel: papel || undefined });
       return json({ ok: true });
     }
 

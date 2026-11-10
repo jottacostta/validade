@@ -870,6 +870,34 @@ tflaky('gestão de usuários: assistente visualiza card, cria operador e envia p
   await a.fechar();
 });
 
+tflaky('gestão de usuários: admin redefine a senha e pode exigir troca no próximo acesso', { skip: pular }, async () => {
+  let payloadEditar=null;
+  const a=await abrirLogado(async p=>{
+    await rotasBase(p,'admin');
+    await p.route(/\/functions\/v1\/gerir-usuarios/,async r=>{
+      let body={};try{body=r.request().postDataJSON();}catch(e){}
+      if(body.acao==='listar')return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({usuarios:[{id:'u2',usuario:'maria',nome:'Maria Silva',papel:'operador',lojas:[{id:'L1',nome:'Loja Teste'}]}],lojas:[{id:'L1',nome:'Loja Teste'}],euPapel:'admin'})});
+      if(body.acao==='editar'){payloadEditar=body;return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true})});}
+      return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true})});
+    });
+  });
+  await a.p.waitForFunction(()=>document.getElementById('cardUsuarios').style.display!=='none');
+  await a.p.click('nav button[data-v="aj"]');
+  await a.p.waitForSelector('.uEdit');
+  await a.p.click('.uEdit');
+  await a.p.waitForSelector('#modalEditarUsuario.on');
+  await a.p.fill('#editarSenha','NovaSenha2026!');
+  await a.p.check('#editarExigirTroca');
+  await a.p.click('#salvarEditarUsuario');
+  await a.p.waitForFunction(()=>!document.getElementById('modalEditarUsuario').classList.contains('on'));
+  assert.ok(payloadEditar,'enviou editar ao endpoint');
+  assert.strictEqual(payloadEditar.id,'u2');
+  assert.strictEqual(payloadEditar.senha,'NovaSenha2026!');
+  assert.strictEqual(payloadEditar.exigir_troca_senha,true);
+  assert.deepStrictEqual(a.erros,[]);
+  await a.fechar();
+});
+
 tflaky('cosmos: cada usuário carrega e salva o seu próprio token (perfil pessoal)', { skip: pular }, async () => {
   let salvo = null;
   const a = await abrirLogado(async p => {

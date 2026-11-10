@@ -791,7 +791,8 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 <div id="modalEditarUsuario" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloEditarUsuario">
   <div class="box"><h2 id="tituloEditarUsuario">Editar usuário</h2>
     <label class="f" for="editarNome">Nome completo</label><input id="editarNome" autocomplete="name">
-    <label class="f" for="editarSenha">Nova senha (deixe em branco para manter)</label><input id="editarSenha" type="password" autocomplete="new-password">
+    <label class="f" for="editarSenha">Redefinir senha (deixe em branco para manter)</label><input id="editarSenha" type="password" autocomplete="new-password">
+    <label style="display:flex;align-items:center;gap:9px;margin:8px 0 12px"><input id="editarExigirTroca" type="checkbox" style="width:18px;height:18px"> <span>Exigir que o usuário troque a senha no próximo acesso</span></label>
     <div id="editarPapelWrap"><label class="f" for="editarPapel">Papel</label><select id="editarPapel"><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option><option value="admin">Administrador</option></select></div>
     <div id="editarLojasWrap"><div class="f">Lojas vinculadas</div><input id="editarLojasBusca" type="search" placeholder="Buscar loja"><div id="editarLojasAcoes"><button type="button" class="btn sec" id="editarMarcarVisiveis">Marcar lojas visíveis</button><button type="button" class="btn sec" id="editarDesmarcarVisiveis">Desmarcar visíveis</button></div><div id="editarLojasResumo"></div><div id="editarLojas"></div></div>
     <div class="row" style="margin-top:14px"><button class="btn sec" id="cancelarEditarUsuario">Cancelar</button><button class="btn" id="salvarEditarUsuario">Salvar alterações</button></div>
@@ -1820,7 +1821,8 @@ function iniciarGestaoUsuarios(){
     $('editarLojas').innerHTML=lojaChecks(visiveis,lojasSelecionadasEdicao).replace(/class="uLoja"/g,'class="uLojaEdit"');
     document.querySelectorAll('#editarLojas .uLojaEdit').forEach(function(ch){ch.onchange=function(){if(ch.checked){if(!lojasSelecionadasEdicao.includes(ch.value))lojasSelecionadasEdicao.push(ch.value);}else lojasSelecionadasEdicao=lojasSelecionadasEdicao.filter(function(id){return id!==ch.value;});atualizarResumoLojas();};});atualizarResumoLojas();}
   function editar(id){var u=cache.users.find(function(x){return x.id===id;});if(!u)return;usuarioEditando=u;
-    $('editarNome').value=u.nome||'';$('editarSenha').value='';$('editarPapel').value=u.papel||'operador';$('editarLojasBusca').value='';
+    var admin=p==='admin';
+    $('editarNome').value=u.nome||'';$('editarSenha').value='';$('editarExigirTroca').checked=false;$('editarPapel').value=u.papel||'operador';$('editarLojasBusca').value='';
     lojasSelecionadasEdicao=(u.lojas||[]).map(function(l){return l.id;});
     var podeAlterarPapelLoja=['admin','analista','gerente'].includes(p);
     $('editarPapelWrap').style.display=podeAlterarPapelLoja?'':'none';$('editarLojasWrap').style.display=podeAlterarPapelLoja?'':'none';
@@ -1833,7 +1835,7 @@ function iniciarGestaoUsuarios(){
   function fecharEdicao(){usuarioEditando=null;$('modalEditarUsuario').classList.remove('on');}
   function salvarEdicao(){if(!usuarioEditando)return;var nome=$('editarNome').value.trim(),senha=$('editarSenha').value,payload={acao:'editar',id:usuarioEditando.id,nome:nome};
     if(!nome){toast('Informe o nome completo.');$('editarNome').focus();return;}
-    if(senha){var er=strongPass(senha,usuarioEditando.usuario);if(er){toast(er);return;}payload.senha=senha;}
+    if(senha){var er=strongPass(senha,usuarioEditando.usuario);if(er){toast(er);return;}payload.senha=senha;payload.exigir_troca_senha=$('editarExigirTroca').checked;}
     if(['admin','analista','gerente'].includes(p)){var papel=$('editarPapel').value;if(!['operador','assistente','analista','gerente','admin'].includes(papel)){toast('Papel inválido.');return;}payload.papel=papel;payload.lojas=lojasSelecionadasEdicao.slice();if(!payload.lojas.length){toast('Selecione pelo menos uma loja.');return;}}
     $('salvarEditarUsuario').disabled=true;callGestao(payload).then(function(){toast('Cadastro atualizado.');fecharEdicao();carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('salvarEditarUsuario').disabled=false;});}
   $('cancelarEditarUsuario').onclick=fecharEdicao;$('salvarEditarUsuario').onclick=salvarEdicao;
