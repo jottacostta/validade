@@ -149,3 +149,42 @@ test('Push: a ativação fica em Configurações (todos os perfis) e sai da tela
   assert.match(al, /id="bIrPush"/, 'Notificações aponta para Configurações');
   assert.match(aj, /<div class="card sys-card" id="pushCard">/, 'cartão de push não nasce oculto nem condicionado a perfil');
 });
+
+test('Ajustes administrativos: menu de dez seções respeita a hierarquia dos perfis', () => {
+  for (const id of ['sysMenuCard', 'sysMenu', 'sysSectionHead', 'sysBackToMenu', 'sysSectionTitle', 'sysSectionView', 'sysReportsPanel']) {
+    assert.match(html, new RegExp('id="' + id + '"'), id + ' existe');
+  }
+  const entries = [...html.matchAll(/\{id:'([^']+)',titulo:'([^']+)',sub:'[^']+',roles:\[([^\]]+)\]/g)];
+  assert.equal(entries.length, 10, 'dez seções administrativas definidas');
+  assert.deepEqual(entries.map(x => x[1]), ['perfil','usuarios','lojas','catalogo','pereciveis','relatorios','auditoria','config','dados','sobre']);
+  const access = Object.fromEntries(entries.map(x => [x[1], x[3].replace(/'/g, '').split(',')]));
+  assert.deepEqual(access.perfil, ['analista','gerente','admin']);
+  assert.deepEqual(access.usuarios, ['analista','gerente','admin']);
+  assert.deepEqual(access.lojas, ['admin']);
+  assert.deepEqual(access.catalogo, ['admin']);
+  assert.deepEqual(access.pereciveis, ['analista','gerente','admin']);
+  assert.deepEqual(access.relatorios, ['analista','gerente','admin']);
+  assert.deepEqual(access.auditoria, ['admin']);
+  assert.deepEqual(access.config, ['gerente','admin']);
+  assert.deepEqual(access.dados, ['admin']);
+  assert.deepEqual(access.sobre, ['analista','gerente','admin']);
+  assert.match(html, /function podeVerMenuSistema\(\)\{return \['analista','gerente','admin'\]\.includes\(papelAtual\(\)\);\}/);
+  assert.match(html, /function abrirSecaoSistema\(key\)/);
+});
+
+test('Ajustes administrativos: telas existentes são agrupadas sem duplicar IDs ou mover controles', () => {
+  for (const [id, sec] of [
+    ['aDig','pereciveis'], ['aValor','pereciveis'], ['aDias','pereciveis'], ['aNotif','pereciveis'],
+    ['aCosmos','config'], ['cardConta','config'], ['cardAuditoria','auditoria'],
+    ['cardSolicitacoes','dados'], ['cardUsuarios','usuarios'], ['cardLojasAdmin','lojas'], ['bExp','dados']
+  ]) {
+    const at = html.indexOf('id="' + id + '"');
+    assert.ok(at >= 0, id + ' continua no DOM');
+    const start = html.lastIndexOf('data-sec="' + sec + '"', at);
+    assert.ok(start >= 0 && at - start < 5000, id + ' está agrupado em ' + sec);
+  }
+  assert.match(html, /#preferencesArea\[data-sec-ativa="pereciveis"\][\s\S]*?display:none!important/);
+  assert.match(html, /data-sys-action="bCsvProd"/);
+  assert.match(html, /data-sys-action="bCsvPe"/);
+  assert.match(html, /data-sys-action="bAlertExport"/);
+});
