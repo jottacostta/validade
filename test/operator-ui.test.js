@@ -133,7 +133,9 @@ test('Catálogo: tela própria, com entrada só em Configurações (administraç
   const cat = html.match(/<section class="vista" id="v-catalogo">([\s\S]*?)<\/section>/);
   assert.ok(cat, 'v-catalogo existe');
   for (const id of ['qCatalogo', 'catalogoFiltros', 'tCatTotal', 'tCatCom', 'tCatSem', 'listaCatalogo', 'pagerCatalogo']) assert.match(cat[1], new RegExp(`id="${id}"`), id);
-  assert.deepEqual([...cat[1].matchAll(/data-cat-filter="([^"]+)"/g)].map(m => m[1]), ['all', 'with', 'without']);
+  assert.deepEqual([...cat[1].matchAll(/data-cat-filter="([^"]+)"/g)].map(m => m[1]), ['all', 'with', 'without', 'inactive']);
+  assert.match(html, /data-catalogo-inativar/);
+  assert.match(html, /data-catalogo-restaurar/);
   assert.match(html, /id="cfgAdminCard"[^>]*hidden/);
   assert.match(html, /id="cfgCatalogo"/);
   assert.doesNotMatch(html.match(/<nav class="abas" id="abas">([\s\S]*?)<\/nav>/)[1], /catalogo/i, 'catálogo não entra na barra inferior');

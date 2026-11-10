@@ -6,6 +6,7 @@ const app = fs.readFileSync(path.join(root, 'src/app.html'), 'utf8');
 const migration = fs.readFileSync(path.join(root, 'supabase/migrations/20261109000000_area_operador_compartilhamento_alertas.sql'), 'utf8');
 const offlineRpcMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261109123000_offline_rpc_idempotency.sql'), 'utf8');
 const rolesMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261108130000_matriz_papeis_ownership_rls.sql'), 'utf8');
+const adminCatalogMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261110150000_admin_catalog_soft_delete.sql'), 'utf8');
 const reviewerHardening = fs.readFileSync(path.join(root, 'supabase/migrations/20261109122158_harden_review_role_null.sql'), 'utf8');
 const personalTokenPolicy = fs.readFileSync(path.join(root, 'supabase/migrations/20261109122302_restrict_personal_cosmos_token_access.sql'), 'utf8');
 const foreignKeyIndexes = fs.readFileSync(path.join(root, 'supabase/migrations/20261109122348_index_audit_and_creator_foreign_keys.sql'), 'utf8');
@@ -31,6 +32,19 @@ test('perfis autorizados a cadastrar e campos de setor validados no cliente', ()
   assert.match(app, /if\(acao==='registrar'\)return \['operador','assistente','analista','gerente'\]\.includes\(p\);/);
   assert.match(app, /SETORES\.includes\(setor\)/);
   assert.match(app, /p_setor:setor/);
+});
+
+test('inativação do catálogo é lógica, replicável, reversível e autorizada no banco só para admin', () => {
+  assert.match(adminCatalogMigration, /alter table public\.catalogo\s+add column if not exists deleted_at timestamptz/i);
+  assert.match(adminCatalogMigration, /private\.meu_papel\(\) is distinct from 'admin'/i);
+  assert.match(adminCatalogMigration, /create trigger catalogo_tombstone_guard\s+before insert or update on public\.catalogo/i);
+  assert.match(adminCatalogMigration, /drop policy if exists catalogo_del_admin on public\.catalogo/i);
+  assert.match(adminCatalogMigration, /revoke delete on public\.catalogo from public, anon, authenticated/i);
+  assert.match(app, /deleted_at=is\.null/);
+  assert.match(app, /function catalogoPull\(\)/);
+  assert.match(app, /row\.deleted_at/);
+  assert.match(app, /data-catalogo-inativar/);
+  assert.match(app, /data-catalogo-restaurar/);
 });
 
 test('matriz de papéis do banco aceita gerente e concede insert a papéis globais', () => {

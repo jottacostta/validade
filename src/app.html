@@ -345,6 +345,8 @@ header .hdr-in.interna .header-bell{display:none}
 .operator-record-main{display:block;width:100%;padding:0;border:0;background:none;color:inherit;text-align:left;cursor:pointer}
 .operator-record-copy.operator-record-main{font:inherit}
 .operator-record-actions button{cursor:pointer}
+.operator-record-actions button[data-catalogo-inativar]{background:#641e2b;border-color:#b9505d;color:#fff}
+.operator-record-actions button[data-catalogo-restaurar]{background:#14583a;border-color:#39a66d;color:#fff}
 
 
 /* ───── Registrar (referências Guanabara) ───── */
@@ -728,10 +730,10 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 </section>
 
 <section class="vista" id="v-catalogo">
-  <div class="operator-page-intro"><span class="operator-page-icon amber" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11M9 8.5h6"/></svg></span><div><h2>Catálogo de Produtos</h2><p>Produtos conhecidos pelo sistema e seus registros nesta loja. Visível apenas para o administrador.</p></div></div>
+  <div class="operator-page-intro"><span class="operator-page-icon amber" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11M9 8.5h6"/></svg></span><div><h2>Catálogo de Produtos</h2><p>Catálogo global compartilhado. O Administrador pode inativar ou restaurar um EAN sem apagar registros das lojas.</p></div></div>
   <div class="operator-toolbar"><input id="qCatalogo" type="search" placeholder="Pesquise por produto, marca ou código de barras" aria-label="Pesquisar no catálogo"></div>
-  <div class="alert-filters" id="catalogoFiltros" role="group" aria-label="Filtrar catálogo"><button type="button" class="on" data-cat-filter="all" aria-pressed="true">Todos</button><button type="button" data-cat-filter="with" aria-pressed="false">Com registros</button><button type="button" data-cat-filter="without" aria-pressed="false">Sem registros</button></div>
-  <div class="operator-summary catalog-summary"><div class="tile in"><span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4 4v13H7zM14 3.5v4h4M9.5 12h6M9.5 15.5h6"/></svg></span><span><small>Total</small><b id="tCatTotal">0</b></span></div><div class="tile ok"><span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span><span><small>Com registros</small><b id="tCatCom">0</b></span></div><div class="tile wa"><span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span><span><small>Sem registros</small><b id="tCatSem">0</b></span></div></div>
+  <div class="alert-filters" id="catalogoFiltros" role="group" aria-label="Filtrar catálogo"><button type="button" class="on" data-cat-filter="all" aria-pressed="true">Ativos</button><button type="button" data-cat-filter="with" aria-pressed="false">Com registros</button><button type="button" data-cat-filter="without" aria-pressed="false">Sem registros</button><button type="button" data-cat-filter="inactive" aria-pressed="false">Inativos</button></div>
+  <div class="operator-summary catalog-summary"><div class="tile in"><span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4 4v13H7zM14 3.5v4h4M9.5 12h6M9.5 15.5h6"/></svg></span><span><small>Ativos</small><b id="tCatTotal">0</b></span></div><div class="tile ok"><span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span><span><small>Com registros</small><b id="tCatCom">0</b></span></div><div class="tile wa"><span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span><span><small>Sem registros</small><b id="tCatSem">0</b></span></div></div>
   <div id="listaCatalogo" class="operator-list"></div>
   <div class="pager" id="pagerCatalogo" hidden><button type="button" data-page="-1"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg><span>Anterior</span></button><span class="pager-info"></span><button type="button" data-page="1"><span>Próxima</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
 </section>
@@ -1064,13 +1066,14 @@ function podeVerCatalogo(){return papelAtual()==='admin';}
 var catFiltro='all';
 function renderCatalogo(){if(!$('listaCatalogo'))return;var q=$('qCatalogo').value.trim().toLowerCase(),eans={};
   Object.keys(D.cat||{}).forEach(function(e){eans[e]=1;});Object.keys(D.prod||{}).forEach(function(e){eans[e]=1;});
-  var todos=Object.keys(eans).map(function(e){var c=detalheProduto(e),n=((D.prod[e]||{}).lotes||[]).length;return {ean:e,nome:c.nome||e,marca:c.marca||'',img:c.img||'',n:n};});
-  var com=todos.filter(function(x){return x.n>0;}).length;$('tCatTotal').textContent=todos.length;$('tCatCom').textContent=com;$('tCatSem').textContent=todos.length-com;
+  var todos=Object.keys(eans).map(function(e){var c=detalheProduto(e),n=((D.prod[e]||{}).lotes||[]).length,cat=D.cat[e]||{};return {ean:e,nome:c.nome||e,marca:c.marca||'',img:c.img||'',n:n,inativo:!!cat.deleted_at};});
+  var ativos=todos.filter(function(x){return !x.inativo;}),com=ativos.filter(function(x){return x.n>0;}).length;$('tCatTotal').textContent=ativos.length;$('tCatCom').textContent=com;$('tCatSem').textContent=ativos.length-com;
   document.querySelectorAll('#catalogoFiltros [data-cat-filter]').forEach(function(b){var on=b.dataset.catFilter===catFiltro;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
-  var itens=todos.filter(function(x){return (catFiltro==='with'?x.n>0:catFiltro==='without'?x.n===0:true)&&(!q||(x.nome+' '+x.marca+' '+x.ean).toLowerCase().indexOf(q)>=0);})
+  var itens=todos.filter(function(x){var estado=catFiltro==='inactive'?x.inativo:!x.inativo;return estado&&(catFiltro==='with'?x.n>0:catFiltro==='without'?x.n===0:true)&&(!q||(x.nome+' '+x.marca+' '+x.ean).toLowerCase().indexOf(q)>=0);})
     .sort(function(a,b){return a.nome.localeCompare(b.nome,'pt-BR');});
   itens=paginar('cat',itens,q+'|'+catFiltro,'pagerCatalogo');
-  $('listaCatalogo').innerHTML=itens.map(function(x){return '<article class="operator-record catalog-card"><span class="operator-record-thumb">'+miniatura(x.img,'lote')+'</span><span class="operator-record-copy"><strong>'+esc(x.nome)+'</strong><small>EAN: '+esc(x.ean)+(x.marca?'<br>Marca: '+esc(x.marca):'')+'<br>'+(x.n?x.n+' registro'+(x.n>1?'s':'')+' nesta loja':'Sem registros nesta loja')+'</small></span><span class="chip '+(x.n?'ok':'wa')+'">'+(x.n?'Com registro':'Sem registro')+'</span><span class="operator-record-actions"><button type="button" data-register-ean="'+esc(x.ean)+'" aria-label="Registrar lote de '+esc(x.nome)+'">'+ic('plus')+'</button></span></article>';}).join('')
+  $('listaCatalogo').innerHTML=itens.map(function(x){var acao=x.inativo?'<button type="button" data-catalogo-restaurar="'+esc(x.ean)+'" aria-label="Restaurar '+esc(x.nome)+'" title="Restaurar">↻</button>':'<button type="button" data-catalogo-inativar="'+esc(x.ean)+'" aria-label="Inativar '+esc(x.nome)+'" title="Inativar">×</button>';
+    return '<article class="operator-record catalog-card"><span class="operator-record-thumb">'+miniatura(x.img,'lote')+'</span><span class="operator-record-copy"><strong>'+esc(x.nome)+'</strong><small>EAN: '+esc(x.ean)+(x.marca?'<br>Marca: '+esc(x.marca):'')+'<br>'+(x.n?x.n+' registro'+(x.n>1?'s':'')+' nesta loja':'Sem registros nesta loja')+'</small></span><span class="chip '+(x.inativo?'da':x.n?'ok':'wa')+'">'+(x.inativo?'Inativo global':x.n?'Com registro':'Sem registro')+'</span><span class="operator-record-actions">'+(x.inativo?'':'<button type="button" data-register-ean="'+esc(x.ean)+'" aria-label="Registrar lote de '+esc(x.nome)+'">'+ic('plus')+'</button>')+acao+'</span></article>';}).join('')
     ||'<div class="operator-empty">'+(q||catFiltro!=='all'?'Nenhum produto encontrado com este filtro.':'O catálogo ainda está vazio.')+'</div>';}
 function ir(v){if(v==='catalogo'&&!podeVerCatalogo()){toast('O catálogo é exclusivo do administrador');return;}var destino=$('v-'+v);if(!destino)return;if(v!==vistaAtual){vistaAnterior=vistaAtual;vistaAtual=v;}if(v==='prod'||v==='pere')areaContextual=v;
   document.querySelectorAll('.vista').forEach(function(s){s.classList.toggle('on',s===destino);});
@@ -1644,8 +1647,10 @@ function sbLojas(){return sbReq('/rest/v1/lojas?select=id,nome&order=nome.asc').
 /* ───── catálogo compartilhado (EAN → nome), entre todas as lojas ───── */
 var SYNC={};try{SYNC=JSON.parse(localStorage.getItem('validade_sync')||'{}')||{};}catch(e){}
 function salvarSync(){try{localStorage.setItem('validade_sync',JSON.stringify(SYNC));}catch(e){}}
+function catalogoSemColunaTombstone(r){return /PGRST204|42703|deleted_at/i.test(JSON.stringify(r&&r.dados||{}));}
 function catalogoBuscar(ean){if(!sbOn()||!logado())return Promise.resolve(null);
-  return sbReq('/rest/v1/catalogo?ean=eq.'+encodeURIComponent(ean)+'&select=nome,marca,img&limit=1')
+  var base='/rest/v1/catalogo?ean=eq.'+encodeURIComponent(ean)+'&select=nome,marca,img&limit=1';
+  return sbReq(base+'&deleted_at=is.null').then(function(r){if(!r.ok&&catalogoSemColunaTombstone(r))return sbReq(base);return r;})
     .then(function(r){var d=r.ok&&Array.isArray(r.dados)&&r.dados[0];return d&&d.nome?{nome:d.nome,marca:d.marca||'',img:d.img||''}:null;},function(){return null;});}
 function catalogoSalvar(ean,d){if(!sbOn()||!logado()||!d||!d.nome)return;
   sbReq('/rest/v1/catalogo?on_conflict=ean',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:[{ean:String(ean),nome:d.nome,marca:d.marca||'',img:d.img||''}]}).catch(function(){});}
@@ -1654,10 +1659,13 @@ function catalogar(ean,dados){D.cat[ean]=Object.assign({},D.cat[ean]||{},dados);
 /* puxa o que mudou no catálogo desde a última vez e junta no cache local */
 function catalogoPull(){if(!sbOn()||!logado())return Promise.resolve(0);
   var desde=SYNC.catalogo||'1970-01-01T00:00:00Z';
-  return sbReq('/rest/v1/catalogo?updated_at=gt.'+encodeURIComponent(desde)+'&select=ean,nome,marca,img,updated_at&order=updated_at.asc&limit=5000')
-    .then(function(r){if(!r.ok||!Array.isArray(r.dados))return 0;var n=0,maxu=desde;
-      r.dados.forEach(function(row){if(row.ean&&row.nome){D.cat[row.ean]=Object.assign({},D.cat[row.ean]||{},{nome:row.nome,marca:row.marca||'',img:row.img||''});n++;}if(row.updated_at&&row.updated_at>maxu)maxu=row.updated_at;});
-      if(maxu>desde){SYNC.catalogo=maxu;salvarSync();}if(n){salvar();listaProdutos();}return n;},function(){return 0;});}
+  var base='/rest/v1/catalogo?updated_at=gt.'+encodeURIComponent(desde)+'&order=updated_at.asc&limit=5000';
+  function aplicar(r,temTombstone){if(!r.ok||!Array.isArray(r.dados))return 0;var n=0,maxu=desde;
+    r.dados.forEach(function(row){if(row.ean){var atual=D.cat[row.ean]||{};if(temTombstone&&row.deleted_at){D.cat[row.ean]=Object.assign({},atual,{nome:row.nome||atual.nome||'',marca:row.marca||atual.marca||'',img:row.img||atual.img||'',deleted_at:row.deleted_at,updated_at:row.updated_at||null});n++;}
+        else if(row.nome){var c=D.cat[row.ean]=Object.assign({},atual,{nome:row.nome,marca:row.marca||'',img:row.img||'',updated_at:row.updated_at||null});delete c.deleted_at;n++;}}
+      if(row.updated_at&&row.updated_at>maxu)maxu=row.updated_at;});
+    if(maxu>desde){SYNC.catalogo=maxu;salvarSync();}if(n){salvar();listaProdutos();if(vistaAtual==='catalogo')renderCatalogo();}return n;}
+  return sbReq(base+'&select=ean,nome,marca,img,updated_at,deleted_at').then(function(r){if(!r.ok&&catalogoSemColunaTombstone(r))return sbReq(base+'&select=ean,nome,marca,img,updated_at').then(function(old){return aplicar(old,false);});return aplicar(r,true);},function(){return 0;});}
 /* Sincronização compartilhada por loja: baixa dados do Supabase e mescla com cache local. */
 var sincronizacaoEmAndamento=false,temporizadorSincronizacao=null;
 function sincronizarLoja(){
@@ -1849,6 +1857,19 @@ function renderBusca(){var q=$('qBusca').value.trim().toLowerCase(),itens=regist
     ||'<div class="operator-empty">'+(q?'Nenhum registro encontrado para esta busca.':'Nenhum registro ainda.')+'</div>';}
 $('qBusca').oninput=renderBusca;
 $('qCatalogo').oninput=renderCatalogo;
+function alterarEstadoCatalogo(ean,inativar){if(!ehAdmin()||!sbOn()||!logado()){toast('Ação exclusiva do Administrador autenticado.');return Promise.resolve(false);}
+  ean=String(ean||'');var cat=D.cat[ean];if(!ean||!cat){toast('Item do catálogo não encontrado neste aparelho. Atualize a lista e tente novamente.');return Promise.resolve(false);}
+  var nome=cat.nome||ean,acao=inativar?'inativar':'restaurar',confirmacao=inativar?'Inativar '+nome+' ('+ean+') no catálogo global? Os registros e lotes das lojas serão preservados.':'Restaurar '+nome+' ('+ean+') no catálogo global?';
+  if(!confirm(confirmacao))return Promise.resolve(false);
+  var filtro=inativar?'deleted_at=is.null':'deleted_at=not.is.null',marca=inativar?new Date().toISOString():null;
+  return sbReq('/rest/v1/catalogo?ean=eq.'+encodeURIComponent(ean)+'&'+filtro,{method:'PATCH',headers:{Prefer:'return=representation'},body:{deleted_at:marca}}).then(function(r){
+    if(!r.ok){if(catalogoSemColunaTombstone(r))throw new Error('A migration de inativação do catálogo ainda não foi aplicada no Supabase.');throw new Error(r.dados&&(r.dados.message||r.dados.error)||'Não foi possível '+acao+' o item do catálogo.');}
+    var row=Array.isArray(r.dados)&&r.dados[0];if(!row)throw new Error('O item não foi alterado. Atualize a lista para conferir se já mudou.');
+    if(inativar)cat.deleted_at=row.deleted_at||marca;else delete cat.deleted_at;
+    if(row.updated_at){cat.updated_at=row.updated_at;if(!SYNC.catalogo||row.updated_at>SYNC.catalogo)SYNC.catalogo=row.updated_at;salvarSync();}
+    salvar();renderCatalogo();toast(inativar?'Item inativado globalmente; registros das lojas preservados.':'Item restaurado no catálogo global.');return true;
+  }).catch(function(e){toast(e.message||'Falha ao atualizar o catálogo.');return false;});}
+$('listaCatalogo').onclick=function(e){var b=e.target.closest('[data-catalogo-inativar],[data-catalogo-restaurar]');if(!b)return;e.preventDefault();e.stopPropagation();var inativar=!!b.dataset.catalogoInativar;alterarEstadoCatalogo(inativar?b.dataset.catalogoInativar:b.dataset.catalogoRestaurar,inativar);};
 $('catalogoFiltros').onclick=function(e){var b=e.target.closest('[data-cat-filter]');if(!b)return;catFiltro=b.dataset.catFilter;renderCatalogo();};
 $('pagerCatalogo').onclick=function(e){var b=e.target.closest('[data-page]');if(!b||b.disabled)return;paginas.cat.n+=+b.dataset.page;renderCatalogo();$('listaCatalogo').scrollIntoView({block:'start'});};
 $('cfgCatalogo').onclick=function(){ir('catalogo');};
