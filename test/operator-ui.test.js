@@ -89,3 +89,19 @@ test('Detalhe e Editar: cabeçalho do produto com selo, aviso, histórico e quan
     assert.doesNotMatch(sec, /[\u{1F300}-\u{1FAFF}\u{270E}\u{2715}]/u, v + ' sem emoji');
   }
 });
+
+test('Barra inferior: caixa e carne coloridas, contador dentro do ícone do sino', () => {
+  const nav = html.match(/<nav class="abas" id="abas">([\s\S]*?)<\/nav>/)[1];
+  assert.match(nav, /data-v="prod"><span class="nav-box">/);
+  assert.match(nav, /data-v="pere"><span class="nav-meat">/);
+  assert.match(nav, /data-v="alertas"><span class="nav-bell"><svg[\s\S]*?<\/svg><b id="alertBadge"/);
+});
+
+test('Listas: paginação, botão Filtrar e nenhum emoji nas telas de registros', () => {
+  for (const id of ['pagerProd', 'pagerPe', 'bFiltrarProd', 'bFiltrarPe']) assert.match(html, new RegExp(`id="${id}"`), id);
+  for (const v of ['v-prod', 'v-pere']) {
+    const sec = html.match(new RegExp(`<section class="vista" id="${v}">([\\s\\S]*?)</section>`))[1];
+    assert.doesNotMatch(sec, /[\u{1F300}-\u{1FAFF}\u{2795}]/u, v + ' sem emoji');
+  }
+  assert.doesNotMatch(html, /♙/);
+});

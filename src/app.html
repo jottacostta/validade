@@ -440,11 +440,50 @@ header .hdr-in.interna .header-bell{display:none}
 .edit-actions .row .btn{display:flex;align-items:center;justify-content:center;min-height:54px;font-size:clamp(15px,4.3vw,18px)}
 .edit-actions .row .btn.sec{border:1.5px solid #fff;background:#0a2a47;color:#fff}
 #bEditDelete{display:flex;align-items:center;justify-content:center;width:100%;margin-top:10px;min-height:46px}
+
+/* ───── Barra inferior, cabeçalho e listas (referências Guanabara) ───── */
+nav.abas button{position:relative}
+nav.abas button{padding-bottom:9px!important}
+nav.abas button.on:after{content:"";position:absolute;left:22%;right:22%;bottom:3px;height:3px;border-radius:3px;background:#ffdf00}
+nav.abas .nav-box svg{stroke:#f5b62e;fill:#f5b62e2e}nav.abas .nav-meat svg path{fill:#f0303c;stroke:#ffd9dc;stroke-width:1.3}nav.abas .nav-meat svg circle{fill:#fff;stroke:none}
+nav.abas .nav-bell{position:relative}
+nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px;height:20px;padding:0 5px;align-items:center;justify-content:center;border:1.5px solid #051829;border-radius:999px;background:#f32635;color:#fff;font:800 12px/1 system-ui}
+.operator-role-pill{display:inline-flex;align-items:center;gap:5px}.operator-role-pill .ico{width:1.2em;height:1.2em;stroke-width:2}
+.operator-page-icon .ico{width:70%;height:70%}.operator-page-icon.amber{color:#f5b62e}
+.operator-filter-row{display:flex!important;gap:6px;align-items:stretch}.operator-filter-row>select,.operator-filter-row>.btn{flex:1 1 0;min-width:0;padding-left:8px;padding-right:4px;font-size:clamp(12px,3.4vw,15px)}
+.btn-filtrar{display:flex;align-items:center;justify-content:center;gap:5px;flex:none;padding:0 12px;border:0;border-radius:12px;background:linear-gradient(180deg,#ffdf00,#f0b400);color:#1a1400;font:800 clamp(13px,3.6vw,16px) system-ui}
+.operator-summary{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:0!important;padding:8px 4px;margin:0 0 12px;border:1px solid #2c5373;border-radius:16px;background:linear-gradient(90deg,#0d2a44,#0a2036)}
+.operator-summary .tile{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;padding:2px 3px;border:0;border-left:1px solid #2c5373;border-radius:0;background:transparent;box-shadow:none;text-align:left}
+.operator-summary .tile:first-child{border-left:0}
+#v-prod .operator-summary .tile,#v-pere .operator-summary .tile{flex-direction:row!important;min-height:0!important;padding:2px 3px!important;background:transparent!important}
+#v-prod .operator-summary .tile:before,#v-pere .operator-summary .tile:before{display:none!important;content:none!important}
+#v-prod>.operator-summary{gap:0!important;margin:0 0 12px!important}
+.operator-summary .tile-ico{display:flex;align-items:center;justify-content:center;flex:none;width:clamp(26px,7.5vw,36px);height:clamp(26px,7.5vw,36px);border-radius:9px;color:#fff}.operator-summary .tile-ico .ico{width:68%;height:68%;stroke-width:2.4}
+.operator-summary .tile.in .tile-ico{background:#1a86f5}.operator-summary .tile.ok .tile-ico{background:#19b53c}.operator-summary .tile.wa .tile-ico{background:#f09a00}.operator-summary .tile.da .tile-ico{background:#f02a36}
+.operator-summary .tile small{display:block;color:#e3edf7;font-size:clamp(10px,2.9vw,13px);white-space:nowrap}.operator-summary .tile b{display:block;color:#fff!important;font:800 clamp(17px,5vw,22px)/1.1 system-ui}
+.operator-list{display:flex;flex-direction:column;gap:9px}
+.operator-record{display:grid!important;grid-template-columns:clamp(40px,11.5vw,54px) minmax(0,1fr) auto auto auto;align-items:center;gap:6px;padding:8px 6px 8px 8px!important;margin:0!important;border:1px solid #2c5373;border-radius:14px;background:linear-gradient(90deg,#0d2a44,#0a2036)}
+.operator-record-thumb{position:relative;display:flex;align-items:center;justify-content:center;width:auto!important;height:clamp(40px,11.5vw,54px)!important;border-radius:9px;background:#0a2136;color:#8fb3d1;overflow:hidden;font-size:0}
+.operator-record-thumb .ico{width:60%;height:60%}.operator-record-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff}
+.operator-record-copy{min-width:0;padding:0;border:0;background:none;color:#fff;text-align:left;font:inherit}
+.operator-record-copy strong{display:block;font-size:clamp(13px,3.7vw,16px);line-height:1.15;overflow-wrap:anywhere}
+.operator-record-copy small{display:block;margin-top:2px;color:#d5e3f0;font-size:clamp(11px,3.1vw,13px);line-height:1.3;overflow-wrap:anywhere}
+.operator-record-val{display:flex;align-items:center;gap:4px;padding-left:6px;border-left:1px solid #2c5373;color:#e3edf7;font-size:clamp(10px,2.9vw,13px);line-height:1.2}
+.operator-record-val .ico{width:18px;height:18px}.operator-record-val b{display:block;font-weight:500;font-size:clamp(11px,3.1vw,14px);white-space:nowrap}
+.operator-record .chip{padding:4px 7px;border-radius:9px;font-size:clamp(11px,3vw,13px)}.operator-record .chip .ico{width:1em;height:1em}
+.operator-record-actions{display:flex!important;flex-direction:row!important;align-items:center;gap:2px}
+.operator-record-actions button{display:flex;align-items:center;justify-content:center;width:clamp(30px,8.6vw,38px);height:clamp(30px,8.6vw,38px);padding:0;border:1px solid #2a7fd0;border-radius:9px;background:#0b3a6a;color:#fff}
+.operator-record-actions button:last-child{width:20px;border:0;background:none}.operator-record-actions .ico{width:20px;height:20px}
+@media(max-width:520px){.operator-record{grid-template-columns:clamp(40px,11.5vw,54px) minmax(0,1fr) auto auto;row-gap:3px}.operator-record-thumb{grid-row:1/3}.operator-record-val{grid-column:2/5;grid-row:2;border-left:0;padding-left:0}.operator-record-val>span{display:flex;gap:5px}.operator-record .chip{grid-column:3;grid-row:1}.operator-record-actions{grid-column:4;grid-row:1}}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0}
+.pager button{display:flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:1px solid #3c6a8e;border-radius:12px;background:#0a2136;color:#fff;font:600 clamp(14px,3.9vw,17px) system-ui}
+.pager button:disabled{opacity:.45}.pager .ico{width:20px;height:20px;stroke-width:2.4}.pager-info{color:#fff;font-size:clamp(14px,3.9vw,17px)}
+#v-prod>.row .btn,#pe-lista>.row .btn{display:flex;align-items:center;justify-content:center;min-height:46px}
 </style>
 </head>
 <body>
 <div id="splash"><div class="sp-logo"><img id="splashLogo" alt="" style="display:none"><span id="splashIni">📅</span></div><div class="sp-nome">/*NOME_HTML*/</div><div class="sp-sub">Controle de validade e perecíveis</div><span class="gira"></span><div class="barra-am"></div></div>
-<header><div class="hdr-in"><button class="header-back" id="headerBack" type="button" aria-label="Voltar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h12"/></svg></button><img id="hdrLogo" alt="Supermercados Guanabara" class="hdr-logo" style="display:none"><span class="hdr-divider" aria-hidden="true"></span><div class="hdr-brand-copy" style="min-width:0"><h1 id="screenTitle">Controle de Validade</h1><p id="slogan">Área do Operador</p><span class="operator-role-pill" id="operatorRolePill" hidden>♙ Área do Operador</span><p id="lojaAtualLabel" class="ean" style="margin:3px 0 0;display:none"></p></div><button class="header-bell" id="homeBell" type="button" aria-label="Abrir notificações"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><b id="homeBellBadge" style="display:none">0</b></button><button id="bLogoutHdr" class="hdr-logout" type="button">Sair</button></div></header>
+<header><div class="hdr-in"><button class="header-back" id="headerBack" type="button" aria-label="Voltar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h12"/></svg></button><img id="hdrLogo" alt="Supermercados Guanabara" class="hdr-logo" style="display:none"><span class="hdr-divider" aria-hidden="true"></span><div class="hdr-brand-copy" style="min-width:0"><h1 id="screenTitle">Controle de Validade</h1><p id="slogan">Área do Operador</p><span class="operator-role-pill" id="operatorRolePill" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="3.6"/><path d="M5 20c.8-3.8 3.5-5.6 7-5.6s6.2 1.8 7 5.6M7.8 8.2a4.3 4.3 0 0 1 8.4 0M6.8 8.2h10.4"/></svg><span>Área do Operador</span></span><p id="lojaAtualLabel" class="ean" style="margin:3px 0 0;display:none"></p></div><button class="header-bell" id="homeBell" type="button" aria-label="Abrir notificações"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><b id="homeBellBadge" style="display:none">0</b></button><button id="bLogoutHdr" class="hdr-logout" type="button">Sair</button></div></header>
 <main>
 
 <!-- ═════════ REGISTRAR ═════════ -->
@@ -526,15 +565,15 @@ header .hdr-in.interna .header-bell{display:none}
 
 <!-- ═════════ PRODUTOS ═════════ -->
 <section class="vista" id="v-prod">
-  <div class="operator-page-intro"><span class="operator-page-icon" aria-hidden="true">📦</span><div><h2>Meus Registros</h2><p>Consulte, pesquise e gerencie os produtos registrados por você.</p></div></div>
+  <div class="operator-page-intro"><span class="operator-page-icon amber" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg></span><div><h2>Meus Registros</h2><p>Consulte, pesquise e gerencie os produtos registrados por você.</p></div></div>
   <div class="operator-toolbar"><input id="qProd" type="search" placeholder="Pesquise por produto, lote ou código de barras"><button class="btn sec" id="bBuscaProduto" type="button" aria-label="Escanear código de barras"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V4h3M18 4h3v3M21 17v3h-3M6 20H3v-3M6 12h12M8 9v6M11 8v8M14 10v4M17 9v6"/></svg></button></div>
   <div class="operator-filter-row"><select id="fPeriodoProd" aria-label="Filtrar por período"><option value="">Período</option><option value="7">Últimos 7 dias</option><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select>
     <select id="fSetorProd" aria-label="Filtrar por setor"><option value="">Setor</option><option>Açougue</option><option>Laticínios</option><option>Padaria</option><option>Salgados</option><option>FLV</option><option>Mercearia</option></select>
-    <select id="fSituacaoProd" aria-label="Filtrar por situação"><option value="">Situação</option><option value="validos">Válidos</option><option value="alerta">Próximos do vencimento</option><option value="vencidos">Vencidos</option></select></div>
-  <div class="operator-summary"><div class="tile"><b id="tLotes">0</b><small>Total</small></div><div class="tile"><b id="tProd">0</b><small>Válidos</small></div>
-    <div class="tile wa"><b id="tAlerta">0</b><small>Próx. venc.</small></div><div class="tile da"><b id="tVenc">0</b><small>Vencidos</small></div></div>
+    <select id="fSituacaoProd" aria-label="Filtrar por situação"><option value="">Situação</option><option value="validos">Válidos</option><option value="alerta">Próximos do vencimento</option><option value="vencidos">Vencidos</option></select><button class="btn-filtrar" id="bFiltrarProd" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6.2 7.5V19l-3.6-2v-4.5z"/></svg><span>Filtrar</span></button></div>
+  <div class="operator-summary"><div class="tile in"><span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4 4v13H7zM14 3.5v4h4M9.5 12h6M9.5 15.5h6"/></svg></span><span><small>Total</small><b id="tLotes">0</b></span></div><div class="tile ok"><span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span><span><small>Válidos</small><b id="tProd">0</b></span></div><div class="tile wa"><span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span><span><small>Próx. Venc.</small><b id="tAlerta">0</b></span></div><div class="tile da"><span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4zM12 10v4.5M12 17.3v.2"/></svg></span><span><small>Vencidos</small><b id="tVenc">0</b></span></div></div>
   <div id="listaProd" class="operator-list"></div>
-  <div class="row" style="margin-top:4px"><button class="btn sec" id="bCsvProd">📊 Planilha (CSV)</button><button class="btn sec" id="bRelProd">📤 Relatório</button></div>
+  <div class="pager" id="pagerProd" hidden><button type="button" data-page="-1"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg><span>Anterior</span></button><span class="pager-info"></span><button type="button" data-page="1"><span>Próxima</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
+  <div class="row" style="margin-top:4px"><button class="btn sec" id="bCsvProd"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 11l4.5 4.5 4.5-4.5M5 19.5h14"/></svg><span>Planilha (CSV)</span></button><button class="btn sec" id="bRelProd"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 7.5 12 3.5l4 4M5 12.5V20h14v-7.5"/></svg><span>Relatório</span></button></div>
 </section>
 
 <section class="vista" id="v-detail">
@@ -574,24 +613,25 @@ header .hdr-in.interna .header-bell{display:none}
 
 <!-- ═════════ PERECÍVEIS ═════════ -->
 <section class="vista" id="v-pere">
-  <div class="operator-page-intro"><span class="operator-page-icon" aria-hidden="true">🥩</span><div><h2>Registros de Perecíveis</h2><p>Acompanhe produtos, lotes e condições de armazenamento.</p></div></div>
+  <div class="operator-page-intro"><span class="operator-page-icon" aria-hidden="true"><svg class="ico meat" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12.5c0-4.4 4.3-7.5 9.6-7.5 4.3 0 7.4 2.1 7.4 5.1 0 2.2-1.4 3.4-3.5 4.2-2 .8-3.1 1.8-4.8 3.5-1.3 1.3-3.5 1.5-5.5.5-2-1-3.2-3-3.2-5.8z"/><circle cx="14.6" cy="10" r="1.9"/></svg></span><div><h2>Registros de Perecíveis</h2><p>Acompanhe produtos, lotes e condições de armazenamento.</p></div></div>
   <div class="sub operator-tabs" id="subPere"><button data-s="reg">Registrar</button><button data-s="cad">Códigos</button><button class="on" data-s="lista">Registros</button></div>
   <div id="pe-cad" style="display:none">
     <div class="card"><h2>Novo código de balança</h2>
       <div class="g3"><div><label class="f" for="cCod">Código</label><input id="cCod" inputmode="numeric" placeholder="1234"></div>
       <div style="grid-column:span 2"><label class="f" for="cDesc">Descrição</label><input id="cDesc" placeholder="Picanha resfriada"></div></div>
       <label class="f" for="cSif">SIF (opcional)</label><input id="cSif" inputmode="numeric" placeholder="número do SIF">
-      <button class="btn big" id="bAddCod" style="margin-top:12px">➕ Cadastrar</button></div>
+      <button class="btn big" id="bAddCod" style="margin-top:12px">Cadastrar</button></div>
     <div class="card"><h2>Códigos cadastrados</h2><div id="listaCod"></div></div>
   </div>
   <div id="pe-lista" style="display:none">
     <div class="operator-toolbar"><input id="qPe" type="search" placeholder="Pesquise por produto, lote, setor ou etiqueta da balança"><button class="btn sec" id="bBuscaPerecivel" type="button" aria-label="Ler etiqueta da balança"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V4h3M18 4h3v3M21 17v3h-3M6 20H3v-3M6 12h12M8 9v6M11 8v8M14 10v4M17 9v6"/></svg></button></div>
     <div class="operator-filter-row"><select id="fPeriodoPe" aria-label="Filtrar por período"><option value="">Período</option><option value="7">Últimos 7 dias</option><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select>
-      <select id="fSetorPe" aria-label="Filtrar por setor"><option value="">Setor</option><option>Açougue</option><option>Laticínios</option><option>Padaria</option><option>Salgados</option><option>FLV</option><option>Mercearia</option></select><button class="btn sec" id="fTemperaturaPe" type="button" disabled title="O contrato atual não armazena temperatura">Temperatura indisponível</button></div>
-    <div class="operator-summary"><div class="tile"><b id="tPeTotal">0</b><small>Total</small></div><div class="tile"><b id="tPeValidos">0</b><small>Válidos</small></div><div class="tile wa"><b id="tPeAlerta">0</b><small>Próx. venc.</small></div><div class="tile da"><b id="tPeVenc">0</b><small>Vencidos</small></div></div>
+      <select id="fSetorPe" aria-label="Filtrar por setor"><option value="">Setor</option><option>Açougue</option><option>Laticínios</option><option>Padaria</option><option>Salgados</option><option>FLV</option><option>Mercearia</option></select><button class="btn sec" id="fTemperaturaPe" type="button" disabled title="O contrato atual não armazena temperatura">Temperatura</button><button class="btn-filtrar" id="bFiltrarPe" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6.2 7.5V19l-3.6-2v-4.5z"/></svg><span>Filtrar</span></button></div>
+    <div class="operator-summary"><div class="tile in"><span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4 4v13H7zM14 3.5v4h4M9.5 12h6M9.5 15.5h6"/></svg></span><span><small>Total</small><b id="tPeTotal">0</b></span></div><div class="tile ok"><span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span><span><small>Válidos</small><b id="tPeValidos">0</b></span></div><div class="tile wa"><span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span><span><small>Próx. Venc.</small><b id="tPeAlerta">0</b></span></div><div class="tile da"><span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4zM12 10v4.5M12 17.3v.2"/></svg></span><span><small>Vencidos</small><b id="tPeVenc">0</b></span></div></div>
     <div id="listaPe" class="operator-list"></div>
+    <div class="pager" id="pagerPe" hidden><button type="button" data-page="-1"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg><span>Anterior</span></button><span class="pager-info"></span><button type="button" data-page="1"><span>Próxima</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
     <p style="margin:0 0 10px;font-size:12px;color:var(--mu);text-align:center">Toque num registro para corrigir peso, validade ou SIF.</p>
-    <div class="row"><button class="btn sec" id="bCsvPe">📊 Planilha (CSV)</button><button class="btn sec" id="bRelPe">📤 Relatório</button></div>
+    <div class="row"><button class="btn sec" id="bCsvPe"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 11l4.5 4.5 4.5-4.5M5 19.5h14"/></svg><span>Planilha (CSV)</span></button><button class="btn sec" id="bRelPe"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 7.5 12 3.5l4 4M5 12.5V20h14v-7.5"/></svg><span>Relatório</span></button></div>
   </div>
 </section>
 
@@ -664,7 +704,7 @@ header .hdr-in.interna .header-bell{display:none}
 </section>
 </main>
 
-<nav class="abas" id="abas"><button class="on" data-v="home"><span><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span>Início</button><button data-v="prod"><span><svg viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 17l9 5 9-5"/></svg></span>Produtos</button><button data-v="pere"><span><svg viewBox="0 0 24 24"><path d="M12 3c-3 0-5 2-5 5 0 5 3 11 5 13 2-2 5-8 5-13 0-3-2-5-5-5ZM7 8c-2-2-4-1-5 1-1 3 2 6 5 7M17 8c2-2 4-1 5 1 1 3-2 6-5 7"/></svg></span>Perecíveis</button><button data-v="alertas"><span><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></span>Alertas <b id="alertBadge" style="display:none"></b></button><button data-v="aj"><span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1a2 2 0 1 1-2.8 2.8l-.1-.1a2 2 0 0 0-3.4 1.4v.3a2 2 0 1 1-4 0v-.2A2 2 0 0 0 5.8 17l-.1.1a2 2 0 1 1-2.8-2.8L3 14a2 2 0 0 0-1.4-3.4h-.2a2 2 0 1 1 0-4h.2A2 2 0 0 0 3 3.2l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a2 2 0 0 0 3.4-1.4v-.2a2 2 0 1 1 4 0v.2a2 2 0 0 0 3.4 1.4l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a2 2 0 0 0 1.4 3.4h.2a2 2 0 1 1 0 4h-.2A2 2 0 0 0 19.4 15Z" transform="translate(1 2) scale(.9)"/></svg></span>Ajustes</button></nav>
+<nav class="abas" id="abas"><button class="on" data-v="home"><span><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span>Início</button><button data-v="prod"><span class="nav-box"><svg viewBox="0 0 24 24"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg></span>Produtos</button><button data-v="pere"><span class="nav-meat"><svg viewBox="0 0 24 24"><path d="M3.5 12.5c0-4.4 4.3-7.5 9.6-7.5 4.3 0 7.4 2.1 7.4 5.1 0 2.2-1.4 3.4-3.5 4.2-2 .8-3.1 1.8-4.8 3.5-1.3 1.3-3.5 1.5-5.5.5-2-1-3.2-3-3.2-5.8z"/><circle cx="14.6" cy="10" r="1.9"/></svg></span>Perecíveis</button><button data-v="alertas"><span class="nav-bell"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><b id="alertBadge" style="display:none"></b></span>Alertas</button><button data-v="aj"><span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1a2 2 0 1 1-2.8 2.8l-.1-.1a2 2 0 0 0-3.4 1.4v.3a2 2 0 1 1-4 0v-.2A2 2 0 0 0 5.8 17l-.1.1a2 2 0 1 1-2.8-2.8L3 14a2 2 0 0 0-1.4-3.4h-.2a2 2 0 1 1 0-4h.2A2 2 0 0 0 3 3.2l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a2 2 0 0 0 3.4-1.4v-.2a2 2 0 1 1 4 0v.2a2 2 0 0 0 3.4 1.4l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a2 2 0 0 0 1.4 3.4h.2a2 2 0 1 1 0 4h-.2A2 2 0 0 0 19.4 15Z" transform="translate(1 2) scale(.9)"/></svg></span>Ajustes</button></nav>
 
 <div id="modalEditarUsuario" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloEditarUsuario">
   <div class="box"><h2 id="tituloEditarUsuario">Editar usuário</h2>
@@ -774,7 +814,7 @@ function renderHome(){
  var nome=(SESS&&(SESS.nome||SESS.usuario||SESS.email))||'Operador';nome=String(nome).split(/[\s@]/)[0]||'Operador';
  var loja=(SESS&&SESS.lojaNome)||'Loja não selecionada';
  if($('homeGreeting'))$('homeGreeting').textContent='Olá, '+nome+'!';
- var roleTxt=(SESS&&SESS.papel&&PAPEIS&&PAPEIS[SESS.papel])||'Operador';if($('operatorRolePill'))$('operatorRolePill').textContent='♙ Área do '+roleTxt;
+ var roleTxt=(SESS&&SESS.papel&&PAPEIS&&PAPEIS[SESS.papel])||'Operador';if($('operatorRolePill'))$('operatorRolePill').lastElementChild.textContent='Área do '+roleTxt;
  if($('homeStore'))$('homeStore').textContent=((SESS&&SESS.papel&&PAPEIS&&PAPEIS[SESS.papel])||'Operador')+' · '+loja;
  var nAlert=todosRegistros().filter(function(x){var n=dias(x.reg.val);return n!==null&&n<=D.aj.dias;}).length;
  ['homeBellBadge','homeAlertsBadge'].forEach(function(id){var b=$(id);if(b){b.textContent=nAlert>99?'99+':String(nAlert);b.style.display=nAlert?'':'none';}});
@@ -799,7 +839,7 @@ function ir(v){var destino=$('v-'+v);if(!destino)return;if(v!==vistaAtual){vista
   document.querySelectorAll('.vista').forEach(function(s){s.classList.toggle('on',s===destino);});
   var interna=v!=='home',cab=document.querySelector('header .hdr-in');cab.classList.toggle('interna',interna);
   if($('screenTitle'))$('screenTitle').textContent=titulosTela[v]||'Controle de Validade';
-  if($('slogan'))$('slogan').textContent=CFG.slogan||'Área do Operador';
+  if($('slogan'))$('slogan').textContent=(interna&&subtitulosTela[v])||CFG.slogan||'Área do Operador';
   if($('operatorRolePill'))$('operatorRolePill').hidden=!interna;
   document.querySelectorAll('#abas button').forEach(function(b){b.classList.toggle('on',b.dataset.v===(v==='reg'?'home':v==='detail'||v==='edit'?areaContextual:v));});
   if(v==='home')renderHome();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();mostrarVisaoAlertas('alerts');}if(v==='aj'){renderPerfilOperador();ajustes();carregarSolicitacoesExclusao();mostrarVistaAjustes('settings');}window.scrollTo(0,0);}
@@ -1060,17 +1100,23 @@ $('bEditDelete').onclick=function(){if(!registroContexto)return;var ctx=registro
 $('qProd').oninput=function(){listaProdutos();};
 if($('fSetorProd'))$('fSetorProd').onchange=listaProdutos;if($('fPeriodoProd'))$('fPeriodoProd').onchange=listaProdutos;if($('fSituacaoProd'))$('fSituacaoProd').onchange=listaProdutos;
 if($('bBuscaProduto'))$('bBuscaProduto').onclick=function(){if(!pode('registrar')){toast('Seu perfil não permite registrar produtos');return;}mostrarEscolhaRegistro();ir('reg');$('bTipoIndustrial').click();$('bEscanear').click();};
+/* cartão de registro e paginação compartilhados por Meus Registros e Perecíveis */
+var POR_PAGINA=8,paginas={prod:{n:1,f:''},pe:{n:1,f:''}};
+function cartaoRegistro(o){var x=seloValidade(o.val);return '<article class="operator-record"><span class="operator-record-thumb">'+miniatura(o.img,o.tipo)+'</span><button type="button" class="operator-record-copy operator-record-main" '+o.detalhe+'><strong>'+esc(o.nome)+'</strong><small>'+esc(o.l1)+'<br>Setor: '+o.prov+'</small></button><span class="operator-record-val">'+ic('cal')+'<span>Validade<b>'+fdata(o.val)+'</b></span></span><span class="chip '+x.c+'">'+chipHtml(x)+'</span><span class="operator-record-actions"><button type="button" '+o.editar+' aria-label="Editar '+esc(o.nome)+'">'+ic('pencil')+'</button><button type="button" '+o.detalhe+' aria-label="Ver detalhes">'+ic('chev','chev')+'</button></span></article>';}
+function paginar(chave,itens,filtro,pager){var st=paginas[chave];if(st.f!==filtro){st.f=filtro;st.n=1;}var total=Math.max(1,Math.ceil(itens.length/POR_PAGINA));st.n=Math.min(Math.max(1,st.n),total);
+  var el=$(pager);el.hidden=total<2;el.querySelector('.pager-info').textContent='Página '+st.n+' de '+total;el.querySelector('[data-page="-1"]').disabled=st.n<=1;el.querySelector('[data-page="1"]').disabled=st.n>=total;
+  return itens.slice((st.n-1)*POR_PAGINA,st.n*POR_PAGINA);}
 function listaProdutos(){var q=$('qProd').value.toLowerCase(),setorFiltro=$('fSetorProd').value,periodo=+$('fPeriodoProd').value||0,situacao=$('fSituacaoProd').value,nP=0,nL=0,nV=0,nA=0,nOk=0,cards=[];
   var desde=periodo?Date.now()-periodo*864e5:0;
   Object.keys(D.prod).forEach(function(ean){var p=D.prod[ean],c=detalheProduto(ean);nP++;p.lotes.forEach(function(l){nL++;var n=dias(l.val);if(n!==null&&n<0)nV++;else if(n!==null&&n<=D.aj.dias)nA++;else if(n!==null)nOk++;});
-    if(!p.lotes.length&&!setorFiltro&&!periodo&&!situacao&&(!q||((c.nome||'')+' '+ean).toLowerCase().indexOf(q)>=0)){var thumb0=c.img?'<img src="'+esc(c.img)+'" alt="" loading="lazy">':'📦';var empty='<article class="operator-record"><span class="operator-record-thumb">'+thumb0+'</span><button type="button" class="operator-record-copy operator-record-main" data-register-ean="'+esc(ean)+'" aria-label="Registrar lote de '+esc(c.nome||ean)+'"><strong>'+esc(c.nome||ean)+'</strong><small>EAN: '+esc(ean)+'<br>Sem lotes registrados</small></button><span class="operator-record-actions"><span class="st wa">Sem lote</span><button type="button" data-register-ean="'+esc(ean)+'" aria-label="Registrar lote">＋</button></span></article>';cards.push({ord:'9999',h:empty});}
+    if(!p.lotes.length&&!setorFiltro&&!periodo&&!situacao&&(!q||((c.nome||'')+' '+ean).toLowerCase().indexOf(q)>=0)){var thumb0=miniatura(c.img,'lote');var empty='<article class="operator-record"><span class="operator-record-thumb">'+thumb0+'</span><button type="button" class="operator-record-copy operator-record-main" data-register-ean="'+esc(ean)+'" aria-label="Registrar lote de '+esc(c.nome||ean)+'"><strong>'+esc(c.nome||ean)+'</strong><small>EAN: '+esc(ean)+'<br>Sem lotes registrados</small></button><span class="operator-record-actions"><span class="st wa">Sem lote</span><button type="button" data-register-ean="'+esc(ean)+'" aria-label="Registrar lote">'+ic('plus')+'</button></span></article>';cards.push({ord:'9999',h:empty});}
     ordenar(p.lotes).forEach(function(l){var n=dias(l.val),stamp=+new Date(l.criado||l.criado_em||0);if(setorFiltro&&l.setor!==setorFiltro||periodo&&(!stamp||stamp<desde))return;
       if(situacao==='validos'&&(n===null||n<=D.aj.dias)||situacao==='alerta'&&(n===null||n<0||n>D.aj.dias)||situacao==='vencidos'&&(n===null||n>=0))return;
       if(q&&((c.nome||'')+' '+ean+' '+l.lote+' '+l.setor+' '+l.created_by_nome).toLowerCase().indexOf(q)<0)return;
-      var thumb=c.img?'<img src="'+esc(c.img)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'📦';
-      var h='<article class="operator-record"><span class="operator-record-thumb">'+thumb+'</span><button type="button" class="operator-record-copy operator-record-main" data-detail-lote="'+esc(l.id)+'" data-ean="'+esc(ean)+'"><strong>'+esc(c.nome||ean)+'</strong><small>Lote: '+esc(l.lote||'—')+'<br>Setor: '+esc(l.setor||'Não informado')+'<br>'+proveniencia(l)+'<br>Validade: '+fdata(l.val)+' · '+esc(l.qtd)+' un.</small></button><span class="operator-record-actions"><span>'+status(l.val)+'</span><button type="button" data-edit-lote="'+esc(l.id)+'" data-ean="'+esc(ean)+'" aria-label="Editar '+esc(c.nome||'produto')+'">✎</button><button type="button" data-detail-lote="'+esc(l.id)+'" data-ean="'+esc(ean)+'" aria-label="Ver detalhes">›</button></span></article>';
+      var h=cartaoRegistro({tipo:'lote',img:c.img,nome:c.nome||ean,l1:'Lote: '+(l.lote||'—')+' · '+l.qtd+' un.',prov:proveniencia(l),val:l.val,detalhe:'data-detail-lote="'+esc(l.id)+'" data-ean="'+esc(ean)+'"',editar:'data-edit-lote="'+esc(l.id)+'" data-ean="'+esc(ean)+'"'});
       cards.push({ord:l.val||'9',h:h});});});
   cards.sort(function(a,b){return a.ord.localeCompare(b.ord);});
+  cards=paginar('prod',cards,[q,setorFiltro,periodo,situacao].join('|'),'pagerProd');
   $('listaProd').innerHTML=cards.map(function(c){return c.h;}).join('')||'<div class="operator-empty">'+(nP?'Nenhum registro corresponde aos filtros.':'Nenhum produto ainda. Use “Registrar produto” no início.')+'</div>';
   $('tProd').textContent=nOk;$('tLotes').textContent=nL;$('tVenc').textContent=nV;$('tAlerta').textContent=nA;}
 
@@ -1169,14 +1215,19 @@ $('listaCod').onclick=function(e){var del=e.target.closest('[data-cod-del]');if(
   var d=prompt('Descrição do código '+k+' (vazio para apagar):',it.desc);if(d===null)return;if(!d.trim()){if(ehAdmin()){if(confirm('Excluir código perecível e registros associados?'))adminExcluirRegistro('pere_item',k);}else solicitarExclusao('pere_item',k);return;}
   var s=prompt('SIF:',it.sif||'');it.desc=d.trim();if(s!==null)it.sif=s.trim();salvar();listaCodigos();};
 $('qPe').oninput=function(){listaPere();};
+$('pagerProd').onclick=function(e){var b=e.target.closest('[data-page]');if(!b||b.disabled)return;paginas.prod.n+=+b.dataset.page;listaProdutos();$('listaProd').scrollIntoView({block:'start'});};
+$('pagerPe').onclick=function(e){var b=e.target.closest('[data-page]');if(!b||b.disabled)return;paginas.pe.n+=+b.dataset.page;listaPere();$('listaPe').scrollIntoView({block:'start'});};
+$('bFiltrarProd').onclick=function(){paginas.prod.n=1;listaProdutos();$('listaProd').scrollIntoView({block:'start',behavior:'smooth'});};
+$('bFiltrarPe').onclick=function(){paginas.pe.n=1;listaPere();$('listaPe').scrollIntoView({block:'start',behavior:'smooth'});};
 if($('fSetorPe'))$('fSetorPe').onchange=listaPere;if($('fPeriodoPe'))$('fPeriodoPe').onchange=listaPere;
 if($('bBuscaPerecivel'))$('bBuscaPerecivel').onclick=function(){if(!pode('registrar')){toast('Seu perfil não permite registrar perecíveis');return;}abrirRegistroPerecivel();$('bEscanearBal').click();};
 function listaPere(){var q=$('qPe').value.toLowerCase(),setorFiltro=$('fSetorPe').value,periodo=+$('fPeriodoPe').value||0,desde=periodo?Date.now()-periodo*864e5:0,rows=[],total=D.pere.regs.length,validos=0,alertas=0,vencidos=0;
   D.pere.regs.forEach(function(r){var n=dias(r.val),stamp=+new Date(r.criado||r.criado_em||0);if(n!==null&&n<0)vencidos++;else if(n!==null&&n<=D.aj.dias)alertas++;else if(n!==null)validos++;
     if(setorFiltro&&r.setor!==setorFiltro||periodo&&(!stamp||stamp<desde))return;var it=D.pere.itens[r.cod]||{desc:'(código '+r.cod+')'},needle=(it.desc+' '+r.cod+' '+r.sif+' '+r.setor+' '+r.created_by_nome).toLowerCase();if(q&&needle.indexOf(q)<0)return;
-    var thumb=it.img?'<img src="'+esc(it.img)+'" alt="" loading="lazy">':'🥩';var html='<article class="operator-record"><span class="operator-record-thumb">'+thumb+'</span><button type="button" class="operator-record-copy operator-record-main" data-detail-pere="'+esc(r.id)+'"><strong>'+esc(it.desc)+'</strong><small>Lote: '+esc(r.sif||'—')+'<br>Setor: '+esc(r.setor||'Não informado')+'<br>'+proveniencia(r)+'<br>Validade: '+fdata(r.val)+' · '+kg(r.peso)+' kg</small></button><span class="operator-record-actions"><span>'+status(r.val)+'</span><button type="button" data-edit-pere="'+esc(r.id)+'" aria-label="Editar registro">✎</button><button type="button" data-detail-pere="'+esc(r.id)+'" aria-label="Ver detalhes">›</button></span></article>';
+    var html=cartaoRegistro({tipo:'pere',img:it.img,nome:it.desc,l1:'Lote: '+(r.sif||'—')+' · '+kg(r.peso)+' kg',prov:proveniencia(r),val:r.val,detalhe:'data-detail-pere="'+esc(r.id)+'"',editar:'data-edit-pere="'+esc(r.id)+'"'});
     rows.push({ord:r.val||'9',html:html});});rows.sort(function(a,b){return a.ord.localeCompare(b.ord);});
   $('tPeTotal').textContent=total;$('tPeValidos').textContent=validos;$('tPeAlerta').textContent=alertas;$('tPeVenc').textContent=vencidos;
+  rows=paginar('pe',rows,[q,setorFiltro,periodo].join('|'),'pagerPe');
   $('listaPe').innerHTML=rows.map(function(r){return r.html;}).join('')||'<div class="operator-empty">Nenhum registro de perecíveis corresponde à busca ou aos filtros.</div>';}
 /* dd/mm/aaaa, dd/mm/aa ou aaaa-mm-dd → 'aaaa-mm-dd' (null se a data não existir) */
 function lerData(t){t=String(t||'').trim();var m=/^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t),a,me,di;
@@ -1481,7 +1532,7 @@ function salvarTokenCosmos(v){
             function(){toast('⚠️ Não foi possível salvar o token na nuvem');});
   }else{D.aj.cosmos=v;salvar();toast(v?'Token do Cosmos salvo':'Token removido');}}
 function precisaLogin(){return sbOn()&&(!logado()||(SESS&&SESS.forcePasswordChange)||!SESS.lojaId);}
-function protegerVoltaPosLogout(){if(sbOn()&&!logado()){ir('reg');$('conta').classList.add('on');mostrarLoginForm();atualizarBotaoLogout();}}
+function protegerVoltaPosLogout(){if(sbOn()&&!logado()){ir('home');$('conta').classList.add('on');mostrarLoginForm();atualizarBotaoLogout();}}
 window.addEventListener('pageshow',protegerVoltaPosLogout);window.addEventListener('popstate',protegerVoltaPosLogout);
 function atualizarGate(){if(precisaLogin()){$('conta').classList.add('on');if(logado()){if(SESS.forcePasswordChange)mostrarTrocaSenhaPrimeiroAcesso();else mostrarLojas();}else mostrarLoginForm();}}
 function fdataHora(ms){try{var d=new Date(ms);return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}

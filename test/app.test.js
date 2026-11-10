@@ -1023,6 +1023,34 @@ tflaky('Registrar: tocar num lote já registrado do produto abre o detalhe', { s
   await a.fechar();
 });
 
+tflaky('Meus Registros: cartão não repete o setor, mostra validade e selo, e pagina de 8 em 8', { skip: pular }, async () => {
+  const lotes = []; for (let i = 1; i <= 10; i++) lotes.push({ id: 'l' + i, lote: 'L' + String(i).padStart(2, '0'), qtd: i, val: '2032-01-' + String(i).padStart(2, '0'), setor: 'Laticínios', created_by_nome: 'William' });
+  const a = await abrir({ dados: { prod: { '7891000315507': { lotes } }, cat: { '7891000315507': { nome: 'Café' } }, pere: { itens: {}, regs: [] } } });
+  await a.p.click('nav button[data-v="prod"]');
+  assert.strictEqual(await a.p.locator('#listaProd .operator-record').count(), 8);
+  const cartao = await a.p.textContent('#listaProd .operator-record >> nth=0');
+  assert.strictEqual(cartao.split('Laticínios').length - 1, 1, 'setor aparece uma vez só: ' + cartao);
+  assert.ok(cartao.includes('informado por William') && cartao.includes('01/01/2032') && cartao.includes('Válido'), cartao);
+  assert.strictEqual((await a.p.textContent('#pagerProd')).replace(/\s+/g, ' ').includes('Página 1 de 2'), true);
+  await a.p.click('#pagerProd [data-page="1"]');
+  assert.strictEqual(await a.p.locator('#listaProd .operator-record').count(), 2);
+  await a.p.fill('#qProd', 'L03');
+  assert.strictEqual(await a.p.locator('#listaProd .operator-record').count(), 1, 'buscar volta para a primeira página');
+  assert.strictEqual(await a.p.isVisible('#pagerProd'), false);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Cabeçalho: subtítulo próprio em cada tela interna; contador de alertas fica sobre o sino', { skip: pular }, async () => {
+  const a = await abrir({ dados: { prod: { '7891000315507': { lotes: [lote('v', '2020-01-01', 1, 'L1')] } }, cat: {}, pere: { itens: {}, regs: [] } } });
+  await a.p.click('nav button[data-v="prod"]');
+  assert.strictEqual(await a.p.textContent('#slogan'), 'Produtos (Industrializados)');
+  await a.p.click('nav button[data-v="pere"]');
+  assert.strictEqual(await a.p.textContent('#slogan'), 'Produtos perecíveis da loja');
+  const pos = await a.p.evaluate(() => { const b = document.getElementById('alertBadge').getBoundingClientRect(), i = document.querySelector('#abas [data-v="alertas"] svg').getBoundingClientRect(); return { visivel: b.width > 0, acima: b.top < i.top + i.height / 2, direita: b.left > i.left + i.width / 2 - 2 }; });
+  assert.deepStrictEqual(pos, { visivel: true, acima: true, direita: true });
+  await a.fechar();
+});
+
 tflaky('Área do Operador: abas, alertas/notificações e detalhe/edição de lote', { skip: pular }, async () => {
   const a = await abrir({ dados: {
     prod: { '7891000315507': { nome: 'Café', lotes: [lote('l1', '2032-12-01', 5, 'L1')] } },
