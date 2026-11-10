@@ -103,7 +103,7 @@ Feito no commit `3ac395c` (branch `feat/catalogo-admin`), 129 testes passando lo
 Falta:
 - [x] PR #32 aberta para `main` (Draft).
 - [x] Conferência visual a 360 px feita em navegador de teste (entrada em Configurações e tela do Catálogo).
-- [ ] Decidir com o Jonatas se **gerente/analista** também devem ver o catálogo (hoje: só admin).
+- [x] **Decisão do Jonatas (10/11):** o Catálogo é **somente do administrador**. Gerente e analista não veem. Já é o comportamento implementado.
 - [ ] Perguntar "Posso fazer a merge?" — nunca mesclar sem autorização explícita.
 
 ## 5. Como trabalhar neste repositório
@@ -125,3 +125,4 @@ Falta:
 - 10/11 — Claude — Catálogo do administrador implementado na branch `feat/catalogo-admin` (`3ac395c`); este documento criado.
 - 10/11 — Claude — PR #32 aberta; subtítulo do cabeçalho do Catálogo encurtado (cortava a 360 px); conferência visual feita. Falta só a autorização de merge.
 - 10/11 — Claude — Push: segredo salvo pelo Jonatas; disparo testado (200, 6 avisos, 0 push por falta de aparelhos inscritos); migration `agendador_dispara_push` aplicada em produção e incluída na PR #32. Falta inscrever aparelhos e conferir a execução de 11/11.
+- 10/11 — Claude — Decisão registrada: Catálogo somente para administrador (sem mudança de código). PR #32 segue aguardando autorização de merge.
