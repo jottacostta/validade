@@ -1430,3 +1430,62 @@ tflaky('Área do Operador: abas, alertas/notificações e detalhe/edição de lo
   assert.deepStrictEqual(a.erros, []);
   await a.fechar();
 });
+
+/* Armazenamento do navegador cheio: o app guarda os dados no IndexedDB em vez de só avisar. */
+const semEspaco = p => p.addInitScript(() => {
+  const original = Storage.prototype.setItem;
+  Storage.prototype.setItem = function (k, v) {
+    if (k === 'validade_dados' || k === 'validade_sync') throw new DOMException('cheio', 'QuotaExceededError');
+    return original.call(this, k, v);
+  };
+  window.__toasts = [];
+  document.addEventListener('DOMContentLoaded', () => { const t = document.getElementById('toast');
+    if (t) new MutationObserver(() => window.__toasts.push(t.textContent)).observe(t, { childList: true, characterData: true, subtree: true }); });
+});
+const lerIdb = (p, chave) => p.evaluate(k => new Promise(res => {
+  const r = indexedDB.open('validade_armazenamento', 1);
+  r.onupgradeneeded = () => r.result.createObjectStore('kv');
+  r.onerror = () => res(null);
+  r.onsuccess = () => { const q = r.result.transaction('kv').objectStore('kv').get(k);
+    q.onsuccess = () => { r.result.close(); res(q.result || null); }; q.onerror = () => { r.result.close(); res(null); }; };
+}), chave);
+
+tflaky('armazenamento cheio: a gravação vai para o IndexedDB e volta ao reabrir o app', { skip: pular }, async () => {
+  const a = await abrir({ antes: semEspaco });
+  await a.p.evaluate(() => { const e = document.getElementById('aDias'); e.value = '45'; e.dispatchEvent(new Event('change')); });
+  await a.p.waitForFunction(() => new Promise(res => { const r = indexedDB.open('validade_armazenamento', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onerror = () => res(false);
+    r.onsuccess = () => { const q = r.result.transaction('kv').objectStore('kv').get('validade_dados'); q.onsuccess = () => { r.result.close(); res(!!q.result); }; }; }));
+  assert.strictEqual(JSON.parse(await lerIdb(a.p, 'validade_dados')).aj.dias, 45);
+  const avisos = await a.p.evaluate(() => window.__toasts.join('|'));
+  assert.ok(!/Não foi possível salvar|Armazenamento cheio/.test(avisos), 'não mostra aviso de falha quando o IndexedDB guardou: ' + avisos);
+  await a.p.reload();
+  await a.p.waitForFunction(() => document.getElementById('aDias').value === '45');
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
+
+tflaky('armazenamento cheio: a sincronização conclui, atualiza a tela e não repete o aviso', { skip: pular }, async () => {
+  const a = await abrirRegistro(async p => {
+    await p.route('**/rest/v1/**', async r => {
+      const u = new URL(r.request().url()), method = r.request().method();
+      let rows = [];
+      if (u.pathname === '/rest/v1/perfis') rows = [{ papel: 'operador', nome: 'Teste' }];
+      if (method === 'GET' && u.pathname === '/rest/v1/catalogo' && u.searchParams.has('updated_at')) rows = [{ ean: '7891234567890', nome: 'Produto compartilhado', marca: '', img: '', updated_at: '2026-11-07T20:00:00Z' }];
+      if (method === 'GET' && u.pathname === '/rest/v1/produtos') rows = [{ ean: '7891234567890', updated_at: '2026-11-07T20:00:00Z', deleted_at: null }];
+      if (method === 'GET' && u.pathname === '/rest/v1/lotes') rows = [{ id: 'lote-w', ean: '7891234567890', lote: 'FL05-W', qtd: 7, val: '2026-12-10', setor: 'Açougue', criado: 1, created_by: 'u1', created_by_nome: 'William', updated_at: '2026-11-07T20:00:00Z', deleted_at: null }];
+      return r.fulfill({ status: method === 'GET' ? 200 : 201, contentType: 'application/json', body: JSON.stringify(rows) });
+    });
+  }, null, semEspaco);
+  await a.p.waitForFunction(() => new Promise(res => { const r = indexedDB.open('validade_armazenamento', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onerror = () => res(false);
+    r.onsuccess = () => { const q = r.result.transaction('kv').objectStore('kv').get('validade_sync'); q.onsuccess = () => { r.result.close(); try { res(!!JSON.parse(q.result || '{}').recebido); } catch (e) { res(false); } }; }; }));
+  const dados = JSON.parse(await lerIdb(a.p, 'validade_dados'));
+  assert.strictEqual(dados.prod['7891234567890'].lotes[0].lote, 'FL05-W');
+  await a.p.click('nav button[data-v="prod"]');
+  assert.ok((await a.p.textContent('#listaProd')).includes('Produto compartilhado'));
+  const avisos = await a.p.evaluate(() => window.__toasts.join('|'));
+  assert.ok(!/Armazenamento cheio|Falha ao gravar|Não foi possível salvar/.test(avisos), 'sem aviso de armazenamento: ' + avisos);
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
