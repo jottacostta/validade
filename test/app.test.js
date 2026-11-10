@@ -1300,6 +1300,23 @@ tflaky('Catálogo: administrador abre por Configurações, vê todos os produtos
   await a.fechar();
 });
 
+tflaky('Push: operador, assistente, analista, gerente e administrador ativam em Configurações', { skip: pular }, async () => {
+  for (const papel of ['operador', 'assistente', 'analista', 'gerente', 'admin']) {
+    const a = await abrirLogado(async p => { await rotasBase(p, papel);
+      await p.addInitScript(() => { Object.defineProperty(window, 'isSecureContext', { value: true });
+        Object.defineProperty(navigator, 'serviceWorker', { value: { register: () => Promise.resolve({ pushManager: { getSubscription: () => Promise.resolve(null) } }) } });
+        window.PushManager = function () {}; window.Notification = function () {}; });
+    }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel });
+    await a.p.click('nav button[data-v="aj"]');
+    await a.p.waitForFunction(() => /ainda não ativado/.test(document.getElementById('pushStatus').textContent));
+    assert.strictEqual(await a.p.isVisible('#pushCard'), true, papel + ' vê o cartão de push');
+    assert.strictEqual(await a.p.isVisible('#bPushAtivar'), true, papel + ' vê o botão Ativar');
+    if (papel === 'operador') { await a.p.click('nav button[data-v="alertas"]'); await a.p.click('[data-alert-view="notifications"]'); await a.p.click('#bIrPush');
+      assert.strictEqual(await a.p.textContent('#screenTitle'), 'Configurações'); assert.strictEqual(await a.p.isVisible('#pushCard'), true); }
+    await a.fechar();
+  }
+});
+
 tflaky('Área do Operador: abas, alertas/notificações e detalhe/edição de lote', { skip: pular }, async () => {
   const a = await abrir({ dados: {
     prod: { '7891000315507': { nome: 'Café', lotes: [lote('l1', '2032-12-01', 5, 'L1')] } },

@@ -57,12 +57,20 @@ no painel). `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` e `VAPID_SUBJECT` também co
 - [x] Migration `20261110030000_agendador_dispara_push.sql` aplicada em produção: o job `gerar-alertas-validade-diario`
       (09:00 UTC) agora chama a função `alertas` via `pg_net`. O comando do job foi executado uma vez à mão e respondeu 200.
 - [x] Vault com os três nomes que o job lê: `alertas_function_url`, `alertas_anon_key`, `alertas_cron_secret`.
-- [ ] **[operadores]** Em cada aparelho: Alertas → Notificações → "Push neste aparelho" → Ativar notificações.
+- [ ] **[todos os perfis]** Em cada aparelho: **Configurações → Notificações push → Ativar notificações push** (decisão do Jonatas em 10/11: todos os perfis ativam, e a tela fica em Configurações).
       Só depois disso `enviados` passa de 0. **Ainda não testado em aparelho real.**
 - [ ] **[agente]** Em 11/11 depois das 09:00 UTC, conferir `cron.job_run_details` e `net._http_response`
       (esperado: status 200). Se o push falhar em aparelhos inscritos, olhar o campo `falhas` da resposta.
 - [ ] A migration acima está na branch `feat/catalogo-admin` (PR #32); o repositório só reflete a produção depois da merge.
 - Se o segredo for trocado no painel, atualizar o mesmo valor no Vault (`vault.update_secret`), senão o job recebe 401.
+
+### 3.1.1 Limite conhecido do push para perfis de escopo global (NÃO resolvido)
+O servidor só aceita inscrição (`subscribe`) e só gera avisos para quem está em `loja_membros` da loja:
+`isMember()` em `supabase/functions/alertas/index.ts` e o `join public.loja_membros` em `gerar_alertas_validade()`.
+Analista, gerente e administrador enxergam todas as lojas, mas **só recebem push das lojas em que estão vinculados**;
+se entrarem em uma loja sem vínculo, "Ativar" responde 403 "Loja inválida ou sem vínculo".
+Decisão pendente do Jonatas: esses perfis devem receber avisos de **todas** as lojas ou só das vinculadas?
+Mudar isso exige alterar a função `alertas` e a função SQL (migration) — não foi feito.
 
 ### 3.2 Catálogo do administrador — EM ANDAMENTO (branch `feat/catalogo-admin`)
 Ver seção 4. Falta: abrir PR, CI verde, conferência visual e autorização de merge.
@@ -126,3 +134,4 @@ Falta:
 - 10/11 — Claude — PR #32 aberta; subtítulo do cabeçalho do Catálogo encurtado (cortava a 360 px); conferência visual feita. Falta só a autorização de merge.
 - 10/11 — Claude — Push: segredo salvo pelo Jonatas; disparo testado (200, 6 avisos, 0 push por falta de aparelhos inscritos); migration `agendador_dispara_push` aplicada em produção e incluída na PR #32. Falta inscrever aparelhos e conferir a execução de 11/11.
 - 10/11 — Claude — Decisão registrada: Catálogo somente para administrador (sem mudança de código). PR #32 segue aguardando autorização de merge.
+- 10/11 — Claude — Push: cartão de ativação movido para Configurações e visível a todos os perfis (teste cobre os 5); Notificações ganhou atalho para lá. Registrado o limite do servidor para perfis globais sem vínculo com a loja (seção 3.1.1).
