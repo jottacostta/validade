@@ -238,3 +238,19 @@ em `src/app.html`, dentro de `#preferencesArea`):
 - 10/11 — Claude — Decisão: perfis globais recebem avisos de todas as lojas. Migration `alertas_escopo_global` + ajuste em `alertas/index.ts` + teste de contrato na PR #32. Nada aplicado/publicado em produção ainda.
 - 10/11 — Claude — PR #32 mesclada (`1da3e67`); migration `alertas_escopo_global` aplicada e conferida por MD5; função `alertas` v3 publicada e testada (public-key 200, dispatch 200). Pedido novo registrado: Área do Administrador (seção 7), não iniciada; imagem em `docs/referencias/area-administrador.jpg`.
 - 10/11 — ChatGPT — Iniciada a etapa 1 da Área de Ajustes: central de dez seções, subpáginas por perfil e reaproveitamento dos componentes existentes; sem alterações de backend. PR #33 já mesclada.
+
+
+## 7.1 Especificação funcional consolidada — decisões aprovadas em 10/11/2026
+
+Documento normativo criado: `docs/especificacao-funcional-administrador.md`.
+
+Decisões confirmadas pelo proprietário:
+- **Grupos:** um usuário pode pertencer a múltiplos grupos de lojas, atribuídos pelo Administrador. Assistente e Analista ficam restritos à união das lojas de seus grupos; Gerente e Administrador têm escopo global.
+- **Permissões:** matriz padrão por perfil + exceções individuais por usuário, configuradas pelo Administrador por checkboxes. Permissão funcional e escopo territorial são dimensões separadas; exceções não podem ultrapassar o teto de autoridade nem ampliar lojas indevidamente.
+- **Aprovação:** qualquer usuário com a permissão específica pode aprovar (não é necessária aprovação cumulativa), desde que esteja autorizado para a loja e não seja o próprio solicitante.
+- **Cadastro:** Assistente cadastra Operadores no próprio escopo; Analista cadastra Operadores e Assistentes no próprio escopo; Gerente cadastra Operadores, Assistentes e Analistas em qualquer loja; Administrador cadastra todos os perfis e administra todos os grupos.
+- **Solicitações:** alteração de nome de produto pode ser aprovada por Assistente, Analista, Gerente ou Administrador; exclusão somente por Gerente ou Administrador. Exclusão deve preservar histórico, preferencialmente por inativação lógica.
+
+Essas decisões são **especificação aprovada, não funcionalidades implementadas**. A PR #34 continua sendo a primeira etapa de navegação; implementação de backend, migrations, RLS, Edge Functions e interface de gestão ocorrerá em etapas próprias.
+
+- 10/11 — ChatGPT — Criado `docs/especificacao-funcional-administrador.md` na branch `feat/area-ajustes-administrador`; decisões de grupos, permissões e aprovações consolidadas. PR #34 permanece aberta, sem merge.
