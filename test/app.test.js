@@ -1076,9 +1076,10 @@ tflaky('Configurações: dados reais, preferências persistem e Sobre mostra a v
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
 
-tflaky('Alterar Senha: valida, confere a senha atual no servidor e só então grava a nova', { skip: pular }, async () => {
+tflaky('Alterar Senha (função antiga no servidor): confere a senha atual e grava pelo Auth', { skip: pular }, async () => {
   const chamadas = { token: [], user: [] }; let senhaCerta = false;
   const a = await abrirLogado(async p => { await rotasBase(p, 'operador');
+    await p.route('**/functions/v1/gerir-usuarios', r => r.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: 'Ação desconhecida.' }) }));
     await p.route('**/auth/v1/token?grant_type=password', r => { chamadas.token.push(r.request().postDataJSON()); senhaCerta
       ? r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ access_token: 'tok2', refresh_token: 'ref2', expires_in: 3600, user: { id: 'u1', email: 'teste@loja.validade' } }) })
       : r.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error_description: 'Invalid login credentials' }) }); });
@@ -1139,6 +1140,58 @@ tflaky('Leitor: título conforme o modo, Trocar câmera alterna a câmera pedida
   await a.p.waitForFunction(() => document.getElementById('pEan').textContent === '7891000315507');
   assert.strictEqual(await a.p.isVisible('#scanner'), false);
   assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Alterar Senha: usa a função do servidor e mostra o motivo quando ela recusa', { skip: pular }, async () => {
+  const chamadas = []; let resposta = { status: 400, body: { error: 'Essa senha é muito comum. Escolha outra.' } }; let nativo = 0;
+  const a = await abrirLogado(async p => { await rotasBase(p, 'operador');
+    await p.route('**/functions/v1/gerir-usuarios', r => { chamadas.push(r.request().postDataJSON()); r.fulfill({ status: resposta.status, contentType: 'application/json', body: JSON.stringify(resposta.body) }); });
+    await p.route('**/auth/v1/user', r => { nativo++; r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }); });
+  }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador' });
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#cfgSenha');
+  await a.p.fill('#pwAtual', 'antiga1'); await a.p.fill('#pwNova', 'guanabara'); await a.p.fill('#pwConfirma', 'guanabara'); await a.p.click('#bPwSalvar');
+  await a.p.waitForFunction(() => /muito comum/.test(document.getElementById('pwErro').textContent));
+  assert.deepStrictEqual(chamadas[0], { acao: 'trocar_senha', senha_atual: 'antiga1', senha: 'guanabara' });
+  resposta = { status: 200, body: { ok: true } };
+  await a.p.fill('#pwNova', 'nova1234'); await a.p.fill('#pwConfirma', 'nova1234'); await a.p.click('#bPwSalvar');
+  await a.p.waitForFunction(() => document.getElementById('screenTitle').textContent === 'Configurações');
+  assert.strictEqual(nativo, 0, 'com a função publicada, não usa o caminho direto do Auth');
+  await a.fechar();
+});
+
+tflaky('Notificações: Limpar marca as do usuário como removidas; sem a coluna no servidor o botão some', { skip: pular }, async () => {
+  const patches = []; let comColuna = true; const linhas = [{ id: 'n1', tipo: 'validade', titulo: 'Produto vencido', mensagem: 'Café', payload: {}, criado: '2026-11-09T10:00:00Z', lida_em: null }];
+  const a = await abrirLogado(async p => { await rotasBase(p, 'operador');
+    await p.route(/\/rest\/v1\/notificacoes/, r => { const u = r.request().url();
+      if (r.request().method() === 'PATCH') { patches.push({ u, b: r.request().postDataJSON() }); linhas.length = 0; return r.fulfill({ status: 204, body: '' }); }
+      if (u.includes('removida_em') && !comColuna) return r.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ message: 'column notificacoes.removida_em does not exist' }) });
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(linhas) }); });
+  }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador' });
+  a.respostas.push(true);
+  await a.p.click('nav button[data-v="alertas"]'); await a.p.click('[data-alert-view="notifications"]');
+  await a.p.waitForFunction(() => document.getElementById('listaNotificacoes').textContent.includes('Produto vencido'));
+  await a.p.click('#bLimparNotificacoes');
+  await a.p.waitForFunction(() => !document.getElementById('listaNotificacoes').textContent.includes('Produto vencido'));
+  assert.ok(patches[0].u.includes('id=in.(n1)') && patches[0].u.includes('loja_id=eq.L1'), patches[0].u);
+  assert.deepStrictEqual(Object.keys(patches[0].b), ['removida_em']);
+  comColuna = false; linhas.push({ id: 'n2', tipo: 'validade', titulo: 'Outro aviso', mensagem: 'x', payload: {}, criado: '2026-11-09T11:00:00Z', lida_em: null });
+  await a.p.click('#bAtualizarNotificacoes');
+  await a.p.waitForFunction(() => document.getElementById('listaNotificacoes').textContent.includes('Outro aviso'));
+  assert.strictEqual(await a.p.isVisible('#bLimparNotificacoes'), false);
+  await a.fechar();
+});
+
+tflaky('Perfil: "Sair de todos os aparelhos" encerra as sessões no servidor e volta ao login', { skip: pular }, async () => {
+  const saidas = [];
+  const a = await abrirLogado(async p => { await rotasBase(p, 'operador');
+    await p.route('**/auth/v1/logout**', r => { saidas.push(r.request().url()); r.fulfill({ status: 204, body: '' }); });
+  }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador' });
+  a.respostas.push(true);
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#settingsTabs [data-settings-view="profile"]'); await a.p.click('#profileSessions');
+  await a.p.waitForSelector('#conta-login', { state: 'visible' });
+  assert.ok(saidas.some(u => u.includes('scope=global')), JSON.stringify(saidas));
+  assert.strictEqual(await a.p.evaluate(() => localStorage.getItem('validade_sessao')), null);
+  await a.fechar();
 });
 
 tflaky('Área do Operador: abas, alertas/notificações e detalhe/edição de lote', { skip: pular }, async () => {
