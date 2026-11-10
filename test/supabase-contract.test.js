@@ -154,3 +154,34 @@ test('alertas de validade são gerados diariamente pelo agendador do banco, sem 
   // a chamada é local ao banco: nenhuma requisição HTTP, cabeçalho de segredo ou token na migration
   assert.doesNotMatch(m, /net\.http_post|x-alertas-cron-secret|Bearer|eyJ/);
 });
+
+test('agendador diário dispara a função alertas (push) lendo endereço, chave e segredo do Vault', () => {
+  const m = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261110030000_agendador_dispara_push.sql'), 'utf8');
+  const sql = m.split('\n').filter(l => !l.trim().startsWith('--')).join('\n');
+  assert.match(sql, /cron\.schedule\(\s*'gerar-alertas-validade-diario',\s*'0 9 \* \* \*'/, 'mesmo job e horário (substitui o anterior)');
+  assert.match(sql, /net\.http_post\(/);
+  assert.match(sql, /"action":"dispatch"/);
+  for (const nome of ['alertas_function_url', 'alertas_anon_key', 'alertas_cron_secret']) assert.match(sql, new RegExp(`vault\\.decrypted_secrets where name = '${nome}'`), nome);
+  assert.match(sql, /'x-alertas-cron-secret', \(select decrypted_secret/);
+  // nada sensível nem específico do projeto no arquivo
+  assert.doesNotMatch(sql, /eyJ|sb_publishable_|sb_secret_|supabase\.co|[0-9a-f]{40,}/);
+});
+
+test('perfis de escopo global recebem avisos de todas as lojas; ninguém lê notificação de outra pessoa', () => {
+  const m = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261110040000_alertas_escopo_global.sql'), 'utf8');
+  assert.match(m, /select lm\.user_id, lm\.loja_id from public\.loja_membros lm\s+union[\s\S]*from public\.perfis p cross join public\.lojas lo\s+where p\.papel in \('analista','gerente','admin'\)/);
+  assert.match(m, /on conflict\(user_id,dedupe_key\) do nothing/, 'deduplicação preservada');
+  assert.match(m, /<> 'service_role' then raise exception/, 'continua restrita ao service_role');
+  assert.match(m, /revoke all on function public\.gerar_alertas_validade\(\) from public,anon,authenticated/);
+  for (const pol of ['notificacoes_sel_own_store', 'notificacoes_upd_own_store']) {
+    const bloco = m.match(new RegExp('alter policy ' + pol + '[\\s\\S]*?;'))[0];
+    assert.match(bloco, /user_id=\(select auth\.uid\(\)\) and \(private\.membro_da\(loja_id\) or private\.tem_escopo_global\(\)\)/, pol);
+  }
+  assert.doesNotMatch(m, /drop policy|disable row level security|to anon/i);
+  // o corpo da função só difere da versão anterior no trecho dos destinatários
+  const corpo = s => s.slice(s.indexOf('create or replace function public.gerar_alertas_validade()'), s.indexOf('$$;', s.indexOf('create or replace function public.gerar_alertas_validade()')));
+  const antes = corpo(migration).split('\n'), depois = corpo(m).split('\n');
+  assert.deepEqual(antes.filter(l => !depois.includes(l)), ['    from candidatos c join public.loja_membros m on m.loja_id=c.loja_id']);
+  assert.match(edge, /PAPEIS_GLOBAIS = \["analista", "gerente", "admin"\]/);
+  assert.match(edge, /if \(!error && data\) return true;[\s\S]*PAPEIS_GLOBAIS\.includes\(perfil\.papel\)\) return false;[\s\S]*from\("lojas"\)/, 'global só em loja existente');
+});

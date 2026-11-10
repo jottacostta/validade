@@ -128,3 +128,24 @@ test('Leitor: cabeçalho próprio, Flash, Trocar câmera e Ler da galeria, sem e
   assert.doesNotMatch(sc.match(/<input[^>]*id="fGaleria"[^>]*>/)[0], /capture/, 'galeria não força a câmera');
   assert.doesNotMatch(sc, /[\u{1F300}-\u{1FAFF}\u{2715}]/u);
 });
+
+test('Catálogo: tela própria, com entrada só em Configurações (administração)', () => {
+  const cat = html.match(/<section class="vista" id="v-catalogo">([\s\S]*?)<\/section>/);
+  assert.ok(cat, 'v-catalogo existe');
+  for (const id of ['qCatalogo', 'catalogoFiltros', 'tCatTotal', 'tCatCom', 'tCatSem', 'listaCatalogo', 'pagerCatalogo']) assert.match(cat[1], new RegExp(`id="${id}"`), id);
+  assert.deepEqual([...cat[1].matchAll(/data-cat-filter="([^"]+)"/g)].map(m => m[1]), ['all', 'with', 'without']);
+  assert.match(html, /id="cfgAdminCard"[^>]*hidden/);
+  assert.match(html, /id="cfgCatalogo"/);
+  assert.doesNotMatch(html.match(/<nav class="abas" id="abas">([\s\S]*?)<\/nav>/)[1], /catalogo/i, 'catálogo não entra na barra inferior');
+  assert.doesNotMatch(cat[1], /[\u{1F300}-\u{1FAFF}]/u);
+});
+
+test('Push: a ativação fica em Configurações (todos os perfis) e sai da tela de Notificações', () => {
+  const aj = html.match(/<section class="vista" id="v-aj">([\s\S]*?)<\/section>/)[1];
+  const al = html.match(/<section class="vista" id="v-alertas">([\s\S]*?)<\/section>/)[1];
+  const ref = aj.slice(aj.indexOf('id="settingsRefArea"'), aj.indexOf('id="preferencesArea"'));
+  for (const id of ['pushCard', 'pushStatus', 'bPushAtivar', 'bPushDesativar']) { assert.match(ref, new RegExp(`id="${id}"`), id + ' em Configurações'); assert.doesNotMatch(al, new RegExp(`id="${id}"`), id + ' fora de Alertas'); }
+  assert.ok(ref.indexOf('id="pushCard"') < ref.indexOf('id="cfgAdminCard"'), 'push vem antes da área de administração');
+  assert.match(al, /id="bIrPush"/, 'Notificações aponta para Configurações');
+  assert.match(aj, /<div class="card sys-card" id="pushCard">/, 'cartão de push não nasce oculto nem condicionado a perfil');
+});
