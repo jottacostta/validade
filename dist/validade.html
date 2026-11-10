@@ -51,14 +51,7 @@ nav.abas button span{font-size:21px}nav.abas button.on{color:var(--c);background
 nav.abas #alertBadge{font-size:10px;line-height:16px;background:var(--da);color:#fff;border-radius:999px;padding:0 5px;min-width:16px;height:16px;justify-content:center;margin-top:-2px}
 .sub{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:4px;margin-bottom:12px}
 .sub button{border:0;background:none;padding:9px 4px;border-radius:10px;font:700 12.5px system-ui;color:var(--mu);cursor:pointer}.sub button.on{background:var(--c);color:#fff}
-#scanner{position:fixed;inset:0;background:#000;z-index:50;display:none;flex-direction:column}
-#scanner.on{display:flex}#scanner video{flex:1;width:100%;object-fit:cover;min-height:0}
-#scanner .mira{position:absolute;left:8%;right:8%;top:50%;height:30%;transform:translateY(-50%);border:3px solid rgba(255,255,255,.85);border-radius:18px;box-shadow:0 0 0 2000px rgba(0,0,0,.35)}
-#scanner .mira::after{content:"";position:absolute;left:6%;right:6%;top:50%;height:2px;background:#FF3B30;box-shadow:0 0 12px #FF3B30;animation:varre 1.6s ease-in-out infinite}
 @keyframes varre{0%,100%{transform:translateY(-40px)}50%{transform:translateY(40px)}}
-#scanner .topo{position:absolute;top:0;left:0;right:0;padding:calc(14px + env(safe-area-inset-top)) 14px 14px;color:#fff;text-align:center;font-weight:700;text-shadow:0 1px 4px #000}
-#scanner .base{position:absolute;bottom:0;left:0;right:0;padding:14px 14px calc(18px + env(safe-area-inset-bottom));display:flex;gap:8px}
-#scanner .base .btn{flex:1;background:rgba(255,255,255,.18);backdrop-filter:blur(6px)}
 .toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#17212B;color:#fff;padding:11px 16px;border-radius:12px;font-weight:600;font-size:14px;z-index:60;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%}
 .toast.on{opacity:1}
 .aviso{padding:10px 12px;border-radius:12px;font-size:13px;margin-top:10px}.aviso.wa{background:var(--wal);color:var(--wa)}.aviso.ok{background:var(--okl);color:var(--ok)}.aviso.da{background:var(--dal);color:var(--da)}
@@ -513,6 +506,25 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 .busca-card .alert-thumb{width:clamp(60px,17vw,76px);height:clamp(60px,17vw,76px)}.busca-card .alert-copy small{white-space:normal}.busca-card{align-items:flex-start}.busca-card .chip,.busca-card .chev{align-self:center}
 #v-prod .operator-toolbar #bAbrirBusca .ico{width:24px;height:24px}
 .notification-tabs .ico{width:1.1em;height:1.1em;vertical-align:-.2em;margin-right:3px}.notification-actions .btn{display:flex;align-items:center;justify-content:center}
+
+/* ───── Leitor (referência "Ler Etiqueta") ───── */
+#scanner{position:fixed;inset:0;z-index:50;display:none;flex-direction:column;overflow:auto;background:linear-gradient(180deg,#03172b,#031321);color:#fff}
+#scanner.on{display:flex}
+.scan-head{display:flex;align-items:center;gap:12px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;border-bottom:4px solid #ffdf00;background:linear-gradient(110deg,#07346e,#064a9c 52%,#0752a7)}
+.scan-head strong{display:block;font-size:clamp(19px,5.4vw,24px)}.scan-head span{display:block;font-size:clamp(15px,4.2vw,19px)}
+.scan-back{display:flex;padding:8px;border:0;background:none;color:#fff}.scan-back .ico{width:30px;height:30px;stroke-width:2.6}
+.scan-box{position:relative;margin:12px;border:2px solid #5d87ab;border-radius:20px;background:#000;overflow:hidden;aspect-ratio:1/1;max-height:58vh}
+#scanner video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#scanner .mira{position:absolute;left:14%;right:14%;top:22%;bottom:14%}
+#scanner .mira i{position:absolute;width:44px;height:44px;border:5px solid #21e04a;border-radius:14px}
+#scanner .mira i:nth-child(1){left:0;top:0;border-right:0;border-bottom:0;border-radius:14px 0 0 0}#scanner .mira i:nth-child(2){right:0;top:0;border-left:0;border-bottom:0;border-radius:0 14px 0 0}
+#scanner .mira i:nth-child(3){left:0;bottom:0;border-right:0;border-top:0;border-radius:0 0 0 14px}#scanner .mira i:nth-child(4){right:0;bottom:0;border-left:0;border-top:0;border-radius:0 0 14px 0}
+.scan-pill{position:absolute;left:8%;right:8%;top:10px;display:flex;align-items:center;justify-content:center;gap:10px;padding:9px 12px;border:1px solid #ffffff40;border-radius:16px;background:#0a1826d9;font-size:clamp(13px,3.8vw,17px);text-align:center}
+.scan-actions{display:grid;grid-template-columns:repeat(3,auto);justify-content:space-between;gap:6px;margin:0 12px}
+.scan-actions .ico{flex:none}
+.scan-actions button,.scan-actions label{display:flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:0 9px;border:1px solid #5d87ab;border-radius:999px;background:#0a2136;color:#fff;font:500 clamp(12px,3.3vw,15px) system-ui;white-space:nowrap;cursor:pointer}
+.scan-actions .ico{width:22px;height:22px}.scan-actions button.on{border-color:#ffdf00;color:#ffdf00}
+.scan-hint{margin:14px 16px;color:#c1d0df;font-size:13px;text-align:center}
 </style>
 </head>
 <body>
@@ -785,10 +797,12 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
     <div class="row" style="margin-top:14px"><button class="btn sec" id="cancelarEditarUsuario">Cancelar</button><button class="btn" id="salvarEditarUsuario">Salvar alterações</button></div>
   </div>
 </div>
-<div id="scanner"><video id="video" playsinline muted></video><div class="mira"></div>
-  <div class="topo" id="scanTxt">Aponte para o código de barras</div>
-  <div class="base"><button class="btn" id="bLuz">🔦 Luz</button><label class="btn" for="fFoto">📸 Foto</label><button class="btn" id="bFechar">✕ Cancelar</button></div>
-  <input type="file" id="fFoto" accept="image/*" capture="environment" style="display:none"></div>
+<div id="scanner">
+  <div class="scan-head"><button class="scan-back" id="bFechar" type="button" aria-label="Cancelar leitura"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h12"/></svg></button><div><strong>Controle de Validade</strong><span id="scanTitulo">Escanear código de barras</span></div></div>
+  <div class="scan-box"><video id="video" playsinline muted></video><div class="mira"><i></i><i></i><i></i><i></i></div><div class="scan-pill"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14M7.5 5v14M10.5 5v14M14 5v14M17 5v14M20 5v14"/></svg><span id="scanTxt">Aponte para o código de barras</span></div></div>
+  <div class="scan-actions"><button type="button" id="bLuz"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg><span>Flash</span></button><button type="button" id="bTrocarCam"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg><span>Trocar câmera</span></button><label for="fGaleria"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="m4 16 4.5-4.5 4 4 3-3 4.5 4.5"/><circle cx="15.5" cy="9.5" r="1.3"/></svg><span>Ler da galeria</span></label></div>
+  <p class="scan-hint">Se a câmera não abrir, use “Ler da galeria” para tirar ou escolher uma foto, ou volte e digite o código.</p>
+  <input type="file" id="fGaleria" accept="image/*" style="display:none"><input type="file" id="fFoto" accept="image/*" capture="environment" style="display:none"></div>
 <div id="conta" class="modal"><div class="box">
   <div class="gate-top"><img id="gateLogo" alt="" style="display:none"><div class="gate-nome">Controle de Validade</div><div class="gate-sub">Acesso ao sistema</div></div>
   <div class="gate-card">
@@ -1105,16 +1119,20 @@ window.aoVoltarAndroid=function(){if($('scanner').classList.contains('on')){fech
 /* ───── scanner (BarcodeDetector nativo ou leitor próprio) ───── */
 var fluxo=null,loop=null,alvoScan=null,ultimo='',repet=0,luz=false,detector=null;
 try{if('BarcodeDetector' in window)detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','itf','data_matrix','qr_code']});}catch(e){detector=null;}
-function abrirScanner(alvo){alvoScan=alvo;ultimo='';repet=0;nQuadro=0;
-  $('scanTxt').textContent=alvo==='etq'?'Posicione a etiqueta dentro da área de leitura':alvo==='bal'?'Aponte para a etiqueta da balança':'Aponte para o código de barras';
-  $('scanner').classList.add('on');
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){$('scanTxt').textContent='Câmera ao vivo indisponível — use 📸 Foto';return;}
-  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}},audio:false}).then(function(s){
+var camLado='environment';
+function pararCamera(){clearInterval(loop);loop=null;if(fluxo){fluxo.getTracks().forEach(function(t){t.stop();});fluxo=null;}}
+function iniciarCamera(){pararCamera();var dica=alvoScan==='etq'?'Posicione a etiqueta dentro da área de leitura':alvoScan==='bal'?'Aponte para a etiqueta da balança':'Aponte para o código de barras';$('scanTxt').textContent=dica;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){$('scanTxt').textContent='Câmera ao vivo indisponível — use Ler da galeria';return;}
+  navigator.mediaDevices.getUserMedia({video:{facingMode:camLado,width:{ideal:1280},height:{ideal:720}},audio:false}).then(function(s){
+    if(!$('scanner').classList.contains('on')){s.getTracks().forEach(function(t){t.stop();});return;}
     fluxo=s;var v=$('video');v.srcObject=s;v.play();
     try{var tr=s.getVideoTracks()[0],cap=tr.getCapabilities&&tr.getCapabilities();if(cap&&cap.focusMode&&cap.focusMode.indexOf('continuous')>=0)tr.applyConstraints({advanced:[{focusMode:'continuous'}]});}catch(e){}
     loop=setInterval(quadro,160);
-  },function(e){$('scanTxt').textContent='Sem acesso à câmera ('+e.name+') — use 📸 Foto ou digite o código';});}
-function fecharScanner(){clearInterval(loop);loop=null;if(fluxo){fluxo.getTracks().forEach(function(t){t.stop();});fluxo=null;}
+  },function(e){$('scanTxt').textContent='Sem acesso à câmera ('+e.name+') — use Ler da galeria ou digite o código';});}
+function abrirScanner(alvo){alvoScan=alvo;ultimo='';repet=0;nQuadro=0;camLado='environment';
+  $('scanTitulo').textContent=alvo==='etq'?'Ler Etiqueta – Perecível':alvo==='bal'?'Escanear etiqueta da balança':'Escanear código de barras';
+  $('scanner').classList.add('on');iniciarCamera();}
+function fecharScanner(){pararCamera();
   if(luz){luz=false;try{window.Android&&Android.lanterna&&Android.lanterna(false);}catch(e){}}
   $('scanner').classList.remove('on');}
 /* o leitor próprio pesa no celular: com o leitor nativo ele só reforça a cada 4 quadros;
@@ -1139,8 +1157,9 @@ $('bFechar').onclick=fecharScanner;
 $('bLuz').onclick=function(){luz=!luz;var ok=false;
   try{if(window.Android&&Android.lanterna){ok=Android.lanterna(luz)==='OK';}}catch(e){}
   if(!ok&&fluxo){try{fluxo.getVideoTracks()[0].applyConstraints({advanced:[{torch:luz}]});ok=true;}catch(e){}}
-  $('bLuz').textContent=luz?'🔦 Apagar':'🔦 Luz';};
-$('fFoto').onchange=function(e){var f=e.target.files[0];if(!f)return;e.target.value='';var img=new Image();
+  $('bLuz').classList.toggle('on',luz);$('bLuz').lastElementChild.textContent=luz?'Apagar':'Flash';};
+$('bTrocarCam').onclick=function(){camLado=camLado==='environment'?'user':'environment';luz=false;$('bLuz').classList.remove('on');$('bLuz').lastElementChild.textContent='Flash';iniciarCamera();};
+$('fGaleria').onchange=$('fFoto').onchange=function(e){var f=e.target.files[0];if(!f)return;e.target.value='';var img=new Image();
   img.onload=function(){var fim=function(c,fmt){if(!c){toast('Não consegui ler — aproxime e tente de novo, ou digite o código');return;}var g=(fmt==='data_matrix'||fmt==='qr_code')?LeitorGS1.ler(c):null;fonteOCR=D.aj.ocr?img:null;vib(80);bip();fecharScanner();if(g&&(g.peso!=null||g.gtin))tratarGS1(g,alvoScan);else tratarCodigo(String(c).replace(/\D/g,''),alvoScan,fmt);};
     if(detector){detector.detect(img).then(function(r){r&&r.length?fim(r[0].rawValue,r[0].format):fim(lerProprio(img));},function(){fim(lerProprio(img));});}else fim(lerProprio(img));};
   img.src=URL.createObjectURL(f);};

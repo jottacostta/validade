@@ -121,3 +121,10 @@ test('Buscar Produto e Notificações: tela de busca própria e nenhum controle 
   assert.doesNotMatch(al, /Limpar/i, 'o servidor só permite marcar como lida; não há "Limpar"');
   assert.doesNotMatch(al, /[\u{1F300}-\u{1FAFF}\u{26A0}\u{24D8}\u{2713}\u{21BB}]/u);
 });
+
+test('Leitor: cabeçalho próprio, Flash, Trocar câmera e Ler da galeria, sem emoji', () => {
+  const sc = html.match(/<div id="scanner">([\s\S]*?)<\/div>\n<div id="conta"/)[1];
+  for (const id of ['scanTitulo', 'scanTxt', 'bLuz', 'bTrocarCam', 'fGaleria', 'fFoto', 'bFechar', 'video']) assert.match(sc, new RegExp(`id="${id}"`), id);
+  assert.doesNotMatch(sc.match(/<input[^>]*id="fGaleria"[^>]*>/)[0], /capture/, 'galeria não força a câmera');
+  assert.doesNotMatch(sc, /[\u{1F300}-\u{1FAFF}\u{2715}]/u);
+});

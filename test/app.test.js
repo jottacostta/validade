@@ -1118,6 +1118,29 @@ tflaky('Buscar Produto: procura em industrializados e perecíveis e filtra por t
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
 
+tflaky('Leitor: título conforme o modo, Trocar câmera alterna a câmera pedida e Ler da galeria lê o código', { skip: pular }, async () => {
+  const a = await abrir({ dados: { prod: {}, cat: { '7891000315507': { nome: 'Café' } }, pere: { itens: {}, regs: [] } }, antes: p => p.addInitScript(() => {
+    window.__cams = []; const md = navigator.mediaDevices || (navigator.mediaDevices = {});
+    md.getUserMedia = c => { window.__cams.push(c.video.facingMode); return Promise.reject(Object.assign(new Error('sem câmera'), { name: 'NotFoundError' })); };
+    window.BarcodeDetector = class { detect() { return Promise.resolve([{ rawValue: '7891000315507', format: 'ean_13' }]); } }; }) });
+  await a.p.route('**/*', r => r.request().url().startsWith('file:') ? r.continue() : r.abort());
+  await a.p.click('#homeRegister'); await a.p.click('#bTipoPerecivel'); await a.p.click('#bLerEtiqueta');
+  assert.strictEqual(await a.p.textContent('#scanTitulo'), 'Ler Etiqueta – Perecível');
+  await a.p.click('#bFechar');
+  assert.strictEqual(await a.p.isVisible('#scanner'), false);
+  await a.p.click('#bTipoIndustrial'); await a.p.click('#bEscanear');
+  assert.strictEqual(await a.p.textContent('#scanTitulo'), 'Escanear código de barras');
+  await a.p.click('#bTrocarCam');
+  await a.p.waitForFunction(() => window.__cams.length >= 3);
+  assert.deepStrictEqual(await a.p.evaluate(() => window.__cams.slice(-2)), ['environment', 'user']);
+  const png = path.join(os.tmpdir(), 'validade-teste.png');
+  fs.writeFileSync(png, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'));
+  await a.p.setInputFiles('#fGaleria', png);
+  await a.p.waitForFunction(() => document.getElementById('pEan').textContent === '7891000315507');
+  assert.strictEqual(await a.p.isVisible('#scanner'), false);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
 tflaky('Área do Operador: abas, alertas/notificações e detalhe/edição de lote', { skip: pular }, async () => {
   const a = await abrir({ dados: {
     prod: { '7891000315507': { nome: 'Café', lotes: [lote('l1', '2032-12-01', 5, 'L1')] } },
