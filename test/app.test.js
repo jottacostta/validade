@@ -133,8 +133,11 @@ tflaky('lote novo é salvo; lote duplicado (mesmo lote+validade) é rejeitado', 
   // lote NOVO (L2) → salvo
   await salvarLote('l2', 3, '2031-02-01');
   await a.p.waitForFunction(() => { try { return JSON.parse(localStorage.getItem('validade_dados')).prod['7891000315507'].lotes.length === 2; } catch (e) { return false; } });
+  // fluxo aprovado: depois de salvar aparece a confirmação; "Novo registro" volta ao formulário
+  await a.p.waitForSelector('#regSucesso', { state: 'visible' }); await a.p.click('#bNovoRegistro');
   // lote DUPLICADO (mesmo L1 + 2031-01-01) → rejeitado, nada muda
   await salvarLote('l1', 9, '2031-01-01');
+  assert.strictEqual(await a.p.isVisible('#regSucesso'), false, 'duplicado rejeitado não mostra confirmação');
   const ls = (await a.salvo()).prod['7891000315507'].lotes;
   assert.strictEqual(ls.length, 2, 'duplicado não cria novo lote');
   assert.ok(ls.some(l => l.lote === 'L1' && l.qtd === 5), 'lote existente permanece com qtd 5');
@@ -201,6 +204,10 @@ tflaky('lê etiqueta GS1 (DataMatrix) e preenche os perecíveis', { skip: pular 
   assert.strictEqual(cap.rpc_perecivel[0].p_peso, 0.576);
   assert.strictEqual(cap.rpc_perecivel[0].p_val, '2026-11-08');
   assert.strictEqual(cap.rpc_perecivel[0].p_descricao, 'Picanha Suína Fracionada');
+  // fluxo aprovado: confirmação do registro e "Novo registro" volta ao formulário de perecível
+  await a.p.waitForSelector('#regSucesso', { state: 'visible' });
+  assert.ok((await a.p.textContent('#regSucesso')).includes('Picanha Suína Fracionada'));
+  await a.p.click('#bNovoRegistro');
   // ao reler a mesma etiqueta, a descrição já vem preenchida (D em memória)
   await a.p.click('#bEscanearBal');
   await a.p.waitForFunction(() => document.getElementById('peDesc').value === 'Picanha Suína Fracionada');
@@ -882,6 +889,94 @@ tflaky('cosmos: cada usuário carrega e salva o seu próprio token (perfil pesso
   await a.p.waitForFunction(() => { try { return JSON.parse(localStorage.getItem('validade_sessao')).cosmos === 'NOVO-999'; } catch (e) { return false; } });
   assert.ok(salvo && salvo[0] && salvo[0].user_id === 'u1' && salvo[0].cosmos_token === 'NOVO-999', 'upsert com uid e token do usuário');
   await a.fechar();
+});
+
+tflaky('Registrar: abre com Industrializado selecionado e alterna para Perecível na mesma tela', { skip: pular }, async () => {
+  const a = await abrir({ dados: { prod: {}, cat: {}, pere: { itens: {}, regs: [] } } });
+  await a.p.click('#homeRegister');
+  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Registrar Produto');
+  assert.strictEqual(await a.p.getAttribute('#bTipoIndustrial', 'aria-pressed'), 'true');
+  assert.strictEqual(await a.p.isVisible('#bEscanear'), true);
+  assert.strictEqual(await a.p.isVisible('#pe-reg'), false);
+  await a.p.click('#bTipoPerecivel');
+  assert.strictEqual(await a.p.getAttribute('#bTipoPerecivel', 'aria-pressed'), 'true');
+  assert.strictEqual(await a.p.getAttribute('#bTipoIndustrial', 'aria-pressed'), 'false');
+  assert.strictEqual(await a.p.isVisible('#bEscanearBal'), true);
+  assert.strictEqual(await a.p.isVisible('#bLerEtiqueta'), true);
+  assert.strictEqual(await a.p.isVisible('#bEscanear'), false);
+  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Registrar Produto');
+  assert.strictEqual(await a.p.isVisible('#v-reg'), true);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Registrar: − / + ajustam a quantidade sem ficar abaixo de 1', { skip: pular }, async () => {
+  const a = await abrir({ dados: { prod: {}, cat: { '7891000315507': { nome: 'Café' } }, pere: { itens: {}, regs: [] } } });
+  await a.p.click('#homeRegister'); await a.p.fill('#tCodigo', '7891000315507'); await a.p.click('#bBuscar');
+  await a.p.waitForSelector('#cardProd', { state: 'visible' });
+  await a.p.click('#pQtdMais'); await a.p.click('#pQtdMais');
+  assert.strictEqual(await a.p.inputValue('#pQtd'), '2');
+  await a.p.click('#pQtdMenos'); await a.p.click('#pQtdMenos'); await a.p.click('#pQtdMenos');
+  assert.strictEqual(await a.p.inputValue('#pQtd'), '1');
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Registrar: confirmação só aparece depois da resposta do Supabase e oferece as duas saídas', { skip: pular }, async () => {
+  let liberar; const espera = new Promise(r => { liberar = r; });
+  const a = await abrirRegistro(async p => {
+    await rotasRegistro(p);
+    await p.route(/\/rest\/v1\/rpc\/registrar_lote$/, async r => { await espera; r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ created_by: 'u1', created_by_nome: 'Teste', criado: Date.now() }) }); });
+  }, { prod: {}, cat: { '7891000315507': { nome: 'Café' } }, pere: { itens: {}, regs: [] } });
+  await a.p.fill('#tCodigo', '7891000315507'); await a.p.click('#bBuscar');
+  await a.p.waitForFunction(() => document.getElementById('pNome').value === 'Café');
+  await a.p.fill('#pLote', 'l5'); await a.p.fill('#pQtd', '3'); await a.p.fill('#pVal', '2031-02-01'); await a.p.selectOption('#pSetor', 'Mercearia');
+  await a.p.click('#bSalvarLote');
+  await a.p.waitForFunction(() => document.getElementById('bSalvarLote').disabled);
+  assert.strictEqual(await a.p.isVisible('#regSucesso'), false, 'sem confirmação antes do servidor responder');
+  liberar();
+  await a.p.waitForSelector('#regSucesso', { state: 'visible' });
+  assert.strictEqual(await a.p.textContent('#regSucessoTitulo'), 'Registro concluído');
+  assert.ok((await a.p.textContent('#regSucesso')).includes('Café'));
+  assert.strictEqual(await a.p.isVisible('#cardRegScan'), false, 'não volta sozinho ao leitor');
+  await a.p.click('#bNovoRegistro');
+  assert.strictEqual(await a.p.isVisible('#regSucesso'), false);
+  assert.strictEqual(await a.p.isVisible('#bEscanear'), true);
+  assert.strictEqual(await a.p.inputValue('#pLote'), '');
+  await a.fechar();
+});
+
+tflaky('Registrar: sem rede a confirmação avisa que está pendente de sincronização', { skip: pular }, async () => {
+  const net = { online: false };
+  const a = await abrirRegistro(p => rotasRede(p, net), { prod: { '7891000315507': { nome: 'Café', lotes: [] } }, cat: {}, pere: { itens: {}, regs: [] } });
+  await a.p.fill('#tCodigo', '7891000315507'); await a.p.click('#bBuscar');
+  await a.p.waitForFunction(() => document.getElementById('pNome').value === 'Café');
+  await a.p.fill('#pLote', 'l9'); await a.p.fill('#pQtd', '2'); await a.p.fill('#pVal', '2031-01-01'); await a.p.selectOption('#pSetor', 'Mercearia');
+  await a.p.click('#bSalvarLote');
+  await a.p.waitForSelector('#regSucesso', { state: 'visible' });
+  assert.strictEqual(await a.p.textContent('#regSucessoTitulo'), 'Salvo no aparelho');
+  assert.match(await a.p.textContent('#regSucesso'), /sincroniz/i);
+  await a.p.click('#bVerRegistros');
+  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Meus Registros');
+  await a.fechar();
+});
+
+tflaky('Ler Etiqueta: mostra os dados lidos e só preenche o formulário ao tocar em Usar dados', { skip: pular }, async () => {
+  const a = await abrir({ dados: { prod: {}, cat: {}, pere: { itens: { '6019': { desc: 'Acém Bovino', sif: 'B12345' } }, regs: [] }, aj: { dig: 4, valor: 'peso', dias: 30 } },
+    antes: p => p.addInitScript(() => { window.BarcodeDetector = class { detect() { return Promise.resolve([{ rawValue: '2601900012504', format: 'ean_13' }]); } }; }) });
+  await a.p.route('**/*', r => r.request().url().startsWith('file:') ? r.continue() : r.abort());
+  await a.p.click('#homeRegister'); await a.p.click('#bTipoPerecivel'); await a.p.click('#bLerEtiqueta');
+  const png = path.join(os.tmpdir(), 'validade-teste.png');
+  fs.writeFileSync(png, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'));
+  await a.p.setInputFiles('#fFoto', png);
+  await a.p.waitForSelector('#etqConfirm', { state: 'visible' });
+  const lido = await a.p.textContent('#etqConfirm');
+  assert.ok(lido.includes('Acém Bovino') && lido.includes('1,250 kg'), lido);
+  assert.strictEqual(await a.p.isVisible('#cardPe'), false, 'formulário não é preenchido antes da confirmação');
+  await a.p.click('#bEtqUsar');
+  await a.p.waitForSelector('#cardPe', { state: 'visible' });
+  assert.strictEqual(await a.p.inputValue('#pePeso'), '1.250');
+  assert.strictEqual(await a.p.inputValue('#peDesc'), 'Acém Bovino');
+  assert.strictEqual(await a.p.isVisible('#etqConfirm'), false);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
 
 tflaky('Área do Operador: abas, alertas/notificações e detalhe/edição de lote', { skip: pular }, async () => {

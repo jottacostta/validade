@@ -53,3 +53,24 @@ test('listas seguem a ordem das referências e não duplicam títulos ou filtros
   assert.deepEqual(perishableOrder, [...perishableOrder].sort((a, b) => a - b));
   assert.doesNotMatch(html, /id="profileArea" style="display:none"><div class="operator-page-intro"/);
 });
+
+test('Registrar: seletor Industrializado/Perecível no topo e formulário de perecível na mesma tela', () => {
+  const reg = html.match(/<section class="vista" id="v-reg">([\s\S]*?)<\/section>/)[1];
+  const ordem = ['id="regTipo"', 'id="bTipoIndustrial"', 'id="bTipoPerecivel"', 'id="cardRegScan"', 'id="pe-reg"', 'id="regSucesso"'].map(t => reg.indexOf(t));
+  assert.ok(ordem.every(i => i >= 0), 'seletor, leitura, perecível e confirmação ficam em v-reg: ' + ordem);
+  assert.deepEqual(ordem, [...ordem].sort((a, b) => a - b));
+  assert.doesNotMatch(html, /id="regEscolha"/, 'a tela separada de escolha deixa de existir');
+  const pere = html.match(/<section class="vista" id="v-pere">([\s\S]*?)<\/section>/)[1];
+  assert.doesNotMatch(pere, /id="pe-reg"/, 'o formulário de perecível sai da aba Perecíveis');
+});
+
+test('Registrar: quantidade com − / +, Ler Etiqueta e confirmação com as duas saídas', () => {
+  for (const id of ['pQtdMenos', 'pQtdMais', 'bLerEtiqueta', 'etqConfirm', 'bEtqUsar', 'bEtqNovamente', 'bNovoRegistro', 'bVerRegistros', 'regSucessoTitulo']) {
+    assert.match(html, new RegExp(`id="${id}"`), `controle ${id} existe`);
+  }
+});
+
+test('Registrar: botões usam ícones desenhados, sem emoji', () => {
+  const reg = html.match(/<section class="vista" id="v-reg">([\s\S]*?)<\/section>/)[1];
+  assert.doesNotMatch(reg, /[\u{1F300}-\u{1FAFF}\u{2795}]/u);
+});

@@ -214,7 +214,7 @@ nav.abas #alertBadge{font-size:10px;line-height:16px;background:#f32635;color:#f
 #v-pere #pe-reg>.card:first-child{background:linear-gradient(145deg,#103b5b,#0b2942);border-color:#28618a}
 #v-pere #pe-reg>.card:first-child .btn{min-height:54px}
 #v-pere #cardPe{border-color:#2873a7;box-shadow:0 8px 26px #0069b533}
-#v-pere #cardPe .ean,#v-pere #peCod{display:inline-flex;background:#071827;border:1px solid #2b4e68;border-radius:9px;padding:7px 10px;margin-bottom:8px}
+
 #v-pere #peInfo{margin-top:10px}
 #v-alertas>.card{padding:18px;margin-bottom:14px}
 #v-alertas>.card>h2{font-size:18px;display:flex;align-items:center;gap:9px}
@@ -322,6 +322,73 @@ header .hdr-in.interna .header-bell{display:none}
 .operator-record-copy.operator-record-main{font:inherit}
 .operator-record-actions button{cursor:pointer}
 
+
+/* ───── Registrar (referências Guanabara) ───── */
+.ico{width:1.35em;height:1.35em;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ico.meat path{fill:#ff3b45;stroke:#fff;stroke-width:1.5}.ico.meat circle{fill:#fff;stroke:none}
+.reg-type{display:grid;grid-template-columns:1fr 1fr;margin:0 0 14px;border:1px solid #2c5373;border-radius:18px;background:#0a2136;overflow:hidden}
+.reg-type button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:76px;border:2px solid transparent;border-radius:18px;background:transparent;color:#e3edf7;font:700 clamp(15px,4.2vw,19px) system-ui}
+.reg-type button .ico{width:30px;height:30px}
+#bTipoIndustrial.on{background:linear-gradient(180deg,#0a8cff,#0756c4);border-color:#27a4ff;color:#fff;box-shadow:0 4px 14px #0a6fe04d}
+#bTipoPerecivel.on{background:linear-gradient(180deg,#f0222f,#b30d18);border-color:#ff7b93;color:#fff;box-shadow:0 4px 14px #d3152440}
+#bTipoPerecivel.on .ico.meat path{fill:none;stroke:#fff}
+.reg-scan{margin:0 0 14px}
+.reg-scan-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:100%;min-height:112px;padding:12px;border:2px solid #2fd0ff;border-radius:20px;background:linear-gradient(180deg,#0b74e6,#083f96);color:#fff;font:800 clamp(17px,4.9vw,22px) system-ui;box-shadow:0 6px 18px #0a63d640}
+.reg-scan-btn .ico{width:46px;height:46px;stroke-width:1.7}
+.reg-scan-split{display:grid;grid-template-columns:minmax(0,1fr) minmax(96px,30%);border:2px solid #2fd0ff;border-radius:20px;background:linear-gradient(180deg,#0b74e6,#083f96);box-shadow:0 6px 18px #0a63d640;overflow:hidden}
+.reg-scan-split .reg-scan-btn{border:0;border-radius:0;background:transparent;box-shadow:none;font-size:clamp(15px,4.2vw,19px)}
+.reg-scan-split .reg-scan-side{font-size:clamp(13px,3.7vw,16px);font-weight:600;position:relative}
+.reg-scan-split .reg-scan-side:before{content:"";position:absolute;left:0;top:22%;bottom:22%;width:1.5px;background:#bfe3ff}
+.reg-scan-split .reg-scan-side .ico{width:34px;height:34px}
+.reg-or{display:flex;align-items:center;gap:12px;margin:14px 8px 10px;color:#e3edf7;font-size:clamp(14px,3.9vw,17px)}
+.reg-or:before,.reg-or:after{content:"";flex:1;height:1px;background:#3a5e7c}
+.reg-code{display:flex;align-items:center;gap:10px;padding:3px;border:1px solid #1c3a55;border-radius:16px;background:#071a2b}
+.reg-code-ico{display:flex;padding-left:10px;color:#fff}.reg-code-ico .ico{width:28px;height:28px}
+.reg-code input{flex:1;min-width:0;border:1px solid #5d87ab;border-radius:13px;background:#0c2740;padding:12px 12px;font-size:clamp(15px,4.2vw,18px)}
+.reg-code{position:relative}.reg-code .reg-code-ico{position:absolute;left:8px;pointer-events:none}.reg-code input{padding-left:50px}
+.reg-code-go{display:flex;align-items:center;justify-content:center;flex:none;width:clamp(58px,17vw,78px);align-self:stretch;min-height:48px;border:1px solid #2a9bff;border-radius:13px;background:linear-gradient(180deg,#0a8cff,#0756c4);color:#fff}
+.reg-code-go .ico{width:26px;height:26px;stroke-width:2.3}
+.reg-data{border-color:#3a6688!important;border-radius:20px!important}
+.reg-data>h2{margin:0 0 10px;font-size:clamp(18px,5vw,22px)}.reg-data>h2 em{font-style:normal;color:var(--am)}
+.reg-prod{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+.reg-thumb{position:relative;display:flex;align-items:center;justify-content:center;flex:none;width:clamp(72px,21vw,96px);height:clamp(60px,17vw,78px);border:1px solid #3a6688;border-radius:14px;background:#0a2136;color:#7fa6c7;overflow:hidden}
+.reg-thumb .ico{width:34px;height:34px}.reg-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff}
+.reg-prod-copy{flex:1;min-width:0}
+.reg-prod-copy input{padding:4px 6px;margin-left:-6px;border-color:transparent;background:transparent;font:800 clamp(15px,4.1vw,19px) system-ui;color:#fff;text-overflow:ellipsis}
+.reg-prod-copy input:placeholder-shown{border-color:#5d87ab;background:#0c2740;font-weight:500}
+.reg-prod-code{font-size:clamp(13px,3.8vw,16px);color:#d5e3f0;margin-top:2px}.reg-prod-code .ean,.reg-prod-code.ean{font:inherit;font-size:clamp(13px,3.8vw,16px);letter-spacing:0;color:#d5e3f0}
+.reg-prod-status{font-size:12px;color:var(--mu);margin-top:2px}.reg-prod-status:empty{display:none}
+.reg-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 14px}
+.reg-grid label.f{font-size:clamp(14px,3.9vw,17px);font-weight:600;color:#fff;margin:10px 0 5px}
+.reg-grid input,.reg-grid select{min-height:50px;border-color:#5d87ab;background:#0b2238;border-radius:13px}
+.reg-grid>div{min-width:0}
+.stepper{display:grid;grid-template-columns:46px minmax(0,1fr) 46px;align-items:center;gap:4px;padding:3px;border:1px solid #5d87ab;border-radius:13px;background:#0b2238}
+.stepper button{display:flex;align-items:center;justify-content:center;height:42px;border:0;border-radius:10px;background:#2f5475;color:#fff}
+.stepper input{min-height:42px;padding:6px 2px;border:0;background:transparent;text-align:center;font-size:20px;-moz-appearance:textfield}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.unit-field{display:flex;align-items:center;border:1px solid #5d87ab;border-radius:13px;background:#0b2238}
+.unit-field input{border:0;background:transparent;min-width:0}.unit-field span{padding:0 14px 0 4px;color:#d5e3f0;font-size:17px}
+.reg-save{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:16px;min-height:58px;border:1px solid #2a9bff;background:linear-gradient(180deg,#0a8cff,#0756c4);color:#fff;font:800 clamp(17px,4.9vw,21px) system-ui}
+.reg-save .ico{width:28px;height:28px}
+.btn .ico{vertical-align:-.3em;margin-right:6px}
+#pLotes:not(:empty){margin-top:14px;padding-top:10px;border-top:1px solid #2c5373}
+.reg-lots h3{margin:0 0 6px;font-size:14px;color:var(--mu)}
+.reg-lot{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #1d3a55}.reg-lot:first-of-type{border-top:0}
+.reg-lot>div{flex:1;min-width:0}.reg-lot b{display:block}.reg-lot small{display:block;color:var(--mu);font-size:12px;overflow-wrap:anywhere}
+.etq-confirm>h2{display:flex;align-items:center;gap:12px;margin:0 0 8px;font-size:clamp(18px,5vw,22px)}
+.etq-ok{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#12b83a;color:#fff}.etq-ok .ico{stroke-width:3}
+.etq-grid{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #2c5373;margin-bottom:12px}
+.etq-grid>div{padding:9px 6px;border-bottom:1px solid #2c5373;min-width:0}.etq-grid small{display:block;color:#e3edf7;font-size:13px}
+.etq-grid b{display:block;color:var(--am);font-size:clamp(16px,4.6vw,20px);overflow-wrap:anywhere}
+.reg-done{text-align:center;padding:26px 18px!important;border-color:#1fae45!important}
+.reg-done.pend{border-color:#ffad21!important}
+.reg-done-ico{display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;border-radius:50%;background:#12b83a;color:#fff}.reg-done-ico .ico{width:40px;height:40px;stroke-width:3}
+.reg-done.pend .reg-done-ico{background:#d98a00}
+.reg-done h2{margin:14px 0 6px;font-size:clamp(21px,5.8vw,26px)}.reg-done p{margin:0 0 14px;color:var(--mu)}
+.reg-done-resumo{margin:0 0 16px;padding:12px;border:1px solid #2c5373;border-radius:14px;background:#0a2136;text-align:left}
+.reg-done-resumo b{display:block;font-size:17px}.reg-done-resumo small{display:block;color:#d5e3f0;font-size:14px;margin-top:2px}
+.reg-done .btn{display:flex;align-items:center;justify-content:center;min-height:52px}
+@media(max-width:360px){.reg-grid{gap:2px 9px}.stepper{grid-template-columns:38px minmax(0,1fr) 38px}}
 </style>
 </head>
 <body>
@@ -348,23 +415,61 @@ header .hdr-in.interna .header-bell{display:none}
   <section class="home-recent" aria-label="Últimos registros"><div class="home-recent-head"><h2>Últimos registros</h2><button id="homeSeeAll" type="button">Ver todos <span aria-hidden="true">›</span></button></div><div id="homeRecentList"><div class="vazio">Carregando registros…</div></div></section>
 </section>
 <section class="vista" id="v-reg">
-  <div class="card" id="regEscolha"><h2>O que deseja registrar?</h2><div class="row"><button class="btn big" id="bTipoIndustrial">Produto industrializado</button><button class="btn big sec" id="bTipoPerecivel">Produto perecível</button></div></div>
-  <div class="card" id="cardRegScan">
-    <button class="btn big" id="bEscanear">📷 Escanear código de barras</button>
-    <label class="f" for="tCodigo">ou digite o código</label>
-    <div style="display:flex;gap:8px"><input id="tCodigo" inputmode="numeric" placeholder="7891234567890" autocomplete="off"><button class="btn" id="bBuscar" style="flex:none">Buscar</button></div>
+  <div class="reg-type" id="regTipo" role="group" aria-label="Tipo de produto">
+    <button type="button" class="on" id="bTipoIndustrial" aria-pressed="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg><span>Industrializado</span></button>
+    <button type="button" id="bTipoPerecivel" aria-pressed="false"><svg class="ico meat" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12.5c0-4.4 4.3-7.5 9.6-7.5 4.3 0 7.4 2.1 7.4 5.1 0 2.2-1.4 3.4-3.5 4.2-2 .8-3.1 1.8-4.8 3.5-1.3 1.3-3.5 1.5-5.5.5-2-1-3.2-3-3.2-5.8z"/><circle cx="14.6" cy="10" r="1.9"/></svg><span>Perecível</span></button>
   </div>
-  <div class="card" id="cardProd" style="display:none">
-    <div class="prod"><img id="pImg" alt="" style="display:none"><div style="flex:1;min-width:0"><div class="ean" id="pEan"></div><div id="pStatus" style="font-size:13px;color:var(--mu)"></div></div></div>
-    <label class="f" for="pNome">Produto</label><input id="pNome" placeholder="Nome do produto">
-    <div class="g3">
-      <div><label class="f" for="pLote">Lote</label><input id="pLote" autocapitalize="characters" placeholder="L2345"></div>
-      <div><label class="f" for="pQtd">Quantidade</label><input id="pQtd" type="number" inputmode="numeric" min="0" placeholder="0"></div>
-      <div><label class="f" for="pVal">Validade</label><input id="pVal" type="date"></div>
+  <div id="regIndustrial">
+    <div class="reg-scan" id="cardRegScan">
+      <button class="reg-scan-btn" id="bEscanear" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5.5a1.5 1.5 0 0 1 1.5-1.5H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M3 12h18"/></svg><span>Escanear código de barras</span></button>
+      <div class="reg-or"><span>ou digite o código</span></div>
+      <div class="reg-code"><span class="reg-code-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14M7.5 5v14M10.5 5v14M14 5v14M17 5v14M20 5v14"/></svg></span><input id="tCodigo" inputmode="numeric" placeholder="Ex.: 7891234567890" autocomplete="off" aria-label="Código de barras"><button class="reg-code-go" id="bBuscar" type="button" aria-label="Buscar"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.3-4.3"/></svg></button></div>
     </div>
-    <label class="f" for="pSetor">Setor</label><select id="pSetor"><option value="">Selecione o setor</option><option>Açougue</option><option>Laticínios</option><option>Padaria</option><option>Salgados</option><option>FLV</option><option>Mercearia</option></select>
-    <button class="btn big" id="bSalvarLote" style="margin-top:12px">💾 Salvar lote</button>
-    <div id="pLotes"></div>
+    <div class="card reg-data" id="cardProd" style="display:none">
+      <h2>Dados do produto</h2>
+      <div class="reg-prod"><span class="reg-thumb"><img id="pImg" alt="" style="display:none"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg></span><div class="reg-prod-copy"><input id="pNome" placeholder="Nome do produto" aria-label="Nome do produto"><div class="reg-prod-code">Código: <span class="ean" id="pEan"></span></div><div id="pStatus" class="reg-prod-status"></div></div></div>
+      <div class="reg-grid">
+        <div><label class="f" for="pLote">Lote *</label><input id="pLote" autocapitalize="characters" placeholder="L2345"></div>
+        <div><label class="f" for="pVal">Validade *</label><input id="pVal" type="date"></div>
+        <div><label class="f" for="pQtd">Quantidade *</label><div class="stepper"><button type="button" id="pQtdMenos" aria-label="Diminuir quantidade"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><input id="pQtd" type="number" inputmode="numeric" min="0" placeholder="0"><button type="button" id="pQtdMais" aria-label="Aumentar quantidade"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div></div>
+        <div><label class="f" for="pSetor">Setor *</label><select id="pSetor"><option value="">Selecione</option><option>Açougue</option><option>Laticínios</option><option>Padaria</option><option>Salgados</option><option>FLV</option><option>Mercearia</option></select></div>
+      </div>
+      <button class="btn big reg-save" id="bSalvarLote" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/></svg><span>Salvar registro</span></button>
+      <div id="pLotes"></div>
+    </div>
+  </div>
+  <div id="regPerecivel" style="display:none">
+  <div id="pe-reg">
+    <div class="reg-scan" id="cardPeScan">
+      <div class="reg-scan-split"><button class="reg-scan-btn" id="bEscanearBal" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5.5a1.5 1.5 0 0 1 1.5-1.5H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M3 12h18"/></svg><span>Escanear código de barras</span></button><button class="reg-scan-btn reg-scan-side" id="bLerEtiqueta" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg><span>Ler Etiqueta</span></button></div>
+      <div class="reg-or"><span>ou digite o código / PLU</span></div>
+      <div class="reg-code"><span class="reg-code-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14M7.5 5v14M10.5 5v14M14 5v14M17 5v14M20 5v14"/></svg></span><input id="tCodBal" inputmode="numeric" placeholder="Ex.: 1234 ou PLU" aria-label="Código de balança ou PLU"><button class="reg-code-go" id="bBuscarBal" type="button" aria-label="Buscar"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.3-4.3"/></svg></button></div>
+    </div>
+    <div class="card etq-confirm" id="etqConfirm" style="display:none" role="status">
+      <h2><span class="etq-ok"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>Dados lidos da etiqueta</h2>
+      <div class="etq-grid" id="etqDados"></div>
+      <div class="row"><button class="btn" id="bEtqUsar" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><span>Usar dados</span></button><button class="btn sec" id="bEtqNovamente" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg><span>Ler novamente</span></button></div>
+    </div>
+    <div class="card reg-data" id="cardPe" style="display:none">
+      <h2>Dados do produto <em>(Perecível)</em></h2>
+      <div class="reg-prod"><span class="reg-thumb meat"><svg class="ico meat" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12.5c0-4.4 4.3-7.5 9.6-7.5 4.3 0 7.4 2.1 7.4 5.1 0 2.2-1.4 3.4-3.5 4.2-2 .8-3.1 1.8-4.8 3.5-1.3 1.3-3.5 1.5-5.5.5-2-1-3.2-3-3.2-5.8z"/><circle cx="14.6" cy="10" r="1.9"/></svg></span><div class="reg-prod-copy"><input id="peDesc" placeholder="Descrição do produto" aria-label="Descrição do produto"><div class="reg-prod-code ean" id="peCod"></div></div></div>
+      <div class="reg-grid">
+        <div><label class="f" for="peSif">Lote / SIF</label><input id="peSif" placeholder="B12345"></div>
+        <div><label class="f" for="peVal">Validade *</label><input id="peVal" type="date"></div>
+        <div><label class="f" for="pePeso">Peso *</label><div class="unit-field"><input id="pePeso" type="number" inputmode="decimal" step="0.001" min="0" placeholder="0,000"><span>kg</span></div></div>
+        <div><label class="f" for="peSetor">Setor *</label><select id="peSetor"><option value="">Selecione</option><option>Açougue</option><option>Laticínios</option><option>Padaria</option><option>Salgados</option><option>FLV</option><option>Mercearia</option></select></div>
+      </div>
+      <div id="peInfo"></div>
+      <button class="btn big reg-save" id="bSalvarPe" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/></svg><span>Salvar registro</span></button>
+    </div>
+  </div>
+  </div>
+  <div class="card reg-done" id="regSucesso" style="display:none" role="status" aria-live="polite">
+    <span class="reg-done-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>
+    <h2 id="regSucessoTitulo">Registro concluído</h2>
+    <p id="regSucessoTexto"></p>
+    <div class="reg-done-resumo" id="regSucessoResumo"></div>
+    <div class="row"><button class="btn" id="bNovoRegistro" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Novo registro</span></button><button class="btn sec" id="bVerRegistros" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h14"/></svg><span>Ver meus registros</span></button></div>
   </div>
 </section>
 
@@ -409,25 +514,6 @@ header .hdr-in.interna .header-bell{display:none}
 <section class="vista" id="v-pere">
   <div class="operator-page-intro"><span class="operator-page-icon" aria-hidden="true">🥩</span><div><h2>Registros de Perecíveis</h2><p>Acompanhe produtos, lotes e condições de armazenamento.</p></div></div>
   <div class="sub operator-tabs" id="subPere"><button data-s="reg">Registrar</button><button data-s="cad">Códigos</button><button class="on" data-s="lista">Registros</button></div>
-  <div id="pe-reg">
-    <div class="card">
-      <button class="btn big" id="bEscanearBal">📷 Escanear etiqueta da balança</button>
-      <label class="f" for="tCodBal">ou digite o código de balança</label>
-      <div style="display:flex;gap:8px"><input id="tCodBal" inputmode="numeric" placeholder="ex.: 1234"><button class="btn" id="bBuscarBal" style="flex:none">Buscar</button></div>
-    </div>
-    <div class="card" id="cardPe" style="display:none">
-      <div class="ean" id="peCod"></div>
-      <label class="f" for="peDesc">Descrição</label><input id="peDesc" placeholder="ex.: Linguiça toscana">
-      <div class="operator-form-grid">
-        <div><label class="f" for="peSif">SIF</label><input id="peSif" inputmode="numeric" placeholder="1234"></div>
-        <div><label class="f" for="pePeso">Peso (kg)</label><input id="pePeso" type="number" inputmode="decimal" step="0.001" min="0" placeholder="0,000"></div>
-        <div><label class="f" for="peVal">Validade</label><input id="peVal" type="date"></div>
-      </div>
-      <label class="f" for="peSetor">Setor</label><select id="peSetor"><option value="">Selecione o setor</option><option>Açougue</option><option>Laticínios</option><option>Padaria</option><option>Salgados</option><option>FLV</option><option>Mercearia</option></select>
-      <div id="peInfo"></div>
-      <button class="btn big" id="bSalvarPe" style="margin-top:12px">💾 Salvar</button>
-    </div>
-  </div>
   <div id="pe-cad" style="display:none">
     <div class="card"><h2>Novo código de balança</h2>
       <div class="g3"><div><label class="f" for="cCod">Código</label><input id="cCod" inputmode="numeric" placeholder="1234"></div>
@@ -808,9 +894,27 @@ $('headerBack').onclick=function(){ir(vistaAnterior==='reg'?'home':vistaAnterior
 $('abas').onclick=function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.v==='pere')subPere('lista');ir(b.dataset.v);};
 $('alertViewTabs').onclick=function(e){var b=e.target.closest('[data-alert-view]');if(b)mostrarVisaoAlertas(b.dataset.alertView);};
 $('settingsTabs').onclick=function(e){var b=e.target.closest('[data-settings-view]');if(b)mostrarVistaAjustes(b.dataset.settingsView);};
-function mostrarEscolhaRegistro(){atual=null;$('cardProd').style.display='none';$('cardRegScan').style.display='none';$('regEscolha').style.display='';$('pLote').value='';$('pQtd').value='';$('pVal').value='';$('pSetor').value='';$('tCodigo').value='';}
-$('bTipoIndustrial').onclick=function(){$('regEscolha').style.display='none';$('cardRegScan').style.display='';$('tCodigo').focus();};
-$('bTipoPerecivel').onclick=function(){ir('pere');subPere('reg');$('cardPe').style.display='none';};
+/* Registrar: uma tela só; o seletor do topo alterna Industrializado/Perecível (referência aprovada). */
+var regTipoAtual='ind',etqPendente=null,ultimoRegistro='ind';
+function regTipo(t){regTipoAtual=t;var pe=t==='pere';$('regTipo').style.display='';$('regIndustrial').style.display=pe?'none':'';$('regPerecivel').style.display=pe?'':'none';$('regSucesso').style.display='none';
+  [['bTipoIndustrial',!pe],['bTipoPerecivel',pe]].forEach(function(x){$(x[0]).classList.toggle('on',x[1]);$(x[0]).setAttribute('aria-pressed',x[1]?'true':'false');});}
+function limparEtiquetaLida(){etqPendente=null;$('etqConfirm').style.display='none';$('etqDados').innerHTML='';}
+function mostrarEscolhaRegistro(){atual=null;$('cardProd').style.display='none';$('cardRegScan').style.display='';$('pLote').value='';$('pQtd').value='';$('pVal').value='';$('pSetor').value='';$('tCodigo').value='';limparEtiquetaLida();regTipo('ind');}
+function abrirRegistroPerecivel(){limparEtiquetaLida();regTipo('pere');ir('reg');}
+$('bTipoIndustrial').onclick=function(){regTipo('ind');};
+$('bTipoPerecivel').onclick=function(){limparEtiquetaLida();$('cardPe').style.display='none';peAtual=null;regTipo('pere');};
+function passoQtd(d){var q=Math.max(1,Math.round(num($('pQtd').value))+d);$('pQtd').value=q;}
+$('pQtdMenos').onclick=function(){passoQtd(-1);};$('pQtdMais').onclick=function(){passoQtd(1);};
+/* Confirmação do registro: só é chamada depois que a gravação terminou (servidor, aparelho ou fila offline). */
+function registroConcluido(o){ultimoRegistro=o.tipo;$('regTipo').style.display='none';$('regIndustrial').style.display='none';$('regPerecivel').style.display='none';
+  var box=$('regSucesso');box.classList.toggle('pend',!!o.pendente);
+  $('regSucessoTitulo').textContent=o.pendente?'Salvo no aparelho':'Registro concluído';
+  $('regSucessoTexto').textContent=o.pendente?'Sem internet: o registro ficou guardado neste aparelho e será sincronizado ao reconectar.':(o.local?'Registro salvo neste aparelho.':'Registro confirmado no servidor.');
+  $('regSucessoResumo').innerHTML='<b>'+esc(o.nome)+'</b>'+o.linhas.map(function(l){return '<small>'+esc(l)+'</small>';}).join('');
+  box.style.display='';if(vistaAtual!=='reg')ir('reg');window.scrollTo(0,0);}
+$('bNovoRegistro').onclick=function(){mostrarEscolhaRegistro();if(ultimoRegistro==='pere'){$('cardPe').style.display='none';regTipo('pere');}};
+$('bVerRegistros').onclick=function(){$('regSucesso').style.display='none';if(ultimoRegistro==='pere'){subPere('lista');ir('pere');}else ir('prod');};
+function rotuloBotao(b,texto,ocupado){b.disabled=!!ocupado;var sp=b.querySelector('span');if(sp)sp.textContent=texto;else b.textContent=texto;}
 window.aoVoltarAndroid=function(){if($('scanner').classList.contains('on')){fecharScanner();return true;}
   var on=document.querySelector('#abas button.on');if(on&&on.dataset.v!=='home'){ir('home');return true;}if(document.querySelector('#v-reg.on')){ir('home');return true;}return false;};
 
@@ -818,7 +922,7 @@ window.aoVoltarAndroid=function(){if($('scanner').classList.contains('on')){fech
 var fluxo=null,loop=null,alvoScan=null,ultimo='',repet=0,luz=false,detector=null;
 try{if('BarcodeDetector' in window)detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','itf','data_matrix','qr_code']});}catch(e){detector=null;}
 function abrirScanner(alvo){alvoScan=alvo;ultimo='';repet=0;nQuadro=0;
-  $('scanTxt').textContent=alvo==='bal'?'Aponte para a etiqueta da balança':'Aponte para o código de barras';
+  $('scanTxt').textContent=alvo==='etq'?'Posicione a etiqueta dentro da área de leitura':alvo==='bal'?'Aponte para a etiqueta da balança':'Aponte para o código de barras';
   $('scanner').classList.add('on');
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){$('scanTxt').textContent='Câmera ao vivo indisponível — use 📸 Foto';return;}
   navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}},audio:false}).then(function(s){
@@ -857,15 +961,28 @@ $('fFoto').onchange=function(e){var f=e.target.files[0];if(!f)return;e.target.va
     if(detector){detector.detect(img).then(function(r){r&&r.length?fim(r[0].rawValue,r[0].format):fim(lerProprio(img));},function(){fim(lerProprio(img));});}else fim(lerProprio(img));};
   img.src=URL.createObjectURL(f);};
 $('bEscanear').onclick=function(){abrirScanner('prod');};
-$('bEscanearBal').onclick=function(){abrirScanner('bal');};
+$('bEscanearBal').onclick=function(){limparEtiquetaLida();abrirScanner('bal');};
+$('bLerEtiqueta').onclick=function(){limparEtiquetaLida();abrirScanner('etq');};
+function confirmarEtiqueta(l){var d={},it,cod,g=l.gs1;
+  if(g){var gt=g.gtin||'',ean=gt.length===14?gt.slice(1):(gt.length===13?gt:'');
+    if(ean&&ehBalanca(ean)){var i1=lerEtiqueta(ean);cod=i1.cod;d.peso=g.peso!=null?g.peso:i1.peso;}else{cod=norm(gt);d.peso=g.peso;}
+    d.val=g.val||'';d.lote=g.lote||'';}
+  else{var c=l.cod;if(ehBalanca(c)){var i2=lerEtiqueta(c);cod=i2.cod;d.peso=i2.peso;}else cod=norm(c);}
+  if(!cod){toast('Não consegui identificar o produto na etiqueta');return;}
+  it=D.pere.itens[cod];etqPendente={leitura:l,fonte:fonteOCR};
+  var campo=function(r,v){return '<div><small>'+r+'</small><b>'+esc(v)+'</b></div>';};
+  $('etqDados').innerHTML=campo('Produto',it?it.desc:'Código '+cod+' (não cadastrado)')+campo('Peso',d.peso!=null?kg(d.peso)+' kg':'—')+campo('Lote',d.lote||(it&&it.sif)||'—')+campo('Validade',d.val?fdata(d.val):'—');
+  regTipo('pere');if(vistaAtual!=='reg')ir('reg');$('cardPe').style.display='none';$('etqConfirm').style.display='';$('etqConfirm').scrollIntoView({block:'center'});}
+$('bEtqUsar').onclick=function(){var e=etqPendente;if(!e)return;limparEtiquetaLida();fonteOCR=e.fonte||null;var l=e.leitura;if(l.gs1)tratarGS1(l.gs1,'bal');else tratarCodigo(l.cod,'bal');};
+$('bEtqNovamente').onclick=function(){limparEtiquetaLida();abrirScanner('etq');};
 
 function ehBalanca(c){return c.length===13&&c.charAt(0)==='2';}
 /* etiqueta 2D (GS1): com peso vai para perecíveis; só com código vai para produtos */
-function tratarGS1(g,alvo){var gt=g.gtin||'',ean=gt.length===14?gt.slice(1):(gt.length===13?gt:'');
-  if(ean&&ehBalanca(ean)){ir('pere');subPere('reg');abrirPerecivel(ean,{peso:g.peso,val:g.val,preco:g.preco});return;}
-  if(g.peso!=null){ir('pere');subPere('reg');abrirPerecivelGS1(g);return;}
+function tratarGS1(g,alvo){if(alvo==='etq'){confirmarEtiqueta({gs1:g});return;}var gt=g.gtin||'',ean=gt.length===14?gt.slice(1):(gt.length===13?gt:'');
+  if(ean&&ehBalanca(ean)){abrirRegistroPerecivel();abrirPerecivel(ean,{peso:g.peso,val:g.val,preco:g.preco});return;}
+  if(g.peso!=null){abrirRegistroPerecivel();abrirPerecivelGS1(g);return;}
   if(alvo==='bal')toast('Etiqueta sem peso — tratando como produto');ir('reg');abrirProduto(norm(gt));}
-function tratarCodigo(c,alvo,fmt){c=normEAN(c,fmt);if(ehBalanca(c)){ir('pere');subPere('reg');abrirPerecivel(c);return;}
+function tratarCodigo(c,alvo,fmt){c=normEAN(c,fmt);if(alvo==='etq'){confirmarEtiqueta({cod:c});return;}if(ehBalanca(c)){abrirRegistroPerecivel();abrirPerecivel(c);return;}
   if(alvo==='bal'){toast('Esse não parece ser um código de balança (começa com 2)');}
   ir('reg');abrirProduto(c);}
 
@@ -942,26 +1059,28 @@ $('bSalvarLote').onclick=function(){if(!pode('registrar')){toast('Seu perfil nã
   if(!sbOn()){
     if(ex){var novo=prompt('Este lote já existe. Informe a quantidade final (atual: '+ex.qtd+', digitada: '+qtd+'):',String(+ex.qtd+qtd));if(novo===null)return;var nf=num(novo);if(nf<=0){toast('Quantidade inválida');return;}ex.qtd=nf;ex.setor=setor;ex.created_by_nome='Usuário local';}
     else{reg.created_by_nome='Usuário local';p.lotes.push(reg);}
-    D.cat[atual]=Object.assign({},D.cat[atual]||{},{nome:nome});salvar();lembrete(ex||reg,nome);toast('Salvo neste aparelho');listaProdutos();mostrarEscolhaRegistro();return;
+    D.cat[atual]=Object.assign({},D.cat[atual]||{},{nome:nome});salvar();lembrete(ex||reg,nome);toast('Salvo neste aparelho');listaProdutos();mostrarEscolhaRegistro();registroConcluido({tipo:'ind',local:true,nome:nome,linhas:resumoLote(ex||reg)});return;
   }
   if(ex){toast('Este lote e validade já estão cadastrados nesta loja. Edite o registro existente.');return;}
-  var b=$('bSalvarLote');b.disabled=true;b.textContent='⏳ Salvando no SQL…';
+  var b=$('bSalvarLote');rotuloBotao(b,'Salvando…',true);
   var eanSalvo=atual,lojaSalva=SESS.lojaId;
   inserirLoteSQL(eanSalvo,nome,reg,lojaSalva).then(function(serverRow){
     D.cat[eanSalvo]=Object.assign({},D.cat[eanSalvo]||{},{nome:nome});reg.created_by=serverRow.created_by||SESS.uid;reg.created_by_nome=serverRow.created_by_nome||SESS.nome||SESS.usuario;reg.criado=serverRow.criado||reg.criado;reg.rpcConfirmado=true;p.lotes.push(reg);
     salvar();lembrete(reg,nome);toast('Lote confirmado no Supabase ✔');auditar('registrou_lote',{ean:eanSalvo,lote:lote,qtd:qtd,val:val,setor:setor});vib(40);
-    listaProdutos();mostrarEscolhaRegistro();
+    listaProdutos();mostrarEscolhaRegistro();registroConcluido({tipo:'ind',nome:nome,linhas:resumoLote(reg)});
   }).catch(function(e){
     if(ehSemRede(e)){
       D.cat[eanSalvo]=Object.assign({},D.cat[eanSalvo]||{},{nome:nome});reg.created_by=SESS.uid;reg.created_by_nome=SESS.nome||SESS.usuario||'Usuário';p.lotes.push(reg);salvar();
       lembrete(reg,nome);marcarPendente(1,{tipo:'lote',uid:SESS.uid,payload:payloadLoteSQL(eanSalvo,nome,reg,lojaSalva)});vib(40);
       toast('Sem internet — lote salvo no aparelho. Sincroniza ao reconectar ✔');
-      listaProdutos();mostrarEscolhaRegistro();
+      listaProdutos();mostrarEscolhaRegistro();registroConcluido({tipo:'ind',pendente:true,nome:nome,linhas:resumoLote(reg)});
     }else{toast('Falha SQL: '+(e.message||'erro desconhecido'));console.error('Falha ao inserir lote no Supabase',e);}
   })
-  .finally(function(){b.disabled=false;b.textContent='💾 Salvar lote';});};
+  .finally(function(){rotuloBotao(b,'Salvar registro',false);});};
+function resumoLote(l){return ['Lote: '+(l.lote||'—'),'Validade: '+fdata(l.val),'Quantidade: '+l.qtd+' un. · Setor: '+(l.setor||'—')];}
+function resumoPerecivel(r){return ['Lote / SIF: '+(r.sif||'—'),'Validade: '+fdata(r.val),'Peso: '+kg(r.peso)+' kg · Setor: '+(r.setor||'—')];}
 function lotesDoAtual(){var p=D.prod[atual];if(!p||!p.lotes.length){$('pLotes').innerHTML='';return;}
-  $('pLotes').innerHTML='<table><tr><th>Lote / setor / responsável</th><th>Qtd</th><th>Validade</th><th></th></tr>'+ordenar(p.lotes).map(function(l){return '<tr data-id="'+esc(l.id)+'" data-ean="'+esc(atual)+'"><td><b>'+esc(l.lote||'—')+'</b><div class="ean">'+proveniencia(l)+'</div></td><td>'+l.qtd+'</td><td>'+fdata(l.val)+'</td><td style="text-align:right">'+status(l.val)+'</td></tr>';}).join('')+'</table>';}
+  $('pLotes').innerHTML='<div class="reg-lots"><h3>Lotes já registrados deste produto</h3>'+ordenar(p.lotes).map(function(l){return '<div class="reg-lot" data-id="'+esc(l.id)+'" data-ean="'+esc(atual)+'"><div><b>'+esc(l.lote||'—')+' · '+fdata(l.val)+' · '+esc(l.qtd)+' un.</b><small>'+proveniencia(l)+'</small></div>'+status(l.val)+'</div>';}).join('')+'</div>';}
 function ordenar(ls){return ls.slice().sort(function(a,b){return (a.val||'9').localeCompare(b.val||'9');});}
 var registroContexto=null;
 function formatadoEm(v){if(!v)return '—';var d=new Date(v);return isNaN(d.getTime())?'—':d.toLocaleString('pt-BR');}
@@ -1026,8 +1145,8 @@ function listaProdutos(){var q=$('qProd').value.toLowerCase(),setorFiltro=$('fSe
 
 /* ───── perecíveis (código de balança) ───── */
 var subAtual='lista',peAtual=null;
-function subPere(s){subAtual=s;[].forEach.call($('subPere').children,function(b){b.classList.toggle('on',b.dataset.s===s);});
-  ['reg','cad','lista'].forEach(function(x){$('pe-'+x).style.display=x===s?'':'none';});if(s==='cad')listaCodigos();if(s==='lista')listaPere();}
+function subPere(s){if(s==='reg'){abrirRegistroPerecivel();return;}subAtual=s;[].forEach.call($('subPere').children,function(b){b.classList.toggle('on',b.dataset.s===s);});
+  ['cad','lista'].forEach(function(x){$('pe-'+x).style.display=x===s?'':'none';});if(s==='cad')listaCodigos();if(s==='lista')listaPere();}
 $('subPere').onclick=function(e){var b=e.target.closest('button');if(b)subPere(b.dataset.s);};
 function norm(c){return String(c||'').replace(/\D/g,'').replace(/^0+(?=\d)/,'');}
 function lerEtiqueta(c){var n=+D.aj.dig||4,cod=c.substr(1,n),v=parseInt(c.substr(7,5),10)||0;
@@ -1036,7 +1155,7 @@ function abrirPerecivel(c,ov){ov=ov||{};var info=ehBalanca(c)?lerEtiqueta(c):{co
   if(ov.peso!=null)info.peso=ov.peso;if(ov.preco!=null)info.preco=ov.preco;
   if(!info.cod){toast('Código inválido');return;}
   peAtual=info.cod;var it=D.pere.itens[peAtual];$('cardPe').style.display='block';
-  $('peCod').textContent='Código de balança '+peAtual+(ehBalanca(c)?' • etiqueta '+c:'');
+  $('peCod').textContent='PLU: '+peAtual+(ehBalanca(c)?' · etiqueta '+c:'');
   $('peDesc').value=it?it.desc:'';$('peSif').value=it?it.sif||'':'';$('pePeso').value=info.peso!=null?(+info.peso).toFixed(3):'';$('peVal').value=ov.val||'';
   $('peInfo').innerHTML=it?'':'<div class="aviso wa">Código ainda não cadastrado — preencha a descrição e o SIF: ele fica salvo para as próximas etiquetas.</div>';
   if(ov.val)$('peInfo').innerHTML+='<div class="aviso ok">Validade lida da etiqueta: '+fdata(ov.val)+'.</div>';
@@ -1079,7 +1198,7 @@ function talvezOCR(){var fonte=fonteOCR;fonteOCR=null;if(!fonte||!D.aj.ocr||type
   },function(){av.remove();/* OCR indisponível (offline ou erro): segue manual, sem alarde */});}
 function abrirPerecivelGS1(g){var cod=norm(g.gtin);if(!cod){toast('Etiqueta sem código de produto');return;}
   peAtual=cod;var it=D.pere.itens[cod];$('cardPe').style.display='block';
-  $('peCod').textContent='Produto '+(g.gtin||cod)+(g.lote?' • lote '+g.lote:'');
+  $('peCod').textContent='Código: '+(g.gtin||cod)+(g.lote?' · lote '+g.lote:'');
   $('peDesc').value=it?it.desc:'';$('peSif').value=it?it.sif||'':'';
   $('pePeso').value=g.peso!=null?g.peso.toFixed(3):'';$('peVal').value=g.val||'';
   var a=it?'':'<div class="aviso wa">Produto ainda não cadastrado — preencha a descrição e o SIF: fica salvo para as próximas etiquetas.</div>';
@@ -1094,23 +1213,23 @@ $('bSalvarPe').onclick=function(){if(!pode('registrar')){toast('Seu perfil não 
   if(!desc){toast('Digite a descrição');$('peDesc').focus();return;}if(peso<=0){toast('Informe um peso maior que zero');$('pePeso').focus();return;}if(!val){toast('Informe a validade');$('peVal').focus();return;}if(!SETORES.includes(setor)){$('peSetor').focus();toast('Selecione um dos setores oficiais');return;}
   if(sbOn()&&(!logado()||!SESS.lojaId)){toast('Faça login e selecione uma loja para salvar no SQL.');return;}
   var r={id:uid(),cod:peAtual,sif:sif,peso:peso,val:val,setor:setor,criado:Date.now()},loja=SESS&&SESS.lojaId,b=$('bSalvarPe'),codSalvo=peAtual;
-  if(!sbOn()){var localItem=D.pere.itens[codSalvo]||(D.pere.itens[codSalvo]={desc:desc,sif:sif});r.created_by_nome='Usuário local';D.pere.regs.push(r);salvar();lembrete(r,desc);toast('Salvo neste aparelho ✔ '+kg(peso)+' kg');$('pePeso').value='';$('peVal').value='';$('peSetor').value='';$('peInfo').innerHTML='';$('cardPe').style.display='none';peAtual=null;listaPere();return;}
-  b.disabled=true;b.textContent='⏳ Salvando no SQL…';
+  if(!sbOn()){var localItem=D.pere.itens[codSalvo]||(D.pere.itens[codSalvo]={desc:desc,sif:sif});r.created_by_nome='Usuário local';D.pere.regs.push(r);salvar();lembrete(r,desc);toast('Salvo neste aparelho ✔ '+kg(peso)+' kg');$('pePeso').value='';$('peVal').value='';$('peSetor').value='';$('peInfo').innerHTML='';$('cardPe').style.display='none';peAtual=null;listaPere();registroConcluido({tipo:'pere',local:true,nome:desc,linhas:resumoPerecivel(r)});return;}
+  rotuloBotao(b,'Salvando…',true);
   var payloadPerecivel={p_id:String(r.id),p_loja_id:loja,p_cod:codSalvo,p_descricao:desc,p_sif:sif,p_peso:peso,p_val:val,p_setor:setor};
   inserirPerecivelSQL(payloadPerecivel)
   .then(function(x){if(!x.ok)throw erroSQL(x,'registro perecível');var serverRow=x.dados||{};
     var it=D.pere.itens[codSalvo]||(D.pere.itens[codSalvo]={desc:serverRow.descricao||desc,sif:serverRow.sif||sif});it.desc=serverRow.descricao||it.desc||desc;it.sif=serverRow.sif!=null?serverRow.sif:(it.sif||sif);r.created_by=serverRow.created_by||SESS.uid;r.created_by_nome=serverRow.created_by_nome||SESS.nome||SESS.usuario;r.criado=serverRow.criado||r.criado;r.rpcConfirmado=true;D.pere.regs.push(r);salvar();lembrete(r,it.desc);
     auditar('registrou_perecivel',{cod:codSalvo,peso:peso,val:val,setor:setor});toast('Salvo no Supabase ✔ '+kg(peso)+' kg');vib(40);
-    $('pePeso').value='';$('peVal').value='';$('peSetor').value='';$('peInfo').innerHTML='';$('cardPe').style.display='none';peAtual=null;listaPere();
+    $('pePeso').value='';$('peVal').value='';$('peSetor').value='';$('peInfo').innerHTML='';$('cardPe').style.display='none';peAtual=null;listaPere();registroConcluido({tipo:'pere',nome:it.desc||desc,linhas:resumoPerecivel(r)});
   }).catch(function(e){
     if(ehSemRede(e)){
       var it=D.pere.itens[codSalvo]||(D.pere.itens[codSalvo]={desc:desc,sif:sif});it.desc=desc;it.sif=sif;it.created_by=SESS.uid;r.created_by=SESS.uid;r.created_by_nome=SESS.nome||SESS.usuario||'Usuário';D.pere.regs.push(r);salvar();
       lembrete(r,desc);marcarPendente(1,{tipo:'perecivel',uid:SESS.uid,payload:payloadPerecivel});vib(40);
       toast('Sem internet — salvo no aparelho. Sincroniza ao reconectar ✔');
-      $('pePeso').value='';$('peVal').value='';$('peSetor').value='';$('peInfo').innerHTML='';$('cardPe').style.display='none';peAtual=null;listaPere();
+      $('pePeso').value='';$('peVal').value='';$('peSetor').value='';$('peInfo').innerHTML='';$('cardPe').style.display='none';peAtual=null;listaPere();registroConcluido({tipo:'pere',pendente:true,nome:desc,linhas:resumoPerecivel(r)});
     }else{toast('Falha SQL: '+(e.message||'erro desconhecido'));console.error('Falha ao salvar perecível no Supabase',e);}
   })
-  .finally(function(){b.disabled=false;b.textContent='💾 Salvar';});};
+  .finally(function(){rotuloBotao(b,'Salvar registro',false);});};
 $('bAddCod').onclick=function(){if(!pode('codigos')){toast('Só assistente/admin cadastra códigos');return;}var c=norm($('cCod').value),d=$('cDesc').value.trim();if(!c||!d){toast('Preencha código e descrição');return;}
   D.pere.itens[c]={desc:d,sif:$('cSif').value.trim(),created_by:SESS&&SESS.uid||null};salvar();auditar('cadastrou_codigo',{cod:c,desc:d});$('cCod').value='';$('cDesc').value='';$('cSif').value='';toast('Código '+c+' cadastrado ✔');listaCodigos();};
 function listaCodigos(){var ks=Object.keys(D.pere.itens).sort(function(a,b){return +a-+b;});
@@ -1120,7 +1239,7 @@ $('listaCod').onclick=function(e){var del=e.target.closest('[data-cod-del]');if(
   var s=prompt('SIF:',it.sif||'');it.desc=d.trim();if(s!==null)it.sif=s.trim();salvar();listaCodigos();};
 $('qPe').oninput=function(){listaPere();};
 if($('fSetorPe'))$('fSetorPe').onchange=listaPere;if($('fPeriodoPe'))$('fPeriodoPe').onchange=listaPere;
-if($('bBuscaPerecivel'))$('bBuscaPerecivel').onclick=function(){if(!pode('registrar')){toast('Seu perfil não permite registrar perecíveis');return;}ir('pere');subPere('reg');$('bEscanearBal').click();};
+if($('bBuscaPerecivel'))$('bBuscaPerecivel').onclick=function(){if(!pode('registrar')){toast('Seu perfil não permite registrar perecíveis');return;}abrirRegistroPerecivel();$('bEscanearBal').click();};
 function listaPere(){var q=$('qPe').value.toLowerCase(),setorFiltro=$('fSetorPe').value,periodo=+$('fPeriodoPe').value||0,desde=periodo?Date.now()-periodo*864e5:0,rows=[],total=D.pere.regs.length,validos=0,alertas=0,vencidos=0;
   D.pere.regs.forEach(function(r){var n=dias(r.val),stamp=+new Date(r.criado||r.criado_em||0);if(n!==null&&n<0)vencidos++;else if(n!==null&&n<=D.aj.dias)alertas++;else if(n!==null)validos++;
     if(setorFiltro&&r.setor!==setorFiltro||periodo&&(!stamp||stamp<desde))return;var it=D.pere.itens[r.cod]||{desc:'(código '+r.cod+')'},needle=(it.desc+' '+r.cod+' '+r.sif+' '+r.setor+' '+r.created_by_nome).toLowerCase();if(q&&needle.indexOf(q)<0)return;
