@@ -438,6 +438,7 @@ tflaky('conta: entra (usuário→e-mail interno), lista e escolhe a loja', { ski
   assert.strictEqual(sess.lojaId, 'L2');
   assert.strictEqual(sess.lojaNome, 'Campo Grande');
   await a.p.click('nav button[data-v="aj"]');
+  await a.p.click('#sysMenu [data-sys-open="op-preferencias"]');
   await a.p.waitForSelector('#cardConta', { state: 'visible' });
   assert.ok((await a.p.textContent('#contaInfo')).includes('Campo Grande'));
   assert.deepStrictEqual(a.erros, []);
@@ -918,6 +919,7 @@ tflaky('cosmos: cada usuário carrega e salva o seu próprio token (perfil pesso
   // o token do usuário chega na sessão
   await a.p.waitForFunction(() => { try { return JSON.parse(localStorage.getItem('validade_sessao')).cosmos === 'TKN-123'; } catch (e) { return false; } });
   await a.p.click('nav button[data-v="aj"]');
+  await a.p.click('#sysMenu [data-sys-open="op-preferencias"]');
   // operador (sem permissão de ajustes) ainda edita o PRÓPRIO token
   assert.strictEqual(await a.p.getAttribute('#aCosmos', 'disabled'), null);
   assert.strictEqual(await a.p.inputValue('#aCosmos'), 'TKN-123');
@@ -1092,7 +1094,15 @@ tflaky('Cabeçalho: subtítulo próprio em cada tela interna; contador de alerta
 tflaky('Configurações: dados reais, preferências persistem e Sobre mostra a versão; voltar retorna a Configurações', { skip: pular }, async () => {
   const a = await abrirLogado(p => rotasBase(p, 'operador'), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador', nome: 'Jonatas', lojaNome: 'Filial 31' });
   await a.p.click('nav button[data-v="aj"]');
-  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Configurações');
+  assert.strictEqual(await a.p.textContent('#sysMenuTitle'), 'Ajustes do Operador');
+  assert.strictEqual(await a.p.locator('#sysMenu [data-sys-open]').count(), 3);
+  await a.p.click('#sysMenu [data-sys-open="op-preferencias"]');
+  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Preferências e Alertas');
+  assert.strictEqual(await a.p.isVisible('#aCosmos'), true, 'token pessoal continua disponível ao Operador');
+  assert.strictEqual(await a.p.isVisible('#aDias'), true, 'alertas de validade continuam disponíveis');
+  assert.strictEqual(await a.p.isVisible('#cardUsuarios'), false, 'gestão de usuários não aparece ao Operador');
+  assert.strictEqual(await a.p.isVisible('#cardLojasAdmin'), false, 'gestão de lojas não aparece ao Operador');
+  assert.strictEqual(await a.p.isVisible('#bExp'), false, 'backup administrativo não aparece ao Operador');
   assert.strictEqual(await a.p.textContent('#cfgLoja'), 'Filial 31');
   // o nome exibido é o do perfil devolvido pelo servidor (rotasBase responde nome = papel)
   await a.p.waitForFunction(() => document.getElementById('cfgOperador').textContent === 'operador');
@@ -1107,9 +1117,9 @@ tflaky('Configurações: dados reais, preferências persistem e Sobre mostra a v
   assert.strictEqual(await a.p.textContent('#aboutVersao'), versao);
   assert.strictEqual(await a.p.isVisible('#settingsRefArea'), false);
   await a.p.click('#headerBack');
-  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Configurações');
-  assert.strictEqual(await a.p.isVisible('#settingsRefArea'), true);
-  await a.p.click('#settingsTabs [data-settings-view="profile"]');
+  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Ajustes do Operador');
+  assert.strictEqual(await a.p.isVisible('#settingsRefArea'), false);
+  await a.p.click('#sysMenu [data-sys-open="op-perfil"]');
   assert.strictEqual((await a.p.textContent('#profileStatus')).trim(), 'Operador Ativo');
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
@@ -1123,7 +1133,7 @@ tflaky('Alterar Senha (função antiga no servidor): confere a senha atual e gra
       : r.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error_description: 'Invalid login credentials' }) }); });
     await p.route('**/auth/v1/user', r => { chamadas.user.push({ m: r.request().method(), b: r.request().postDataJSON(), auth: r.request().headers().authorization }); r.fulfill({ status: 200, contentType: 'application/json', body: '{"id":"u1"}' }); });
   }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador' });
-  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#cfgSenha');
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="op-preferencias"]'); await a.p.click('#cfgSenha');
   assert.strictEqual(await a.p.textContent('#screenTitle'), 'Alterar Senha');
   await a.p.fill('#pwAtual', 'antiga1'); await a.p.fill('#pwNova', 'nova123'); await a.p.fill('#pwConfirma', 'outra123'); await a.p.click('#bPwSalvar');
   assert.match(await a.p.textContent('#pwErro'), /não conferem/);
@@ -1134,7 +1144,7 @@ tflaky('Alterar Senha (função antiga no servidor): confere a senha atual e gra
   await a.p.waitForFunction(() => /senha atual/i.test(document.getElementById('pwErro').textContent));
   assert.strictEqual(chamadas.user.length, 0, 'senha atual errada não altera nada');
   senhaCerta = true; await a.p.click('#bPwSalvar');
-  await a.p.waitForFunction(() => document.getElementById('screenTitle').textContent === 'Configurações');
+  await a.p.waitForFunction(() => document.getElementById('screenTitle').textContent === 'Ajustes do Operador');
   assert.deepStrictEqual(chamadas.token[1], { email: 'teste@loja.validade', password: 'antiga1' });
   assert.deepStrictEqual([chamadas.user[0].m, chamadas.user[0].b, chamadas.user[0].auth], ['PUT', { password: 'nova123' }, 'Bearer tok2']);
   assert.strictEqual(await a.p.inputValue('#pwNova'), '', 'campos limpos depois de salvar');
@@ -1186,13 +1196,13 @@ tflaky('Alterar Senha: usa a função do servidor e mostra o motivo quando ela r
     await p.route('**/functions/v1/gerir-usuarios', r => { chamadas.push(r.request().postDataJSON()); r.fulfill({ status: resposta.status, contentType: 'application/json', body: JSON.stringify(resposta.body) }); });
     await p.route('**/auth/v1/user', r => { nativo++; r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }); });
   }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador' });
-  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#cfgSenha');
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="op-preferencias"]'); await a.p.click('#cfgSenha');
   await a.p.fill('#pwAtual', 'antiga1'); await a.p.fill('#pwNova', 'guanabara'); await a.p.fill('#pwConfirma', 'guanabara'); await a.p.click('#bPwSalvar');
   await a.p.waitForFunction(() => /muito comum/.test(document.getElementById('pwErro').textContent));
   assert.deepStrictEqual(chamadas[0], { acao: 'trocar_senha', senha_atual: 'antiga1', senha: 'guanabara' });
   resposta = { status: 200, body: { ok: true } };
   await a.p.fill('#pwNova', 'nova1234'); await a.p.fill('#pwConfirma', 'nova1234'); await a.p.click('#bPwSalvar');
-  await a.p.waitForFunction(() => document.getElementById('screenTitle').textContent === 'Configurações');
+  await a.p.waitForFunction(() => document.getElementById('screenTitle').textContent === 'Ajustes do Operador');
   assert.strictEqual(nativo, 0, 'com a função publicada, não usa o caminho direto do Auth');
   await a.fechar();
 });
@@ -1225,7 +1235,7 @@ tflaky('Perfil: "Sair de todos os aparelhos" encerra as sessões no servidor e v
     await p.route('**/auth/v1/logout**', r => { saidas.push(r.request().url()); r.fulfill({ status: 204, body: '' }); });
   }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador' });
   a.respostas.push(true);
-  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#settingsTabs [data-settings-view="profile"]'); await a.p.click('#profileSessions');
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="op-perfil"]'); await a.p.click('#profileSessions');
   await a.p.waitForSelector('#conta-login', { state: 'visible' });
   assert.ok(saidas.some(u => u.includes('scope=global')), JSON.stringify(saidas));
   assert.strictEqual(await a.p.evaluate(() => localStorage.getItem('validade_sessao')), null);
@@ -1375,7 +1385,7 @@ tflaky('Push: operador, assistente, analista, gerente e administrador ativam em 
     assert.strictEqual(await a.p.isVisible('#pushCard'), true, papel + ' vê o cartão de push');
     assert.strictEqual(await a.p.isVisible('#bPushAtivar'), true, papel + ' vê o botão Ativar');
     if (papel === 'operador') { await a.p.click('nav button[data-v="alertas"]'); await a.p.click('[data-alert-view="notifications"]'); await a.p.click('#bIrPush');
-      assert.strictEqual(await a.p.textContent('#screenTitle'), 'Configurações'); assert.strictEqual(await a.p.isVisible('#pushCard'), true); }
+      assert.strictEqual(await a.p.textContent('#screenTitle'), 'Ajustes do Operador'); assert.strictEqual(await a.p.isVisible('#pushCard'), true); }
     await a.fechar();
   }
 });
@@ -1403,11 +1413,18 @@ tflaky('Área do Operador: abas, alertas/notificações e detalhe/edição de lo
   assert.strictEqual(await a.p.isVisible('#cardNotificacoes'), true);
   assert.strictEqual(await a.p.isVisible('#alertasMain'), false);
   await a.p.click('nav button[data-v="aj"]');
-  const menuAdmin = await a.p.isVisible('#sysMenuCard');
-  if (menuAdmin) await a.p.click('#sysMenu [data-sys-open="config"]');
+  const menu = await a.p.isVisible('#sysMenuCard');
+  if (menu) {
+    const config = a.p.locator('#sysMenu [data-sys-open="config"]');
+    await a.p.click(await config.count() ? '#sysMenu [data-sys-open="config"]' : '#sysMenu [data-sys-open="op-preferencias"]');
+  }
   assert.strictEqual(await a.p.isVisible('#preferencesArea'), true);
   assert.strictEqual(await a.p.isVisible('#profileArea'), false);
-  if (menuAdmin) { await a.p.click('#sysBackToMenu'); await a.p.click('#sysMenu [data-sys-open="perfil"]'); }
+  if (menu) {
+    await a.p.click('#sysBackToMenu');
+    const perfil = a.p.locator('#sysMenu [data-sys-open="perfil"]');
+    await a.p.click(await perfil.count() ? '#sysMenu [data-sys-open="perfil"]' : '#sysMenu [data-sys-open="op-perfil"]');
+  }
   else await a.p.click('#settingsTabs [data-settings-view="profile"]');
   assert.strictEqual(await a.p.isVisible('#profileArea'), true);
   assert.deepStrictEqual(a.erros, []);

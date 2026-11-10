@@ -254,3 +254,17 @@ Decisões confirmadas pelo proprietário:
 Essas decisões são **especificação aprovada, não funcionalidades implementadas**. A PR #34 continua sendo a primeira etapa de navegação; implementação de backend, migrations, RLS, Edge Functions e interface de gestão ocorrerá em etapas próprias.
 
 - 10/11 — ChatGPT — Criado `docs/especificacao-funcional-administrador.md` na branch `feat/area-ajustes-administrador`; decisões de grupos, permissões e aprovações consolidadas. PR #34 permanece aberta, sem merge.
+
+## 8. Ajustes do Operador — menu próprio (10/11/2026)
+
+Pedido do Jonatas: replicar o padrão visual da central administrativa nos Ajustes do Operador, respeitando os limites do papel.
+
+- Branch de trabalho: `feat/operator-settings-layout`, baseada na `main` em `fd27718928a312c2c0263c8cf48d6bcdcd83f4fd`.
+- Implementação local: menu dedicado para o perfil Operador com subpáginas de preferências/configuração, suporte e perfil, reutilizando os controles existentes e sem conceder opções administrativas.
+- O Assistente mantém seu fluxo de Ajustes preexistente; a nova central é exclusiva ao Operador.
+- Nenhuma migration, RPC, RLS, Edge Function, configuração ou dado remoto foi alterado nesta tarefa.
+- Build e `npm test` passaram localmente (138/138 testes, conforme execução desta sessão); a PR e o CI remoto ainda precisam ser criados/confirmados.
+- Próximo: revisar/publicar o commit e abrir PR para `main`; sem merge ou deploy até autorização separada.
+
+Diário:
+- 10/11 — Manus — Implementada em branch dedicada a central visual de Ajustes do Operador, preservados os limites de papel e atualizados testes de navegador/contrato; validação local: 138/138. Aguardar PR/CI; sem merge/deploy.
