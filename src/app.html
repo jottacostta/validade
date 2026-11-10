@@ -957,7 +957,7 @@ $('homeRecentList').onclick=function(e){if(e.target.closest('[data-home-record]'
 /* ───── navegação ───── */
 var vistaAtual='home',vistaAnterior='home',areaContextual='prod';
 var titulosTela={home:'Controle de Validade',reg:'Registrar Produto',prod:'Meus Registros',pere:'Perecíveis – Registros',alertas:'Alertas',aj:'Configurações',busca:'Buscar Produto',catalogo:'Catálogo de Produtos',detail:'Detalhe do registro',edit:'Editar registro'};
-var subtitulosTela={busca:'Área do Operador',catalogo:'Produtos conhecidos pelo sistema',reg:'Produtos e perecíveis',prod:'Produtos (Industrializados)',pere:'Produtos perecíveis da loja',alertas:'Validades e notificações',aj:'Área do Operador',detail:'Informações do lote',edit:'Dados do registro'};
+var subtitulosTela={busca:'Área do Operador',catalogo:'Produtos e registros',reg:'Produtos e perecíveis',prod:'Produtos (Industrializados)',pere:'Produtos perecíveis da loja',alertas:'Validades e notificações',aj:'Área do Operador',detail:'Informações do lote',edit:'Dados do registro'};
 function mostrarVisaoAlertas(v){var notif=v==='notifications';$('v-alertas').classList.toggle('alerts-view',!notif);$('alertasMain').style.display=notif?'none':'';$('cardNotificacoes').style.display=notif?'':'none';$('pushCard').style.display=notif?'':'none';
   document.querySelectorAll('#alertViewTabs [data-alert-view]').forEach(function(b){var on=b.dataset.alertView===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
   if($('screenTitle'))$('screenTitle').textContent=notif?'Notificações':'Alertas';}

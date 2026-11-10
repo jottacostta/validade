@@ -18,7 +18,7 @@
 | PR #22 (backend Área do Operador + layout) | mesclada na `main` (`edb4bd6`) |
 | PR #30 (limpar notificações, senha pelo servidor, sessões, agendador) | mesclada na `main` (`4c16aa6`) |
 | PR #31 (quantidade espremida + auditoria 360/320 px) | mesclada na `main` (`5b02033`) |
-| **Branch `feat/catalogo-admin`** | **aberta — Catálogo do administrador (ver seção 4). Aguarda PR/CI/autorização de merge** |
+| **Branch `feat/catalogo-admin`** | **PR #32 aberta (Draft) — Catálogo do administrador (ver seção 4). Aguarda autorização de merge** |
 | PRs #19, #27, #28 (documentação) | abertas, não tocadas por Claude. Estão desatualizadas em relação ao que foi implementado |
 
 Donos de branch: desde 10/11 o Jonatas passou a **#22 e #29 para o Claude**. Se outro agente assumir,
@@ -103,8 +103,8 @@ Feito no commit `3ac395c` (branch `feat/catalogo-admin`), 129 testes passando lo
   precisa buscar o nome pelo código. Nenhuma política/RPC foi alterada.
 
 Falta:
-- [ ] Abrir a PR para `main`, aguardar CI.
-- [ ] Conferência visual a 360 px (o script de captura falhou por erro meu no script, não no app).
+- [x] PR #32 aberta para `main` (Draft).
+- [x] Conferência visual a 360 px feita em navegador de teste (entrada em Configurações e tela do Catálogo).
 - [ ] Decidir com o Jonatas se **gerente/analista** também devem ver o catálogo (hoje: só admin).
 - [ ] Perguntar "Posso fazer a merge?" — nunca mesclar sem autorização explícita.
 
@@ -125,3 +125,4 @@ Falta:
 ## 6. Diário (acrescente uma linha a cada mudança)
 
 - 10/11 — Claude — Catálogo do administrador implementado na branch `feat/catalogo-admin` (`3ac395c`); este documento criado.
+- 10/11 — Claude — PR #32 aberta; subtítulo do cabeçalho do Catálogo encurtado (cortava a 360 px); conferência visual feita. Falta só a autorização de merge.
