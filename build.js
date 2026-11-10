@@ -19,8 +19,9 @@ const MARCADORES = ['/*COR*/', '/*COR2*/', '/*COR3*/', '/*CORDARK*/', '/*ACENTO*
 /* logo: usa config.logo (URL/dataURI) ou embute src/logo.png como data URI */
 function logoDataURI() {
   try {
-    const j = path.join(raiz, 'src/logo.jpg'); if (fs.existsSync(j)) return 'data:image/jpeg;base64,' + fs.readFileSync(j).toString('base64');
+    // o PNG recortado (fundo transparente) tem prioridade; o JPG continua sendo copiado para o dist/ como ícone do PWA
     const p = path.join(raiz, 'src/logo.png'); if (fs.existsSync(p)) return 'data:image/png;base64,' + fs.readFileSync(p).toString('base64');
+    const j = path.join(raiz, 'src/logo.jpg'); if (fs.existsSync(j)) return 'data:image/jpeg;base64,' + fs.readFileSync(j).toString('base64');
   } catch (e) {}
   return '';
 }
@@ -32,7 +33,8 @@ function montar(c) {
   const acento = /^#[0-9a-fA-F]{6}$/.test(c.acento || '') ? c.acento : '#FFC20E';
   const cfg = { cosmos: String(c.cosmos || '').trim(), nome: c.nome || 'Controle de Validade', slogan: String(c.slogan || '').trim(), zap: zap(c.whatsapp),
     dias: Math.max(1, parseInt(c.dias) || 30), dig: +c.dig || 4, valor: c.valor === 'preco' ? 'preco' : 'peso',
-    supaUrl: String(c.supaUrl || '').trim().replace(/\/$/, ''), supaKey: String(c.supaKey || '').trim(), loginDom: String(c.loginDom || 'loja.validade').trim(), logo: (String(c.logo || '').trim() || logoDataURI()) };
+    supaUrl: String(c.supaUrl || '').trim().replace(/\/$/, ''), supaKey: String(c.supaKey || '').trim(), loginDom: String(c.loginDom || 'loja.validade').trim(), logo: (String(c.logo || '').trim() || logoDataURI()),
+    versao: String(require('./package.json').version || '1.0.0') };
   if (![4, 5, 6].includes(cfg.dig)) throw new Error('dig deve ser 4, 5 ou 6');
   const html = APP.split('/*COR*/').join(cor).split('/*COR2*/').join(clarear(cor, .88)).split('/*COR3*/').join(clarear(cor, .3))
     .split('/*CORDARK*/').join(clarear(cor, .4)).split('/*ACENTO*/').join(acento)

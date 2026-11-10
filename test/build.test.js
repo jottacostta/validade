@@ -41,3 +41,13 @@ test('dist/ está em dia com src/ e config.json (rode node build.js)', () => {
   assert.strictEqual(fs.readFileSync(path.join(raiz, 'dist/validade.html'), 'utf8'), html);
   assert.strictEqual(fs.readFileSync(path.join(raiz, 'dist/APP_VALIDADE.js'), 'utf8'), js);
 });
+
+test('logo do cabeçalho: usa o PNG recortado (fundo transparente) quando src/logo.png existe', () => {
+  const png = path.join(__dirname, '../src/logo.png');
+  assert.ok(fs.existsSync(png), 'src/logo.png existe');
+  const bytes = fs.readFileSync(png);
+  assert.ok(bytes.length < 40000, 'logo embutido continua leve (' + bytes.length + ' bytes)');
+  const { cfg } = montar({ nome: 'X' });
+  assert.ok(cfg.logo.startsWith('data:image/png;base64,'), cfg.logo.slice(0, 30));
+  assert.strictEqual(cfg.logo, 'data:image/png;base64,' + bytes.toString('base64'));
+});
