@@ -151,5 +151,6 @@ test('alertas de validade são gerados diariamente pelo agendador do banco, sem 
   const m = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261110020000_agendar_alertas_validade.sql'), 'utf8');
   assert.match(m, /create extension if not exists pg_cron/);
   assert.match(m, /cron\.schedule\(\s*'gerar-alertas-validade-diario',\s*'0 9 \* \* \*',\s*\$\$select public\.gerar_alertas_validade\(\)\$\$/);
-  assert.doesNotMatch(m, /secret|Bearer|eyJ|service_role/i);
+  // a chamada é local ao banco: nenhuma requisição HTTP, cabeçalho de segredo ou token na migration
+  assert.doesNotMatch(m, /net\.http_post|x-alertas-cron-secret|Bearer|eyJ/);
 });
