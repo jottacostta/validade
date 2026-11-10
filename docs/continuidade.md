@@ -64,13 +64,28 @@ no painel). `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` e `VAPID_SUBJECT` também co
 - [ ] A migration acima está na branch `feat/catalogo-admin` (PR #32); o repositório só reflete a produção depois da merge.
 - Se o segredo for trocado no painel, atualizar o mesmo valor no Vault (`vault.update_secret`), senão o job recebe 401.
 
-### 3.1.1 Limite conhecido do push para perfis de escopo global (NÃO resolvido)
-O servidor só aceita inscrição (`subscribe`) e só gera avisos para quem está em `loja_membros` da loja:
-`isMember()` em `supabase/functions/alertas/index.ts` e o `join public.loja_membros` em `gerar_alertas_validade()`.
-Analista, gerente e administrador enxergam todas as lojas, mas **só recebem push das lojas em que estão vinculados**;
-se entrarem em uma loja sem vínculo, "Ativar" responde 403 "Loja inválida ou sem vínculo".
-Decisão pendente do Jonatas: esses perfis devem receber avisos de **todas** as lojas ou só das vinculadas?
-Mudar isso exige alterar a função `alertas` e a função SQL (migration) — não foi feito.
+### 3.1.1 Avisos para perfis de escopo global — CÓDIGO PRONTO NA PR #32, **NÃO APLICADO EM PRODUÇÃO**
+**Decisão do Jonatas (10/11):** analista, gerente e administrador recebem avisos de **todas as lojas**;
+operador e assistente, só das lojas vinculadas.
+
+Feito no repositório (branch `feat/catalogo-admin`):
+- `supabase/migrations/20261110040000_alertas_escopo_global.sql`: `gerar_alertas_validade()` passa a ter como
+  destinatários `loja_membros` ∪ (perfis `analista/gerente/admin` × todas as lojas); as políticas
+  `notificacoes_sel_own_store` e `notificacoes_upd_own_store` aceitam `private.tem_escopo_global()`
+  (continua `user_id = auth.uid()`).
+- `supabase/functions/alertas/index.ts`: `isMember()` aceita perfil global em qualquer loja existente (inscrição do push).
+- Teste de contrato garante que o corpo da função SQL só mudou no trecho dos destinatários.
+
+Falta (precisa de autorização explícita do Jonatas para produção):
+- [ ] Aplicar a migration `alertas_escopo_global` no banco. Depois, conferir que o MD5 de `prosrc` de
+      `public.gerar_alertas_validade` em produção é igual ao corpo do arquivo (mesma técnica usada em `offline_rpc_idempotency`).
+- [ ] Publicar a Edge Function `alertas` (hoje versão 1, de 09/11). Sugestão: mesmo método da `gerir-usuarios` —
+      ponto de entrada de 1 linha importando o arquivo do repositório fixado em um commit da `main`; `verify_jwt` ligado.
+- [ ] Testar: um usuário gerente/admin sem vínculo ativa o push em uma loja e recebe o aviso no dia seguinte.
+- **A SQL desta migration não foi executada em nenhum banco** (só revisão por leitura e teste de contrato). A função TS
+  passou apenas por verificação de sintaxe.
+- Observação: `gerar_alertas_validade()` recusa quem não é `service_role`; por isso o agendador chama a Edge Function
+  e não a função SQL diretamente.
 
 ### 3.2 Catálogo do administrador — EM ANDAMENTO (branch `feat/catalogo-admin`)
 Ver seção 4. Falta: abrir PR, CI verde, conferência visual e autorização de merge.
@@ -135,3 +150,4 @@ Falta:
 - 10/11 — Claude — Push: segredo salvo pelo Jonatas; disparo testado (200, 6 avisos, 0 push por falta de aparelhos inscritos); migration `agendador_dispara_push` aplicada em produção e incluída na PR #32. Falta inscrever aparelhos e conferir a execução de 11/11.
 - 10/11 — Claude — Decisão registrada: Catálogo somente para administrador (sem mudança de código). PR #32 segue aguardando autorização de merge.
 - 10/11 — Claude — Push: cartão de ativação movido para Configurações e visível a todos os perfis (teste cobre os 5); Notificações ganhou atalho para lá. Registrado o limite do servidor para perfis globais sem vínculo com a loja (seção 3.1.1).
+- 10/11 — Claude — Decisão: perfis globais recebem avisos de todas as lojas. Migration `alertas_escopo_global` + ajuste em `alertas/index.ts` + teste de contrato na PR #32. Nada aplicado/publicado em produção ainda.

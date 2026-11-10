@@ -28,10 +28,16 @@ async function authenticatedUser(req: Request) {
   const { data, error } = await admin.auth.getUser(token);
   return error ? null : data.user;
 }
+const PAPEIS_GLOBAIS = ["analista", "gerente", "admin"];
+// Vinculado à loja, ou perfil de escopo global (recebe avisos de todas as lojas) em uma loja que existe.
 async function isMember(userId: string, lojaId: string) {
   const { data, error } = await admin.from("loja_membros").select("loja_id")
     .eq("user_id", userId).eq("loja_id", lojaId).maybeSingle();
-  return !error && !!data;
+  if (!error && data) return true;
+  const { data: perfil, error: perfilErr } = await admin.from("perfis").select("papel").eq("id", userId).maybeSingle();
+  if (perfilErr || !perfil || !PAPEIS_GLOBAIS.includes(perfil.papel)) return false;
+  const { data: loja, error: lojaErr } = await admin.from("lojas").select("id").eq("id", lojaId).maybeSingle();
+  return !lojaErr && !!loja;
 }
 function validPushEndpoint(value: string): boolean {
   if (!value || value.length > 4096) return false;
