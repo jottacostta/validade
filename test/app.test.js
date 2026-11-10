@@ -979,6 +979,50 @@ tflaky('Ler Etiqueta: mostra os dados lidos e só preenche o formulário ao toca
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
 
+tflaky('Alertas: contadores e filtros refletem os registros; o cartão abre o detalhe com aviso de vencido', { skip: pular }, async () => {
+  const dia = n => { const t = new Date(); t.setDate(t.getDate() + n); return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); };
+  const a = await abrir({ dados: {
+    prod: { '7891000315507': { lotes: [{ id: 'v1', lote: 'LV', qtd: 2, val: dia(-3), setor: 'Mercearia' }, { id: 'p1', lote: 'LP', qtd: 4, val: dia(5), setor: 'Mercearia' }, { id: 'ok1', lote: 'LOK', qtd: 1, val: dia(200), setor: 'Mercearia' }] } },
+    cat: { '7891000315507': { nome: 'Café' } }, pere: { itens: { '12': { desc: 'Picanha' } }, regs: [{ id: 'r1', cod: '12', sif: 'S1', peso: 1.25, val: dia(-1), setor: 'Açougue' }] } } });
+  await a.p.click('nav button[data-v="alertas"]');
+  assert.deepStrictEqual([await a.p.textContent('#alertCountVenc'), await a.p.textContent('#alertCountProx'), await a.p.textContent('#alertCountPend')], ['2', '1', '0']);
+  assert.strictEqual(await a.p.locator('#listaAlertasValidade .alert-card').count(), 3, 'válido distante não entra');
+  await a.p.click('#alertFilters [data-alert-filter="soon"]');
+  assert.strictEqual(await a.p.locator('#listaAlertasValidade .alert-card').count(), 1);
+  assert.ok((await a.p.textContent('#listaAlertasValidade')).includes('LP'));
+  await a.p.click('#alertFilters [data-alert-filter="expired"]');
+  assert.strictEqual(await a.p.locator('#listaAlertasValidade .alert-card').count(), 2);
+  await a.p.click('#listaAlertasValidade .alert-card[data-detail-lote="v1"]');
+  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Detalhe do registro');
+  assert.strictEqual((await a.p.textContent('#detailStatus')).trim(), 'Vencido');
+  assert.strictEqual(await a.p.isVisible('#detailWarning'), true);
+  await a.p.click('#bDetailHistory');
+  assert.strictEqual(await a.p.locator('#detailHistoryList [data-detail-lote]').count(), 2, 'histórico lista os outros registros do produto');
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Detalhe de registro válido não mostra aviso; Editar tem cabeçalho do produto e − / +', { skip: pular }, async () => {
+  const a = await abrir({ dados: { prod: { '7891000315507': { lotes: [lote('l1', '2032-12-01', 5, 'L1')] } }, cat: { '7891000315507': { nome: 'Café' } }, pere: { itens: {}, regs: [] } } });
+  await a.p.click('nav button[data-v="prod"]'); await a.p.click('[data-detail-lote="l1"]');
+  assert.strictEqual(await a.p.isVisible('#detailWarning'), false);
+  assert.strictEqual((await a.p.textContent('#detailStatus')).trim(), 'Válido');
+  await a.p.click('#bDetailEdit');
+  assert.strictEqual(await a.p.textContent('#editProductName'), 'Café');
+  await a.p.click('#edQtdMais'); assert.strictEqual(await a.p.inputValue('#edQtd'), '6');
+  await a.p.click('#edQtdMenos'); await a.p.click('#edQtdMenos'); assert.strictEqual(await a.p.inputValue('#edQtd'), '4');
+  await a.p.selectOption('#edSetor', 'Mercearia'); await a.p.click('#bEditSave');
+  assert.strictEqual((await a.salvo()).prod['7891000315507'].lotes[0].qtd, 4);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Registrar: tocar num lote já registrado do produto abre o detalhe', { skip: pular }, async () => {
+  const a = await abrir({ dados: { prod: { '7891000315507': { lotes: [lote('l1', '2032-12-01', 5, 'L1')] } }, cat: { '7891000315507': { nome: 'Café' } }, pere: { itens: {}, regs: [] } } });
+  await a.p.click('#homeRegister'); await a.p.fill('#tCodigo', '7891000315507'); await a.p.click('#bBuscar');
+  await a.p.click('#pLotes [data-id="l1"]');
+  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Detalhe do registro');
+  await a.fechar();
+});
+
 tflaky('Área do Operador: abas, alertas/notificações e detalhe/edição de lote', { skip: pular }, async () => {
   const a = await abrir({ dados: {
     prod: { '7891000315507': { nome: 'Café', lotes: [lote('l1', '2032-12-01', 5, 'L1')] } },

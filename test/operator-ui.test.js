@@ -74,3 +74,18 @@ test('Registrar: botões usam ícones desenhados, sem emoji', () => {
   const reg = html.match(/<section class="vista" id="v-reg">([\s\S]*?)<\/section>/)[1];
   assert.doesNotMatch(reg, /[\u{1F300}-\u{1FAFF}\u{2795}]/u);
 });
+
+test('Alertas: três contadores, chips de filtro e ações, sem texto técnico', () => {
+  const al = html.match(/<section class="vista" id="v-alertas">([\s\S]*?)<\/section>/)[1];
+  for (const id of ['alertCountVenc', 'alertCountProx', 'alertCountPend', 'alertFilters', 'listaAlertasValidade', 'bAlertExport', 'bAlertSort']) assert.match(al, new RegExp(`id="${id}"`), id);
+  assert.deepEqual([...al.matchAll(/data-alert-filter="([^"]+)"/g)].map(m => m[1]), ['all', 'expired', 'soon', 'pending']);
+  assert.doesNotMatch(al.match(/id="alertasMain"[\s\S]*?id="cardNotificacoes"/)[0], /Supabase/);
+});
+
+test('Detalhe e Editar: cabeçalho do produto com selo, aviso, histórico e quantidade com − / +', () => {
+  for (const id of ['detailThumb', 'detailStatus', 'detailWarning', 'bDetailHistory', 'detailHistoryList', 'bDetailSameLot', 'editProductName', 'editStatus', 'edQtdMenos', 'edQtdMais']) assert.match(html, new RegExp(`id="${id}"`), id);
+  for (const v of ['v-detail', 'v-edit', 'v-alertas']) {
+    const sec = html.match(new RegExp(`<section class="vista" id="${v}">([\\s\\S]*?)</section>`))[1];
+    assert.doesNotMatch(sec, /[\u{1F300}-\u{1FAFF}\u{270E}\u{2715}]/u, v + ' sem emoji');
+  }
+});

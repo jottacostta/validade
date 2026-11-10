@@ -389,6 +389,57 @@ header .hdr-in.interna .header-bell{display:none}
 .reg-done-resumo b{display:block;font-size:17px}.reg-done-resumo small{display:block;color:#d5e3f0;font-size:14px;margin-top:2px}
 .reg-done .btn{display:flex;align-items:center;justify-content:center;min-height:52px}
 @media(max-width:360px){.reg-grid{gap:2px 9px}.stepper{grid-template-columns:38px minmax(0,1fr) 38px}}
+
+/* ───── Alertas, Detalhe e Editar (referências Guanabara) ───── */
+[hidden]{display:none!important}
+.chip{display:inline-flex;align-items:center;gap:5px;flex:none;padding:6px 12px;border-radius:12px;font:800 clamp(13px,3.6vw,16px) system-ui;white-space:nowrap;color:#fff}
+.chip .ico{width:1.15em;height:1.15em;stroke-width:2.2}
+.chip.da{background:linear-gradient(180deg,#f02a36,#c3101c)}.chip.wa{background:linear-gradient(180deg,#f0a400,#c98200);color:#231600}.chip.ok{background:linear-gradient(180deg,#19b53c,#0d8a2a)}.chip.in{background:linear-gradient(180deg,#1a86f5,#0b5fc9)}
+#v-alertas.alerts-view>.operator-page-intro{display:none}
+.alert-counters{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 12px}
+.alert-counter{display:flex;flex-direction:column;align-items:center;gap:0;padding:10px 4px 9px;border:1.5px solid;border-radius:16px;color:#fff;font:700 clamp(13px,3.7vw,16px) system-ui}
+.alert-counter .ico{width:28px;height:28px}.alert-counter b{font:800 clamp(28px,8vw,36px)/1.05 system-ui}
+.alert-counter.da{background:linear-gradient(180deg,#b3121c,#6f0a11);border-color:#f04a55}.alert-counter.wa{background:linear-gradient(180deg,#a87400,#6b4700);border-color:#f0b62a}.alert-counter.in{background:linear-gradient(180deg,#0b5fc9,#07398a);border-color:#2a9bff}
+.alert-filters{display:flex;gap:8px;margin:0 0 12px;overflow-x:auto;scrollbar-width:none}.alert-filters::-webkit-scrollbar{display:none}
+.alert-filters button{flex:1 1 auto;min-height:42px;padding:0 8px;white-space:nowrap;border:1px solid #3c6a8e;border-radius:999px;background:#0a2136;color:#fff;font:600 clamp(12px,3.5vw,16px) system-ui}
+.alert-filters button.on{background:linear-gradient(180deg,#0a8cff,#0756c4);border-color:#27a4ff;font-weight:800}
+.alert-sort{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
+.alert-list{display:flex;flex-direction:column;gap:9px;margin:0 0 12px}
+.alert-card{display:flex;align-items:center;gap:10px;width:100%;padding:8px 8px 8px 6px;border:1px solid #2c5373;border-left:5px solid #2c5373;border-radius:14px;background:linear-gradient(90deg,#0d2a44,#0a2036);color:#fff;text-align:left;font:inherit}
+.alert-card.da{border-left-color:#f02a36}.alert-card.wa{border-left-color:#f0a400}.alert-card.in{border-left-color:#1a86f5}
+.alert-thumb{position:relative;display:flex;align-items:center;justify-content:center;flex:none;width:clamp(48px,14vw,64px);height:clamp(48px,14vw,64px);border-radius:10px;color:#8fb3d1;overflow:hidden}
+.alert-thumb .ico{width:30px;height:30px}.alert-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff;border-radius:10px}
+.alert-copy{flex:1;min-width:0;display:flex;flex-direction:column}
+.alert-copy b{font-size:clamp(15px,4.2vw,18px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alert-copy small{font-size:clamp(12px,3.4vw,15px);color:#d5e3f0;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.alert-card .chip{padding:5px 9px;font-size:clamp(12px,3.3vw,15px)}.alert-card{gap:8px}.alert-copy small .ico{width:1.1em;height:1.1em}
+.ico.chev{width:22px;height:22px;stroke-width:2.4;color:#fff}
+.alert-actions .btn{display:flex;align-items:center;justify-content:center;min-height:48px;border:1px solid #3c6a8e;background:#0a2136;color:#fff}
+.prod-head{display:flex;align-items:center;gap:12px;margin:0 0 12px}
+.prod-head-copy{flex:1;min-width:0}.prod-head-copy h2{margin:0;font-size:clamp(18px,5.2vw,23px);overflow-wrap:anywhere}.prod-head-copy p{margin:2px 0 0;color:#cfe0ef;font-size:clamp(13px,3.7vw,16px)}
+.prod-head .reg-thumb{width:clamp(76px,22vw,104px);height:clamp(76px,22vw,104px)}
+.info-card h3,.act-card h3,.edit-card h3{margin:0 0 6px;font-size:clamp(17px,4.8vw,21px)}
+.edit-card h3{display:flex;align-items:center;gap:10px;padding-bottom:8px;border-bottom:1px solid #2c5373}
+.info-row{display:grid;grid-template-columns:30px minmax(0,1fr) minmax(0,1.15fr);align-items:center;gap:8px;padding:9px 0;border-top:1px solid #2c5373}
+.info-card h3+.info-row{border-top:0}.info-row .ico{width:24px;height:24px}.info-row span{color:#e3edf7;font-size:clamp(13px,3.7vw,16px)}.info-row b{font-size:clamp(15px,4.2vw,18px);overflow-wrap:anywhere}
+.val-da{display:inline-block;padding:1px 8px;border-radius:7px;background:#e0202c;color:#fff}.val-da-t{font-style:normal;color:#ff5a64}
+.warn-box{display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:12px 14px;border:1.5px solid;border-radius:16px;color:#fff}
+.warn-box>.ico{width:40px;height:40px}.warn-box b{display:block;font-size:clamp(17px,4.8vw,21px)}.warn-box span{font-size:clamp(13px,3.7vw,16px)}
+.warn-box.da{background:linear-gradient(180deg,#c22a3a,#8f1626);border-color:#ff7b88}.warn-box.wa{background:linear-gradient(180deg,#8a6400,#5a4000);border-color:#ffd21f}
+.opt-row{display:flex;align-items:center;gap:12px;width:100%;min-height:54px;margin-top:8px;padding:0 12px;border:1px solid #3c6a8e;border-radius:13px;background:#0a2136;color:#fff;font:500 clamp(15px,4.2vw,18px) system-ui;text-align:left}
+.opt-row span{flex:1}.opt-row .ico{width:26px;height:26px}.opt-row[aria-expanded=true] .chev{transform:rotate(90deg)}
+.opt-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.opt-item{display:flex;align-items:center;gap:8px;width:100%;padding:9px 10px;border:1px solid #2c5373;border-radius:11px;background:#071a2b;color:#fff;text-align:left;font:inherit}
+.opt-item>span:first-child{flex:1;min-width:0}.opt-item b{display:block}.opt-item small{display:block;color:var(--mu);font-size:12px}
+.opt-note{margin:10px 0 0;font-size:12px;color:var(--mu)}
+.edit-row{display:grid;grid-template-columns:30px minmax(86px,.62fr) minmax(0,1fr);align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #2c5373}
+.edit-row:last-child{border-bottom:0}.edit-row .ico{width:26px;height:26px}.edit-row label{font-size:clamp(15px,4.2vw,18px)}
+.edit-row input,.edit-row select{min-height:48px;border-color:#5d87ab;background:#0b2238;border-radius:12px;font-weight:700}
+.edit-qty{display:flex;align-items:center;gap:8px}.edit-qty .stepper,.edit-qty .unit-field{flex:1;min-width:0}.edit-qty .unit{flex:none;min-width:52px;padding:12px 10px;border:1px solid #5d87ab;border-radius:12px;background:#0b2238;font-weight:700}
+.edit-row .stepper input{min-height:40px;border:0;background:transparent}.edit-row .unit-field input{border:0;background:transparent}
+.edit-actions .row .btn{display:flex;align-items:center;justify-content:center;min-height:54px;font-size:clamp(15px,4.3vw,18px)}
+.edit-actions .row .btn.sec{border:1.5px solid #fff;background:#0a2a47;color:#fff}
+#bEditDelete{display:flex;align-items:center;justify-content:center;width:100%;margin-top:10px;min-height:46px}
 </style>
 </head>
 <body>
@@ -487,27 +538,38 @@ header .hdr-in.interna .header-bell{display:none}
 </section>
 
 <section class="vista" id="v-detail">
-  <div class="operator-page-intro"><span class="operator-page-icon" aria-hidden="true">📋</span><div><h2 id="detailProductName">Detalhe do registro</h2><p id="detailProductMeta">Informações do produto e do lote</p></div></div>
-  <div class="card" id="detailContent"></div>
-  <div class="card"><h3>Mais opções</h3><div id="detailOtherLots" class="operator-list"></div><p class="ean" id="detailHistoryNote">O histórico completo depende dos eventos disponibilizados pelo servidor.</p></div>
-  <button class="btn big" id="bDetailEdit" type="button">✎ Editar registro</button>
+  <div class="prod-head"><span class="reg-thumb" id="detailThumb"></span><div class="prod-head-copy"><h2 id="detailProductName">Detalhe do registro</h2><p id="detailProductMeta"></p></div><span class="chip" id="detailStatus"></span></div>
+  <div class="card info-card" id="detailContent"></div>
+  <div class="warn-box da" id="detailWarning" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4zM12 10v4.5M12 17.3v.2"/></svg><div><b>Atenção!</b><span id="detailWarningText"></span></div></div>
+  <div class="card act-card" id="detailActions"><h3>Ações</h3><button class="btn big reg-save" id="bDetailEdit" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 19 1-4L16.5 4.5l3 3L9 18zM14.5 6.5l3 3"/></svg><span>Editar registro</span></button></div>
+  <div class="card act-card"><h3>Mais opções</h3>
+    <button class="opt-row" id="bDetailHistory" type="button" aria-expanded="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.5-5.8M4 5v4h4M12 8v4.5l3 1.5"/></svg><span>Histórico do produto</span><svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+    <div id="detailHistoryList" class="opt-list" hidden></div>
+    <button class="opt-row" id="bDetailSameLot" type="button" aria-expanded="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4 8.5 4.2L12 12.4 3.5 8.2zM3.5 12.2 12 16.4l8.5-4.2M3.5 16.2 12 20.4l8.5-4.2"/></svg><span>Outros registros do lote</span><svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+    <div id="detailOtherLots" class="opt-list" hidden></div>
+    <p class="opt-note" id="detailHistoryNote"></p>
+  </div>
 </section>
 
 <section class="vista" id="v-edit">
-  <div class="operator-page-intro"><span class="operator-page-icon" aria-hidden="true">✎</span><div><h2>Editar registro</h2><p id="editProductMeta">Confira os dados do lote antes de salvar.</p></div></div>
-  <div class="card"><div class="operator-form-grid" id="editProdFields">
-    <div><label class="f" for="edLote">Lote</label><input id="edLote" autocomplete="off"></div>
-    <div><label class="f" for="edVal">Validade</label><input id="edVal" type="date"></div>
-    <div><label class="f" for="edQtd">Quantidade</label><input id="edQtd" type="number" min="0" step="any"></div>
-    <div><label class="f" for="edSetor">Setor</label><select id="edSetor"><option value="">Selecione</option><option>Açougue</option><option>Laticínios</option><option>Padaria</option><option>Salgados</option><option>FLV</option><option>Mercearia</option></select></div>
-  </div><div class="operator-form-grid" id="editPereFields" style="display:none">
-    <div><label class="f" for="edSif">Lote / SIF</label><input id="edSif" autocomplete="off"></div>
-    <div><label class="f" for="edPereVal">Validade</label><input id="edPereVal" type="text" inputmode="numeric" placeholder="dd/mm/aaaa"></div>
-    <div><label class="f" for="edPeso">Peso / quantidade (kg)</label><input id="edPeso" type="number" min="0" step="0.001"></div>
-    <div><label class="f" for="edPereSetor">Setor</label><select id="edPereSetor"><option value="">Selecione</option><option>Açougue</option><option>Laticínios</option><option>Padaria</option><option>Salgados</option><option>FLV</option><option>Mercearia</option></select></div>
-  </div><div class="aviso wa">A alteração deve refletir a conferência física do produto.</div>
-    <div class="row"><button class="btn sec" id="bEditCancel" type="button">✕ Cancelar</button><button class="btn perigo" id="bEditDelete" type="button">Excluir registro</button><button class="btn" id="bEditSave" type="button">💾 Salvar alterações</button></div>
+  <div class="prod-head"><span class="reg-thumb" id="editThumb"></span><div class="prod-head-copy"><h2 id="editProductName">Editar registro</h2><p id="editProductMeta"></p></div><span class="chip" id="editStatus"></span></div>
+  <div class="card edit-card"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 19 1-4L16.5 4.5l3 3L9 18zM14.5 6.5l3 3"/></svg>Dados do registro</h3>
+    <div class="edit-rows" id="editProdFields">
+      <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14M7.5 5v14M10.5 5v14M14 5v14M17 5v14M20 5v14"/></svg><label for="edLote">Lote *</label><input id="edLote" autocomplete="off"></div>
+      <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg><label for="edVal">Validade *</label><input id="edVal" type="date"></div>
+      <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg><label for="edQtd">Quantidade *</label><div class="edit-qty"><div class="stepper"><button type="button" id="edQtdMenos" aria-label="Diminuir quantidade"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><input id="edQtd" type="number" min="0" step="any"><button type="button" id="edQtdMais" aria-label="Aumentar quantidade"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div><span class="unit">un.</span></div></div>
+      <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5V20h16v-9.5M3 6.5 4.5 4h15L21 6.5V8a2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0A2.2 2.2 0 0 1 3 8zM9.5 20v-5h5v5"/></svg><label for="edSetor">Setor *</label><select id="edSetor"><option value="">Selecione</option><option>Açougue</option><option>Laticínios</option><option>Padaria</option><option>Salgados</option><option>FLV</option><option>Mercearia</option></select></div>
+    </div>
+    <div class="edit-rows" id="editPereFields" style="display:none">
+      <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14M7.5 5v14M10.5 5v14M14 5v14M17 5v14M20 5v14"/></svg><label for="edSif">Lote / SIF</label><input id="edSif" autocomplete="off"></div>
+      <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg><label for="edPereVal">Validade *</label><input id="edPereVal" type="text" inputmode="numeric" placeholder="dd/mm/aaaa"></div>
+      <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.5 10.5h-13zM9 9a3 3 0 0 1 6 0M12 13.5v-2"/></svg><label for="edPeso">Peso *</label><div class="edit-qty"><div class="unit-field"><input id="edPeso" type="number" min="0" step="0.001"><span>kg</span></div></div></div>
+      <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5V20h16v-9.5M3 6.5 4.5 4h15L21 6.5V8a2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0A2.2 2.2 0 0 1 3 8zM9.5 20v-5h5v5"/></svg><label for="edPereSetor">Setor *</label><select id="edPereSetor"><option value="">Selecione</option><option>Açougue</option><option>Laticínios</option><option>Padaria</option><option>Salgados</option><option>FLV</option><option>Mercearia</option></select></div>
+    </div>
   </div>
+  <div class="warn-box wa"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4zM12 10v4.5M12 17.3v.2"/></svg><div><b>Atenção!</b><span>A alteração deve refletir a conferência física do produto.</span></div></div>
+  <div class="card edit-actions"><div class="row"><button class="btn sec" id="bEditCancel" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg><span>Cancelar</span></button><button class="btn" id="bEditSave" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/></svg><span>Salvar alterações</span></button></div>
+    <button class="btn perigo" id="bEditDelete" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M9.5 7V4.5h5V7M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg><span>Excluir registro</span></button></div>
 </section>
 
 <!-- ═════════ PERECÍVEIS ═════════ -->
@@ -535,9 +597,19 @@ header .hdr-in.interna .header-bell{display:none}
 
 <!-- ═════════ ALERTAS COMPARTILHADOS ═════════ -->
 <section class="vista" id="v-alertas">
-  <div class="operator-page-intro"><span class="operator-page-icon" aria-hidden="true">🔔</span><div><h2 id="alertViewTitle">Alertas da loja</h2><p id="alertViewSubtitle">Acompanhe produtos vencidos e próximos do vencimento.</p></div></div>
+  <div class="operator-page-intro"><span class="operator-page-icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 6-2.5 6.5-2.5 8.5h17c0-2-2.5-2.5-2.5-8.5M10 20.5h4"/></svg></span><div><h2 id="alertViewTitle">Alertas da loja</h2><p id="alertViewSubtitle">Acompanhe produtos vencidos e próximos do vencimento.</p></div></div>
   <div class="operator-tabs" id="alertViewTabs" role="tablist" aria-label="Alertas e notificações"><button class="on" type="button" data-alert-view="alerts" aria-pressed="true">Alertas</button><button type="button" data-alert-view="notifications" aria-pressed="false">Notificações</button></div>
-  <div class="card" id="alertasMain"><p style="margin:0;color:var(--mu);font-size:13px">Validades recebidas do Supabase para a loja ativa. Os alertas internos são compartilhados com todos os usuários vinculados.</p><div id="alertasResumo" class="tiles" style="margin-top:12px"></div><div id="listaAlertasValidade"></div></div>
+  <div id="alertasMain">
+    <div class="alert-counters">
+      <button type="button" class="alert-counter da" data-alert-jump="expired"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg><b id="alertCountVenc">0</b><span>Vencidos</span></button>
+      <button type="button" class="alert-counter wa" data-alert-jump="soon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4zM12 10v4.5M12 17.3v.2"/></svg><b id="alertCountProx">0</b><span>A vencer</span></button>
+      <button type="button" class="alert-counter in" data-alert-jump="pending"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4 4V20.5H7zM14 3.5v4h4M9.5 12h6M9.5 15.5h6"/></svg><b id="alertCountPend">0</b><span>Pendências</span></button>
+    </div>
+    <div class="alert-filters" id="alertFilters" role="group" aria-label="Filtrar alertas"><button type="button" class="on" data-alert-filter="all" aria-pressed="true">Todos</button><button type="button" data-alert-filter="expired" aria-pressed="false">Vencidos</button><button type="button" data-alert-filter="soon" aria-pressed="false">A vencer</button><button type="button" data-alert-filter="pending" aria-pressed="false">Pendências</button></div>
+    <div class="alert-sort" id="alertSortPanel" hidden><select id="alertSetor" aria-label="Filtrar por setor"><option value="">Todos os setores</option><option>Açougue</option><option>Laticínios</option><option>Padaria</option><option>Salgados</option><option>FLV</option><option>Mercearia</option></select><select id="alertOrdem" aria-label="Ordenar alertas"><option value="urg">Mais urgentes primeiro</option><option value="longe">Validade mais distante primeiro</option><option value="nome">Nome (A–Z)</option></select></div>
+    <div id="listaAlertasValidade" class="alert-list"></div>
+    <div class="row alert-actions"><button class="btn sec" id="bAlertExport" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 11l4.5 4.5 4.5-4.5M5 19.5h14"/></svg><span>Exportar relatório</span></button><button class="btn sec" id="bAlertSort" type="button" aria-expanded="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6.2 7.5V19l-3.6-2v-4.5z"/></svg><span>Filtrar / Ordenar</span></button></div>
+  </div>
   <div class="card" id="cardNotificacoes" style="display:none"><h2>Suas notificações</h2><div class="notification-tabs" id="notificationTabs" role="tablist" aria-label="Filtrar notificações"><button type="button" class="on" data-notif-filter="all" aria-pressed="true">Todas <span id="notifCountAll">0</span></button><button type="button" data-notif-filter="alerts" aria-pressed="false">⚠ Alertas <span id="notifCountAlerts">0</span></button><button type="button" data-notif-filter="system" aria-pressed="false">ⓘ Sistema <span id="notifCountSystem">0</span></button><button type="button" data-notif-filter="news" aria-pressed="false">Avisos <span id="notifCountNews">0</span></button></div><div id="listaNotificacoes"><div class="vazio">Carregando notificações…</div></div><div class="row notification-actions"><button class="btn sec" id="bLerNotificacoes" type="button">✓ Marcar todas como lidas</button><button class="btn sec" id="bAtualizarNotificacoes" type="button">↻ Atualizar</button></div></div>
   <div class="card" id="pushCard" style="display:none"><h2>Push neste aparelho</h2><p id="pushStatus" style="font-size:13px;color:var(--mu)">Verificando suporte…</p><button class="btn" id="bPushAtivar" type="button">Ativar notificações push</button><button class="btn sec" id="bPushDesativar" type="button" style="display:none">Desativar push neste aparelho</button></div>
 </section>
@@ -717,7 +789,7 @@ $('homeRecentList').onclick=function(e){if(e.target.closest('[data-home-record]'
 var vistaAtual='home',vistaAnterior='home',areaContextual='prod';
 var titulosTela={home:'Controle de Validade',reg:'Registrar Produto',prod:'Meus Registros',pere:'Perecíveis – Registros',alertas:'Alertas',aj:'Ajustes',detail:'Detalhe do registro',edit:'Editar registro'};
 var subtitulosTela={reg:'Produtos e perecíveis',prod:'Produtos (Industrializados)',pere:'Produtos perecíveis da loja',alertas:'Validades e notificações',aj:'Área do Operador',detail:'Informações do lote',edit:'Dados do registro'};
-function mostrarVisaoAlertas(v){var notif=v==='notifications';$('alertasMain').style.display=notif?'none':'';$('cardNotificacoes').style.display=notif?'':'none';$('pushCard').style.display=notif?'':'none';
+function mostrarVisaoAlertas(v){var notif=v==='notifications';$('v-alertas').classList.toggle('alerts-view',!notif);$('alertasMain').style.display=notif?'none':'';$('cardNotificacoes').style.display=notif?'':'none';$('pushCard').style.display=notif?'':'none';
   document.querySelectorAll('#alertViewTabs [data-alert-view]').forEach(function(b){var on=b.dataset.alertView===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
   if($('screenTitle'))$('screenTitle').textContent=notif?'Notificações':'Alertas';}
 function mostrarVistaAjustes(v){var perfil=v==='profile';$('profileArea').style.display=perfil?'':'none';$('preferencesArea').style.display=perfil?'none':'';
@@ -926,29 +998,47 @@ function ordenar(ls){return ls.slice().sort(function(a,b){return (a.val||'9').lo
 var registroContexto=null;
 function formatadoEm(v){if(!v)return '—';var d=new Date(v);return isNaN(d.getTime())?'—':d.toLocaleString('pt-BR');}
 function podeEditarLote(l){if(!sbOn())return true;var proprio=!!(SESS&&SESS.uid&&l.created_by===SESS.uid),papel=papelAtual();return ['analista','gerente','admin'].includes(papel)||(['operador','assistente'].includes(papel)&&proprio);}
+function dataHoraRef(v){if(!v)return '—';var d=new Date(v);if(isNaN(d.getTime()))return '—';return d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
+function linhaInfo(i,rotulo,valor){return '<div class="info-row">'+ic(i)+'<span>'+rotulo+'</span><b>'+valor+'</b></div>';}
+function valorValidade(v){var x=seloValidade(v);return x.c==='da'?'<span class="val-da">'+fdata(v)+'</span> <em class="val-da-t">('+esc(x.t)+')</em>':fdata(v);}
+function avisoDetalhe(v){var n=dias(v),box=$('detailWarning');if(n!==null&&n<0){box.className='warn-box da';$('detailWarningText').textContent='Produto com validade expirada. É necessário realizar o tratamento conforme o procedimento da loja.';box.hidden=false;}
+  else if(n!==null&&n<=D.aj.dias){box.className='warn-box wa';$('detailWarningText').textContent=n===0?'Este registro vence hoje.':'Este registro vence em '+n+' dia'+(n>1?'s':'')+'.';box.hidden=false;}else box.hidden=true;}
+function itemHistorico(attrs,titulo,r){var x=seloValidade(r.val);return '<button class="opt-item" type="button" '+attrs+'><span><b>'+esc(titulo)+'</b><small>Validade '+fdata(r.val)+' · registrado em '+formatadoEm(r.criado||r.criado_em)+' por '+esc(r.created_by_nome||'usuário não identificado')+'</small></span><span class="chip '+x.c+'">'+chipHtml(x)+'</span></button>';}
+function fimDetalhe(r,podeEditar){['detailHistoryList','detailOtherLots'].forEach(function(i){$(i).hidden=true;});['bDetailHistory','bDetailSameLot'].forEach(function(i){$(i).setAttribute('aria-expanded','false');});
+  $('detailHistoryNote').textContent='Registro criado em '+formatadoEm(r.criado||r.criado_em)+'. O histórico de alterações não é armazenado localmente.';
+  $('bDetailEdit').hidden=!podeEditar;$('detailActions').hidden=!podeEditar;pintarChip($('detailStatus'),seloValidade(r.val));avisoDetalhe(r.val);ir('detail');}
+function alternarOpcao(botao,lista){var l=$(lista);l.hidden=!l.hidden;$(botao).setAttribute('aria-expanded',l.hidden?'false':'true');}
+$('bDetailHistory').onclick=function(){alternarOpcao('bDetailHistory','detailHistoryList');};
+$('bDetailSameLot').onclick=function(){alternarOpcao('bDetailSameLot','detailOtherLots');};
 function abrirDetalheLote(id,ean){var p=D.prod[ean],l=p&&p.lotes.filter(function(x){return x.id===id;})[0];if(!l)return;var c=detalheProduto(ean);registroContexto={tipo:'lote',id:id,ean:ean};
-  $('detailProductName').textContent=c.nome||ean;$('detailProductMeta').textContent='EAN: '+ean+' · '+(c.marca||'Produto industrializado');
-  $('detailContent').innerHTML='<h3>Informações do lote</h3><p><b>Lote</b><br>'+esc(l.lote||'—')+'</p><p><b>Validade</b><br>'+fdata(l.val)+' · '+status(l.val)+'</p><p><b>Quantidade registrada</b><br>'+esc(l.qtd)+' un.</p><p><b>Setor</b><br>'+esc(l.setor||'Não informado')+'</p><p><b>Data do registro</b><br>'+formatadoEm(l.criado||l.criado_em)+'</p><p><b>Registrado por</b><br>'+esc(l.created_by_nome||'Usuário não identificado')+'</p>';
-  var outros=ordenar(p.lotes).filter(function(x){return x.id!==id;});$('detailOtherLots').innerHTML=outros.map(function(x){return '<button class="btn sec" type="button" data-detail-lote="'+esc(x.id)+'" data-ean="'+esc(ean)+'">Lote '+esc(x.lote||'—')+' · '+fdata(x.val)+' · '+status(x.val)+'</button>';}).join('')||'<div class="operator-empty">Não há outros lotes deste produto.</div>';
-  $('detailHistoryNote').textContent='Registro criado em '+formatadoEm(l.criado||l.criado_em)+'. O histórico de alterações não é armazenado localmente.';$('bDetailEdit').hidden=!podeEditarLote(l);ir('detail');}
+  $('detailProductName').textContent=c.nome||ean;$('detailProductMeta').textContent='EAN: '+ean+(c.marca?' · '+c.marca:'');$('detailThumb').innerHTML=miniatura(c.img,'lote');
+  $('detailContent').innerHTML='<h3>Informações do lote</h3>'+linhaInfo('bar','Lote',esc(l.lote||'—'))+linhaInfo('cal','Validade',valorValidade(l.val))+linhaInfo('box','Quantidade registrada',esc(l.qtd)+' un.')+linhaInfo('store','Setor',esc(l.setor||'Não informado'))+linhaInfo('clock','Data do registro',dataHoraRef(l.criado||l.criado_em))+linhaInfo('user','Registrado por',esc(l.created_by_nome||'Usuário não identificado'));
+  var outros=ordenar(p.lotes).filter(function(x){return x.id!==id;}),attr=function(x){return 'data-detail-lote="'+esc(x.id)+'" data-ean="'+esc(ean)+'"';};
+  $('detailHistoryList').innerHTML=outros.map(function(x){return itemHistorico(attr(x),'Lote '+(x.lote||'—')+' · '+x.qtd+' un.',x);}).join('')||'<div class="operator-empty">Não há outros registros deste produto.</div>';
+  $('detailOtherLots').innerHTML=outros.filter(function(x){return (x.lote||'')===(l.lote||'');}).map(function(x){return itemHistorico(attr(x),'Lote '+(x.lote||'—')+' · '+x.qtd+' un.',x);}).join('')||'<div class="operator-empty">Não há outros registros deste lote.</div>';
+  fimDetalhe(l,podeEditarLote(l));}
 function abrirDetalhePere(id){var r=D.pere.regs.filter(function(x){return x.id===id;})[0];if(!r)return;var it=D.pere.itens[r.cod]||{};registroContexto={tipo:'pere',id:id,cod:r.cod};
-  $('detailProductName').textContent=it.desc||('Código '+r.cod);$('detailProductMeta').textContent='Perecível · Código de balança: '+r.cod;
-  $('detailContent').innerHTML='<h3>Informações do lote</h3><p><b>Lote / SIF</b><br>'+esc(r.sif||'—')+'</p><p><b>Validade</b><br>'+fdata(r.val)+' · '+status(r.val)+'</p><p><b>Peso registrado</b><br>'+kg(r.peso)+' kg</p><p><b>Setor</b><br>'+esc(r.setor||'Não informado')+'</p><p><b>Data do registro</b><br>'+formatadoEm(r.criado||r.criado_em)+'</p><p><b>Registrado por</b><br>'+esc(r.created_by_nome||'Usuário não identificado')+'</p>';
-  $('detailOtherLots').innerHTML=D.pere.regs.filter(function(x){return x.cod===r.cod&&x.id!==id;}).map(function(x){return '<button class="btn sec" type="button" data-detail-pere="'+esc(x.id)+'">Lote '+esc(x.sif||'—')+' · '+fdata(x.val)+' · '+status(x.val)+'</button>';}).join('')||'<div class="operator-empty">Não há outros registros deste código.</div>';
-  $('detailHistoryNote').textContent='Registro criado em '+formatadoEm(r.criado||r.criado_em)+'. O histórico de alterações não é armazenado localmente.';var local=!sbOn()||!logado(),own=!!(SESS&&SESS.uid&&(r.created_by===SESS.uid||!r.created_by)),full=['analista','gerente','admin'].includes(papelAtual());$('bDetailEdit').hidden=!(local||full||own);ir('detail');}
+  $('detailProductName').textContent=it.desc||('Código '+r.cod);$('detailProductMeta').textContent='PLU: '+r.cod+' · Perecível';$('detailThumb').innerHTML=miniatura('','pere');
+  $('detailContent').innerHTML='<h3>Informações do lote</h3>'+linhaInfo('bar','Lote / SIF',esc(r.sif||'—'))+linhaInfo('cal','Validade',valorValidade(r.val))+linhaInfo('scale','Peso registrado',kg(r.peso)+' kg')+linhaInfo('store','Setor',esc(r.setor||'Não informado'))+linhaInfo('clock','Data do registro',dataHoraRef(r.criado||r.criado_em))+linhaInfo('user','Registrado por',esc(r.created_by_nome||'Usuário não identificado'));
+  var outros=D.pere.regs.filter(function(x){return x.cod===r.cod&&x.id!==id;}),attr=function(x){return 'data-detail-pere="'+esc(x.id)+'"';};
+  $('detailHistoryList').innerHTML=outros.map(function(x){return itemHistorico(attr(x),'Lote '+(x.sif||'—')+' · '+kg(x.peso)+' kg',x);}).join('')||'<div class="operator-empty">Não há outros registros deste produto.</div>';
+  $('detailOtherLots').innerHTML=outros.filter(function(x){return (x.sif||'')===(r.sif||'');}).map(function(x){return itemHistorico(attr(x),'Lote '+(x.sif||'—')+' · '+kg(x.peso)+' kg',x);}).join('')||'<div class="operator-empty">Não há outros registros deste lote.</div>';
+  var local=!sbOn()||!logado(),own=!!(SESS&&SESS.uid&&(r.created_by===SESS.uid||!r.created_by)),full=['analista','gerente','admin'].includes(papelAtual());fimDetalhe(r,local||full||own);}
 function abrirEdicaoLote(id,ean){var p=D.prod[ean],l=p&&p.lotes.filter(function(x){return x.id===id;})[0];if(!l)return;if(!podeEditarLote(l)){toast('Você só pode editar suas próprias inserções');return;}
-  registroContexto={tipo:'lote',id:id,ean:ean};$('editProdFields').style.display='';$('editPereFields').style.display='none';$('edLote').value=l.lote||'';$('edVal').value=l.val||'';$('edQtd').value=l.qtd||'';$('edSetor').value=l.setor||'';$('editProductMeta').textContent=(detalheProduto(ean).nome||ean)+' · Lote '+(l.lote||'—');ir('edit');}
+  registroContexto={tipo:'lote',id:id,ean:ean};$('editProdFields').style.display='';$('editPereFields').style.display='none';$('edLote').value=l.lote||'';$('edVal').value=l.val||'';$('edQtd').value=l.qtd||'';$('edSetor').value=l.setor||'';$('editProductName').textContent=detalheProduto(ean).nome||ean;$('editProductMeta').textContent='EAN: '+ean;$('editThumb').innerHTML=miniatura(detalheProduto(ean).img,'lote');pintarChip($('editStatus'),seloValidade(l.val));ir('edit');}
 function abrirEdicaoPere(id){var r=D.pere.regs.filter(function(x){return x.id===id;})[0];if(!r)return;var local=!sbOn()||!logado(),own=!!(SESS&&SESS.uid&&(r.created_by===SESS.uid||!r.created_by)),full=['analista','gerente','admin'].includes(papelAtual());if(!local&&!full&&!own){toast('Você só pode editar seus próprios registros');return;}
-  registroContexto={tipo:'pere',id:id,cod:r.cod};$('editProdFields').style.display='none';$('editPereFields').style.display='';$('edSif').value=r.sif||'';$('edPereVal').value=fdata(r.val);$('edPeso').value=r.peso||'';$('edPereSetor').value=r.setor||'';$('editProductMeta').textContent=(D.pere.itens[r.cod]||{}).desc||('Código '+r.cod);ir('edit');}
+  registroContexto={tipo:'pere',id:id,cod:r.cod};$('editProdFields').style.display='none';$('editPereFields').style.display='';$('edSif').value=r.sif||'';$('edPereVal').value=fdata(r.val);$('edPeso').value=r.peso||'';$('edPereSetor').value=r.setor||'';$('editProductName').textContent=(D.pere.itens[r.cod]||{}).desc||('Código '+r.cod);$('editProductMeta').textContent='PLU: '+r.cod+' · Perecível';$('editThumb').innerHTML=miniatura('','pere');pintarChip($('editStatus'),seloValidade(r.val));ir('edit');}
 document.addEventListener('click',function(e){var b;
   if((b=e.target.closest('[data-register-ean]'))){if(!pode('registrar')){toast('Seu perfil não permite registrar produtos');return;}mostrarEscolhaRegistro();ir('reg');$('bTipoIndustrial').click();$('tCodigo').value=b.dataset.registerEan;$('bBuscar').click();return;}
   if((b=e.target.closest('[data-edit-lote]'))){abrirEdicaoLote(b.dataset.editLote,b.dataset.ean);return;}
   if((b=e.target.closest('[data-detail-lote]'))){abrirDetalheLote(b.dataset.detailLote,b.dataset.ean);return;}
   if((b=e.target.closest('[data-edit-pere]'))){abrirEdicaoPere(b.dataset.editPere);return;}
   if((b=e.target.closest('[data-detail-pere]'))){abrirDetalhePere(b.dataset.detailPere);return;}
-  var tr=e.target.closest('tr[data-id][data-ean]');if(tr)abrirDetalheLote(tr.dataset.id,tr.dataset.ean);
+  var tr=e.target.closest('[data-id][data-ean]');if(tr)abrirDetalheLote(tr.dataset.id,tr.dataset.ean);
   var pe=e.target.closest('tr[data-pe]');if(pe)abrirDetalhePere(pe.dataset.pe);});
 $('bDetailEdit').onclick=function(){if(!registroContexto)return;if(registroContexto.tipo==='lote')abrirEdicaoLote(registroContexto.id,registroContexto.ean);else abrirEdicaoPere(registroContexto.id);};
+function passoEdQtd(d){$('edQtd').value=Math.max(1,Math.round(num($('edQtd').value))+d);}
+$('edQtdMenos').onclick=function(){passoEdQtd(-1);};$('edQtdMais').onclick=function(){passoEdQtd(1);};
 $('bEditCancel').onclick=function(){if(registroContexto){ir('detail');vistaAnterior=areaContextual;}else ir(vistaAnterior||'home');};
 $('bEditSave').onclick=function(){if(!registroContexto)return;var ctx=registroContexto;
   if(ctx.tipo==='lote'){var p=D.prod[ctx.ean],l=p&&p.lotes.filter(function(x){return x.id===ctx.id;})[0];if(!l)return;if(!podeEditarLote(l)){toast('Você só pode editar suas próprias inserções');return;}
@@ -1121,15 +1211,40 @@ function renderListaNotificacoes(){
 }
 $('notificationTabs').onclick=function(e){var b=e.target.closest('[data-notif-filter]');if(!b)return;filtroNotificacoes=b.dataset.notifFilter;renderListaNotificacoes();};
 $('bAtualizarNotificacoes').onclick=carregarNotificacoes;
-function renderAlertas(){
-  var itens=todosRegistros().map(function(x){var n=dias(x.reg.val);return {reg:x.reg,nome:x.nome,dias:n};})
-    .filter(function(x){return x.dias!==null&&x.dias<=D.aj.dias;})
-    .sort(function(a,b){return a.dias-b.dias;});
-  var venc=itens.filter(function(x){return x.dias<0;}).length,proximos=itens.length-venc;
-  if($('alertasResumo'))$('alertasResumo').innerHTML='<div class="tile"><b>'+venc+'</b><span>Vencidos</span></div><div class="tile"><b>'+proximos+'</b><span>A vencer em até '+D.aj.dias+' dias</span></div>';
-  if($('listaAlertasValidade'))$('listaAlertasValidade').innerHTML=itens.map(function(x){var r=x.reg,detail=r.lote?'Lote '+r.lote:(r.sif?'SIF '+r.sif:'Registro '+r.id);return '<div class="aviso '+(x.dias<0?'da':'wa')+'"><b>'+esc(x.nome)+'</b><div>'+esc(detail)+' · '+proveniencia(r)+'</div><div>Validade: '+fdata(r.val)+' · '+(x.dias<0?'vencido há '+(-x.dias)+' dia(s)':x.dias===0?'vence hoje':'vence em '+x.dias+' dia(s)')+'</div></div>';}).join('')||'<div class="vazio">Nenhuma validade vencida ou próxima dentro do limite configurado.</div>';
+var IC={box:'<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/>',bar:'<path d="M4 5v14M7.5 5v14M10.5 5v14M14 5v14M17 5v14M20 5v14"/>',cal:'<rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/>',store:'<path d="M4 10.5V20h16v-9.5M3 6.5 4.5 4h15L21 6.5V8a2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0A2.2 2.2 0 0 1 3 8zM9.5 20v-5h5v5"/>',clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',user:'<circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/>',warn:'<path d="M12 4 2.8 19.5h18.4zM12 10v4.5M12 17.3v.2"/>',pencil:'<path d="m5 19 1-4L16.5 4.5l3 3L9 18zM14.5 6.5l3 3"/>',hist:'<path d="M4 12a8 8 0 1 0 2.5-5.8M4 5v4h4M12 8v4.5l3 1.5"/>',layers:'<path d="m12 4 8.5 4.2L12 12.4 3.5 8.2zM3.5 12.2 12 16.4l8.5-4.2M3.5 16.2 12 20.4l8.5-4.2"/>',chev:'<path d="m9 5 7 7-7 7"/>',x:'<path d="M6 6l12 12M18 6 6 18"/>',save:'<path d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/>',trash:'<path d="M5 7h14M9.5 7V4.5h5V7M7 7l1 13h8l1-13M10 11v6M14 11v6"/>',doc:'<path d="M7 3.5h7l4 4V20.5H7zM14 3.5v4h4M9.5 12h6M9.5 15.5h6"/>',dl:'<path d="M12 4v11M7.5 11l4.5 4.5 4.5-4.5M5 19.5h14"/>',filter:'<path d="M4 5h16l-6.2 7.5V19l-3.6-2v-4.5z"/>',plus:'<path d="M12 5v14M5 12h14"/>',minus:'<path d="M5 12h14"/>',scale:'<path d="M4 9h16l-1.5 10.5h-13zM9 9a3 3 0 0 1 6 0M12 13.5v-2"/>',meat:'<path d="M3.5 12.5c0-4.4 4.3-7.5 9.6-7.5 4.3 0 7.4 2.1 7.4 5.1 0 2.2-1.4 3.4-3.5 4.2-2 .8-3.1 1.8-4.8 3.5-1.3 1.3-3.5 1.5-5.5.5-2-1-3.2-3-3.2-5.8z"/><circle cx="14.6" cy="10" r="1.9"/>'};
+function ic(n,c){return '<svg class="ico'+(c?' '+c:'')+'" viewBox="0 0 24 24" aria-hidden="true">'+IC[n]+'</svg>';}
+function miniatura(img,tipo){return (img?'<img src="'+esc(img)+'" alt="" onerror="this.remove()">':'')+ic(tipo==='pere'?'meat':'box',tipo==='pere'?'meat':'');}
+/* selo de validade no padrão das referências */
+function seloValidade(v){var n=dias(v);if(n===null)return {c:'wa',t:'Sem data',i:'clock'};if(n<0)return {c:'da',t:'Vencido',i:'warn'};if(n===0)return {c:'da',t:'Vence hoje',i:'warn'};
+  if(n<=D.aj.dias)return {c:'wa',t:n+' dia'+(n>1?'s':''),i:'clock'};return {c:'ok',t:'Válido',i:''};}
+function chipHtml(x){return (x.i?ic(x.i):'')+esc(x.t);}
+function pintarChip(el,x){el.className='chip '+x.c;el.innerHTML=chipHtml(x);}
+/* Alertas: vencidos, a vencer (dentro do limite configurado) e pendências (registros
+   salvos no aparelho que ainda aguardam sincronização com o servidor). */
+var alertFiltro='all';
+function registrosAlerta(){var out=[];
+  Object.keys(D.prod).forEach(function(e){var p=D.prod[e],c=detalheProduto(e);(p.lotes||[]).forEach(function(l){out.push({tipo:'lote',id:l.id,ean:e,reg:l,nome:c.nome||e,img:c.img||'',ref:'Lote: '+(l.lote||'—'),pend:!l.rpcConfirmado&&filaTemRegistro('lote',l.id)});});});
+  D.pere.regs.forEach(function(r){var it=D.pere.itens[r.cod]||{};out.push({tipo:'pere',id:r.id,reg:r,nome:it.desc||('Código '+r.cod),img:'',ref:'Lote: '+(r.sif||'—'),pend:!r.rpcConfirmado&&filaTemRegistro('perecivel',r.id)});});
+  out.forEach(function(x){x.dias=dias(x.reg.val);x.venc=x.dias!==null&&x.dias<0;x.prox=x.dias!==null&&x.dias>=0&&x.dias<=D.aj.dias;});return out;}
+function alertasFiltrados(){var setor=$('alertSetor')?$('alertSetor').value:'',ordem=$('alertOrdem')?$('alertOrdem').value:'urg';
+  var itens=registrosAlerta().filter(function(x){if(setor&&x.reg.setor!==setor)return false;
+    return alertFiltro==='expired'?x.venc:alertFiltro==='soon'?x.prox:alertFiltro==='pending'?x.pend:(x.venc||x.prox||x.pend);});
+  var d=function(x){return x.dias===null?99999:x.dias;};
+  return itens.sort(function(a,b){return ordem==='nome'?a.nome.localeCompare(b.nome,'pt-BR'):ordem==='longe'?d(b)-d(a):d(a)-d(b);});}
+function renderAlertas(){if(!$('listaAlertasValidade'))return;var todos=registrosAlerta();
+  $('alertCountVenc').textContent=todos.filter(function(x){return x.venc;}).length;$('alertCountProx').textContent=todos.filter(function(x){return x.prox;}).length;$('alertCountPend').textContent=todos.filter(function(x){return x.pend;}).length;
+  document.querySelectorAll('#alertFilters [data-alert-filter]').forEach(function(b){var on=b.dataset.alertFilter===alertFiltro;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
+  $('listaAlertasValidade').innerHTML=alertasFiltrados().map(function(x){var cls=x.venc?'da':x.prox?'wa':'in',selo=(x.venc||x.prox)?seloValidade(x.reg.val):{c:'in',t:'Pendente',i:'doc'};
+    return '<button type="button" class="alert-card '+cls+'" '+(x.tipo==='lote'?'data-detail-lote="'+esc(x.id)+'" data-ean="'+esc(x.ean)+'"':'data-detail-pere="'+esc(x.id)+'"')+'><span class="alert-thumb">'+miniatura(x.img,x.tipo)+'</span><span class="alert-copy"><b>'+esc(x.nome)+'</b><small>'+esc(x.ref)+'</small><small class="alert-date">'+ic('cal')+'Validade: '+fdata(x.reg.val)+'</small></span><span class="chip '+selo.c+'">'+chipHtml(selo)+'</span>'+ic('chev','chev')+'</button>';}).join('')
+    ||'<div class="operator-empty">'+(alertFiltro==='pending'?'Nenhum registro aguardando sincronização.':'Nenhuma validade vencida ou próxima dentro do limite configurado.')+'</div>';
   atualizarBadgeAlertas();
 }
+$('alertFilters').onclick=function(e){var b=e.target.closest('[data-alert-filter]');if(!b)return;alertFiltro=b.dataset.alertFilter;renderAlertas();};
+document.querySelectorAll('[data-alert-jump]').forEach(function(b){b.onclick=function(){alertFiltro=b.dataset.alertJump;renderAlertas();};});
+$('bAlertSort').onclick=function(){var p=$('alertSortPanel');p.hidden=!p.hidden;this.setAttribute('aria-expanded',p.hidden?'false':'true');};
+$('alertSetor').onchange=$('alertOrdem').onchange=function(){renderAlertas();};
+$('bAlertExport').onclick=function(){var itens=alertasFiltrados();if(!itens.length){toast('Nenhum alerta para exportar');return;}
+  var t='*'+CFG.nome+' — Alertas* ('+new Date().toLocaleDateString('pt-BR')+')\n';itens.forEach(function(x){t+='\n• '+x.nome+' — '+x.ref+' — validade '+fdata(x.reg.val)+' — '+(x.venc?'VENCIDO':x.prox?(x.dias===0?'vence hoje':'vence em '+x.dias+' dia(s)'):'pendente de sincronização')+(x.reg.setor?' — '+x.reg.setor:'');});compartilhar(t);};
 function atualizarBadgeAlertas(){var b=$('alertBadge');if(!b)return;var pend=notificacoesCache.filter(function(n){return !n.lida_em;}).length,local=todosRegistros().filter(function(x){var n=dias(x.reg.val);return n!==null&&n<=D.aj.dias;}).length,qt=Math.max(pend,local);b.textContent=qt>99?'99+':String(qt);b.style.display=qt?'inline-flex':'none';var hb=$('homeBellBadge'),ha=$('homeAlertsBadge');[hb,ha].forEach(function(x){if(x){x.textContent=qt>99?'99+':String(qt);x.style.display=qt?'':'none';}});}
 function carregarNotificacoes(){if(!sbOn()||!logado()||!SESS.lojaId){$('listaNotificacoes').innerHTML='<div class="vazio">Entre e selecione uma loja para carregar notificações compartilhadas.</div>';return Promise.resolve([]);}
   $('listaNotificacoes').innerHTML='<div class="vazio"><span class="gira"></span> carregando…</div>';
