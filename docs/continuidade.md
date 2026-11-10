@@ -156,10 +156,50 @@ em `src/app.html`, dentro de `#preferencesArea`):
 3. Itens que exigem backend (cada um com migration, RLS e testes próprios): 2FA, sessões ativas, bloqueio de usuário,
    status de loja, categorias, importação XLSX, perdas e avarias, agendamento de envios.
 
-**Decisões que precisam do Jonatas antes de construir**
-- Itens sem backend aparecem como "em breve" ou ficam fora do menu até existirem? (até aqui a regra foi: nada de controle decorativo)
-- Gerente e analista usam esta mesma área (com menos itens) ou só o administrador? (o Catálogo ele definiu como só admin)
-- O visual dos cartões é claro (fundo branco) sobre fundo escuro — confirmar que é isso mesmo, já que a Área do Operador é toda escura.
+**Decisões do Jonatas (10/11, 11:11) — CONFIRMADAS**
+1. O que não existe **deve ser construído** (não usar "em breve", não deixar fora do menu para sempre).
+2. Gerente e analista usam a **mesma área**, com **menos acesso por hierarquia**.
+3. O visual **segue o layout do operador** (escuro), não os cartões brancos da imagem.
+4. Diretriz: "quanto mais completa a área do administrador, mais as outras áreas ganham acesso" — construir primeiro o
+   administrador completo e depois liberar partes para os outros perfis.
+
+**Estado em 10/11 11:15: NENHUM CÓDIGO DA ÁREA DO ADMINISTRADOR FOI ESCRITO.** O Claude parou aqui por limite de uso.
+A branch `docs/continuidade-admin` (PR #33) contém só documentação.
+
+**Desenho pronto para a etapa 1 (casca de navegação), ainda não implementado**
+- Em `#settingsRefArea`, no topo, um cartão `#sysMenuCard` "Ajustes do Sistema — Configurações, acessos e manutenção",
+  escondido por padrão e visível para analista, gerente e admin (`papelAtual()`; no modo local o papel é `admin`).
+- Dentro dele `#sysMenu`, com um botão `.opt-row[data-sys="<chave>"]` por seção, gerado a partir de uma lista no JS:
+
+| chave | título | quem vê | o que abre |
+|---|---|---|---|
+| `perfil` | Perfil e Conta | analista, gerente, admin | `mostrarVistaAjustes('profile')` |
+| `usuarios` | Usuários e Permissões | analista, gerente, admin | subpágina com `#cardUsuarios` |
+| `lojas` | Lojas (Filiais) | admin | subpágina com `#cardLojasAdmin` |
+| `catalogo` | Catálogo de Produtos | admin | `ir('catalogo')` (usar `id="cfgCatalogo"` neste botão e remover `#cfgAdminCard`) |
+| `pereciveis` | Perecíveis e Validade | analista, gerente, admin | subpágina com os cartões "Etiqueta da balança" e "Alertas" |
+| `relatorios` | Relatórios e Indicadores | analista, gerente, admin | subpágina nova com botões que acionam `#bCsvProd`, `#bRelProd`, `#bCsvPe`, `#bRelPe`, `#bAlertExport` |
+| `auditoria` | Auditoria do Sistema | admin | subpágina com `#cardAuditoria` |
+| `config` | Configuração Geral | gerente, admin | subpágina com "Busca do nome do produto", "Alertas" e `#cardConta` |
+| `dados` | Dados e Manutenção | admin | subpágina com "Backup" e `#cardSolicitacoes` |
+| `sobre` | Sobre o Sistema | analista, gerente, admin | `mostrarVistaAjustes('about')` |
+
+- Subpágina **sem mover os cartões**: marcar cada cartão de `#preferencesArea` com `data-sec="..."` e, na subpágina,
+  pôr `data-sec-ativa="<chave>"` em `#preferencesArea` com CSS escondendo os cartões das outras seções. Na tela normal de
+  Configurações nada muda, então os testes que usam `#aDias`, `#aCosmos`, `#bExp` etc. continuam passando.
+- `mostrarVistaAjustes` ganha a vista `'sys'` (título = nome da seção; abas escondidas; voltar retorna a Configurações).
+- Testes a escrever primeiro: admin vê 10 itens; gerente vê 6 (sem lojas, catálogo, auditoria, dados); analista vê 5
+  (sem configuração geral); operador não vê o cartão; em `pereciveis` `#aDias` aparece e `#bExp` não; em `dados` o inverso.
+- Testes existentes a ajustar ao remover `#cfgAdminCard`: `test/operator-ui.test.js` (linhas com `cfgAdminCard`) —
+  `#cfgCatalogo` continua existindo, agora dentro do menu.
+- A hierarquia acima é **proposta do Claude**, não foi confirmada item a item pelo Jonatas.
+
+**Etapas seguintes (cada uma em PR própria; as que mexem em banco precisam de migration + RLS + testes de contrato)**
+2. Auditoria: filtros por usuário/loja/período e exportação. Relatórios: validade por período, registros por usuário, consolidado por loja.
+3. Usuários: bloqueios e afastamentos; tela de perfis de acesso. Lojas: status ativa/inativa.
+4. Catálogo: cadastrar/editar produto, categoria, setor/subsetor, importação XLSX. Dados: exportar XLSX, limpeza no servidor.
+5. Perfil: Meus Dados editável, 2FA (Supabase Auth MFA), sessões ativas. Configuração: modo offline como opção.
+6. Perdas e avarias; agendamento de envios; ambiente (produção/staging) em Sobre.
 
 **Cuidados**
 - Não mover controles sem ajustar/rodar a suíte: os testes clicam em `nav button[data-v="aj"]` e usam direto `#aDias`, `#aCosmos`,
@@ -191,3 +231,4 @@ em `src/app.html`, dentro de `#preferencesArea`):
 - 10/11 — Claude — Push: cartão de ativação movido para Configurações e visível a todos os perfis (teste cobre os 5); Notificações ganhou atalho para lá. Registrado o limite do servidor para perfis globais sem vínculo com a loja (seção 3.1.1).
 - 10/11 — Claude — Decisão: perfis globais recebem avisos de todas as lojas. Migration `alertas_escopo_global` + ajuste em `alertas/index.ts` + teste de contrato na PR #32. Nada aplicado/publicado em produção ainda.
 - 10/11 — Claude — PR #32 mesclada (`1da3e67`); migration `alertas_escopo_global` aplicada e conferida por MD5; função `alertas` v3 publicada e testada (public-key 200, dispatch 200). Pedido novo registrado: Área do Administrador (seção 7), não iniciada; imagem em `docs/referencias/area-administrador.jpg`.
+- 10/11 11:15 — Claude — **PAROU POR LIMITE DE USO.** Decisões do Jonatas sobre a Área do Administrador registradas (construir tudo; mesma área com hierarquia; visual do operador). Desenho da etapa 1 documentado na seção 7; **nenhum código da Área do Administrador foi escrito**. PR #33 (só documentação) aguarda merge. Próximo agente: começar pela etapa 1 da seção 7.
