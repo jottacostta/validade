@@ -154,3 +154,15 @@ test('alertas de validade são gerados diariamente pelo agendador do banco, sem 
   // a chamada é local ao banco: nenhuma requisição HTTP, cabeçalho de segredo ou token na migration
   assert.doesNotMatch(m, /net\.http_post|x-alertas-cron-secret|Bearer|eyJ/);
 });
+
+test('agendador diário dispara a função alertas (push) lendo endereço, chave e segredo do Vault', () => {
+  const m = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261110030000_agendador_dispara_push.sql'), 'utf8');
+  const sql = m.split('\n').filter(l => !l.trim().startsWith('--')).join('\n');
+  assert.match(sql, /cron\.schedule\(\s*'gerar-alertas-validade-diario',\s*'0 9 \* \* \*'/, 'mesmo job e horário (substitui o anterior)');
+  assert.match(sql, /net\.http_post\(/);
+  assert.match(sql, /"action":"dispatch"/);
+  for (const nome of ['alertas_function_url', 'alertas_anon_key', 'alertas_cron_secret']) assert.match(sql, new RegExp(`vault\\.decrypted_secrets where name = '${nome}'`), nome);
+  assert.match(sql, /'x-alertas-cron-secret', \(select decrypted_secret/);
+  // nada sensível nem específico do projeto no arquivo
+  assert.doesNotMatch(sql, /eyJ|sb_publishable_|sb_secret_|supabase\.co|[0-9a-f]{40,}/);
+});
