@@ -13,12 +13,13 @@
 
 | Item | Estado |
 |---|---|
-| `main` | commit `5b02033` (merge da PR #31). Publicada no GitHub Pages: `jottacostta.github.io/validade/` |
+| `main` | commit `1da3e67` (merge da PR #32). Publicada no GitHub Pages: `jottacostta.github.io/validade/` |
 | PR #29 (layout Guanabara) | mesclada na branch da #22 em 10/11 |
 | PR #22 (backend Área do Operador + layout) | mesclada na `main` (`edb4bd6`) |
 | PR #30 (limpar notificações, senha pelo servidor, sessões, agendador) | mesclada na `main` (`4c16aa6`) |
 | PR #31 (quantidade espremida + auditoria 360/320 px) | mesclada na `main` (`5b02033`) |
-| **Branch `feat/catalogo-admin`** | **PR #32 aberta (Draft) — Catálogo do administrador (ver seção 4). Aguarda autorização de merge** |
+| PR #32 (Catálogo do administrador, push em Configurações, agendador do push, avisos para perfis globais) | mesclada na `main` (`1da3e67`) em 10/11, com autorização do Jonatas |
+| **Área do Administrador (seção 7)** | **NÃO INICIADA — próximo trabalho grande** |
 | PRs #19, #27, #28 (documentação) | abertas, não tocadas por Claude. Estão desatualizadas em relação ao que foi implementado |
 
 Donos de branch: desde 10/11 o Jonatas passou a **#22 e #29 para o Claude**. Se outro agente assumir,
@@ -32,13 +33,16 @@ Tudo abaixo foi aplicado com autorização explícita do Jonatas na sessão de 1
   - `offline_rpc_idempotency` — `registrar_lote` / `registrar_perecivel` idempotentes. Conferido: MD5 do corpo das funções em produção = arquivo do repositório.
   - `notificacoes_remocao_logica` — coluna `removida_em`; `authenticated` tem só `SELECT` e `UPDATE(lida_em, removida_em)`.
   - `agendar_alertas_validade` — `pg_cron`, job `gerar-alertas-validade-diario`, `0 9 * * *` (06:00 de Brasília).
+  - `alertas_escopo_global` — destinatários de `gerar_alertas_validade()` = vinculados + analista/gerente/admin de todas as lojas; políticas de `notificacoes` aceitam `private.tem_escopo_global()`. Conferido: MD5 de `prosrc` em produção = corpo do arquivo do repositório (`53253286…`).
   - `agendador_dispara_push` — o mesmo job passa a chamar a Edge Function `alertas` (`dispatch`) via `pg_net`, lendo endereço, chave pública e segredo do Vault.
 - **Edge Function `gerir-usuarios`**: versão 3. O arquivo publicado é um ponto de entrada de 1 linha que importa
   `supabase/functions/gerir-usuarios/index.ts` do repositório **fixado no commit `4c16aa6c6f68c0e7f47f6f7970111fe634624fb5`**.
   - Se o arquivo mudar na `main`, **é preciso publicar de novo** (`supabase functions deploy gerir-usuarios`), senão produção fica na versão antiga.
   - Teste feito: chamada sem usuário respondeu `401 {"error":"Sessão inválida"}` (a função inicializa).
   - **Não testado com usuário real:** `listar`, `criar`, `editar`, `trocar_senha_primeiro_acesso`, `trocar_senha`.
-- **Edge Function `alertas`**: versão 1 (09/11), não alterada. `VAPID_PUBLIC_KEY` está configurada (a função devolve a chave pública).
+- **Edge Function `alertas`**: versão 3, publicada em 10/11 pelo mesmo método da `gerir-usuarios` — ponto de entrada de 1 linha importando
+  `supabase/functions/alertas/index.ts` **fixado no commit `1da3e67d5fd77394d8ff16070144b0516b95a578`**. Se o arquivo mudar na `main`, publicar de novo.
+  Testes após publicar: `?action=public-key` → 200; `dispatch` → `200 {"notificacoes":2,"enviados":0,...}`.
 - **Extensões**: `pg_cron`, `pg_net` (instalada para teste; o Jonatas decidiu **manter**, é necessária para o push), `supabase_vault`.
 - **Vault**: `alertas_cron_secret`, `alertas_function_url`, `alertas_anon_key` (valores só no cofre; não estão no repositório).
 - **Segredos da função `alertas`** (painel): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `ALERTAS_CRON_SECRET` — todos presentes em 10/11.
@@ -61,34 +65,23 @@ no painel). `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` e `VAPID_SUBJECT` também co
       Só depois disso `enviados` passa de 0. **Ainda não testado em aparelho real.**
 - [ ] **[agente]** Em 11/11 depois das 09:00 UTC, conferir `cron.job_run_details` e `net._http_response`
       (esperado: status 200). Se o push falhar em aparelhos inscritos, olhar o campo `falhas` da resposta.
-- [ ] A migration acima está na branch `feat/catalogo-admin` (PR #32); o repositório só reflete a produção depois da merge.
+- [x] A migration está na `main` (PR #32 mesclada).
 - Se o segredo for trocado no painel, atualizar o mesmo valor no Vault (`vault.update_secret`), senão o job recebe 401.
 
-### 3.1.1 Avisos para perfis de escopo global — CÓDIGO PRONTO NA PR #32, **NÃO APLICADO EM PRODUÇÃO**
-**Decisão do Jonatas (10/11):** analista, gerente e administrador recebem avisos de **todas as lojas**;
-operador e assistente, só das lojas vinculadas.
+### 3.1.1 Avisos para perfis de escopo global — APLICADO EM PRODUÇÃO (10/11)
+**Decisão do Jonatas:** analista, gerente e administrador recebem avisos de **todas as lojas**; operador e assistente, só das vinculadas.
+- [x] Migration `alertas_escopo_global` aplicada (MD5 conferido) e função `alertas` v3 publicada.
+- [x] `dispatch` após a mudança gerou 2 avisos novos (destinatários globais), 0 push (nenhum aparelho inscrito).
+- [ ] Testar com usuário real: gerente/admin sem vínculo ativa o push em Configurações e recebe o aviso.
+- Atenção: administrador passa a receber avisos de todas as lojas — pode ser muito volume. Se o Jonatas reclamar,
+  a solução é preferência por usuário (não existe hoje).
+- `gerar_alertas_validade()` recusa quem não é `service_role`; por isso o agendador chama a Edge Function.
 
-Feito no repositório (branch `feat/catalogo-admin`):
-- `supabase/migrations/20261110040000_alertas_escopo_global.sql`: `gerar_alertas_validade()` passa a ter como
-  destinatários `loja_membros` ∪ (perfis `analista/gerente/admin` × todas as lojas); as políticas
-  `notificacoes_sel_own_store` e `notificacoes_upd_own_store` aceitam `private.tem_escopo_global()`
-  (continua `user_id = auth.uid()`).
-- `supabase/functions/alertas/index.ts`: `isMember()` aceita perfil global em qualquer loja existente (inscrição do push).
-- Teste de contrato garante que o corpo da função SQL só mudou no trecho dos destinatários.
+### 3.2 Catálogo do administrador — CONCLUÍDO (PR #32 mesclada)
+Somente o administrador vê (decisão do Jonatas). Ver seção 4. Falta apenas teste em aparelho real.
 
-Falta (precisa de autorização explícita do Jonatas para produção):
-- [ ] Aplicar a migration `alertas_escopo_global` no banco. Depois, conferir que o MD5 de `prosrc` de
-      `public.gerar_alertas_validade` em produção é igual ao corpo do arquivo (mesma técnica usada em `offline_rpc_idempotency`).
-- [ ] Publicar a Edge Function `alertas` (hoje versão 1, de 09/11). Sugestão: mesmo método da `gerir-usuarios` —
-      ponto de entrada de 1 linha importando o arquivo do repositório fixado em um commit da `main`; `verify_jwt` ligado.
-- [ ] Testar: um usuário gerente/admin sem vínculo ativa o push em uma loja e recebe o aviso no dia seguinte.
-- **A SQL desta migration não foi executada em nenhum banco** (só revisão por leitura e teste de contrato). A função TS
-  passou apenas por verificação de sintaxe.
-- Observação: `gerar_alertas_validade()` recusa quem não é `service_role`; por isso o agendador chama a Edge Function
-  e não a função SQL diretamente.
-
-### 3.2 Catálogo do administrador — EM ANDAMENTO (branch `feat/catalogo-admin`)
-Ver seção 4. Falta: abrir PR, CI verde, conferência visual e autorização de merge.
+### 3.2.1 Área do Administrador — NÃO INICIADA
+Ver seção 7 (plano detalhado e imagem de referência).
 
 ### 3.3 Itens das referências ainda não implementados
 - **Campos do perfil**: matrícula, data de admissão, setor de atuação, "Editar Perfil". Decisão proposta e não contestada:
@@ -127,7 +120,93 @@ Falta:
 - [x] PR #32 aberta para `main` (Draft).
 - [x] Conferência visual a 360 px feita em navegador de teste (entrada em Configurações e tela do Catálogo).
 - [x] **Decisão do Jonatas (10/11):** o Catálogo é **somente do administrador**. Gerente e analista não veem. Já é o comportamento implementado.
-- [ ] Perguntar "Posso fazer a merge?" — nunca mesclar sem autorização explícita.
+- [x] Merge autorizada pelo Jonatas e feita em 10/11 (`1da3e67`).
+
+## 7. Área do Administrador (pedido de 10/11 — NÃO INICIADO)
+
+Pedido do Jonatas: *"crie a área do administrador: tudo o que tem na área do operador mais o que está na imagem"*.
+Imagem de referência: `docs/referencias/area-administrador.jpg` ("Estrutura Definitiva da Área de Ajustes (Administrador)").
+
+**Layout da imagem:** cabeçalho "Controle de Validade / Área do Administrador" com sino; título "Ajustes do Sistema —
+Configurações, acessos e manutenção"; lista de 10 cartões **claros** (fundo branco, ícone colorido, título, subtítulo, seta);
+cada cartão abre uma subpágina com lista de itens no mesmo estilo; barra inferior igual à do operador, com "Ajustes" em amarelo.
+
+O que já existe no app para cada seção (todas as partes existentes estão hoje em Ajustes → "Configurações avançadas",
+em `src/app.html`, dentro de `#preferencesArea`):
+
+| Seção da imagem | Já existe | Não existe (precisa construir) |
+|---|---|---|
+| 1. Perfil e Conta | Perfil (`#profileArea`), Alterar Senha (`#passwordArea`), "Sair de todos os aparelhos" | Meus Dados editável, **2FA** (Supabase Auth MFA), lista de Sessões Ativas |
+| 2. Usuários e Permissões | `#cardUsuarios` (listar/criar/editar via função `gerir-usuarios`, vínculo com lojas) | Tela "Perfis de Acesso" (hoje a matriz é fixa no código), Bloqueios e Afastamentos |
+| 3. Lojas (Filiais) | `#cardLojasAdmin` ("Administração de lojas") — **verificar o que ele faz hoje** | Status ativa/inativa, gerenciar equipes |
+| 4. Catálogo de Produtos | Tela `#v-catalogo` (consulta + "+" para registrar) | Cadastrar/editar produto, categoria, setor/subsetor, importação XLSX |
+| 5. Perecíveis e Validade | Aba "Códigos" de perecíveis (`#pe-cad`), dias de alerta (`#aDias`), etiqueta da balança (`#aDig`, `#aValor`) | Regras de alerta por categoria, categorias de perecíveis |
+| 6. Relatórios e Indicadores | Planilha CSV e Relatório de texto em Meus Registros/Perecíveis/Alertas | Validade por período, registros por usuário, consolidado por loja, perdas e avarias, agendamento de envios |
+| 7. Auditoria do Sistema | `#cardAuditoria` (somente admin) + tabela `auditoria` + `auditar()` no app | Filtros por usuário/loja/período, exportação |
+| 8. Configuração Geral | Notificações (`#aNotif`), token Cosmos (`#aCosmos`), OCR (`#aOcr`), som/vibração | Parâmetros do sistema, "Integrações" como tela, **toggle de Modo Offline** (hoje o offline é automático) |
+| 9. Dados e Manutenção | Backup/restauração em JSON, "Apagar todos os dados" local, solicitações de exclusão | Importar produtos XLSX, exportar registros XLSX, limpeza de registros no servidor |
+| 10. Sobre o Sistema | `#aboutArea` (versão, plataforma) | Ambiente (Produção/Staging), suporte e documentação |
+
+**Ordem sugerida de implementação**
+1. **Casca de navegação** (só front-end, sem backend): para `papelAtual()==='admin'`, Ajustes abre "Ajustes do Sistema" com os
+   10 cartões; cada cartão abre uma subpágina que **reaproveita** os blocos existentes (mover os cartões de
+   `#preferencesArea` para as subpáginas certas, mantendo os IDs — muitos testes usam esses IDs).
+   Operador e demais perfis continuam com a tela atual de Configurações.
+2. Itens só de front-end: filtros/exportação da auditoria, relatórios a partir dos dados já sincronizados, "Sobre" com ambiente.
+3. Itens que exigem backend (cada um com migration, RLS e testes próprios): 2FA, sessões ativas, bloqueio de usuário,
+   status de loja, categorias, importação XLSX, perdas e avarias, agendamento de envios.
+
+**Decisões do Jonatas (10/11, 11:11) — CONFIRMADAS**
+1. O que não existe **deve ser construído** (não usar "em breve", não deixar fora do menu para sempre).
+2. Gerente e analista usam a **mesma área**, com **menos acesso por hierarquia**.
+3. O visual **segue o layout do operador** (escuro), não os cartões brancos da imagem.
+4. Diretriz: "quanto mais completa a área do administrador, mais as outras áreas ganham acesso" — construir primeiro o
+   administrador completo e depois liberar partes para os outros perfis.
+
+**Estado em 10/11 11:15: NENHUM CÓDIGO DA ÁREA DO ADMINISTRADOR FOI ESCRITO.** O Claude parou aqui por limite de uso.
+A branch `docs/continuidade-admin` (PR #33) contém só documentação.
+
+**Desenho pronto para a etapa 1 (casca de navegação), ainda não implementado**
+- Em `#settingsRefArea`, no topo, um cartão `#sysMenuCard` "Ajustes do Sistema — Configurações, acessos e manutenção",
+  escondido por padrão e visível para analista, gerente e admin (`papelAtual()`; no modo local o papel é `admin`).
+- Dentro dele `#sysMenu`, com um botão `.opt-row[data-sys="<chave>"]` por seção, gerado a partir de uma lista no JS:
+
+| chave | título | quem vê | o que abre |
+|---|---|---|---|
+| `perfil` | Perfil e Conta | analista, gerente, admin | `mostrarVistaAjustes('profile')` |
+| `usuarios` | Usuários e Permissões | analista, gerente, admin | subpágina com `#cardUsuarios` |
+| `lojas` | Lojas (Filiais) | admin | subpágina com `#cardLojasAdmin` |
+| `catalogo` | Catálogo de Produtos | admin | `ir('catalogo')` (usar `id="cfgCatalogo"` neste botão e remover `#cfgAdminCard`) |
+| `pereciveis` | Perecíveis e Validade | analista, gerente, admin | subpágina com os cartões "Etiqueta da balança" e "Alertas" |
+| `relatorios` | Relatórios e Indicadores | analista, gerente, admin | subpágina nova com botões que acionam `#bCsvProd`, `#bRelProd`, `#bCsvPe`, `#bRelPe`, `#bAlertExport` |
+| `auditoria` | Auditoria do Sistema | admin | subpágina com `#cardAuditoria` |
+| `config` | Configuração Geral | gerente, admin | subpágina com "Busca do nome do produto", "Alertas" e `#cardConta` |
+| `dados` | Dados e Manutenção | admin | subpágina com "Backup" e `#cardSolicitacoes` |
+| `sobre` | Sobre o Sistema | analista, gerente, admin | `mostrarVistaAjustes('about')` |
+
+- Subpágina **sem mover os cartões**: marcar cada cartão de `#preferencesArea` com `data-sec="..."` e, na subpágina,
+  pôr `data-sec-ativa="<chave>"` em `#preferencesArea` com CSS escondendo os cartões das outras seções. Na tela normal de
+  Configurações nada muda, então os testes que usam `#aDias`, `#aCosmos`, `#bExp` etc. continuam passando.
+- `mostrarVistaAjustes` ganha a vista `'sys'` (título = nome da seção; abas escondidas; voltar retorna a Configurações).
+- Testes a escrever primeiro: admin vê 10 itens; gerente vê 6 (sem lojas, catálogo, auditoria, dados); analista vê 5
+  (sem configuração geral); operador não vê o cartão; em `pereciveis` `#aDias` aparece e `#bExp` não; em `dados` o inverso.
+- Testes existentes a ajustar ao remover `#cfgAdminCard`: `test/operator-ui.test.js` (linhas com `cfgAdminCard`) —
+  `#cfgCatalogo` continua existindo, agora dentro do menu.
+- A hierarquia acima é **proposta do Claude**, não foi confirmada item a item pelo Jonatas.
+
+**Etapas seguintes (cada uma em PR própria; as que mexem em banco precisam de migration + RLS + testes de contrato)**
+2. Auditoria: filtros por usuário/loja/período e exportação. Relatórios: validade por período, registros por usuário, consolidado por loja.
+3. Usuários: bloqueios e afastamentos; tela de perfis de acesso. Lojas: status ativa/inativa.
+4. Catálogo: cadastrar/editar produto, categoria, setor/subsetor, importação XLSX. Dados: exportar XLSX, limpeza no servidor.
+5. Perfil: Meus Dados editável, 2FA (Supabase Auth MFA), sessões ativas. Configuração: modo offline como opção.
+6. Perdas e avarias; agendamento de envios; ambiente (produção/staging) em Sobre.
+
+**Cuidados**
+- Não mover controles sem ajustar/rodar a suíte: os testes clicam em `nav button[data-v="aj"]` e usam direto `#aDias`, `#aCosmos`,
+  `#bExp`, `#cardUsuarios` etc. Hoje `#preferencesArea` fica visível ao abrir Ajustes; se a casca esconder isso, os testes precisam
+  ser atualizados para navegar até a subpágina (sem enfraquecer asserções).
+- Autorização sempre validada no servidor (`AGENTS.md`): esconder menu não é segurança.
+- Conferir sempre em 360 px.
 
 ## 5. Como trabalhar neste repositório
 
@@ -151,3 +230,5 @@ Falta:
 - 10/11 — Claude — Decisão registrada: Catálogo somente para administrador (sem mudança de código). PR #32 segue aguardando autorização de merge.
 - 10/11 — Claude — Push: cartão de ativação movido para Configurações e visível a todos os perfis (teste cobre os 5); Notificações ganhou atalho para lá. Registrado o limite do servidor para perfis globais sem vínculo com a loja (seção 3.1.1).
 - 10/11 — Claude — Decisão: perfis globais recebem avisos de todas as lojas. Migration `alertas_escopo_global` + ajuste em `alertas/index.ts` + teste de contrato na PR #32. Nada aplicado/publicado em produção ainda.
+- 10/11 — Claude — PR #32 mesclada (`1da3e67`); migration `alertas_escopo_global` aplicada e conferida por MD5; função `alertas` v3 publicada e testada (public-key 200, dispatch 200). Pedido novo registrado: Área do Administrador (seção 7), não iniciada; imagem em `docs/referencias/area-administrador.jpg`.
+- 10/11 11:15 — Claude — **PAROU POR LIMITE DE USO.** Decisões do Jonatas sobre a Área do Administrador registradas (construir tudo; mesma área com hierarquia; visual do operador). Desenho da etapa 1 documentado na seção 7; **nenhum código da Área do Administrador foi escrito**. PR #33 (só documentação) aguarda merge. Próximo agente: começar pela etapa 1 da seção 7.
