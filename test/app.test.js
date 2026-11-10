@@ -643,17 +643,19 @@ tflaky('sync: produtos por loja guardam somente EAN e leem nome do catálogo glo
   await a.p.waitForFunction(() => { const d = JSON.parse(localStorage.getItem('validade_dados') || '{}'); return !!(d.prod && d.prod['789'] && d.cat && d.cat['789']); });
   const d = await a.salvo();
   assert.deepStrictEqual(Object.keys(d.prod['789']), ['lotes']);
-  await a.p.click('nav button[data-v="prod"]');
-  assert.ok((await a.p.textContent('#listaProd')).includes('Nome do catálogo'));
+  // produto sem lote não aparece mais em Meus Registros (fica no Catálogo do administrador); o nome continua vindo do catálogo global
+  assert.strictEqual(d.cat['789'].nome, 'Nome do catálogo');
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
 
-tflaky('produto conhecido sem lotes abre cadastro direto do cartão', { skip: pular }, async () => {
+tflaky('produto conhecido sem lotes abre cadastro direto do cartão do Catálogo', { skip: pular }, async () => {
   const ean = '7891000315507';
   const a = await abrir({ dados: { prod: { [ean]: { lotes: [] } }, cat: { [ean]: { nome: 'Café', marca: 'Marca', img: '' } } } });
   await a.p.click('nav button[data-v="prod"]');
-  assert.ok((await a.p.textContent('#listaProd')).includes('Café'));
-  await a.p.click(`[data-register-ean="${ean}"]`);
+  assert.ok(!(await a.p.textContent('#listaProd')).includes('Café'), 'produto sem lote não aparece em Meus Registros');
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#cfgCatalogo');
+  assert.ok((await a.p.textContent('#listaCatalogo')).includes('Café'));
+  await a.p.click(`#listaCatalogo [data-register-ean="${ean}"]`);
   await a.p.waitForSelector('#cardProd', { state: 'visible' });
   assert.strictEqual(await a.p.textContent('#pEan'), ean);
   assert.strictEqual(await a.p.inputValue('#pNome'), 'Café');
@@ -1260,6 +1262,42 @@ tflaky('tela estreita (360 px): leitor, notificações, nome longo e áreas de t
   assert.deepStrictEqual(await a.p.evaluate(() => [...document.querySelectorAll('#notificationTabs button')].filter(b => b.scrollWidth > b.clientWidth + 2).map(b => b.textContent.trim())), [], 'abas sem texto cortado');
   for (const id of ['#bLerNotificacoes', '#bAtualizarNotificacoes']) { const c = await caixa(id); assert.ok(c.h <= 60, id + ' em uma linha (' + c.h + ' px)'); }
   assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Catálogo: operador não vê produtos sem registro nem a entrada do catálogo, e não abre a tela', { skip: pular }, async () => {
+  const a = await abrirLogado(p => rotasBase(p, 'operador'), { prod: { '7891000315507': { lotes: [] }, '7896040703727': { lotes: [lote('l1', '2032-12-01', 5, 'L1')] } },
+    cat: { '7891000315507': { nome: 'Café Sem Registro' }, '7896040703727': { nome: 'Limpador Com Registro' } }, pere: { itens: {}, regs: [] } }, { papel: 'operador' });
+  await a.p.click('nav button[data-v="prod"]');
+  const lista = await a.p.textContent('#listaProd');
+  assert.ok(lista.includes('Limpador Com Registro') && !lista.includes('Café Sem Registro'), lista);
+  await a.p.click('nav button[data-v="aj"]');
+  assert.strictEqual(await a.p.isVisible('#cfgCatalogo'), false);
+  // mesmo forçando o clique no botão oculto, a tela não abre para o operador
+  await a.p.evaluate(() => document.getElementById('cfgCatalogo').click());
+  assert.strictEqual(await a.p.isVisible('#v-catalogo'), false);
+  assert.notStrictEqual(await a.p.textContent('#screenTitle'), 'Catálogo de Produtos');
+  await a.fechar();
+});
+
+tflaky('Catálogo: administrador abre por Configurações, vê todos os produtos, filtra e registra a partir do cartão', { skip: pular }, async () => {
+  const a = await abrirLogado(p => rotasBase(p, 'admin'), { prod: { '7891000315507': { lotes: [] }, '7896040703727': { lotes: [lote('l1', '2032-12-01', 5, 'L1'), lote('l2', '2032-12-02', 5, 'L2')] } },
+    cat: { '7891000315507': { nome: 'Café Sem Registro', marca: 'Marca A' }, '7896040703727': { nome: 'Limpador Com Registro' }, '7890000000017': { nome: 'Só no Catálogo' } }, pere: { itens: {}, regs: [] } }, { papel: 'admin' });
+  await a.p.click('nav button[data-v="prod"]');
+  assert.ok(!(await a.p.textContent('#listaProd')).includes('Café Sem Registro'), 'Meus Registros não mistura catálogo');
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#cfgCatalogo');
+  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Catálogo de Produtos');
+  assert.deepStrictEqual([await a.p.textContent('#tCatTotal'), await a.p.textContent('#tCatCom'), await a.p.textContent('#tCatSem')], ['3', '1', '2']);
+  const txt = await a.p.textContent('#listaCatalogo');
+  assert.ok(txt.includes('Café Sem Registro') && txt.includes('Marca A') && txt.includes('Só no Catálogo') && txt.includes('2 registros nesta loja'), txt);
+  await a.p.click('#catalogoFiltros [data-cat-filter="with"]');
+  assert.strictEqual(await a.p.locator('#listaCatalogo .catalog-card').count(), 1);
+  await a.p.click('#catalogoFiltros [data-cat-filter="all"]'); await a.p.fill('#qCatalogo', '7891000315507');
+  assert.strictEqual(await a.p.locator('#listaCatalogo .catalog-card').count(), 1);
+  await a.p.click('#listaCatalogo [data-register-ean="7891000315507"]');
+  await a.p.waitForSelector('#cardProd', { state: 'visible' });
+  assert.strictEqual(await a.p.textContent('#pEan'), '7891000315507');
+  assert.strictEqual(await a.p.inputValue('#pNome'), 'Café Sem Registro');
+  await a.fechar();
 });
 
 tflaky('Área do Operador: abas, alertas/notificações e detalhe/edição de lote', { skip: pular }, async () => {
