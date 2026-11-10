@@ -1238,6 +1238,30 @@ tflaky('tela estreita (360 px): campos de quantidade continuam largos o bastante
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
 
+tflaky('tela estreita (360 px): leitor, notificações, nome longo e áreas de toque cabem na tela', { skip: pular }, async () => {
+  const nomeLongo = 'Barriga suína defumada La Tocineta fatiada 500g';
+  const a = await abrir({ dados: { prod: { '7891000315507': { lotes: [Object.assign(lote('l1', '2032-12-01', 12, 'L1'), { setor: 'Açougue' })] } }, cat: { '7891000315507': { nome: nomeLongo } }, pere: { itens: {}, regs: [] } },
+    antes: p => p.addInitScript(() => { const md = navigator.mediaDevices || (navigator.mediaDevices = {}); md.getUserMedia = () => Promise.reject(Object.assign(new Error('sem câmera'), { name: 'NotFoundError' })); }) });
+  await a.p.setViewportSize({ width: 360, height: 760 });
+  const foraDaTela = sel => a.p.evaluate(s => [...document.querySelectorAll(s)].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > innerWidth + 1 || r.left < -1); }).map(e => e.id || e.textContent.trim().slice(0, 20)), sel);
+  const caixa = sel => a.p.evaluate(s => { const r = document.querySelector(s).getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height) }; }, sel);
+  const verTudo = await caixa('#homeSeeAll'); assert.ok(verTudo.h >= 40, 'Ver todos com ' + verTudo.h + ' px de altura');
+  await a.p.click('#homeRegister');
+  const voltar = await caixa('#headerBack'); assert.ok(voltar.w >= 40 && voltar.h >= 40, 'voltar com ' + voltar.w + 'x' + voltar.h);
+  await a.p.fill('#tCodigo', '7891000315507'); await a.p.click('#bBuscar'); await a.p.waitForSelector('#cardProd', { state: 'visible' });
+  assert.strictEqual(await a.p.inputValue('#pNome'), nomeLongo);
+  assert.strictEqual(await a.p.evaluate(() => { const e = document.getElementById('pNome'); return e.scrollWidth <= e.clientWidth + 2 && e.scrollHeight <= e.clientHeight + 2; }), true, 'nome longo aparece inteiro');
+  await a.p.click('#bEscanear');
+  assert.deepStrictEqual(await foraDaTela('#scanner *'), []);
+  await a.p.click('#bFechar');
+  await a.p.click('nav button[data-v="prod"]');
+  const seta = await caixa('#listaProd .operator-record-actions button:last-child'); assert.ok(seta.w >= 30 && seta.h >= 30, 'seta do cartão com ' + seta.w + 'x' + seta.h);
+  await a.p.click('nav button[data-v="alertas"]'); await a.p.click('[data-alert-view="notifications"]');
+  assert.deepStrictEqual(await a.p.evaluate(() => [...document.querySelectorAll('#notificationTabs button')].filter(b => b.scrollWidth > b.clientWidth + 2).map(b => b.textContent.trim())), [], 'abas sem texto cortado');
+  for (const id of ['#bLerNotificacoes', '#bAtualizarNotificacoes']) { const c = await caixa(id); assert.ok(c.h <= 60, id + ' em uma linha (' + c.h + ' px)'); }
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
 tflaky('Área do Operador: abas, alertas/notificações e detalhe/edição de lote', { skip: pular }, async () => {
   const a = await abrir({ dados: {
     prod: { '7891000315507': { nome: 'Café', lotes: [lote('l1', '2032-12-01', 5, 'L1')] } },
