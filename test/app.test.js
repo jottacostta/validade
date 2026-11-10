@@ -856,6 +856,8 @@ tflaky('papel admin remoto substitui sessão antiga de Operador e restaura a cen
   const a = await abrirLogado(p => rotasBase(p, 'admin'), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador', nome: 'admin' });
   await a.p.waitForFunction(() => { try { return JSON.parse(localStorage.getItem('validade_sessao')).papel === 'admin'; } catch (e) { return false; } });
   assert.strictEqual(await a.p.isVisible('#homeRegister'), true, 'permissões atualizadas de admin permitem registrar');
+  assert.strictEqual(await a.p.textContent('#homeStore'), 'Administrador · Loja Teste', 'home deve atualizar o papel exibido');
+  assert.strictEqual(await a.p.locator('#operatorRolePill').textContent(), 'Área do Administrador', 'cabeçalho deve refletir o papel confirmado');
   await a.p.click('nav button[data-v="aj"]');
   assert.strictEqual(await a.p.textContent('#sysMenuTitle'), 'Ajustes do Sistema');
   assert.strictEqual(await a.p.isVisible('#sysMenu [data-sys-open="lojas"]'), true, 'admin recupera administração de lojas');
