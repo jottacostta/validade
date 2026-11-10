@@ -1222,6 +1222,22 @@ tflaky('Perfil: "Sair de todos os aparelhos" encerra as sessões no servidor e v
   await a.fechar();
 });
 
+tflaky('tela estreita (360 px): campos de quantidade continuam largos o bastante e os botões de Editar não quebram', { skip: pular }, async () => {
+  const a = await abrir({ dados: { prod: { '7891000315507': { lotes: [Object.assign(lote('l1', '2032-12-01', 12, 'L1'), { setor: 'Açougue' })] } }, cat: { '7891000315507': { nome: 'Barriga suína defumada' } }, pere: { itens: {}, regs: [] } } });
+  await a.p.setViewportSize({ width: 360, height: 760 });
+  await a.p.click('nav button[data-v="prod"]'); await a.p.click('[data-edit-lote="l1"]');
+  const ed = await a.p.evaluate(() => { const q = document.getElementById('edQtd').getBoundingClientRect(), s = document.getElementById('bEditSave'), c = document.getElementById('bEditCancel');
+    return { largura: Math.round(q.width), salvarUmaLinha: s.getBoundingClientRect().height <= 60, cancelarUmaLinha: c.getBoundingClientRect().height <= 60, semRolagemLateral: document.documentElement.scrollWidth <= window.innerWidth }; });
+  assert.ok(ed.largura >= 72, 'campo de quantidade em Editar com ' + ed.largura + ' px');
+  assert.deepStrictEqual([ed.salvarUmaLinha, ed.cancelarUmaLinha, ed.semRolagemLateral], [true, true, true]);
+  assert.strictEqual(await a.p.inputValue('#edQtd'), '12');
+  await a.p.click('#bEditCancel'); await a.p.click('nav button[data-v="home"]'); await a.p.click('#homeRegister');
+  await a.p.fill('#tCodigo', '7891000315507'); await a.p.click('#bBuscar'); await a.p.waitForSelector('#cardProd', { state: 'visible' });
+  const reg = await a.p.evaluate(() => Math.round(document.getElementById('pQtd').getBoundingClientRect().width));
+  assert.ok(reg >= 48, 'campo de quantidade em Registrar com ' + reg + ' px');
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
 tflaky('Área do Operador: abas, alertas/notificações e detalhe/edição de lote', { skip: pular }, async () => {
   const a = await abrir({ dados: {
     prod: { '7891000315507': { nome: 'Café', lotes: [lote('l1', '2032-12-01', 5, 'L1')] } },
