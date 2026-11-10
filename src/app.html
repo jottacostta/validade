@@ -1036,7 +1036,7 @@ function podeVerMenuSistema(){return ['analista','gerente','admin'].includes(pap
 function renderMenuAjustes(){var menu=$('sysMenu');if(!menu)return;var p=papelAtual();menu.innerHTML=SYS_SECOES.filter(function(s){return s.roles.includes(p);}).map(function(s){return '<button class="sys-menu-item" type="button" data-sys-open="'+s.id+'"><span class="sys-menu-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">'+s.icon+'</svg></span><span class="sys-menu-copy"><b>'+s.titulo+'</b><small>'+s.sub+'</small></span><svg class="ico sys-menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>';}).join('');}
 function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var menu=podeVerMenuSistema(),ids=['profileArea','settingsRefArea','preferencesArea','passwordArea','aboutArea','sysMenuCard','sysSectionHead','sysSectionView'];ids.forEach(function(id){if($(id))$(id).style.display='none';});
   $('preferencesArea').removeAttribute('data-sec-ativa');$('sysReportsPanel').style.display='none';
-  if(v==='system'){$('sysMenuCard').style.display=menu?'':'none';renderMenuAjustes();}
+  if(v==='system'){$('sysMenuCard').hidden=false;$('sysMenuCard').style.display=menu?'':'none';renderMenuAjustes();}
   else if(v==='syssection'){var item=SYS_SECOES.find(function(s){return s.id===sysSecAtual;});if(!item||!item.roles.includes(papelAtual())){mostrarVistaAjustes('system');return;}
     $('sysSectionHead').style.display='';$('sysSectionTitle').textContent=item.titulo;$('sysSectionSubtitle').textContent=item.sub;
     if(item.id==='config'){$('settingsRefArea').style.display='';$('preferencesArea').style.display='';$('preferencesArea').dataset.secAtiva='config';}
@@ -1045,7 +1045,7 @@ function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var men
   }else{
     var m={profileArea:'profile',settingsRefArea:'settings',preferencesArea:'settings',passwordArea:'password',aboutArea:'about'};
     Object.keys(m).forEach(function(id){$(id).style.display=m[id]===v?'':'none';});
-    if(v==='settings'&&menu){$('sysMenuCard').style.display='';renderMenuAjustes();}
+    if(v==='settings'&&menu){$('sysMenuCard').hidden=false;$('sysMenuCard').style.display='';renderMenuAjustes();}
   }
   $('settingsTabs').style.display=(v==='settings'||v==='profile')&&!menu?'':'none';
   document.querySelectorAll('#settingsTabs [data-settings-view]').forEach(function(b){var on=b.dataset.settingsView===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
