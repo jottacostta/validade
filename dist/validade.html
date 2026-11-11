@@ -715,7 +715,8 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
   <div class="prod-head"><span class="reg-thumb" id="editThumb"></span><div class="prod-head-copy"><h2 id="editProductName">Editar registro</h2><p id="editProductMeta"></p></div><span class="chip" id="editStatus"></span></div>
   <div class="card edit-card"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 19 1-4L16.5 4.5l3 3L9 18zM14.5 6.5l3 3"/></svg>Dados do registro</h3>
     <div class="edit-rows" id="editNameFields" style="display:none">
-      <div class="edit-row edit-row-name"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg><label for="edNome">Nome do produto</label><input id="edNome" autocomplete="off" maxlength="120" placeholder="Digite o nome do produto"></div>
+      <div class="edit-row edit-row-name"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg><label for="edNome" id="edNomeLabel">Nome do produto</label><input id="edNome" autocomplete="off" maxlength="120" placeholder="Digite o nome do produto"></div>
+      <div id="editNameRequest" style="display:none"><p class="ean" style="margin:2px 0 10px">A correção do nome é enviada para avaliação do gerente ou administrador.</p><button class="btn sec" id="bSolicitarNome" type="button">Enviar correção para avaliação</button></div>
     </div>
     <div class="edit-rows" id="editProdFields">
       <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14M7.5 5v14M10.5 5v14M14 5v14M17 5v14M20 5v14"/></svg><label for="edLote">Lote *</label><input id="edLote" autocomplete="off"></div>
@@ -884,6 +885,7 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 
   <div class="card" data-sec="config" id="cardConta" style="display:none"><h2>Conta e sincronização</h2><div id="contaInfo"></div></div>
   <div class="card" data-sec="auditoria" id="cardAuditoria" style="display:none"><h2>Auditoria <span class="ean">(somente admin)</span></h2><div id="listaAud"></div><button class="btn sec" id="bAudRefresh" style="margin-top:10px">Atualizar</button></div>
+  <div class="card" data-sec="pereciveis" id="cardCorrecoesNome" style="display:none"><h2>Correções de nome de produto</h2><p style="font-size:13px;color:var(--mu)">Sugestões enviadas pela equipe. Ao aprovar, o nome muda no catálogo de todas as lojas.</p><div id="listaSolicitacoesNome"></div><button class="btn sec" id="bCorrecoesNomeRefresh" style="margin-top:10px">Atualizar correções</button></div>
   <div class="card" data-sec="dados" id="cardSolicitacoes" style="display:none"><h2>Solicitações de exclusão</h2><p style="font-size:13px;color:var(--mu)">Solicitações pendentes e histórico de revisão. Exclusões aprovadas são tombstones sincronizados.</p><div id="listaSolicitacoes"><div class="vazio">Carregando…</div></div><button class="btn sec" id="bSolicitacoesRefresh" style="margin-top:10px">Atualizar solicitações</button></div>
   <div class="card" data-sec="usuarios" id="cardUsuarios" style="display:none">
     <h2>Gestão de usuários <span class="ean">(assistente, analista e admin)</span></h2>
@@ -1307,7 +1309,7 @@ function ir(v){if(v==='catalogo'&&!podeVerCatalogo()){toast('O catálogo é excl
   if($('slogan'))$('slogan').textContent=(interna&&subtitulosTela[v])||CFG.slogan||'Área do Operador';
   if($('operatorRolePill'))$('operatorRolePill').hidden=!interna;
   document.querySelectorAll('#abas button').forEach(function(b){b.classList.toggle('on',b.dataset.v===(v==='reg'?'home':v==='busca'?'prod':v==='catalogo'?'aj':v==='detail'||v==='edit'?areaContextual:v));});
-  if(v==='home')renderHome();if(v==='busca')renderBusca();if(v==='catalogo')renderCatalogo();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();mostrarVisaoAlertas('alerts');}if(v==='aj'){renderPerfilOperador();ajustes();carregarSolicitacoesExclusao();mostrarVistaAjustes(podeVerMenuAjustes()?'system':'settings');}window.scrollTo(0,0);}
+  if(v==='home')renderHome();if(v==='busca')renderBusca();if(v==='catalogo')renderCatalogo();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();mostrarVisaoAlertas('alerts');}if(v==='aj'){renderPerfilOperador();ajustes();carregarSolicitacoesExclusao();carregarSolicitacoesNome();mostrarVistaAjustes(podeVerMenuAjustes()?'system':'settings');}window.scrollTo(0,0);}
 $('headerBack').onclick=function(){if(vistaAtual==='aj'&&ajVista==='syssection'){mostrarVistaAjustes('system');return;}if(vistaAtual==='aj'&&podeVerMenuAjustes()&&['password','about','profile'].includes(ajVista)){mostrarVistaAjustes('system');return;}if(vistaAtual==='aj'&&(ajVista==='password'||ajVista==='about')){mostrarVistaAjustes('settings');return;}ir(vistaAnterior==='reg'?'home':vistaAnterior||'home');};
 $('abas').onclick=function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.v==='pere')subPere('lista');ir(b.dataset.v);};
 $('alertViewTabs').onclick=function(e){var b=e.target.closest('[data-alert-view]');if(b)mostrarVisaoAlertas(b.dataset.alertView);};
@@ -1541,14 +1543,44 @@ function abrirDetalhePere(id){var r=D.pere.regs.filter(function(x){return x.id==
   $('detailHistoryList').innerHTML=outros.map(function(x){return itemHistorico(attr(x),'Lote '+(x.sif||'—')+' · '+kg(x.peso)+' kg',x);}).join('')||'<div class="operator-empty">Não há outros registros deste produto.</div>';
   $('detailOtherLots').innerHTML=outros.filter(function(x){return (x.sif||'')===(r.sif||'');}).map(function(x){return itemHistorico(attr(x),'Lote '+(x.sif||'—')+' · '+kg(x.peso)+' kg',x);}).join('')||'<div class="operator-empty">Não há outros registros deste lote.</div>';
   var local=!sbOn()||!logado(),own=!!(SESS&&SESS.uid&&(r.created_by===SESS.uid||!r.created_by)),full=['analista','gerente','admin'].includes(papelAtual());fimDetalhe(r,local||full||own);}
-/* o nome do produto só pode ser corrigido pelo administrador (no modo local o papel é admin) */
-function podeEditarNomeProduto(){return papelAtual()==='admin';}
-function prepararNomeEdicao(nome){$('editNameFields').style.display=podeEditarNomeProduto()?'':'none';$('edNome').value=nome||'';}
-function nomeEditado(){return podeEditarNomeProduto()?$('edNome').value.replace(/\s+/g,' ').trim():'';}
+/* Nome do produto: gerente e administrador alteram direto (no modo local o papel é admin);
+   os demais perfis enviam a correção para avaliação. O servidor valida as duas regras. */
+function podeEditarNomeProduto(){return ['gerente','admin'].includes(papelAtual());}
+function prepararNomeEdicao(nome,tipo){var direto=podeEditarNomeProduto(),pedir=!direto&&tipo==='lote'&&sbOn()&&logado();
+  $('editNameFields').style.display=(direto||pedir)?'':'none';$('editNameRequest').style.display=pedir?'':'none';
+  $('edNomeLabel').textContent=pedir?'Sugerir correção do nome':'Nome do produto';$('edNome').value=nome||'';}
+function limparNome(v){return String(v||'').replace(/\s+/g,' ').trim();}
+function nomeEditado(){return podeEditarNomeProduto()?limparNome($('edNome').value):'';}
+function solicitarCorrecaoNome(){var ctx=registroContexto;if(!ctx||ctx.tipo!=='lote'||!sbOn()||!logado())return;
+  var nome=limparNome($('edNome').value),atual=detalheProduto(ctx.ean).nome||'';
+  if(nome.length<2){toast('Digite o nome correto do produto');return;}
+  if(nome===atual){toast('Digite um nome diferente do atual');return;}
+  if(navigator.onLine===false){toast('Sem internet: envie a correção quando reconectar');return;}
+  var b=$('bSolicitarNome');b.disabled=true;
+  sbReq('/rest/v1/rpc/solicitar_correcao_nome',{method:'POST',body:{p_ean:String(ctx.ean),p_nome:nome,p_loja_id:SESS.lojaId||null}})
+    .then(function(r){if(!r.ok)throw new Error(r.dados&&r.dados.message||'Não foi possível enviar a correção');toast('Correção enviada para avaliação');$('edNome').value=atual;carregarSolicitacoesNome();})
+    .catch(function(e){toast(e.message||'Não foi possível enviar a correção');}).then(function(){b.disabled=false;});}
+function carregarSolicitacoesNome(){var card=$('cardCorrecoesNome');if(!card)return;
+  var vis=sbOn()&&logado()&&podeEditarNomeProduto();card.style.display=vis?'':'none';if(!vis){$('listaSolicitacoesNome').innerHTML='';return;}
+  sbReq('/rest/v1/solicitacoes_nome?select=id,ean,nome_atual,nome_sugerido,status,resposta,solicitante_nome,criado_em&order=criado_em.desc&limit=100').then(function(r){
+    if(!r.ok||!Array.isArray(r.dados))throw new Error('Falha ao carregar correções');
+    $('listaSolicitacoesNome').innerHTML=r.dados.map(function(x){
+      var status=x.status==='pendente'?'⏳ Pendente':x.status==='aprovada'?'✅ Aprovada':'❌ Rejeitada';
+      var botoes=x.status==='pendente'?'<div class="row" style="margin-top:8px"><button class="btn" data-nome-review="yes" data-id="'+esc(x.id)+'">Aprovar</button><button class="btn perigo" data-nome-review="no" data-id="'+esc(x.id)+'">Rejeitar</button></div>':'';
+      return '<div class="card" style="margin:8px 0;padding:10px"><b>'+esc(x.nome_sugerido)+'</b><div class="ean">EAN '+esc(x.ean)+' · nome atual: '+esc(x.nome_atual||'sem nome')+'</div><div class="ean">'+esc(status)+' · '+fdataHora(Date.parse(x.criado_em))+' · por '+esc(x.solicitante_nome||'usuário removido')+'</div>'+(x.resposta?'<div class="ean">Resposta: '+esc(x.resposta)+'</div>':'')+botoes+'</div>';
+    }).join('')||'<div class="vazio">Nenhuma correção solicitada.</div>';
+    document.querySelectorAll('[data-nome-review]').forEach(function(b){b.onclick=function(){revisarCorrecaoNome(b.dataset.id,b.dataset.nomeReview==='yes');};});
+  }).catch(function(e){$('listaSolicitacoesNome').innerHTML='<div class="vazio">'+esc(e.message||'Erro ao carregar')+'</div>';});}
+function revisarCorrecaoNome(id,aprovar){
+  var resposta=aprovar?'':prompt('Motivo da rejeição:');if(!aprovar&&(resposta===null||resposta.trim().length<3)){toast('Informe o motivo da rejeição.');return;}
+  if(aprovar&&!confirm('Aprovar a correção? O nome muda para todas as lojas.'))return;
+  sbReq('/rest/v1/rpc/revisar_correcao_nome',{method:'POST',body:{p_id:id,p_aprovar:aprovar,p_resposta:resposta||null}})
+    .then(function(r){if(!r.ok)throw new Error(r.dados&&r.dados.message||'Falha ao avaliar');toast(aprovar?'Correção aprovada':'Correção rejeitada');carregarSolicitacoesNome();catalogoPull();})
+    .catch(function(e){toast(e.message||'Falha ao avaliar a correção');});}
 function abrirEdicaoLote(id,ean){var p=D.prod[ean],l=p&&p.lotes.filter(function(x){return x.id===id;})[0];if(!l)return;if(!podeEditarLote(l)){toast('Você só pode editar suas próprias inserções');return;}
-  registroContexto={tipo:'lote',id:id,ean:ean};$('editProdFields').style.display='';$('editPereFields').style.display='none';$('edLote').value=l.lote||'';$('edVal').value=l.val||'';$('edQtd').value=l.qtd||'';$('edSetor').value=l.setor||'';prepararNomeEdicao(detalheProduto(ean).nome||'');$('editProductName').textContent=detalheProduto(ean).nome||ean;$('editProductMeta').textContent='EAN: '+ean;$('editThumb').innerHTML=miniatura(detalheProduto(ean).img,'lote');pintarChip($('editStatus'),seloValidade(l.val));ir('edit');}
+  registroContexto={tipo:'lote',id:id,ean:ean};$('editProdFields').style.display='';$('editPereFields').style.display='none';$('edLote').value=l.lote||'';$('edVal').value=l.val||'';$('edQtd').value=l.qtd||'';$('edSetor').value=l.setor||'';prepararNomeEdicao(detalheProduto(ean).nome||'','lote');$('editProductName').textContent=detalheProduto(ean).nome||ean;$('editProductMeta').textContent='EAN: '+ean;$('editThumb').innerHTML=miniatura(detalheProduto(ean).img,'lote');pintarChip($('editStatus'),seloValidade(l.val));ir('edit');}
 function abrirEdicaoPere(id){var r=D.pere.regs.filter(function(x){return x.id===id;})[0];if(!r)return;var local=!sbOn()||!logado(),own=!!(SESS&&SESS.uid&&(r.created_by===SESS.uid||!r.created_by)),full=['analista','gerente','admin'].includes(papelAtual());if(!local&&!full&&!own){toast('Você só pode editar seus próprios registros');return;}
-  registroContexto={tipo:'pere',id:id,cod:r.cod};$('editProdFields').style.display='none';$('editPereFields').style.display='';$('edSif').value=r.sif||'';$('edPereVal').value=fdata(r.val);$('edPeso').value=r.peso||'';$('edPereSetor').value=r.setor||'';prepararNomeEdicao((D.pere.itens[r.cod]||{}).desc||'');$('editProductName').textContent=(D.pere.itens[r.cod]||{}).desc||('Código '+r.cod);$('editProductMeta').textContent='PLU: '+r.cod+' · Perecível';$('editThumb').innerHTML=miniatura('','pere');pintarChip($('editStatus'),seloValidade(r.val));ir('edit');}
+  registroContexto={tipo:'pere',id:id,cod:r.cod};$('editProdFields').style.display='none';$('editPereFields').style.display='';$('edSif').value=r.sif||'';$('edPereVal').value=fdata(r.val);$('edPeso').value=r.peso||'';$('edPereSetor').value=r.setor||'';prepararNomeEdicao((D.pere.itens[r.cod]||{}).desc||'','pere');$('editProductName').textContent=(D.pere.itens[r.cod]||{}).desc||('Código '+r.cod);$('editProductMeta').textContent='PLU: '+r.cod+' · Perecível';$('editThumb').innerHTML=miniatura('','pere');pintarChip($('editStatus'),seloValidade(r.val));ir('edit');}
 document.addEventListener('click',function(e){var b;
   if((b=e.target.closest('[data-register-ean]'))){if(!pode('registrar')){toast('Seu perfil não permite registrar produtos');return;}mostrarEscolhaRegistro();ir('reg');$('bTipoIndustrial').click();$('tCodigo').value=b.dataset.registerEan;$('bBuscar').click();return;}
   if((b=e.target.closest('[data-edit-lote]'))){abrirEdicaoLote(b.dataset.editLote,b.dataset.ean);return;}
@@ -1560,6 +1592,7 @@ document.addEventListener('click',function(e){var b;
 $('bDetailEdit').onclick=function(){if(!registroContexto)return;if(registroContexto.tipo==='lote')abrirEdicaoLote(registroContexto.id,registroContexto.ean);else abrirEdicaoPere(registroContexto.id);};
 function passoEdQtd(d){$('edQtd').value=Math.max(1,Math.round(num($('edQtd').value))+d);}
 $('edQtdMenos').onclick=function(){passoEdQtd(-1);};$('edQtdMais').onclick=function(){passoEdQtd(1);};
+$('bSolicitarNome').onclick=solicitarCorrecaoNome;
 $('bEditCancel').onclick=function(){if(registroContexto){ir('detail');vistaAnterior=areaContextual;}else ir(vistaAnterior||'home');};
 $('bEditSave').onclick=function(){if(!registroContexto)return;var ctx=registroContexto;
   if(ctx.tipo==='lote'){var p=D.prod[ctx.ean],l=p&&p.lotes.filter(function(x){return x.id===ctx.id;})[0];if(!l)return;if(!podeEditarLote(l)){toast('Você só pode editar suas próprias inserções');return;}
@@ -2190,6 +2223,7 @@ function contaCard(){atualizarContextoLoja();if(!sbOn()){$('cardConta').style.di
 
 // ── Solicitações de exclusão (RLS/RPC no backend) ──
 function podeRevisarExclusao(){return ['assistente','analista','gerente','admin'].includes(papelAtual());}
+$('bCorrecoesNomeRefresh').onclick=carregarSolicitacoesNome;
 function carregarSolicitacoesExclusao(){
   var card=$('cardSolicitacoes');if(!card)return;
   var vis=sbOn()&&logado()&&SESS.lojaId;card.style.display=vis?'':'none';if(!vis)return;
