@@ -887,7 +887,7 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
   <div class="card" data-sec="config" id="cardConta" style="display:none"><h2>Conta e sincronização</h2><div id="contaInfo"></div></div>
   <div class="card" data-sec="auditoria" id="cardAuditoria" style="display:none"><h2>Auditoria <span class="ean">(somente admin)</span></h2><div id="listaAud"></div><button class="btn sec" id="bAudRefresh" style="margin-top:10px">Atualizar</button></div>
   <div class="card" data-sec="pereciveis" id="cardCorrecoesNome" style="display:none"><h2>Correções de nome de produto</h2><p style="font-size:13px;color:var(--mu)">Sugestões enviadas pela equipe. Ao aprovar, o nome muda no catálogo de todas as lojas.</p><div id="listaSolicitacoesNome"></div><button class="btn sec" id="bCorrecoesNomeRefresh" style="margin-top:10px">Atualizar correções</button></div>
-  <div class="card" data-sec="dados" id="cardSolicitacoes" style="display:none"><h2>Solicitações de exclusão</h2><p style="font-size:13px;color:var(--mu)">Solicitações pendentes e histórico de revisão. Exclusões aprovadas são tombstones sincronizados.</p><div id="listaSolicitacoes"><div class="vazio">Carregando…</div></div><button class="btn sec" id="bSolicitacoesRefresh" style="margin-top:10px">Atualizar solicitações</button></div>
+  <div class="card" data-sec="pereciveis" id="cardSolicitacoes" style="display:none"><h2>Solicitações de exclusão</h2><p style="font-size:13px;color:var(--mu)">Solicitações pendentes e histórico de revisão. Exclusões aprovadas são tombstones sincronizados.</p><div id="listaSolicitacoes"><div class="vazio">Carregando…</div></div><button class="btn sec" id="bSolicitacoesRefresh" style="margin-top:10px">Atualizar solicitações</button></div>
   <div class="card" data-sec="usuarios" id="cardPerfisAcesso" style="display:none">
     <h2>Perfis de acesso</h2>
     <p style="font-size:13px;color:var(--mu)">Defina o que cada perfil pode fazer. Vale para todos os usuários do perfil. O Administrador tem sempre acesso total.</p>
@@ -1902,13 +1902,13 @@ var PAPEIS={operador:'Operador',assistente:'Assistente',analista:'Analista',gere
    sem isso, o app só consegue restringir dentro do teto (a regra do servidor ainda é fixa). */
 var PAPEIS_EDITAVEIS=['operador','assistente','analista','gerente'],TODOS4=PAPEIS_EDITAVEIS;
 var PERMISSOES=[
- {id:'registrar',grupo:'basica',titulo:'Registrar produtos e perecíveis',padrao:TODOS4,teto:TODOS4},
- {id:'editar_proprios',grupo:'basica',titulo:'Editar os próprios registros',padrao:TODOS4,teto:TODOS4},
- {id:'solicitar_exclusao',grupo:'basica',titulo:'Solicitar exclusão de registro',padrao:TODOS4,teto:TODOS4},
+ {id:'registrar',grupo:'basica',titulo:'Registrar produtos e perecíveis',padrao:TODOS4,teto:TODOS4,servidor:true},
+ {id:'editar_proprios',grupo:'basica',titulo:'Editar os próprios registros',padrao:TODOS4,teto:TODOS4,servidor:true},
+ {id:'solicitar_exclusao',grupo:'basica',titulo:'Solicitar exclusão de registro',padrao:TODOS4,teto:TODOS4,servidor:true},
  {id:'nome_solicitar',grupo:'basica',titulo:'Solicitar correção de nome de produto',padrao:TODOS4,teto:TODOS4,servidor:true},
  {id:'relatorios',grupo:'basica',titulo:'Ver e exportar relatórios',padrao:['analista','gerente'],teto:['analista','gerente']},
- {id:'registros_editar_outros',grupo:'especial',titulo:'Editar registros de outros usuários',padrao:['analista','gerente'],teto:['analista','gerente']},
- {id:'exclusoes_aprovar',grupo:'especial',titulo:'Aprovar ou rejeitar exclusões',padrao:['assistente','analista','gerente'],teto:['assistente','analista','gerente']},
+ {id:'registros_editar_outros',grupo:'especial',titulo:'Editar registros de outros usuários',padrao:['analista','gerente'],teto:TODOS4,servidor:true},
+ {id:'exclusoes_aprovar',grupo:'especial',titulo:'Aprovar ou rejeitar exclusões',padrao:['assistente','analista','gerente'],teto:TODOS4,servidor:true},
  {id:'nome_editar',grupo:'especial',titulo:'Editar nome de produto e aprovar correções',padrao:['gerente'],teto:TODOS4,servidor:true},
  {id:'usuarios_gerenciar',grupo:'especial',titulo:'Gerenciar usuários',padrao:['analista','gerente'],teto:['analista','gerente']},
  {id:'alertas_loja_configurar',grupo:'especial',titulo:'Alterar a configuração de alertas da loja',padrao:['gerente'],teto:[]},

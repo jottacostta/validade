@@ -389,3 +389,15 @@ test('perfis de acesso: permissões por papel gravadas e validadas no banco', ()
   assert.ok(noApp.length >= 10); assert.deepEqual(noApp, noBanco);
   assert.match(app, /rpc\/definir_permissao_papel/);
 });
+
+test('perfis de acesso etapa 2: registros e exclusões obedecem às permissões no banco', () => {
+  const m = fs.readFileSync(path.join(root, 'supabase/migrations/20261111080000_permissoes_registros_exclusoes.sql'), 'utf8');
+  for (const perm of ['registrar', 'editar_proprios', 'registros_editar_outros', 'solicitar_exclusao', 'exclusoes_aprovar']) {
+    assert.match(m, new RegExp("private\\.tem_permissao\\('" + perm + "'\\)"), perm + ' validada no banco');
+    assert.match(app, new RegExp("\\{id:'" + perm + "',[^}]*servidor:true\\}"), perm + ' liberada na tela');
+  }
+  assert.match(m, /array\['produtos','lotes','pere_itens','pere_regs'\]/);
+  assert.match(m, /private\.tem_escopo_global\(\) or private\.membro_da\(loja_id\)/, 'alcance por loja preservado');
+  assert.match(m, /created_by = \(select auth\.uid\(\)\) and \(select private\.tem_permissao\('editar_proprios'\)\)/);
+  assert.equal([...m.matchAll(/trecho de (papel|acesso) não encontrado/g)].length, 2, 'falha inteira se a função mudou');
+});
