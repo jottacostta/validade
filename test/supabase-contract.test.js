@@ -118,7 +118,7 @@ test('RPCs exigem setor válido, mas trigger aceita NULL de clientes legados dur
 });
 
 test('alertas internos são escopados à loja e só o destinatário pode ler/marcar como lidos', () => {
-  assert.match(app, /\/rest\/v1\/notificacoes\?select=id,tipo,titulo,mensagem,payload,criado,lida_em&loja_id=eq\./);
+  assert.match(app, /\/rest\/v1\/notificacoes\?select=id,tipo,titulo,mensagem,payload,criado,lida_em&or=\(loja_id\.eq\.'\+encodeURIComponent\(SESS\.lojaId\)\+',tipo\.eq\.sistema_personalizado\)/);
   assert.match(migration, /create table if not exists public\.notificacoes/);
   assert.match(migration, /create policy notificacoes_sel_own_store[\s\S]*user_id=\(select auth\.uid\(\)\)[\s\S]*private\.membro_da\(loja_id\)/);
   assert.match(migration, /create policy notificacoes_upd_own_store[\s\S]*user_id=\(select auth\.uid\(\)\)/);
@@ -477,4 +477,12 @@ test('PWA instalável: manifest com ícones 192 e 512 e service worker registrad
   assert.match(build, /pwa-icon-512\.png/, 'ícone 512 é copiado para dist');
   assert.match(app, /function registrarServiceWorker\(\)/);
   assert.match(app, /addEventListener\('beforeinstallprompt'/);
+});
+
+test('alerta personalizado: remetente recebe a própria cópia e regras não dependem do localStorage', () => {
+  const m = fs.readFileSync(path.join(root, 'supabase/migrations/20261111150000_alerta_personalizado_inclui_remetente.sql'), 'utf8');
+  assert.match(m, /and d\\\.user_id <> auth\\\.uid\\\(\\\)/);
+  assert.match(m, /exclusão do remetente não encontrada/);
+  assert.match(app, /var regrasMem=\{\};/);
+  assert.match(app, /k\.indexOf\('validade_alertas_regras_'\)!==0\)ks\.push\(k\)/, 'limpeza de sobras preserva as regras');
 });

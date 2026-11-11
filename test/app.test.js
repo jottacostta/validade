@@ -1240,7 +1240,7 @@ tflaky('Notificações: Limpar marca as do usuário como removidas; sem a coluna
   await a.p.waitForFunction(() => document.getElementById('listaNotificacoes').textContent.includes('Produto vencido'));
   await a.p.click('#bLimparNotificacoes');
   await a.p.waitForFunction(() => !document.getElementById('listaNotificacoes').textContent.includes('Produto vencido'));
-  assert.ok(patches[0].u.includes('id=in.(n1)') && patches[0].u.includes('loja_id=eq.L1'), patches[0].u);
+  assert.ok(patches[0].u.includes('id=in.(n1)'), patches[0].u); // sem filtro de loja: alertas personalizados podem estar em outra loja do usuário; a RLS restringe ao dono
   assert.deepStrictEqual(Object.keys(patches[0].b), ['removida_em']);
   comColuna = false; linhas.push({ id: 'n2', tipo: 'validade', titulo: 'Outro aviso', mensagem: 'x', payload: {}, criado: '2026-11-09T11:00:00Z', lida_em: null });
   await a.p.click('#bAtualizarNotificacoes');
@@ -2030,4 +2030,38 @@ tflaky('Aviso do sistema: banner global exibe texto literal e marca somente o pe
     assert.ok(typeof patches[0].body.lida_em === 'string' && !Number.isNaN(Date.parse(patches[0].body.lida_em)), 'lida_em deve ser ISO');
     assert.deepStrictEqual(a.erros, []);
   } finally { await a.fechar(); }
+});
+
+/* Regras de antecipação não podem depender do localStorage (aparelho com armazenamento cheio). */
+tflaky('alertas pessoais: com o armazenamento do aparelho cheio a regra ainda é enviada ao servidor e aparece na lista', { skip: pular }, async () => {
+  const posts = []; let servidor = [];
+  const a = await abrirLogado(async p => {
+    await p.addInitScript(() => { const original = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (k, v) { if (String(k).indexOf('validade_alertas_regras_') === 0) throw new DOMException('cheio', 'QuotaExceededError'); return original.call(this, k, v); }; });
+    await rotasPerm(p, 'admin', []);
+    await p.route(/\/rest\/v1\/alertas_regras/, r => { const m = r.request().method();
+      if (m === 'POST') { const b = r.request().postDataJSON(); posts.push(b); servidor = servidor.concat(b); return r.fulfill({ status: 201, body: '' }); }
+      return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(servidor) }); }); },
+    { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="alertas"]');
+  await a.p.fill('#alertaRegraDias', '5'); await a.p.click('#bAlertaRegraAdicionar');
+  await a.p.waitForFunction(() => document.querySelectorAll('#listaRegrasAlertas .alert-rule').length === 1);
+  assert.strictEqual(posts.length, 1, 'regra enviada ao servidor');
+  assert.strictEqual(posts[0][0].dias, 5);
+  await a.p.waitForTimeout(400);
+  assert.strictEqual(await a.p.locator('#listaRegrasAlertas .alert-rule').count(), 1, 'continua na lista depois de recarregar do servidor');
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Notificações: alertas personalizados aparecem mesmo gravados em outra loja do usuário', { skip: pular }, async () => {
+  const urls = [];
+  const a = await abrirLogado(async p => { await rotasPerm(p, 'gerente', []);
+    await p.route(/\/rest\/v1\/notificacoes/, r => { urls.push(decodeURIComponent(r.request().url())); r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ id: 'n1', tipo: 'sistema_personalizado', titulo: 'Inventário amanhã', mensagem: 'Conferir a câmara fria', payload: {}, criado: '2026-11-11T17:00:00Z', lida_em: null }]) }); }); },
+    { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'gerente', nome: 'G' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="alertas"]'); await a.p.click('[data-alert-view="notifications"]');
+  await a.p.waitForFunction(() => /Inventário amanhã/.test(document.getElementById('listaNotificacoes').textContent));
+  assert.ok(urls.some(u => u.includes('or=(loja_id.eq.L1,tipo.eq.sistema_personalizado)')), urls.join(' | '));
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
