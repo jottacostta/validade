@@ -1865,3 +1865,50 @@ tflaky('Perfis de acesso etapa 3: gerente perde Usuários e ganha Auditoria e Ca
   assert.strictEqual(await a.p.isVisible('#v-catalogo'), true);
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
+
+/* Instalação como aplicativo (PWA): o usuário é avisado de que pode instalar. */
+const comoInstalado = p => p.addInitScript(() => { const mm = window.matchMedia.bind(window);
+  window.matchMedia = q => /display-mode:\s*standalone/.test(q) ? { matches: true, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} } : mm(q); });
+
+tflaky('Instalar app: aviso aparece no Início, "Agora não" esconde e a escolha é lembrada', { skip: pular }, async () => {
+  const a = await abrir();
+  assert.strictEqual(await a.p.isVisible('#installCard'), true);
+  assert.ok((await a.p.textContent('#installCard')).includes('Instale o aplicativo'));
+  await a.p.click('#bInstalarDepois');
+  assert.strictEqual(await a.p.isVisible('#installCard'), false);
+  await a.p.reload();
+  assert.strictEqual(await a.p.isVisible('#installCard'), false, 'não insiste depois de adiado');
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="sobre"]');
+  assert.strictEqual(await a.p.isVisible('#bInstalarSobre'), true, 'continua disponível em Sobre');
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Instalar app: botão abre o instalador do navegador e o aviso some depois de instalado', { skip: pular }, async () => {
+  const a = await abrir();
+  await a.p.evaluate(() => { window.__prompts = 0; const e = new Event('beforeinstallprompt', { cancelable: true });
+    e.prompt = () => { window.__prompts++; return Promise.resolve(); }; e.userChoice = Promise.resolve({ outcome: 'accepted' }); window.dispatchEvent(e); });
+  await a.p.click('#bInstalar');
+  assert.strictEqual(await a.p.evaluate(() => window.__prompts), 1);
+  assert.strictEqual(await a.p.isVisible('#installHelp'), false, 'com instalador do navegador não precisa de instruções');
+  await a.p.evaluate(() => window.dispatchEvent(new Event('appinstalled')));
+  assert.strictEqual(await a.p.isVisible('#installCard'), false);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Instalar app: sem instalador automático, o botão mostra o passo a passo', { skip: pular }, async () => {
+  const a = await abrir();
+  assert.strictEqual(await a.p.isVisible('#installHelp'), false);
+  await a.p.click('#bInstalar');
+  assert.strictEqual(await a.p.isVisible('#installHelp'), true);
+  assert.match(await a.p.textContent('#installHelp'), /tela inicial/i);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Instalar app: aberto como aplicativo instalado, não mostra o aviso', { skip: pular }, async () => {
+  const a = await abrir({ antes: comoInstalado });
+  assert.strictEqual(await a.p.isVisible('#installCard'), false);
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="sobre"]');
+  assert.strictEqual(await a.p.isVisible('#bInstalarSobre'), false);
+  assert.match(await a.p.textContent('#installSobreTexto'), /instalado/i);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
