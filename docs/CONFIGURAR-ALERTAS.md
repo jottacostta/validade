@@ -1,6 +1,6 @@
 # Alertas internos compartilhados e Push pessoal
 
-Este documento descreve o desenho no código versionado. **As migrations desta entrega ainda não foram aplicadas em produção e a Edge Function/cron não foram reimplantados por este trabalho.** Confirme o estado real do Supabase antes de qualquer rollout.
+Este documento descreve o desenho no código versionado. **A correção do cron desta branch ainda depende de aplicação da migration e deploy da Edge Function.** Confirme o estado real do Supabase antes de qualquer rollout.
 
 ## Semântica e permissões
 
@@ -11,13 +11,15 @@ Este documento descreve o desenho no código versionado. **As migrations desta e
 - **Escopo e aparelho:** as regras pessoais são da conta; a subscription é vinculada ao usuário e ao aparelho. Sem subscription válida, a preferência é mantida, mas não há entrega Push naquele aparelho.
 - **Fuso:** cada regra pessoal armazena timezone IANA; o padrão é `America/Sao_Paulo`. “30 dias” significa diferença de data civil nesse fuso, não 720 horas.
 - **Ajustes locais:** o destaque da lista e o lembrete nativo seguem locais ao aparelho; não controlam os alertas internos compartilhados nem o cron do Push.
+- **Avisos de sistema:** avisos manuais `sistema_personalizado`, enviados pela função autorizada de gerente/administrador, aparecem em uma faixa global no topo para a loja selecionada. O botão **OK** marca somente aquele aviso como lido para a conta autenticada; o app busca avisos ao restaurar/selecionar a sessão, ao retornar ao app e periodicamente (com limite de uma consulta por minuto). Isso é distinto do Push.
 
 ## Arquivos envolvidos
 
 - `supabase/migrations/20261110160000_alertas_regras_pessoais.sql`: cria `alertas_regras` com RLS por usuário e a outbox pessoal idempotente; preserva a geração diária dos alertas internos e instala o dispatcher minutely.
+- `supabase/migrations/20261111173500_gerar_alertas_via_edge_function.sql`: substitui a chamada SQL direta do `pg_cron` por uma chamada autenticada à Edge Function `alertas`, que executa o RPC usando `service_role` no servidor.
 - `supabase/migrations/20261110170000_push_interno_autorizado.sql`: acrescenta autorização de Push por loja, restringe mudanças em `ajustes.dias` e `push_interno` a gerente/admin, e cria outbox idempotente separada para notificações internas.
-- `supabase/functions/alertas/index.ts`: valida segredo de dispatch e VAPID; prepara/reivindica filas pessoais e internas separadamente, envia aos subscribers do destinatário e registra resultados. Inscrição e cancelamento continuam exigindo JWT válido e escopo de loja.
-- `src/app.html`: cartão dedicado combina regras pessoais e Push, apresenta a janela interna da loja em leitura para papéis sem permissão, e mantém o cache das regras offline separado por UID.
+- `supabase/functions/alertas/index.ts`: valida o segredo para geração diária e dispatch; gera notificações internas via RPC de servidor, prepara/reivindica filas pessoais e internas separadamente, envia aos subscribers do destinatário e registra resultados. Inscrição e cancelamento continuam exigindo JWT válido e escopo de loja.
+- `src/app.html`: cartão dedicado combina regras pessoais e Push, apresenta a janela interna da loja em leitura para papéis sem permissão, mantém o cache das regras offline separado por UID e mostra os avisos de sistema no topo.
 
 ## Dependências e credenciais
 
@@ -27,7 +29,7 @@ O gateway JWT da Function deve permanecer habilitado. Antes do rollout, valide e
 
 ## Cadência e confiabilidade
 
-- Geração de notificações internas: diariamente às 09:00 UTC, conforme a convenção existente no projeto; a janela de antecedência é a definida pelo gerente/admin para cada loja.
+- Geração de notificações internas: diariamente às 09:00 UTC, conforme a convenção existente no projeto. O `pg_cron` chama a Edge Function protegida, que usa `service_role` para executar o RPC; a chamada de geração grava notificações no app, mas não envia Push diretamente. A janela de antecedência é a definida pelo gerente/admin para cada loja.
 - Push pessoal: o dispatcher é chamado a cada minuto e materializa a regra quando o horário local configurado é alcançado na data prevista.
 - Push interno: a fila só inclui notificações criadas enquanto o Push da loja estiver autorizado; notificações anteriores à autorização não são enviadas retroativamente.
 - Chaves únicas por regra/usuário/loja/registro/validade/data local e por notificação interna evitam duplicatas durante reexecuções concorrentes.

@@ -22,6 +22,11 @@ function constantTimeEqual(a: string, b: string): boolean {
   for (let i = 0; i < n; i++) diff |= (aa[i] ?? 0) ^ (bb[i] ?? 0);
   return diff === 0;
 }
+function cronAuthorized(req: Request): boolean {
+  const expected = env("ALERTAS_CRON_SECRET");
+  const supplied = req.headers.get("x-alertas-cron-secret") ?? "";
+  return !!expected && constantTimeEqual(supplied, expected);
+}
 async function authenticatedUser(req: Request) {
   const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) return null;
@@ -65,10 +70,15 @@ Deno.serve(async (req) => {
   try { body = await req.json(); } catch { return json({ error: "JSON inválido" }, 400); }
   const action = body.action;
 
+  if (action === "generate-alerts") {
+    if (!cronAuthorized(req)) return json({ error: "Não autorizado" }, 401);
+    const { data, error } = await admin.rpc("gerar_alertas_validade");
+    if (error) return json({ error: "Falha ao gerar alertas internos" }, 500);
+    return json({ ok: true, gerados: Array.isArray(data) ? data.length : 0 });
+  }
+
   if (action === "dispatch") {
-    const expected = env("ALERTAS_CRON_SECRET");
-    const supplied = req.headers.get("x-alertas-cron-secret") ?? "";
-    if (!expected || !constantTimeEqual(supplied, expected)) return json({ error: "Não autorizado" }, 401);
+    if (!cronAuthorized(req)) return json({ error: "Não autorizado" }, 401);
     const publicKey = env("VAPID_PUBLIC_KEY"), privateKey = env("VAPID_PRIVATE_KEY"), subject = env("VAPID_SUBJECT");
     if (!publicKey || !privateKey || !subject) return json({ error: "Credenciais VAPID não configuradas" }, 503);
     webpush.setVapidDetails(subject, publicKey, privateKey);

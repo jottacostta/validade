@@ -488,6 +488,8 @@ tflaky('sem Supabase configurado: card de conta fica oculto', { skip: pular }, a
    setupRotas registra as rotas ANTES do reload, para o pull inicial ser interceptado */
 async function abrirLogado(setupRotas, dados, sessaoExtra) {
   const a = await abrir({ url: URL_SUPA });
+  await a.p.route(/\/rest\/v1\/notificacoes(?:\?|$)/, r => r.request().method() === 'GET'
+    ? r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }) : r.fulfill({ status: 204, body: '' }));
   if (setupRotas) await setupRotas(a.p);
   await a.p.evaluate(([d, extra]) => { localStorage.setItem('validade_sessao', JSON.stringify(Object.assign({ access_token: 'tok', refresh_token: 'ref', expira: Date.now() + 3600000, usuario: 'teste', email: 'teste@loja.validade', uid: 'u1', lojaId: 'L1', lojaNome: 'Loja Teste' }, extra || {}))); if (d) localStorage.setItem('validade_dados', JSON.stringify(d)); }, [dados, sessaoExtra]);
   await a.p.reload();
@@ -498,6 +500,8 @@ async function abrirLogado(setupRotas, dados, sessaoExtra) {
    então estes testes rodam logados e com as rotas de salvar mockadas. */
 async function abrirRegistro(setupRotas, dados, antes) {
   const a = await abrir({ url: URL_SUPA, antes });
+  await a.p.route(/\/rest\/v1\/notificacoes(?:\?|$)/, r => r.request().method() === 'GET'
+    ? r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }) : r.fulfill({ status: 204, body: '' }));
   if (setupRotas) await setupRotas(a.p);
   await a.p.evaluate((d) => {
     localStorage.setItem('validade_sessao', JSON.stringify({ access_token: 'tok', refresh_token: 'ref', expira: Date.now() + 3600000, usuario: 'teste', email: 'teste@loja.validade', uid: 'u1', papel: 'operador', nome: 'Teste', lojaId: 'L1', lojaNome: 'Loja Teste' }));
@@ -1977,4 +1981,53 @@ tflaky('Instalar app: aberto como aplicativo instalado, não mostra o aviso', { 
   assert.strictEqual(await a.p.isVisible('#bInstalarSobre'), false);
   assert.match(await a.p.textContent('#installSobreTexto'), /instalado/i);
   assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Aviso do sistema: banner global exibe texto literal e marca somente o personalizado como lido', { skip: pular }, async () => {
+  const loja = 'L1', avisoId = 'aviso-sistema-1';
+  const titulo = 'Aviso <img src=x onerror="window.__alertXss=1">';
+  const mensagem = 'Mensagem <svg onload="window.__alertXss=1">texto</svg>';
+  const patches = [];
+  const linhas = [
+    { id: avisoId, loja_id: loja, tipo: 'sistema_personalizado', titulo, mensagem, lida_em: null },
+    { id: 'aviso-validade-1', loja_id: loja, tipo: 'validade', titulo: 'Validade próxima', mensagem: 'Produto vence em breve', lida_em: null }
+  ];
+  const a = await abrirLogado(async p => {
+    await rotasBase(p, 'operador');
+    await p.route(/\/rest\/v1\/notificacoes(?:\?|$)/, r => {
+      const req = r.request(), u = new URL(req.url());
+      if (req.method() === 'GET') return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(linhas) });
+      if (req.method() === 'PATCH') {
+        let body = null; try { body = req.postDataJSON(); } catch (e) {}
+        const filtroId = u.searchParams.get('id') || '', registro = linhas.find(x => filtroId === 'eq.' + x.id);
+        if (registro && body && body.lida_em) registro.lida_em = body.lida_em;
+        patches.push({ url: u.pathname + u.search, body });
+        return r.fulfill({ status: 204, body: '' });
+      }
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    });
+  }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador', nome: 'Teste' });
+
+  try {
+    await a.p.waitForSelector('#systemAlertBanner', { state: 'visible' });
+    assert.strictEqual(await a.p.textContent('#systemAlertTitle'), titulo);
+    assert.strictEqual(await a.p.textContent('#systemAlertMessage'), mensagem);
+    assert.strictEqual(await a.p.locator('#systemAlertBanner img, #systemAlertBanner svg').count(), 0, 'conteúdo malicioso aparece como texto, sem criar HTML');
+    assert.strictEqual(await a.p.evaluate(() => window.__alertXss || 0), 0);
+    assert.strictEqual(await a.p.textContent('#bSystemAlertOk'), 'OK');
+    const textoBanner = await a.p.locator('#systemAlertBanner').innerText();
+    assert.ok(textoBanner.includes(titulo) && textoBanner.includes(mensagem), 'banner mostra o aviso personalizado');
+    assert.ok(!textoBanner.includes('Validade próxima') && !textoBanner.includes('Produto vence em breve'), 'aviso comum de validade não deve ser exibido como banner');
+
+    await a.p.click('#bSystemAlertOk');
+    await a.p.waitForSelector('#systemAlertBanner', { state: 'hidden' });
+    await a.p.waitForFunction(() => document.querySelector('#systemAlertBanner')?.hidden || getComputedStyle(document.querySelector('#systemAlertBanner')).display === 'none');
+    // Aguarda callbacks iniciais/duplicados da carga terminarem antes de validar a chamada de atualização.
+    await a.p.waitForTimeout(150);
+    assert.strictEqual(patches.length, 1, 'um único PATCH marca o aviso como lido');
+    assert.strictEqual(patches[0].url, `/rest/v1/notificacoes?loja_id=eq.${loja}&id=eq.${avisoId}`);
+    assert.deepStrictEqual(patches[0].body, { lida_em: patches[0].body.lida_em });
+    assert.ok(typeof patches[0].body.lida_em === 'string' && !Number.isNaN(Date.parse(patches[0].body.lida_em)), 'lida_em deve ser ISO');
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
 });
