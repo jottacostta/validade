@@ -28,14 +28,16 @@ async function authenticatedUser(req: Request) {
   const { data, error } = await admin.auth.getUser(token);
   return error ? null : data.user;
 }
-const PAPEIS_GLOBAIS = ["analista", "gerente", "admin"];
 // Vinculado à loja, ou perfil de escopo global (recebe avisos de todas as lojas) em uma loja que existe.
 async function isMember(userId: string, lojaId: string) {
   const { data, error } = await admin.from("loja_membros").select("loja_id")
     .eq("user_id", userId).eq("loja_id", lojaId).maybeSingle();
   if (!error && data) return true;
   const { data: perfil, error: perfilErr } = await admin.from("perfis").select("papel").eq("id", userId).maybeSingle();
-  if (perfilErr || !perfil || !PAPEIS_GLOBAIS.includes(perfil.papel)) return false;
+  if (perfilErr || !perfil) return false;
+  // Perfis de acesso: "Receber avisos de todas as lojas" é definido pelo Administrador.
+  const { data: global, error: permErr } = await admin.rpc("papel_tem_permissao", { p_papel: perfil.papel, p_permissao: "avisos_todas_lojas" });
+  if (permErr || global !== true) return false;
   const { data: loja, error: lojaErr } = await admin.from("lojas").select("id").eq("id", lojaId).maybeSingle();
   return !lojaErr && !!loja;
 }

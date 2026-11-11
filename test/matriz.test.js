@@ -27,9 +27,9 @@ test('solicitação e revisão de exclusão passam por RPC',()=>{
 });
 
 test('gerente pode excluir contas via Edge Function, analista não',()=>{
-  assert.match(edge,/ehAdmin \|\| ehGerente/);
-  assert.match(edge,/Somente Gerente ou Administrador pode excluir usuários/);
-  assert.match(edge,/const podeEditar = \["analista", "gerente", "admin"\]/);
+  assert.match(edge,/p_permissao: "usuarios_excluir"/);
+  assert.match(edge,/if \(!podeExcluir\) return json\(/);
+  assert.match(edge,/const podeEditar = escopoTotal;/);
 });
 
 test('sync aplica tombstones recebidos para remover dados locais',()=>{

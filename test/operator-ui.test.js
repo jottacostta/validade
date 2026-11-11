@@ -219,7 +219,7 @@ test('Alertas pessoais e Push: cartão unificado preserva controles e separa esc
   assert.match(html, /data-regra-toggle/);
   assert.match(html, /data-regra-delete/);
   assert.match(html, /Destaque local quando faltarem \(dias\)/);
-  assert.match(html, /function podeGerenciarAlertasLoja\(\)\{return \['admin','gerente'\]\.includes\(papelAtual\(\)\);\}/);
+  assert.match(html, /function podeGerenciarAlertasLoja\(\)\{return temPermissao\('alertas_loja_configurar'\);\}/);
   assert.match(html, /function carregarAjustesAlertasLoja\(\)/);
   assert.match(html, /rest\/v1\/ajustes\?select=loja_id,dias,push_interno,push_interno_desde/);
   assert.match(html, /Autorizar Push dos alertas internos desta loja/);

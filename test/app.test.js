@@ -1752,7 +1752,6 @@ tflaky('Perfis de acesso: administrador vê básicas e especiais do perfil e con
   assert.ok(await a.p.locator('#permBasicas [data-perm]').count() >= 4);
   assert.ok(await a.p.locator('#permEspeciais [data-perm]').count() >= 6);
   assert.strictEqual(await a.p.isChecked('#permEspeciais [data-perm="nome_editar"]'), true, 'gerente já edita nome por padrão');
-  assert.strictEqual(await a.p.isDisabled('#permEspeciais [data-perm="lojas_gerenciar"]'), true, 'permissão ainda não ligada ao servidor fica travada');
   await a.p.selectOption('#permPapel', 'operador');
   assert.strictEqual(await a.p.isChecked('#permEspeciais [data-perm="nome_editar"]'), false);
   assert.strictEqual(await a.p.isChecked('#permBasicas [data-perm="registrar"]'), true);
@@ -1816,5 +1815,53 @@ tflaky('Perfis de acesso etapa 2: registros e exclusões ficam liberados para ma
   await permsCarregadas(a.p);
   await a.p.click('nav button[data-v="prod"]'); await a.p.click('[data-detail-lote="l1"]'); await a.p.click('#bDetailEdit');
   assert.strictEqual(await a.p.isVisible('#edLote'), true, 'com a permissão, edita');
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Perfis de acesso etapa 3: nenhuma permissão fica travada para o administrador, em nenhum perfil', { skip: pular }, async () => {
+  const a = await abrirLogado(p => rotasPerm(p, 'admin', []), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="usuarios"]');
+  for (const papel of ['operador', 'assistente', 'analista', 'gerente']) {
+    await a.p.selectOption('#permPapel', papel);
+    assert.strictEqual(await a.p.locator('#cardPerfisAcesso [data-perm]').count(), 16);
+    assert.strictEqual(await a.p.locator('#cardPerfisAcesso [data-perm]:disabled').count(), 0, papel + ': nada desabilitado');
+  }
+  assert.ok(!(await a.p.textContent('#cardPerfisAcesso')).includes('Regra fixa'));
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Perfis de acesso etapa 3: operador recebe Auditoria, Relatórios e Lojas no menu só quando o administrador concede', { skip: pular }, async () => {
+  let a = await abrirLogado(p => rotasPerm(p, 'operador', []), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador', nome: 'Op' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="aj"]');
+  assert.deepStrictEqual(await a.p.locator('#sysMenu [data-sys-open]').evaluateAll(b => b.map(x => x.dataset.sysOpen)), ['op-perfil', 'op-preferencias', 'op-alertas', 'op-sobre']);
+  await a.fechar();
+  a = await abrirLogado(async p => { await rotasPerm(p, 'operador', ['auditoria_ver', 'relatorios', 'lojas_gerenciar'].map(x => ({ papel: 'operador', permissao: x, permitido: true })));
+    await p.route(/\/rest\/v1\/auditoria/, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.route(/\/rest\/v1\/lojas\?/, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ id: 'L1', nome: 'FL05' }]) })); },
+    { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador', nome: 'Op' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="aj"]');
+  assert.deepStrictEqual(await a.p.locator('#sysMenu [data-sys-open]').evaluateAll(b => b.map(x => x.dataset.sysOpen)), ['op-perfil', 'op-preferencias', 'lojas', 'relatorios', 'auditoria', 'op-alertas', 'op-sobre']);
+  await a.p.click('#sysMenu [data-sys-open="auditoria"]');
+  assert.strictEqual(await a.p.isVisible('#cardAuditoria'), true);
+  assert.strictEqual(await a.p.isVisible('#cardLojasAdmin'), false);
+  await a.p.click('#sysBackToMenu'); await a.p.click('#sysMenu [data-sys-open="lojas"]');
+  assert.strictEqual(await a.p.isVisible('#cardLojasAdmin'), true);
+  await a.p.click('#sysBackToMenu'); await a.p.click('#sysMenu [data-sys-open="relatorios"]');
+  assert.strictEqual(await a.p.isVisible('#sysReportsPanel'), true);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Perfis de acesso etapa 3: gerente perde Usuários e ganha Auditoria e Catálogo conforme a permissão', { skip: pular }, async () => {
+  const a = await abrirLogado(p => rotasPerm(p, 'gerente', [{ papel: 'gerente', permissao: 'usuarios_gerenciar', permitido: false }, { papel: 'gerente', permissao: 'auditoria_ver', permitido: true }, { papel: 'gerente', permissao: 'catalogo_gerenciar', permitido: true }]),
+    { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'gerente', nome: 'G' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="aj"]');
+  const menu = await a.p.locator('#sysMenu [data-sys-open]').evaluateAll(b => b.map(x => x.dataset.sysOpen));
+  assert.ok(!menu.includes('usuarios') && menu.includes('auditoria') && menu.includes('catalogo') && !menu.includes('lojas') && !menu.includes('dados'), menu.join(','));
+  await a.p.click('#sysMenu [data-sys-open="catalogo"]');
+  assert.strictEqual(await a.p.isVisible('#v-catalogo'), true);
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
