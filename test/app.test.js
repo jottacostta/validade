@@ -2117,6 +2117,7 @@ tflaky('Central desktop: admin aguarda confirmação do perfil, usa indicadores 
     assert.strictEqual(await a.p.isVisible('#adminDesktop'), false);
     assert.strictEqual(await a.p.isVisible('nav.abas'), true, 'volta à navegação móvel');
     assert.strictEqual(await a.p.isVisible('#homeRegister'), true, 'admin mantém o fluxo de registro no celular');
+    assert.strictEqual((await a.p.textContent('#slogan')).trim(), 'Área do Administrador', 'o cabeçalho inicial acompanha o papel confirmado');
     await a.p.click('#homeRegister');
     assert.strictEqual(await a.p.isVisible('#bEscanear'), true, 'botão do scanner continua disponível no celular');
     assert.deepStrictEqual(a.erros, []);
@@ -2135,6 +2136,7 @@ tflaky('Central desktop: operador em PC não recebe a central administrativa nem
     await a.p.setViewportSize({ width: 390, height: 844 });
     assert.strictEqual(await a.p.locator('html').evaluate(e => e.classList.contains('desktop-admin')), false);
     assert.strictEqual(await a.p.isVisible('nav.abas'), true);
+    assert.strictEqual((await a.p.textContent('#slogan')).trim(), 'Área do Operador', 'o cabeçalho mantém o papel do operador');
     assert.deepStrictEqual(a.erros, []);
   } finally { await a.fechar(); }
 });

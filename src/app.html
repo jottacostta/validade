@@ -1207,7 +1207,7 @@ function renderHome(){
  var nome=(SESS&&(SESS.nome||SESS.usuario||SESS.email))||'Operador';nome=String(nome).split(/[\s@]/)[0]||'Operador';
  var loja=(SESS&&SESS.lojaNome)||'Loja não selecionada';
  if($('homeGreeting'))$('homeGreeting').textContent='Olá, '+nome+'!';
- var roleTxt=(SESS&&SESS.papel&&PAPEIS&&PAPEIS[SESS.papel])||'Operador';if($('operatorRolePill'))$('operatorRolePill').lastElementChild.textContent='Área do '+roleTxt;
+ var roleTxt=(SESS&&SESS.papel&&PAPEIS&&PAPEIS[SESS.papel])||'Operador',areaTxt=SESS&&SESS.papel?'Área do '+roleTxt:(CFG.slogan||'Área do Operador');if($('slogan'))$('slogan').textContent=areaTxt;if($('operatorRolePill'))$('operatorRolePill').lastElementChild.textContent='Área do '+roleTxt;
  if($('homeStore'))$('homeStore').textContent=((SESS&&SESS.papel&&PAPEIS&&PAPEIS[SESS.papel])||'Operador')+' · '+loja;
  var nAlert=todosRegistros().filter(function(x){var n=dias(x.reg.val);return n!==null&&n<=D.aj.dias;}).length;
  ['homeBellBadge','homeAlertsBadge'].forEach(function(id){var b=$(id);if(b){b.textContent=nAlert>99?'99+':String(nAlert);b.style.display=nAlert?'':'none';}});
