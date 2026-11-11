@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#083d81">
 <link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./pwa-icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Validade">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Controle de Validade</title>
 <style>
 :root{--c:#083d81;--c2:#e1e8f0;--c3:#5277a7;--am:#faf400;--bg:#F4F7FA;--sf:#fff;--bd:#E0E7EE;--ink:#17212B;--mu:#657586;--ok:#16803C;--okl:#E3F4EA;--wa:#B26A00;--wal:#FFF2D6;--da:#C62828;--dal:#FDE4E6}
@@ -604,6 +608,68 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 #pushCard #pushStatus{margin:0 0 10px;padding:10px 12px;border:1px solid #294b67;border-radius:12px;background:#091d2e;color:#fff;font-size:clamp(13px,3.7vw,16px)}
 #pushCard .btn{width:100%;min-height:50px}
 #pushDica .btn{margin-top:8px;min-height:44px}
+
+/* Central administrativa desktop: ativa apenas para admin autenticado, papel confirmado e viewport amplo. */
+#adminDesktop{display:none}
+#adminDesktop .admin-desktop-sidebar{background:#061b30;border-right:1px solid #254562;color:#edf5fc;padding:26px 18px;display:flex;flex-direction:column;gap:22px;min-width:0}
+#adminDesktop .admin-desktop-brand{display:flex;align-items:center;gap:12px;padding:0 7px 20px;border-bottom:1px solid #24415c}
+#adminDesktop .admin-desktop-mark{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:linear-gradient(145deg,#0878e8,#0b3d79);color:#ffdf00;font-weight:900;font-size:19px}
+#adminDesktop .admin-desktop-brand b{display:block;font-size:14px;line-height:1.2}
+#adminDesktop .admin-desktop-brand small{display:block;color:#a9bed1;margin-top:4px;font-size:11px}
+#adminDesktop .admin-desktop-nav{display:grid;gap:8px}
+#adminDesktop .admin-desktop-nav button{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:0 13px;border:1px solid transparent;border-radius:12px;background:transparent;color:#c1d0df;text-align:left;font:700 14px system-ui;cursor:pointer}
+#adminDesktop .admin-desktop-nav button:hover,#adminDesktop .admin-desktop-nav button.on{background:#0b3d79;border-color:#2761a0;color:#fff}
+#adminDesktop .admin-desktop-nav .admin-nav-icon{display:grid;place-items:center;width:24px;height:24px;color:#ffdf00;font-size:19px}
+#adminDesktop .admin-desktop-sidebar-foot{margin-top:auto;display:grid;gap:10px}
+#adminDesktop .admin-desktop-sidebar-foot p{margin:0;padding:12px;border:1px solid #24415c;border-radius:12px;color:#b8c9d8;font-size:12px;overflow-wrap:anywhere}
+#adminDesktop .admin-desktop-main{min-width:0;min-height:0;display:flex;flex-direction:column;background:radial-gradient(70% 100% at 100% 0%,#0a2d4b 0%,#031321 60%)}
+#adminDesktop .admin-desktop-top{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 34px;border-bottom:1px solid #24415c;background:#071d31}
+#adminDesktop .admin-desktop-top h1{margin:0;font-size:25px;line-height:1.15;color:#fff}
+#adminDesktop .admin-desktop-top p{margin:6px 0 0;color:#b8c9d8;font-size:13px}
+#adminDesktop .admin-desktop-top-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+#adminDesktop .admin-desktop-user{display:grid;gap:2px;text-align:right;margin-right:7px}
+#adminDesktop .admin-desktop-user b{font-size:13px;color:#fff}
+#adminDesktop .admin-desktop-user small{font-size:11px;color:#b8c9d8}
+#adminDesktop .admin-desktop-content{min-width:0;flex:1;overflow:auto;padding:28px 34px 40px}
+#adminDesktop .admin-desktop-scope{margin:0 0 18px;color:#bfd0df;font-size:12px}
+#adminDesktop .admin-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:18px}
+#adminDesktop .admin-kpi{min-width:0;padding:18px;border:1px solid #294967;border-radius:16px;background:linear-gradient(145deg,#10283e,#0b2034);box-shadow:0 8px 22px #0002}
+#adminDesktop .admin-kpi small{display:block;color:#b8c9d8;font-size:12px;font-weight:700}
+#adminDesktop .admin-kpi b{display:block;margin-top:8px;color:#fff;font-size:30px;line-height:1}
+#adminDesktop .admin-kpi.da b{color:#ff6b72}#adminDesktop .admin-kpi.wa b{color:#ffc35c}#adminDesktop .admin-kpi.ok b{color:#6ee28a}
+#adminDesktop .admin-desktop-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(360px,.95fr);gap:16px;align-items:start}
+#adminDesktop .admin-desktop-card{min-width:0;padding:20px;border:1px solid #294967;border-radius:17px;background:#0b2034;box-shadow:0 8px 22px #0002}
+#adminDesktop .admin-desktop-card h2{margin:0 0 5px;font-size:17px;color:#fff}
+#adminDesktop .admin-desktop-card>p{margin:0 0 15px;color:#b8c9d8;font-size:12px}
+#adminDesktop .admin-status-row{display:grid;grid-template-columns:100px minmax(0,1fr) 44px;gap:10px;align-items:center;margin:15px 0;color:#dce8f3;font-size:12px}
+#adminDesktop .admin-status-track{height:10px;border-radius:999px;background:#18354e;overflow:hidden}
+#adminDesktop .admin-status-fill{height:100%;width:0;border-radius:inherit;background:#6ee28a;transition:width .2s}
+#adminDesktop .admin-status-fill.wa{background:#ffc35c}#adminDesktop .admin-status-fill.da{background:#ff6b72}
+#adminDesktop .admin-desktop-table-wrap{overflow:auto}
+#adminDesktop .admin-desktop-table{min-width:610px;font-size:12px}
+#adminDesktop .admin-desktop-table th,#adminDesktop .admin-desktop-table td{padding:10px 8px}
+#adminDesktop .admin-desktop-empty{padding:24px;color:#a9bed1;text-align:center}
+#adminDesktop .admin-report-actions{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+#adminDesktop .admin-report-actions .btn{min-height:48px}
+#adminDesktop .admin-report-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}
+#adminDesktop .admin-report-summary div{padding:13px;border:1px solid #294967;border-radius:13px;background:#10283e}
+#adminDesktop .admin-report-summary small{display:block;color:#b8c9d8;font-size:11px}
+#adminDesktop .admin-report-summary b{display:block;margin-top:4px;color:#fff;font-size:20px}
+#adminDesktop .admin-report-status{min-height:24px;color:#b8c9d8;font-size:13px}
+#adminDesktop [hidden]{display:none!important}
+#adminDesktopLoading{display:none}
+@media(min-width:1024px){
+ html.desktop-admin,html.desktop-admin body{width:100%;height:100%;min-height:100%;overflow:hidden}
+ html.desktop-admin body{padding:0!important}
+ html.desktop-admin body>header,html.desktop-admin body>#systemAlertBanner,html.desktop-admin body>main,html.desktop-admin body>nav.abas{display:none!important}
+ html.desktop-admin #adminDesktop{position:fixed;inset:0;z-index:30;display:grid;grid-template-columns:250px minmax(0,1fr);min-width:0;min-height:0;background:#031321}
+ html.desktop-admin #scanner{display:none!important}
+ html.desktop-admin #adminDesktop .admin-desktop-top{padding:22px 30px}
+ html.desktop-admin .toast{bottom:24px}
+ html.desktop-admin-pending body>header,html.desktop-admin-pending body>#systemAlertBanner,html.desktop-admin-pending body>main,html.desktop-admin-pending body>nav.abas{display:none!important}
+ html.desktop-admin-pending #adminDesktopLoading{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:#031321;color:#fff;font:700 16px system-ui}
+}
+@media(min-width:1024px) and (max-width:1200px){#adminDesktop .admin-desktop-sidebar{padding:20px 12px}#adminDesktop .admin-desktop-content{padding:22px 20px}#adminDesktop .admin-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}#adminDesktop .admin-desktop-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -613,6 +679,52 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
   <div class="system-alert-copy"><strong id="systemAlertTitle"></strong><p id="systemAlertMessage"></p></div>
   <button id="bSystemAlertOk" class="btn" type="button">OK</button>
 </div>
+<section id="adminDesktop" aria-label="Central administrativa desktop">
+  <aside class="admin-desktop-sidebar">
+    <div class="admin-desktop-brand"><span class="admin-desktop-mark" aria-hidden="true">CV</span><span><b>Controle de Validade</b><small>Central Administrativa</small></span></div>
+    <nav class="admin-desktop-nav" id="adminDesktopNav" aria-label="Navegação administrativa">
+      <button class="on" type="button" data-admin-view="dashboard" aria-current="page"><span class="admin-nav-icon" aria-hidden="true">⌂</span><span>Visão geral</span></button>
+      <button type="button" data-admin-view="reports"><span class="admin-nav-icon" aria-hidden="true">▤</span><span>Relatórios e exportações</span></button>
+    </nav>
+    <div class="admin-desktop-sidebar-foot"><p>Escopo dos dados<br><b id="adminDesktopStore">Loja selecionada</b></p></div>
+  </aside>
+  <div class="admin-desktop-main">
+    <header class="admin-desktop-top"><div><h1 id="adminDesktopTitle">Painel administrativo</h1><p id="adminDesktopSubtitle">Indicadores de validade e registros da loja selecionada.</p></div>
+      <div class="admin-desktop-top-actions"><span class="admin-desktop-user"><b id="adminDesktopUser">Administrador</b><small>Administrador</small></span><button class="btn sec" id="adminDesktopChangeStore" type="button">Trocar loja</button><button class="btn sec" id="adminDesktopRefresh" type="button">Atualizar</button><button class="btn" id="adminDesktopLogout" type="button">Sair</button></div>
+    </header>
+    <div class="admin-desktop-content">
+      <section id="adminDesktopDashboard" aria-label="Indicadores administrativos">
+        <p class="admin-desktop-scope" id="adminDesktopScope">Dados locais/sincronizados da loja ativa.</p>
+        <div class="admin-kpis">
+          <article class="admin-kpi"><small>Registros monitorados</small><b id="adminKpiRecords">0</b></article>
+          <article class="admin-kpi"><small>Produtos cadastrados</small><b id="adminKpiProducts">0</b></article>
+          <article class="admin-kpi da"><small>Vencidos</small><b id="adminKpiExpired">0</b></article>
+          <article class="admin-kpi wa"><small>A vencer</small><b id="adminKpiSoon">0</b></article>
+          <article class="admin-kpi ok"><small>Dentro da validade</small><b id="adminKpiValid">0</b></article>
+        </div>
+        <div class="admin-desktop-grid">
+          <section class="admin-desktop-card"><h2>Situação das validades</h2><p>Distribuição dos registros da loja atual; o período de alerta segue a configuração do aplicativo.</p>
+            <div class="admin-status-row"><span>Vencidos</span><span class="admin-status-track"><span class="admin-status-fill da" id="adminBarExpired"></span></span><b id="adminBarExpiredCount">0</b></div>
+            <div class="admin-status-row"><span>A vencer</span><span class="admin-status-track"><span class="admin-status-fill wa" id="adminBarSoon"></span></span><b id="adminBarSoonCount">0</b></div>
+            <div class="admin-status-row"><span>Válidos</span><span class="admin-status-track"><span class="admin-status-fill" id="adminBarValid"></span></span><b id="adminBarValidCount">0</b></div>
+            <div class="admin-report-summary"><div><small>Unidades nos lotes</small><b id="adminKpiUnits">0</b></div><div><small>Peso perecíveis (kg)</small><b id="adminKpiWeight">0,000</b></div><div><small>Pendentes de sync</small><b id="adminKpiPending">0</b></div></div>
+          </section>
+          <section class="admin-desktop-card"><h2>Registros recentes</h2><p>Últimos registros disponíveis no cache desta loja.</p>
+            <div class="admin-desktop-table-wrap"><table class="admin-desktop-table"><thead><tr><th>Produto</th><th>Tipo</th><th>Validade</th><th>Situação</th></tr></thead><tbody id="adminRecentRows"><tr><td colspan="4" class="admin-desktop-empty">Nenhum registro encontrado.</td></tr></tbody></table></div>
+          </section>
+        </div>
+      </section>
+      <section id="adminDesktopReports" aria-label="Relatórios e exportações" hidden>
+        <section class="admin-desktop-card"><h2>Relatórios da loja</h2><p>Gere um resumo legível e exporte os registros disponíveis em um arquivo Excel verdadeiro (.xlsx). O arquivo inclui as abas Resumo, Validades, Perecíveis e Alertas.</p>
+          <div class="admin-report-summary"><div><small>Lotes industrializados</small><b id="adminReportLots">0</b></div><div><small>Registros perecíveis</small><b id="adminReportPereciveis">0</b></div><div><small>Alertas de validade</small><b id="adminReportAlerts">0</b></div></div>
+          <div class="admin-report-actions"><button class="btn sec" id="adminGenerateReport" type="button">Baixar resumo (.txt)</button><button class="btn" id="adminExportXlsx" type="button">Exportar Excel (.xlsx)</button></div>
+          <p class="admin-report-status" id="adminReportStatus" aria-live="polite">O relatório usa os dados carregados para a loja atualmente selecionada.</p>
+        </section>
+      </section>
+    </div>
+  </div>
+</section>
+<div id="adminDesktopLoading" role="status" aria-live="polite">Confirmando perfil e permissões…</div>
 <main>
 
 <!-- ═════════ REGISTRAR ═════════ -->
@@ -1254,7 +1366,7 @@ function renderHome(){
  var nome=(SESS&&(SESS.nome||SESS.usuario||SESS.email))||'Operador';nome=String(nome).split(/[\s@]/)[0]||'Operador';
  var loja=(SESS&&SESS.lojaNome)||'Loja não selecionada';
  if($('homeGreeting'))$('homeGreeting').textContent='Olá, '+nome+'!';
- var roleTxt=(SESS&&SESS.papel&&PAPEIS&&PAPEIS[SESS.papel])||'Operador';if($('operatorRolePill'))$('operatorRolePill').lastElementChild.textContent='Área do '+roleTxt;
+ var roleTxt=(SESS&&SESS.papel&&PAPEIS&&PAPEIS[SESS.papel])||'Operador',areaTxt=SESS&&SESS.papel?'Área do '+roleTxt:(CFG.slogan||'Área do Operador');if($('slogan'))$('slogan').textContent=areaTxt;if($('operatorRolePill'))$('operatorRolePill').lastElementChild.textContent='Área do '+roleTxt;
  if($('homeStore'))$('homeStore').textContent=((SESS&&SESS.papel&&PAPEIS&&PAPEIS[SESS.papel])||'Operador')+' · '+loja;
  var nAlert=todosRegistros().filter(function(x){var n=dias(x.reg.val);return n!==null&&n<=D.aj.dias;}).length;
  ['homeBellBadge','homeAlertsBadge'].forEach(function(id){var b=$(id);if(b){b.textContent=nAlert>99?'99+':String(nAlert);b.style.display=nAlert?'':'none';}});
@@ -1406,7 +1518,7 @@ function iniciarCamera(){pararCamera();var dica=alvoScan==='etq'?'Posicione a et
     try{var tr=s.getVideoTracks()[0],cap=tr.getCapabilities&&tr.getCapabilities();if(cap&&cap.focusMode&&cap.focusMode.indexOf('continuous')>=0)tr.applyConstraints({advanced:[{focusMode:'continuous'}]});}catch(e){}
     loop=setInterval(quadro,160);
   },function(e){$('scanTxt').textContent='Sem acesso à câmera ('+e.name+') — use Ler da galeria ou digite o código';});}
-function abrirScanner(alvo){alvoScan=alvo;ultimo='';repet=0;nQuadro=0;camLado='environment';
+function abrirScanner(alvo){if(typeof adminDesktopAtivo==='function'&&adminDesktopAtivo()){toast('O scanner está disponível na experiência móvel.');return;}alvoScan=alvo;ultimo='';repet=0;nQuadro=0;camLado='environment';
   $('scanTitulo').textContent=alvo==='etq'?'Ler Etiqueta – Perecível':alvo==='bal'?'Escanear etiqueta da balança':'Escanear código de barras';
   $('scanner').classList.add('on');iniciarCamera();}
 function fecharScanner(){pararCamera();
@@ -1943,6 +2055,43 @@ $('bRelProd').onclick=function(){var v=[],a=[];Object.keys(D.prod).forEach(funct
 $('bRelPe').onclick=function(){var t='*'+CFG.nome+' — Perecíveis* ('+new Date().toLocaleDateString('pt-BR')+')\n';ordenar(D.pere.regs).forEach(function(r){var it=D.pere.itens[r.cod]||{},n=dias(r.val);
   t+='\n'+(n<0?'⚠️ ':n<=D.aj.dias?'⏰ ':'')+(it.desc||r.cod)+' — SIF '+(r.sif||'—')+' — '+kg(r.peso)+' kg — '+fdata(r.val);});compartilhar(t);};
 
+/* Indicadores desktop: somente dados em cache/sincronizados da loja ativa; sem agregação multi-loja. */
+function adminDesktopRegistros(){var out=[];Object.keys(D.prod||{}).forEach(function(ean){var p=D.prod[ean]||{},c=detalheProduto(ean);(p.lotes||[]).forEach(function(r){out.push({tipo:'Lote',codigo:ean,nome:c.nome||ean,marca:c.marca||'',lote:r.lote||'',quantidade:Number(r.qtd)||0,peso:0,setor:r.setor||'',validade:r.val||'',dias:dias(r.val),informante:r.created_by_nome||'',pendente:!r.rpcConfirmado&&filaTemRegistro('lote',r.id),criado:r.criado||r.created_at||r.atualizado||0});});});
+  (D.pere&&D.pere.regs||[]).forEach(function(r){var it=D.pere.itens[r.cod]||{};out.push({tipo:'Perecível',codigo:r.cod,nome:it.desc||('Código '+r.cod),marca:'',lote:r.sif||'',quantidade:0,peso:Number(r.peso)||0,setor:r.setor||'',validade:r.val||'',dias:dias(r.val),informante:r.created_by_nome||'',pendente:!r.rpcConfirmado&&filaTemRegistro('perecivel',r.id),criado:r.criado||r.created_at||0});});return out;}
+function adminStatusValidade(d){return d===null?'Sem data':d<0?'Vencido':d===0?'Vence hoje':d<=D.aj.dias?'A vencer':'Válido';}
+function adminDesktopData(){var rows=adminDesktopRegistros(),exp=rows.filter(function(r){return r.dias!==null&&r.dias<0;}).length,soon=rows.filter(function(r){return r.dias!==null&&r.dias>=0&&r.dias<=D.aj.dias;}).length,valid=rows.filter(function(r){return r.dias!==null&&r.dias>D.aj.dias;}).length,unidades=rows.reduce(function(n,r){return n+r.quantidade;},0),peso=rows.reduce(function(n,r){return n+r.peso;},0),pend=rows.filter(function(r){return r.pendente;}).length;
+  return {rows:rows,expired:exp,soon:soon,valid:valid,units:unidades,weight:peso,pending:pend,products:Object.keys(D.prod||{}).length+Object.keys(D.pere&&D.pere.itens||{}).length};}
+function adminDesktopSet(id,value){var el=$(id);if(el)el.textContent=String(value);}
+function adminDesktopView(v){adminDesktopVista=v==='reports'?'reports':'dashboard';var dash=adminDesktopVista==='dashboard';$('adminDesktopDashboard').hidden=!dash;$('adminDesktopReports').hidden=dash;$('adminDesktopTitle').textContent=dash?'Painel administrativo':'Relatórios e exportações';$('adminDesktopSubtitle').textContent=dash?'Indicadores de validade e registros da loja selecionada.':'Geração de relatórios dos dados disponíveis na loja atual.';document.querySelectorAll('#adminDesktopNav [data-admin-view]').forEach(function(b){var on=b.dataset.adminView===adminDesktopVista;b.classList.toggle('on',on);if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});adminDesktopRender();}
+function adminDesktopRender(){if(!$('adminDesktop')||!document.documentElement.classList.contains('desktop-admin'))return;var d=adminDesktopData(),den=Math.max(1,d.rows.length),nome=SESS&&(SESS.nome||SESS.usuario||SESS.email)||'Administrador',loja=SESS&&(SESS.lojaNome)||'Loja selecionada';
+  adminDesktopSet('adminDesktopUser',nome);adminDesktopSet('adminDesktopStore',loja);adminDesktopSet('adminKpiRecords',d.rows.length);adminDesktopSet('adminKpiProducts',d.products);adminDesktopSet('adminKpiExpired',d.expired);adminDesktopSet('adminKpiSoon',d.soon);adminDesktopSet('adminKpiValid',d.valid);adminDesktopSet('adminKpiUnits',d.units.toLocaleString('pt-BR'));adminDesktopSet('adminKpiWeight',kg(d.weight));adminDesktopSet('adminKpiPending',d.pending);
+  var recebido=SYNC&&SYNC.recebido?new Date(SYNC.recebido).toLocaleString('pt-BR'):'ainda não confirmada';adminDesktopSet('adminDesktopScope','Loja: '+loja+' · dados do cache local, última sincronização: '+recebido+'.');
+  [['adminBarExpired',d.expired,'adminBarExpiredCount'],['adminBarSoon',d.soon,'adminBarSoonCount'],['adminBarValid',d.valid,'adminBarValidCount']].forEach(function(x){var bar=$(x[0]);if(bar)bar.style.width=(100*({adminBarExpired:d.expired,adminBarSoon:d.soon,adminBarValid:d.valid}[x[0]])/den)+'%';adminDesktopSet(x[2],x[0]==='adminBarExpired'?d.expired:x[0]==='adminBarSoon'?d.soon:d.valid);});
+  var recent=d.rows.slice().sort(function(a,b){var da=typeof a.criado==='number'?a.criado:Date.parse(a.criado)||0,db=typeof b.criado==='number'?b.criado:Date.parse(b.criado)||0;return db-da;}).slice(0,8);$('adminRecentRows').innerHTML=recent.map(function(r){return '<tr><td>'+esc(r.nome)+'</td><td>'+esc(r.tipo)+'</td><td>'+esc(fdata(r.validade))+'</td><td>'+esc(adminStatusValidade(r.dias))+(r.pendente?' · Pendente sync':'')+'</td></tr>';}).join('')||'<tr><td colspan="4" class="admin-desktop-empty">Nenhum registro encontrado.</td></tr>';
+  adminDesktopSet('adminReportLots',d.rows.filter(function(r){return r.tipo==='Lote';}).length);adminDesktopSet('adminReportPereciveis',d.rows.filter(function(r){return r.tipo==='Perecível';}).length);adminDesktopSet('adminReportAlerts',d.rows.filter(function(r){return r.dias!==null&&r.dias<=D.aj.dias||r.pendente;}).length);}
+function adminDesktopAtivar(){return !!(window.matchMedia&&window.matchMedia('(min-width: 1024px)').matches&&sbOn()&&logado()&&papelConfirmado&&SESS&&SESS.papel==='admin'&&SESS.lojaId);}
+function atualizarModoDesktopAdmin(){var ativo=adminDesktopAtivar();document.documentElement.classList.toggle('desktop-admin',ativo);if(ativo&&$('scanner')&&$('scanner').classList.contains('on'))fecharScanner();if(ativo)adminDesktopRender();}
+window.addEventListener('resize',atualizarModoDesktopAdmin);
+$('adminDesktopNav').onclick=function(e){var b=e.target.closest('[data-admin-view]');if(b)adminDesktopView(b.dataset.adminView);};
+$('adminDesktopChangeStore').onclick=function(){abrirConta();};$('adminDesktopLogout').onclick=function(){$('bLogoutHdr').click();};
+$('adminDesktopRefresh').onclick=function(){var b=this;b.disabled=true;b.textContent='Atualizando…';catalogoPull().then(function(){return sincronizarLoja();}).then(function(n){adminDesktopRender();$('adminReportStatus').textContent=n<0?'Atualização indisponível; exibindo o cache local.':'Painel atualizado com os dados disponíveis da loja.';}).catch(function(){adminDesktopRender();$('adminReportStatus').textContent='Não foi possível atualizar; os dados locais continuam disponíveis.';}).then(function(){b.disabled=false;b.textContent='Atualizar';});};
+function adminXml(v){return String(v==null?'':v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');}
+function adminColuna(n){var s='';while(n>0){var r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26);}return s;}
+function adminPlanilhaXml(rows){var data=rows.map(function(row,i){var cells=row.map(function(v,j){var ref=adminColuna(j+1)+(i+1);if(typeof v==='number'&&Number.isFinite(v))return '<c r="'+ref+'"><v>'+v+'</v></c>';return '<c r="'+ref+'" t="inlineStr"><is><t xml:space="preserve">'+adminXml(v)+'</t></is></c>';}).join('');return '<row r="'+(i+1)+'">'+cells+'</row>';}).join('');return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'+data+'</sheetData></worksheet>';}
+function adminCrc32(bytes){var c=0xffffffff;for(var i=0;i<bytes.length;i++){c^=bytes[i];for(var j=0;j<8;j++)c=(c>>>1)^(c&1?0xedb88320:0);}return (c^0xffffffff)>>>0;}
+function adminZip(files){var enc=new TextEncoder(),parts=[],central=[],offset=0;function put16(a,p,v){new DataView(a.buffer,a.byteOffset,a.byteLength).setUint16(p,v,true);}function put32(a,p,v){new DataView(a.buffer,a.byteOffset,a.byteLength).setUint32(p,v>>>0,true);}
+  files.forEach(function(f){var name=enc.encode(f.name),data=enc.encode(f.text),crc=adminCrc32(data),local=new Uint8Array(30+name.length+data.length);put32(local,0,0x04034b50);put16(local,4,20);put16(local,6,0);put16(local,8,0);put16(local,10,0);put16(local,12,0x21);put32(local,14,crc);put32(local,18,data.length);put32(local,22,data.length);put16(local,26,name.length);put16(local,28,0);local.set(name,30);local.set(data,30+name.length);parts.push(local);
+    var cd=new Uint8Array(46+name.length);put32(cd,0,0x02014b50);put16(cd,4,20);put16(cd,6,20);put16(cd,8,0);put16(cd,10,0);put16(cd,12,0);put16(cd,14,0x21);put32(cd,16,crc);put32(cd,20,data.length);put32(cd,24,data.length);put16(cd,28,name.length);put16(cd,30,0);put16(cd,32,0);put16(cd,34,0);put16(cd,36,0);put32(cd,38,0);put32(cd,42,offset);cd.set(name,46);central.push(cd);offset+=local.length;});
+  var cdSize=central.reduce(function(n,x){return n+x.length;},0),end=new Uint8Array(22);put32(end,0,0x06054b50);put16(end,4,0);put16(end,6,0);put16(end,8,files.length);put16(end,10,files.length);put32(end,12,cdSize);put32(end,16,offset);put16(end,20,0);return new Blob(parts.concat(central,[end]),{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});}
+function adminCriarXlsx(){var d=adminDesktopData(),rows=d.rows,hojeTxt=new Date().toLocaleDateString('pt-BR'),store=SESS&&SESS.lojaNome||'Loja selecionada',prod=[['EAN','Produto','Marca','Lote','Quantidade','Setor','Validade','Dias para vencer','Situação','Informado por','Sincronização']].concat(rows.filter(function(r){return r.tipo==='Lote';}).map(function(r){return [r.codigo,r.nome,r.marca,r.lote,r.quantidade,r.setor,fdata(r.validade),r.dias===null?'':r.dias,adminStatusValidade(r.dias),r.informante,r.pendente?'Pendente':'Sincronizado/local'];}));
+  var pere=[['Código','Descrição','SIF','Peso (kg)','Setor','Validade','Dias para vencer','Situação','Informado por','Sincronização']].concat(rows.filter(function(r){return r.tipo==='Perecível';}).map(function(r){return [r.codigo,r.nome,r.lote,r.peso,r.setor,fdata(r.validade),r.dias===null?'':r.dias,adminStatusValidade(r.dias),r.informante,r.pendente?'Pendente':'Sincronizado/local'];}));
+  var alerts=[['Tipo','Código','Produto','Lote/SIF','Quantidade','Peso (kg)','Setor','Validade','Dias para vencer','Situação','Informado por','Sincronização']].concat(rows.filter(function(r){return r.dias!==null&&r.dias<=D.aj.dias||r.pendente;}).map(function(r){return [r.tipo,r.codigo,r.nome,r.lote,r.quantidade,r.peso,r.setor,fdata(r.validade),r.dias===null?'':r.dias,adminStatusValidade(r.dias),r.informante,r.pendente?'Pendente':'Sincronizado/local'];}));
+  var resumo=[['Indicador','Valor'],['Relatório de validade',CFG.nome],['Loja',store],['Gerado em',hojeTxt],['Registros monitorados',rows.length],['Produtos cadastrados',d.products],['Lotes industrializados',prod.length-1],['Registros perecíveis',pere.length-1],['Vencidos',d.expired],['A vencer',d.soon],['Dentro da validade',d.valid],['Unidades nos lotes',d.units],['Peso perecíveis (kg)',d.weight],['Pendentes de sincronização',d.pending],['Dias de antecedência',D.aj.dias],['Escopo','Dados disponíveis para a loja atualmente selecionada']];
+  var sheets=[{name:'Resumo',rows:resumo},{name:'Validades',rows:prod},{name:'Perecíveis',rows:pere},{name:'Alertas',rows:alerts}],names=sheets.map(function(s){return s.name;}),files=[{name:'[Content_Types].xml',text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+sheets.map(function(s,i){return '<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';}).join('')+'</Types>'},{name:'_rels/.rels',text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},{name:'xl/workbook.xml',text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+names.map(function(n,i){return '<sheet name="'+adminXml(n)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>';}).join('')+'</sheets></workbook>'},{name:'xl/_rels/workbook.xml.rels',text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+sheets.map(function(s,i){return '<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>';}).join('')+'</Relationships>'}];
+  sheets.forEach(function(s,i){files.push({name:'xl/worksheets/sheet'+(i+1)+'.xml',text:adminPlanilhaXml(s.rows)});});var a=document.createElement('a'),url=URL.createObjectURL(adminZip(files));a.href=url;a.download='validade_relatorio_'+dt()+'.xlsx';document.body.appendChild(a);a.click();setTimeout(function(){a.remove();URL.revokeObjectURL(url);},2000);$('adminReportStatus').textContent='Arquivo Excel (.xlsx) gerado com '+rows.length+' registro(s) da loja '+store+'.';}
+$('adminExportXlsx').onclick=adminCriarXlsx;
+$('adminGenerateReport').onclick=function(){var d=adminDesktopData(),store=SESS&&SESS.lojaNome||'Loja selecionada',text=[CFG.nome+' — Relatório de validade','Loja: '+store,'Gerado em: '+new Date().toLocaleString('pt-BR'),'','Registros monitorados: '+d.rows.length,'Produtos cadastrados: '+d.products,'Lotes industrializados: '+d.rows.filter(function(r){return r.tipo==='Lote';}).length,'Registros perecíveis: '+d.rows.filter(function(r){return r.tipo==='Perecível';}).length,'Vencidos: '+d.expired,'A vencer: '+d.soon,'Dentro da validade: '+d.valid,'Unidades nos lotes: '+d.units,'Peso perecíveis (kg): '+kg(d.weight),'Pendentes de sincronização: '+d.pending,'','Escopo: dados locais/sincronizados disponíveis para a loja atualmente selecionada.'].join('\n');baixar('validade_relatorio_'+dt()+'.txt','\ufeff'+text,'text/plain;charset=utf-8');$('adminReportStatus').textContent='Resumo em texto gerado para a loja '+store+'.';};
+
 /* ───── ajustes ───── */
 function ajustes(){$('aCosmos').value=tokenCosmos();$('aDig').value=String(D.aj.dig);$('aValor').value=D.aj.valor;$('aDias').value=D.aj.dias;$('aNotif').checked=!!D.aj.notif;$('aOcr').checked=!!D.aj.ocr;carregarAjustesAlertasLoja();contaCard();auditoriaCard();carregarLojasAdmin();}
 var ALERTA_LOJA={lojaId:null,dias:30,push:false,disponivel:false};
@@ -2009,7 +2158,7 @@ function sbReq(path,opt){opt=opt||{};
 function sbLogin(user,pass){return sbReq('/auth/v1/token?grant_type=password',{method:'POST',auth:false,body:{email:user+'@'+DOM_LOGIN,password:pass}})
   .then(function(r){if(!r.ok||!r.dados||!r.dados.access_token)throw new Error((r.dados&&(r.dados.error_description||r.dados.msg||r.dados.error))||'Usuário ou senha inválidos');
     var u=r.dados.user||{},meta=u.app_metadata||{};SESS={access_token:r.dados.access_token,refresh_token:r.dados.refresh_token,expira:Date.now()+((r.dados.expires_in||3600)*1000),usuario:user,email:u.email,uid:u.id,loginEm:Date.now(),lojaId:null,lojaNome:null,forcePasswordChange:meta.force_password_change===true};salvarSess();return SESS;});}
-function sbLogout(){var token=SESS&&SESS.access_token;SESS=null;salvarSess();refreshSessaoEmAndamento=null;calendarConectado=false;calendarUltimoSync=0;calendarRender();try{localStorage.removeItem('validade_ultima_loja');}catch(e){}if(token&&sbOn()){return fetch(CFG.supaUrl+'/auth/v1/logout',{method:'POST',headers:{apikey:CFG.supaKey,Authorization:'Bearer '+token}}).catch(function(e){console.warn('Falha ao invalidar sessão remota (sessão local já encerrada):',e);});}return Promise.resolve();}
+function sbLogout(){var token=SESS&&SESS.access_token;SESS=null;papelConfirmado=false;atualizarModoDesktopAdmin();salvarSess();refreshSessaoEmAndamento=null;calendarConectado=false;calendarUltimoSync=0;calendarRender();try{localStorage.removeItem('validade_ultima_loja');}catch(e){}if(token&&sbOn()){return fetch(CFG.supaUrl+'/auth/v1/logout',{method:'POST',headers:{apikey:CFG.supaKey,Authorization:'Bearer '+token}}).catch(function(e){console.warn('Falha ao invalidar sessão remota (sessão local já encerrada):',e);});}return Promise.resolve();}
 function sairParaLogin(){notificacoesCache=[];notificacoesConsultadasEm=0;notificacoesEscopoCache='';atualizarBannerAlertaSistema();sbLogout();try{history.replaceState({loggedOut:true},'',location.href.split('#')[0]);}catch(e){}var modal=$('conta');if(modal)modal.classList.add('on');mostrarLoginForm();contaCard();atualizarBotaoLogout();atualizarGate();toast('Você saiu');}
 function sbLojas(){return sbReq('/rest/v1/lojas?select=id,nome&order=nome.asc').then(function(r){if(!r.ok)throw new Error('falha');return Array.isArray(r.dados)?r.dados:[];});}
 /* ───── catálogo compartilhado (EAN → nome), entre todas as lojas ───── */
@@ -2059,7 +2208,7 @@ function sincronizarLoja(){
     regs.forEach(function(row){var ix=D.pere.regs.findIndex(function(x){return String(x.id)===String(row.id);});if(row.deleted_at){if(ix>=0)D.pere.regs.splice(ix,1);return;}var reg={id:row.id,cod:String(row.cod),sif:row.sif||'',peso:Number(row.peso)||0,val:row.val||'',setor:row.setor||null,criado:row.criado||null,created_by:row.created_by||null,created_by_nome:row.created_by_nome||null,rpcConfirmado:true},ix=D.pere.regs.findIndex(function(x){return String(x.id)===String(row.id);});if(ix>=0)D.pere.regs[ix]=Object.assign(D.pere.regs[ix],reg);else D.pere.regs.push(reg);n++;});
     guardar(K,JSON.stringify(D));
     renderAlertas();var abaAtiva=document.querySelector('#abas button.on');if(abaAtiva){if(abaAtiva.dataset.v==='home')renderHome();if(abaAtiva.dataset.v==='prod')listaProdutos();else if(abaAtiva.dataset.v==='pere')subPere(subAtual);else if(abaAtiva.dataset.v==='alertas')carregarNotificacoes();else if(abaAtiva.dataset.v==='aj')contaCard();}
-    SYNC.loja=SESS.lojaId;SYNC.recebido=Date.now();salvarSync();return n;
+    SYNC.loja=SESS.lojaId;SYNC.recebido=Date.now();salvarSync();adminDesktopRender();return n;
   }).catch(function(e){console.warn('Sincronização da loja falhou:',e);return -1;}).then(function(n){sincronizacaoEmAndamento=false;if(n>=0)agendarSyncCalendar();return n;},function(e){sincronizacaoEmAndamento=false;throw e;});
 }
 function agendarSincronizacaoPeriodica(){clearInterval(temporizadorSincronizacao);if(!sbOn()||!logado()||!SESS.lojaId)return;temporizadorSincronizacao=setInterval(function(){if(!document.hidden){sincronizarLoja();carregarNotificacoes(true);}},20000);}
@@ -2183,6 +2332,10 @@ function salvarPermissoesPerfil(){var papel=permPapelAtual,ids=Object.keys(permP
     if(falha){atualizarBarraPermissoes('Parte das alterações não foi salva: '+falha);toast('Não foi possível salvar todas as permissões');}
     else{atualizarBarraPermissoes('Permissões de '+PAPEL_ROTULO[papel]+' salvas.');toast('Permissões salvas');}});}
 function papelAtual(){return (sbOn()&&SESS&&SESS.papel)||(sbOn()?'operador':'admin');}
+var papelConfirmado=false,papelCarregando=false,adminDesktopVista='dashboard';
+function adminDesktopAtivo(){return !!(window.matchMedia&&window.matchMedia('(min-width: 1024px)').matches&&sbOn()&&logado()&&SESS&&!SESS.forcePasswordChange&&SESS.lojaId&&papelConfirmado&&SESS.papel==='admin');}
+function atualizarModoDesktopAdmin(){var ativo=adminDesktopAtivo(),pendente=!!(window.matchMedia&&window.matchMedia('(min-width: 1024px)').matches&&sbOn()&&logado()&&SESS&&!SESS.forcePasswordChange&&SESS.lojaId&&papelCarregando);document.documentElement.classList.toggle('desktop-admin',ativo);document.documentElement.classList.toggle('desktop-admin-pending',pendente);if(ativo&&$('scanner')&&$('scanner').classList.contains('on'))fecharScanner();if(ativo)adminDesktopRender();}
+window.addEventListener('resize',atualizarModoDesktopAdmin);
 function pode(acao){var p=papelAtual();if(p==='admin')return true;
   if(acao==='registrar')return ['operador','assistente','analista','gerente'].includes(p)&&temPermissao('registrar');
   if(acao==='editar'||acao==='ajustes'||acao==='codigos')return p==='assistente'||p==='analista'||p==='gerente';
@@ -2196,14 +2349,15 @@ function aplicarPapel(){var reg=pode('registrar'),ed=pode('editar'),aj=pode('aju
   if(!reg){var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='reg')ir('prod');}}
 function carregarPapel(){if(!sbOn()||!logado())return Promise.resolve();
   carregarPrefs();carregarRegrasAlertas();carregarCalendarStatus();carregarPermissoes();
+  papelConfirmado=false;papelCarregando=true;atualizarModoDesktopAdmin();
   /* Filtra pelo próprio id: admin/analista/gerente enxergam vários perfis (RLS),
      então sem o filtro o limit=1 traria o papel de OUTRO usuário. */
   var alvo='/rest/v1/perfis?select=papel,nome'+((SESS&&SESS.uid)?'&id=eq.'+encodeURIComponent(SESS.uid):'')+'&limit=1';
   return sbReq(alvo).then(function(r){var d=r.ok&&Array.isArray(r.dados)&&r.dados[0];if(d){SESS.papel=d.papel;SESS.nome=d.nome;salvarSess();}
-    else if(r.ok){SESS.papel=null;salvarSess();}
-    atualizarInterfacePapel();return d;},function(){aplicarPapel();if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();});}
+    else{SESS.papel=null;salvarSess();}
+    papelCarregando=false;papelConfirmado=!!r.ok;atualizarInterfacePapel();return d;},function(){papelCarregando=false;papelConfirmado=false;atualizarInterfacePapel();if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();});}
 function atualizarInterfacePapel(){
-  aplicarPapel();atualizarBotaoLogout();atualizarContextoLoja();
+  atualizarModoDesktopAdmin();aplicarPapel();atualizarBotaoLogout();atualizarContextoLoja();
   if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();
   if(vistaAtual==='home')renderHome();
   if(vistaAtual==='aj'){
@@ -2374,7 +2528,7 @@ var promptInstalar=null,INSTALL_ADIAR_MS=7*24*60*60*1000;
 function appInstalado(){try{return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true;}catch(e){return false;}}
 function instalarAdiado(){try{var t=Number(localStorage.getItem('pwa_install_adiado')||0);return t>0&&Date.now()-t<INSTALL_ADIAR_MS;}catch(e){return false;}}
 function instrucoesInstalar(){var ua=navigator.userAgent||'';
-  if(/iPhone|iPad|iPod/i.test(ua))return 'No Safari, toque em Compartilhar (quadrado com a seta para cima) e depois em “Adicionar à Tela de Início”.';
+  if(/iPhone|iPad|iPod/i.test(ua))return 'No Safari, toque em Compartilhar (quadrado com a seta para cima), escolha “Adicionar à Tela de Início”, ative “Abrir como App Web” e toque em “Adicionar”.';
   return 'Abra o menu do navegador (três pontos) e toque em “Instalar aplicativo” ou “Adicionar à tela inicial”.';}
 function renderInstalar(){var inst=appInstalado();
   $('installCard').style.display=(!inst&&!instalarAdiado())?'':'none';

@@ -487,7 +487,7 @@ tflaky('sem Supabase configurado: card de conta fica oculto', { skip: pular }, a
 /* abre o app já logado (sessão posta via evaluate + reload, como os demais testes);
    setupRotas registra as rotas ANTES do reload, para o pull inicial ser interceptado */
 async function abrirLogado(setupRotas, dados, sessaoExtra) {
-  const a = await abrir({ url: URL_SUPA });
+  const a = await abrir({ url: URL_SUPA, opcoes: { viewport: { width: 390, height: 844 } } });
   await a.p.route(/\/rest\/v1\/notificacoes(?:\?|$)/, r => r.request().method() === 'GET'
     ? r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }) : r.fulfill({ status: 204, body: '' }));
   if (setupRotas) await setupRotas(a.p);
@@ -499,7 +499,7 @@ async function abrirLogado(setupRotas, dados, sessaoExtra) {
    para os testes de scanner. Desde o PR #18 o registro salva direto no Supabase,
    então estes testes rodam logados e com as rotas de salvar mockadas. */
 async function abrirRegistro(setupRotas, dados, antes) {
-  const a = await abrir({ url: URL_SUPA, antes });
+  const a = await abrir({ url: URL_SUPA, antes, opcoes: { viewport: { width: 390, height: 844 } } });
   await a.p.route(/\/rest\/v1\/notificacoes(?:\?|$)/, r => r.request().method() === 'GET'
     ? r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }) : r.fulfill({ status: 204, body: '' }));
   if (setupRotas) await setupRotas(a.p);
@@ -2028,6 +2028,136 @@ tflaky('Aviso do sistema: banner global exibe texto literal e marca somente o pe
     assert.strictEqual(patches[0].url, `/rest/v1/notificacoes?loja_id=eq.${loja}&id=eq.${avisoId}`);
     assert.deepStrictEqual(patches[0].body, { lida_em: patches[0].body.lida_em });
     assert.ok(typeof patches[0].body.lida_em === 'string' && !Number.isNaN(Date.parse(patches[0].body.lida_em)), 'lida_em deve ser ISO');
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
+
+tflaky('Central desktop: admin aguarda confirmação do perfil, usa indicadores da loja ativa e exporta XLSX válido', { skip: pular }, async () => {
+  let liberarPerfil;
+  const perfilLiberado = new Promise(resolve => { liberarPerfil = resolve; });
+  const dia = offset => { const d = new Date(); d.setDate(d.getDate() + offset); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  const dados = {
+    prod: {
+      '7890000000017': { lotes: [
+        { id: 'lote-vencido', lote: 'A1', qtd: 4, val: dia(-1), setor: 'Mercearia', criado: Date.now() - 3000, created_by_nome: 'Operador A', rpcConfirmado: true },
+        { id: 'lote-proximo', lote: 'A2', qtd: 3, val: dia(5), setor: 'Mercearia', criado: Date.now() - 2000, created_by_nome: 'Operador B', rpcConfirmado: true }
+      ] },
+      '7890000000024': { lotes: [
+        { id: 'lote-valido', lote: 'B1', qtd: 2, val: '2099-12-31', setor: 'Bebidas', criado: Date.now() - 1000, created_by_nome: 'Operador C', rpcConfirmado: true }
+      ] }
+    },
+    cat: {
+      '7890000000017': { nome: 'Produto Vencido e Próximo', marca: 'Marca A' },
+      '7890000000024': { nome: 'Produto Dentro da Validade', marca: 'Marca B' }
+    },
+    pere: {
+      itens: { '2000001': { desc: 'Queijo Fresco', sif: 'SIF-7' } },
+      regs: [{ id: 'pere-1', cod: '2000001', sif: 'SIF-7', peso: 1.25, val: '2099-12-31', setor: 'Frios', criado: Date.now(), created_by_nome: 'Operador D', rpcConfirmado: true }]
+    }
+  };
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'admin', []);
+    await p.route(/\/rest\/v1\/perfis(?:\?|$)/, async r => {
+      await perfilLiberado;
+      await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ papel: 'admin', nome: 'Admin Teste' }]) });
+    });
+  }, dados, { papel: 'admin', nome: 'Papel armazenado antigo' });
+  try {
+    await a.p.setViewportSize({ width: 1440, height: 960 });
+    await a.p.waitForFunction(() => document.documentElement.classList.contains('desktop-admin-pending'));
+    assert.strictEqual(await a.p.isVisible('#adminDesktop'), false, 'não expõe a central enquanto o papel não foi confirmado');
+    assert.strictEqual(await a.p.isVisible('#adminDesktopLoading'), true, 'indica que o perfil está sendo confirmado');
+    liberarPerfil();
+    await a.p.waitForFunction(() => document.documentElement.classList.contains('desktop-admin'));
+    assert.strictEqual(await a.p.isVisible('#adminDesktop'), true);
+    assert.strictEqual(await a.p.isVisible('#adminDesktopDashboard'), true);
+    assert.strictEqual(await a.p.isVisible('nav.abas'), false, 'não exibe a navegação móvel no desktop admin');
+    assert.strictEqual(await a.p.isVisible('#scanner'), false, 'scanner oculto no desktop');
+    assert.strictEqual(await a.p.isVisible('#homeRegister'), false, 'entrada do fluxo móvel não aparece no desktop');
+    assert.strictEqual(await a.p.textContent('#adminDesktopUser'), 'Admin Teste', 'usa o perfil confirmado, não o dado antigo da sessão');
+    assert.strictEqual((await a.p.textContent('#adminKpiRecords')).trim(), '4');
+    assert.strictEqual((await a.p.textContent('#adminKpiExpired')).trim(), '1');
+    assert.strictEqual((await a.p.textContent('#adminKpiSoon')).trim(), '1');
+    assert.strictEqual((await a.p.textContent('#adminKpiValid')).trim(), '2');
+    assert.match(await a.p.textContent('#adminDesktopScope'), /Loja Teste/);
+    await a.p.evaluate(() => document.getElementById('bEscanear').click());
+    await a.p.waitForTimeout(100);
+    assert.strictEqual(await a.p.locator('#scanner').evaluate(e => e.classList.contains('on')), false, 'clique programático também não inicia scanner no desktop');
+
+    await a.p.click('#adminDesktopNav [data-admin-view="reports"]');
+    assert.strictEqual(await a.p.isVisible('#adminDesktopReports'), true);
+    const [download] = await Promise.all([a.p.waitForEvent('download'), a.p.click('#adminExportXlsx')]);
+    assert.match(download.suggestedFilename(), /^validade_relatorio_.*\.xlsx$/);
+    const file = await download.path();
+    const zip = fs.readFileSync(file);
+    const entries = {};
+    let offset = 0;
+    while (offset + 30 <= zip.length && zip.readUInt32LE(offset) === 0x04034b50) {
+      const length = zip.readUInt32LE(offset + 18);
+      const nameLength = zip.readUInt16LE(offset + 26);
+      const extraLength = zip.readUInt16LE(offset + 28);
+      const name = zip.subarray(offset + 30, offset + 30 + nameLength).toString('utf8');
+      const start = offset + 30 + nameLength + extraLength;
+      entries[name] = zip.subarray(start, start + length).toString('utf8');
+      offset = start + length;
+    }
+    assert.ok(entries['[Content_Types].xml'], 'pacote contém tipos Office Open XML');
+    assert.match(entries['xl/workbook.xml'], /name="Resumo"/);
+    assert.match(entries['xl/workbook.xml'], /name="Validades"/);
+    assert.match(entries['xl/workbook.xml'], /name="Perecíveis"/);
+    assert.match(entries['xl/workbook.xml'], /name="Alertas"/);
+    assert.match(entries['xl/worksheets/sheet1.xml'], /Loja Teste/);
+    assert.match(entries['xl/worksheets/sheet2.xml'], /Produto Vencido e Próximo/);
+    assert.match(entries['xl/worksheets/sheet3.xml'], /Queijo Fresco/);
+    assert.match(entries['xl/worksheets/sheet4.xml'], /Produto Vencido e Próximo/);
+
+    await a.p.setViewportSize({ width: 390, height: 844 });
+    await a.p.waitForFunction(() => !document.documentElement.classList.contains('desktop-admin'));
+    assert.strictEqual(await a.p.isVisible('#adminDesktop'), false);
+    assert.strictEqual(await a.p.isVisible('nav.abas'), true, 'volta à navegação móvel');
+    assert.strictEqual(await a.p.isVisible('#homeRegister'), true, 'admin mantém o fluxo de registro no celular');
+    assert.strictEqual((await a.p.textContent('#slogan')).trim(), 'Área do Administrador', 'o cabeçalho inicial acompanha o papel confirmado');
+    await a.p.click('#homeRegister');
+    assert.strictEqual(await a.p.isVisible('#bEscanear'), true, 'botão do scanner continua disponível no celular');
+    assert.deepStrictEqual(a.erros, []);
+  } finally { liberarPerfil(); await a.fechar(); }
+});
+
+tflaky('Central desktop: operador em PC não recebe a central administrativa nem perde a navegação existente', { skip: pular }, async () => {
+  const a = await abrirLogado(p => rotasPerm(p, 'operador', []), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador', nome: 'Operador Teste' });
+  try {
+    await a.p.setViewportSize({ width: 1440, height: 900 });
+    await a.p.waitForFunction(() => JSON.parse(localStorage.getItem('validade_sessao') || '{}').papel === 'operador');
+    assert.strictEqual(await a.p.locator('html').evaluate(e => e.classList.contains('desktop-admin')), false);
+    assert.strictEqual(await a.p.isVisible('#adminDesktop'), false);
+    assert.strictEqual(await a.p.isVisible('nav.abas'), true, 'mantém a interface já existente para não-admin');
+    assert.strictEqual(await a.p.isVisible('#homeRegister'), true);
+    await a.p.setViewportSize({ width: 390, height: 844 });
+    assert.strictEqual(await a.p.locator('html').evaluate(e => e.classList.contains('desktop-admin')), false);
+    assert.strictEqual(await a.p.isVisible('nav.abas'), true);
+    assert.strictEqual((await a.p.textContent('#slogan')).trim(), 'Área do Operador', 'o cabeçalho mantém o papel do operador');
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
+
+tflaky('PWA iPhone: declara metadados Apple e orienta instalação como App Web', { skip: pular }, async () => {
+  const a = await abrir({ url: URL_NOSUPA, opcoes: {
+    viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true,
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
+  } });
+  try {
+    assert.strictEqual(await a.p.locator('link[rel="apple-touch-icon"]').getAttribute('href'), './pwa-icon-192.png');
+    assert.strictEqual(await a.p.locator('meta[name="apple-mobile-web-app-capable"]').getAttribute('content'), 'yes');
+    assert.strictEqual(await a.p.locator('meta[name="apple-mobile-web-app-title"]').getAttribute('content'), 'Validade');
+    assert.strictEqual(await a.p.locator('meta[name="apple-mobile-web-app-status-bar-style"]').getAttribute('content'), 'black-translucent');
+    assert.strictEqual(await a.p.locator('link[rel="manifest"]').getAttribute('href'), './manifest.webmanifest');
+    await a.p.click('#bInstalar');
+    const instrucoes = await a.p.textContent('#installHelp');
+    assert.match(instrucoes, /Safari/);
+    assert.match(instrucoes, /Adicionar à Tela de Início/);
+    assert.match(instrucoes, /Abrir como App Web/);
     assert.deepStrictEqual(a.erros, []);
   } finally { await a.fechar(); }
 });
