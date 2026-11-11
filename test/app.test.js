@@ -872,6 +872,97 @@ tflaky('papel admin remoto substitui sessão antiga de Operador e restaura a cen
   await a.fechar();
 });
 
+tflaky('alertas pessoais: admin mantém regra após resposta GET antiga e só confirma após sincronizar', { skip: pular }, async () => {
+  let linhas=[],postRecebido=false,posts=0,liberarLeiturasAntigas;
+  const esperaLeituraAntiga=new Promise(resolve=>{liberarLeiturasAntigas=resolve;});
+  let iniciouLeituraAntiga;const leituraAntigaIniciada=new Promise(resolve=>{iniciouLeituraAntiga=resolve;});
+  let concluiuLeituraNova;const leituraNovaConcluida=new Promise(resolve=>{concluiuLeituraNova=resolve;});
+  const a=await abrirLogado(async p=>{
+    await rotasBase(p,'admin');
+    await p.route(/\/rest\/v1\/ajustes(?:\?|$)/,r=>r.fulfill({status:200,contentType:'application/json',body:'[]'}));
+    await p.route(/\/rest\/v1\/alertas_regras(?:\?|$)/,async r=>{
+      const req=r.request(),metodo=req.method();
+      if(metodo==='GET'){
+        if(!postRecebido){iniciouLeituraAntiga();await esperaLeituraAntiga;return r.fulfill({status:200,contentType:'application/json',body:'[]'});}
+        await r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(linhas)});concluiuLeituraNova();return;
+      }
+      if(metodo==='POST'){
+        posts++;const body=req.postDataJSON(),novas=Array.isArray(body)?body:[body];
+        novas.forEach(n=>{const i=linhas.findIndex(x=>x.id===n.id);if(i<0)linhas.push(n);else linhas[i]=n;});postRecebido=true;
+        return r.fulfill({status:201,contentType:'application/json',body:'[]'});
+      }
+      if(metodo==='DELETE')return r.fulfill({status:204,body:''});
+      return r.fulfill({status:200,contentType:'application/json',body:'[]'});
+    });
+  },{prod:{},cat:{},pere:{itens:{},regs:[]}},{papel:'operador',nome:'admin'});
+  try{
+    await a.p.waitForFunction(()=>{try{return JSON.parse(localStorage.getItem('validade_sessao')).papel==='admin';}catch(e){return false;}});
+    await a.p.click('nav button[data-v="aj"]');
+    if(await a.p.isVisible('#sysMenuCard'))await a.p.click('#sysMenu [data-sys-open="alertas"]');
+    await a.p.waitForSelector('#alertaRegraDias',{state:'visible'});
+    await iniciouLeituraAntiga;
+    await a.p.click('#bAlertaRegraAdicionar');
+    assert.strictEqual(posts,0,'dias vazios não devem enviar gravação');
+    await a.p.fill('#alertaRegraDias','5');
+    await a.p.fill('#alertaRegraHora','08:00');
+    await a.p.click('#bAlertaRegraAdicionar');
+    await a.p.waitForSelector('#listaRegrasAlertas [data-regra]',{state:'visible'});
+    await leituraNovaConcluida;
+    await a.p.waitForFunction(()=>document.getElementById('toast').textContent==='Regra pessoal adicionada');
+    assert.strictEqual(posts,1,'admin envia uma gravação autenticada');
+    assert.strictEqual(linhas.length,1);
+    assert.deepStrictEqual([linhas[0].user_id,linhas[0].dias,linhas[0].hora_local],['u1',5,'08:00:00']);
+    liberarLeiturasAntigas();
+    await a.p.waitForTimeout(100);
+    assert.strictEqual(await a.p.locator('#listaRegrasAlertas [data-regra]').count(),1,'a resposta antiga vazia não pode apagar a regra recém salva');
+    assert.match(await a.p.textContent('#listaRegrasAlertas'),/5 dias · 08:00/);
+    assert.deepStrictEqual(a.erros,[]);
+  }finally{liberarLeiturasAntigas();await a.fechar();}
+});
+
+tflaky('alertas pessoais: mantém regra local pendente se a leitura posterior não a confirmar', { skip: pular }, async () => {
+  let payload=null,postRecebido=false,liberarLeitura;
+  const esperaLeitura=new Promise(resolve=>{liberarLeitura=resolve;});
+  let iniciouLeitura;const leituraIniciada=new Promise(resolve=>{iniciouLeitura=resolve;});
+  let iniciouPost;const postIniciado=new Promise(resolve=>{iniciouPost=resolve;});
+  const a=await abrirLogado(async p=>{
+    await rotasBase(p,'admin');
+    await p.route(/\/rest\/v1\/ajustes(?:\?|$)/,r=>r.fulfill({status:200,contentType:'application/json',body:'[]'}));
+    await p.route(/\/rest\/v1\/alertas_regras(?:\?|$)/,async r=>{
+      const metodo=r.request().method();
+      if(metodo==='GET'){
+        if(postRecebido){iniciouLeitura();await esperaLeitura;}
+        return r.fulfill({status:200,contentType:'application/json',body:'[]'});
+      }
+      if(metodo==='POST'){
+        payload=r.request().postDataJSON();postRecebido=true;iniciouPost();
+        return r.fulfill({status:201,contentType:'application/json',body:'[]'});
+      }
+      return r.fulfill({status:204,body:''});
+    });
+  },{prod:{},cat:{},pere:{itens:{},regs:[]}},{papel:'admin',nome:'admin'});
+  try{
+    await a.p.waitForFunction(()=>{try{return JSON.parse(localStorage.getItem('validade_sessao')).papel==='admin';}catch(e){return false;}});
+    await a.p.click('nav button[data-v="aj"]');
+    if(await a.p.isVisible('#sysMenuCard'))await a.p.click('#sysMenu [data-sys-open="alertas"]');
+    await a.p.waitForSelector('#alertaRegraDias',{state:'visible'});
+    await a.p.fill('#alertaRegraDias','15');
+    await a.p.fill('#alertaRegraHora','09:00');
+    await a.p.click('#bAlertaRegraAdicionar');
+    await postIniciado;
+    await leituraIniciada;
+    await a.p.waitForFunction(()=>document.getElementById('toast').textContent==='Salvando regra…');
+    liberarLeitura();
+    await a.p.waitForFunction(()=>document.getElementById('toast').textContent==='Regra salva neste aparelho; sincronização pendente');
+    assert.ok(payload,'o cliente enviou a regra ao Supabase');
+    assert.strictEqual(payload[0].dias,15);
+    assert.strictEqual(await a.p.locator('#listaRegrasAlertas [data-regra]').count(),1,'a cópia local pendente permanece visível');
+    const cache=await a.p.evaluate(()=>JSON.parse(localStorage.getItem('validade_alertas_regras_u1')));
+    assert.strictEqual(cache.pendentes.length,1,'não limpar a fila até confirmar o reflexo do servidor');
+    assert.deepStrictEqual(a.erros,[]);
+  }finally{liberarLeitura();await a.fechar();}
+});
+
 tflaky('gestão de usuários: assistente visualiza card, cria operador e envia payload ao endpoint', { skip: pular }, async () => {
   let payloadCriar=null;
   const a=await abrirLogado(async p=>{
