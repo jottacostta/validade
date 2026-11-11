@@ -460,6 +460,7 @@ header .hdr-in.interna .header-bell{display:none}
 .opt-item{display:flex;align-items:center;gap:8px;width:100%;padding:9px 10px;border:1px solid #2c5373;border-radius:11px;background:#071a2b;color:#fff;text-align:left;font:inherit}
 .opt-item>span:first-child{flex:1;min-width:0}.opt-item b{display:block}.opt-item small{display:block;color:var(--mu);font-size:12px}
 .opt-note{margin:10px 0 0;font-size:12px;color:var(--mu)}
+.install-card{border-color:#2f7fd6;margin-bottom:14px}.install-top{display:flex;gap:12px;align-items:flex-start}.install-top strong{font-size:16px}.install-top p{margin:4px 0 0;font-size:13px;color:var(--mu)}.install-ico{flex:none;width:42px;height:42px;border-radius:12px;background:#0b4f9c;display:grid;place-items:center}.install-help{margin:12px 0 0;padding:10px 12px;border-radius:10px;background:#0b2238;font-size:13px;line-height:1.45}.install-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.install-actions .btn{margin:0;min-height:44px}
 .perm-title{margin:16px 0 6px;font-size:15px}.perm-row{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid #2c5373;font-size:14px;min-height:44px}.perm-row input{width:22px;height:22px;flex:none;margin-top:1px}.perm-row small{display:block;color:var(--mu);font-size:11.5px;margin-top:2px}.perm-status{margin:14px 0 10px;font-size:13px;color:var(--mu)}.perm-status.pend{color:#ffd60a;font-weight:700}
 .edit-row-name{grid-template-columns:30px minmax(0,1fr)!important}.edit-row-name input{grid-column:1/-1;width:100%}
 .edit-row{display:grid;grid-template-columns:30px minmax(86px,.62fr) minmax(0,1fr);align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #2c5373}
@@ -611,6 +612,12 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 <!-- ═════════ REGISTRAR ═════════ -->
 
 <section class="vista on" id="v-home" aria-label="Início">
+  <div class="card install-card" id="installCard" style="display:none">
+    <div class="install-top"><span class="install-ico" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></span>
+      <div><strong>Instale o aplicativo</strong><p>Abra direto da tela inicial do celular, em tela cheia, sem precisar do navegador.</p></div></div>
+    <p class="install-help" id="installHelp" style="display:none"></p>
+    <div class="install-actions"><button class="btn sec" id="bInstalarDepois" type="button">Agora não</button><button class="btn" id="bInstalar" type="button">Instalar</button></div>
+  </div>
   <div class="operator-hello">
     <div class="operator-avatar" aria-hidden="true"><svg viewBox="0 0 64 64"><circle cx="32" cy="21" r="12" fill="currentColor"/><path d="M10 57c1-13 9-20 22-20s21 7 22 20" fill="currentColor"/></svg></div>
     <div class="operator-identity"><strong id="homeGreeting">Olá, Operador!</strong><small id="homeStore">Operador · Filial não selecionada</small></div>
@@ -941,6 +948,8 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
     <div class="card about-top"><span class="about-app" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5.5a1.5 1.5 0 0 1 1.5-1.5H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M8 9v6M11 9v6M14 9v6M17 9v6"/></svg></span><div><h2>Controle de Validade</h2><p>Gestão de lotes, validades e perecíveis</p><span class="about-ver"><em>Versão instalada</em><b id="aboutVersao">—</b></span></div></div>
     <div class="card about-card"><div class="about-row"><span class="about-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg></span><div><h3>Sobre o Aplicativo</h3><p>O Controle de Validade é um aplicativo corporativo desenvolvido para apoiar a rotina operacional das lojas do Supermercados Guanabara, permitindo o registro, acompanhamento e controle de lotes, datas de validade e produtos perecíveis.</p></div></div>
       <div class="about-feats"><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5.5a1.5 1.5 0 0 1 1.5-1.5H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>Registro de produtos</span><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 6-2.5 6.5-2.5 8.5h17c0-2-2.5-2.5-2.5-8.5M10 20.5h4"/></svg>Alertas de vencimento</span><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4 8.5 4.2L12 12.4 3.5 8.2zM3.5 12.2 12 16.4l8.5-4.2M3.5 16.2 12 20.4l8.5-4.2"/></svg>Controle por lote</span><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-5M10 20V10M15 20v-8M20 20V5"/></svg>Mais segurança e redução de perdas</span></div></div>
+    <div class="card about-card" id="installSobre"><div class="about-row"><span class="about-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></span><div><h3>Instalar aplicativo</h3><p id="installSobreTexto">Instale o Controle de Validade na tela inicial do aparelho para abrir em tela cheia.</p></div></div>
+      <p class="install-help" id="installHelpSobre" style="display:none"></p><button class="btn" id="bInstalarSobre" type="button" style="margin-top:10px">Instalar</button></div>
     <div class="card about-card"><div class="about-row"><span class="about-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/></svg></span><div><h3>Desenvolvido por</h3><p><b>Jonatas Costa</b><br>Idealizador e desenvolvedor do Controle de Validade, com foco em soluções práticas e eficientes para a operação de supermercados, unindo tecnologia, controle e prevenção de perdas.</p></div></div></div>
     <div class="card about-card"><div class="about-row"><span class="about-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.5v.3"/></svg></span><div style="flex:1"><h3>Informações Técnicas</h3><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg><span>Versão</span><b id="aboutVersaoTec">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg><span>Última sincronização</span><b id="aboutSync">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></svg><span>Plataforma</span><b id="aboutPlataforma">—</b></div></div></div></div>
   </div>
@@ -2340,6 +2349,32 @@ function contaCard(){atualizarContextoLoja();if(!sbOn()){$('cardConta').style.di
 function podeRevisarExclusao(){return temPermissao('exclusoes_aprovar');}
 $('bCorrecoesNomeRefresh').onclick=carregarSolicitacoesNome;
 $('bApEnviar').onclick=enviarAlertaPersonalizado;
+/* ───── Instalação como aplicativo (PWA) ───── */
+/* a chave não começa com 'validade_' de propósito: a migração de dados antigos trata chaves com esse prefixo como dados */
+var promptInstalar=null,INSTALL_ADIAR_MS=7*24*60*60*1000;
+function appInstalado(){try{return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true;}catch(e){return false;}}
+function instalarAdiado(){try{var t=Number(localStorage.getItem('pwa_install_adiado')||0);return t>0&&Date.now()-t<INSTALL_ADIAR_MS;}catch(e){return false;}}
+function instrucoesInstalar(){var ua=navigator.userAgent||'';
+  if(/iPhone|iPad|iPod/i.test(ua))return 'No Safari, toque em Compartilhar (quadrado com a seta para cima) e depois em “Adicionar à Tela de Início”.';
+  return 'Abra o menu do navegador (três pontos) e toque em “Instalar aplicativo” ou “Adicionar à tela inicial”.';}
+function renderInstalar(){var inst=appInstalado();
+  $('installCard').style.display=(!inst&&!instalarAdiado())?'':'none';
+  $('bInstalarSobre').style.display=inst?'none':'';
+  $('installSobreTexto').textContent=inst?'O aplicativo já está instalado neste aparelho.':'Instale o Controle de Validade na tela inicial do aparelho para abrir em tela cheia.';
+  if(inst){$('installHelp').style.display='none';$('installHelpSobre').style.display='none';}}
+function pedirInstalacao(ajudaId){
+  if(promptInstalar){var p=promptInstalar;promptInstalar=null;try{p.prompt();}catch(e){}
+    if(p.userChoice&&p.userChoice.then)p.userChoice.then(function(r){if(r&&r.outcome==='dismissed')toast('Você pode instalar depois em Ajustes → Sobre.');},function(){});return;}
+  var h=$(ajudaId);h.textContent=instrucoesInstalar();h.style.display='';}
+function registrarServiceWorker(){if(!('serviceWorker' in navigator)||location.protocol!=='https:')return;
+  try{navigator.serviceWorker.register('./service-worker.js').catch(function(){});}catch(e){}}
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();promptInstalar=e;renderInstalar();});
+window.addEventListener('appinstalled',function(){promptInstalar=null;$('installCard').style.display='none';$('bInstalarSobre').style.display='none';
+  $('installSobreTexto').textContent='O aplicativo já está instalado neste aparelho.';toast('Aplicativo instalado');});
+$('bInstalar').onclick=function(){pedirInstalacao('installHelp');};
+$('bInstalarSobre').onclick=function(){pedirInstalacao('installHelpSobre');};
+$('bInstalarDepois').onclick=function(){try{localStorage.setItem('pwa_install_adiado',String(Date.now()));}catch(e){}$('installCard').style.display='none';};
+renderInstalar();registrarServiceWorker();
 $('permPapel').onchange=trocarPerfilPermissoes;$('bPermSalvar').onclick=salvarPermissoesPerfil;
 function carregarSolicitacoesExclusao(){
   var card=$('cardSolicitacoes');if(!card)return;

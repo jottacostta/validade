@@ -53,7 +53,7 @@ if (require.main === module) {
   fs.mkdirSync(path.join(raiz, 'dist'), { recursive: true });
   fs.writeFileSync(path.join(raiz, 'dist/validade.html'), html);
   fs.writeFileSync(path.join(raiz, 'dist/APP_VALIDADE.js'), js);
-  for (const file of ['manifest.webmanifest','service-worker.js','logo.jpg','pwa-icon-192.png']) {
+  for (const file of ['manifest.webmanifest','service-worker.js','logo.jpg','pwa-icon-192.png','pwa-icon-512.png']) {
     fs.copyFileSync(path.join(raiz, 'src', file), path.join(raiz, 'dist', file));
   }
   console.log('✅ dist/validade.html (' + html.length + ' bytes) e dist/APP_VALIDADE.js');

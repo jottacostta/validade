@@ -142,7 +142,7 @@ test('janela compartilhada e autorização de Push interno exigem gerente/admin 
 test('PWA publica service worker, manifest e ícones necessários', () => {
   assert.match(app, /rel="manifest" href="\.\/manifest\.webmanifest"/);
   assert.match(app, /serviceWorker\.register\('\.\/service-worker\.js'\)/);
-  assert.match(build, /manifest\.webmanifest.*service-worker\.js.*logo\.jpg.*pwa-icon-192\.png/);
+  assert.match(build, /manifest\.webmanifest.*service-worker\.js.*logo\.jpg.*pwa-icon-192\.png.*pwa-icon-512\.png/);
   assert.ok(fs.existsSync(path.join(root, 'src/service-worker.js')));
   assert.ok(fs.existsSync(path.join(root, 'src/manifest.webmanifest')));
   assert.ok(fs.existsSync(path.join(root, 'src/pwa-icon-192.png')));
@@ -442,4 +442,16 @@ test('alertas personalizados: envio validado no banco e push só pelo remetente'
   const edge = fs.readFileSync(path.join(root, 'supabase/functions/alertas/index.ts'), 'utf8');
   assert.match(edge, /action === "custom-push"/);
   assert.match(edge, /\.eq\("payload->>remetente_id", user\.id\)/, 'só o remetente dispara o push do próprio envio');
+});
+
+test('PWA instalável: manifest com ícones 192 e 512 e service worker registrado ao abrir', () => {
+  const mf = JSON.parse(fs.readFileSync(path.join(root, 'src/manifest.webmanifest'), 'utf8'));
+  const tamanhos = mf.icons.filter(i => i.type === 'image/png').map(i => i.sizes);
+  assert.ok(tamanhos.includes('192x192') && tamanhos.includes('512x512'), 'Chrome/Android exigem 192 e 512');
+  assert.equal(mf.display, 'standalone'); assert.ok(mf.name && mf.short_name && mf.start_url);
+  for (const i of mf.icons) assert.ok(fs.existsSync(path.join(root, 'src', i.src)), i.src + ' existe');
+  const build = fs.readFileSync(path.join(root, 'build.js'), 'utf8');
+  assert.match(build, /pwa-icon-512\.png/, 'ícone 512 é copiado para dist');
+  assert.match(app, /function registrarServiceWorker\(\)/);
+  assert.match(app, /addEventListener\('beforeinstallprompt'/);
 });
