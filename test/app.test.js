@@ -1632,3 +1632,81 @@ tflaky('Google Calendar: função ainda não configurada mostra feedback sem der
   await a.p.waitForFunction(()=>document.querySelector('#calendarFeedback').textContent.includes('ainda não está configurada'));
   assert.deepStrictEqual(a.erros,[]);await a.fechar();
 });
+
+/* Editar registro: o administrador corrige o nome do produto na própria tela de edição. */
+tflaky('Editar registro: administrador altera o nome do produto e o catálogo é atualizado', { skip: pular }, async () => {
+  const a = await abrir({ dados: { prod: { '0070341558737': { lotes: [lote('l1', '2032-12-01', 15, '1382')] } }, cat: {}, pere: { itens: {}, regs: [] } } });
+  await a.p.click('nav button[data-v="prod"]'); await a.p.click('[data-detail-lote="l1"]'); await a.p.click('#bDetailEdit');
+  assert.strictEqual(await a.p.isVisible('#edNome'), true, 'campo do nome aparece para o administrador');
+  assert.strictEqual(await a.p.inputValue('#edNome'), '', 'produto sem nome começa vazio, sem repetir o EAN');
+  await a.p.fill('#edNome', '  Creme de Leite 200g ');
+  await a.p.selectOption('#edSetor', 'Mercearia');
+  await a.p.click('#bEditSave');
+  assert.strictEqual((await a.salvo()).cat['0070341558737'].nome, 'Creme de Leite 200g');
+  assert.ok((await a.p.textContent('#v-detail')).includes('Creme de Leite 200g'), 'o detalhe mostra o nome novo');
+  await a.p.click('#bDetailEdit');
+  assert.strictEqual(await a.p.inputValue('#edNome'), 'Creme de Leite 200g');
+  assert.strictEqual(await a.p.textContent('#editProductName'), 'Creme de Leite 200g');
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+for (const papel of ['admin', 'gerente']) tflaky('Editar registro: ' + papel + ' logado envia o nome novo ao catálogo compartilhado', { skip: pular }, async () => {
+  const envios = [];
+  const a = await abrirLogado(async p => { await rotasBase(p, papel);
+    await p.route(/\/rest\/v1\/catalogo\?on_conflict/, r => { envios.push(r.request().postDataJSON()); r.fulfill({ status: 201, body: '' }); }); },
+    { prod: { '7891000315507': { lotes: [Object.assign(lote('l1', '2032-12-01', 5, 'L1'), { setor: 'Mercearia', created_by: 'outro' })] } }, cat: { '7891000315507': { nome: 'Cafe' } }, pere: { itens: {}, regs: [] } }, { papel, nome: 'Chefe' });
+  await a.p.click('nav button[data-v="prod"]'); await a.p.click('[data-detail-lote="l1"]'); await a.p.click('#bDetailEdit');
+  assert.strictEqual(await a.p.isVisible('#bSolicitarNome'), false, 'quem edita direto não vê o botão de solicitação');
+  await a.p.fill('#edNome', 'Café Torrado 500g'); await a.p.click('#bEditSave');
+  await a.p.waitForTimeout(300);
+  assert.ok(envios.some(e => e[0].ean === '7891000315507' && e[0].nome === 'Café Torrado 500g'), 'catálogo recebeu o nome: ' + JSON.stringify(envios));
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+for (const papel of ['operador', 'assistente', 'analista']) tflaky('Editar registro: ' + papel + ' não altera o nome, envia a correção para avaliação', { skip: pular }, async () => {
+  const pedidos = [], envios = [];
+  const a = await abrirLogado(async p => { await rotasBase(p, papel);
+    await p.route(/\/rest\/v1\/catalogo\?on_conflict/, r => { envios.push(r.request().postDataJSON()); r.fulfill({ status: 201, body: '' }); });
+    await p.route(/\/rest\/v1\/solicitacoes_nome/, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.route(/\/rest\/v1\/rpc\/solicitar_correcao_nome$/, r => { pedidos.push(r.request().postDataJSON()); r.fulfill({ status: 200, contentType: 'application/json', body: '"id-1"' }); }); },
+    { prod: { '7891000315507': { lotes: [Object.assign(lote('l1', '2032-12-01', 5, 'L1'), { setor: 'Mercearia', created_by: 'u1' })] } }, cat: { '7891000315507': { nome: 'Cafe' } }, pere: { itens: {}, regs: [] } }, { papel, nome: 'Op' });
+  await a.p.click('nav button[data-v="prod"]'); await a.p.click('[data-detail-lote="l1"]'); await a.p.click('#bDetailEdit');
+  assert.strictEqual(await a.p.isVisible('#edNome'), true);
+  assert.strictEqual(await a.p.isVisible('#bSolicitarNome'), true);
+  await a.p.fill('#edNome', ' Café Torrado  500g ');
+  await a.p.click('#bSolicitarNome');
+  await a.p.waitForFunction(() => /avaliação/.test(document.getElementById('toast').textContent));
+  assert.deepStrictEqual(pedidos, [{ p_ean: '7891000315507', p_nome: 'Café Torrado 500g', p_loja_id: 'L1' }]);
+  await a.p.fill('#edNome', 'Outro nome'); await a.p.click('#bEditSave'); await a.p.waitForTimeout(300);
+  assert.strictEqual((await a.salvo()).cat['7891000315507'].nome, 'Cafe', 'o nome não muda no aparelho sem aprovação');
+  assert.ok(!envios.some(e => e[0].nome !== 'Cafe'), 'nenhum nome novo foi enviado direto ao catálogo: ' + JSON.stringify(envios));
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Correções de nome: gerente vê a solicitação pendente e aprova', { skip: pular }, async () => {
+  const revisoes = [];
+  const a = await abrirLogado(async p => { await rotasBase(p, 'gerente');
+    await p.route(/\/rest\/v1\/solicitacoes_exclusao/, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.route(/\/rest\/v1\/solicitacoes_nome/, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(revisoes.length ? [] : [{ id: 's1', ean: '7891000315507', nome_atual: 'Cafe', nome_sugerido: 'Café Torrado 500g', status: 'pendente', solicitante_nome: 'William', criado_em: '2026-11-11T07:00:00Z', resposta: null }]) }));
+    await p.route(/\/rest\/v1\/rpc\/revisar_correcao_nome$/, r => { revisoes.push(r.request().postDataJSON()); r.fulfill({ status: 204, body: '' }); }); },
+    { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'gerente', nome: 'Gerente' });
+  await a.p.click('nav button[data-v="aj"]');
+  await a.p.waitForFunction(() => /Café Torrado 500g/.test(document.getElementById('listaSolicitacoesNome').textContent));
+  const texto = await a.p.textContent('#listaSolicitacoesNome');
+  assert.ok(texto.includes('Cafe') && texto.includes('William') && texto.includes('7891000315507'));
+  await a.p.locator('#listaSolicitacoesNome [data-nome-review="yes"]').evaluate(b => b.click());
+  await a.p.waitForFunction(() => /aprovad/i.test(document.getElementById('toast').textContent));
+  assert.deepStrictEqual(revisoes, [{ p_id: 's1', p_aprovar: true, p_resposta: null }]);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Correções de nome: operador não recebe botões de aprovação', { skip: pular }, async () => {
+  const a = await abrirLogado(async p => { await rotasBase(p, 'operador');
+    await p.route(/\/rest\/v1\/solicitacoes_exclusao/, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.route(/\/rest\/v1\/solicitacoes_nome/, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ id: 's1', ean: '7891000315507', nome_atual: 'Cafe', nome_sugerido: 'Café Torrado 500g', status: 'pendente', solicitante_nome: 'Op', criado_em: '2026-11-11T07:00:00Z', resposta: null }]) })); },
+    { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador', nome: 'Op' });
+  await a.p.click('nav button[data-v="aj"]'); await a.p.waitForTimeout(500);
+  assert.strictEqual(await a.p.locator('[data-nome-review]').count(), 0);
+  assert.strictEqual(await a.p.isVisible('#cardCorrecoesNome'), false);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});

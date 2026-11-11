@@ -341,3 +341,27 @@ test('eventos Calendar têm ID determinístico, hash, mapping sem FK destrutiva 
   assert.match(calendarEdge, /Math\.min\(5, items\.length\)/);
   assert.match(calendarEdge, /"DELETE"/);
 });
+
+test('correção de nome do catálogo: solicitação com avaliação e trava no banco', () => {
+  const m = fs.readFileSync(path.join(root, 'supabase/migrations/20261111050000_correcao_nome_catalogo.sql'), 'utf8');
+  assert.match(m, /create table if not exists public\.solicitacoes_nome/);
+  assert.match(m, /alter table public\.solicitacoes_nome enable row level security/);
+  assert.doesNotMatch(m, /grant[^;]*\b(insert|update|delete)\b[^;]*on public\.solicitacoes_nome/i, 'escrita só pelas funções');
+  for (const f of ['solicitar_correcao_nome', 'revisar_correcao_nome']) {
+    const corpo = m.slice(m.indexOf('function public.' + f));
+    assert.match(corpo, /security definer\s+set search_path\s*=\s*''/);
+    assert.match(corpo, /auth\.uid\(\) is null/);
+    assert.match(m, new RegExp('revoke all on function public\\.' + f + '\\([^)]*\\) from public, ?anon'));
+  }
+  const revisar = m.slice(m.indexOf('function public.revisar_correcao_nome'));
+  assert.match(revisar, /not in \('gerente','admin'\)/, 'só gerente e administrador avaliam');
+  assert.match(revisar, /for update/);
+  assert.match(revisar, /insert into public\.auditoria/);
+  const trava = m.slice(m.indexOf('function private.proteger_nome_catalogo'), m.indexOf('create trigger catalogo_nome_guard'));
+  assert.match(trava, /new\.nome is distinct from old\.nome/);
+  assert.match(trava, /not in \('gerente','admin'\)/);
+  assert.match(trava, /new\.nome := old\.nome/, 'envios de outros perfis preservam o nome em vez de falhar');
+  assert.match(m, /create trigger catalogo_nome_guard\s+before update on public\.catalogo/);
+  assert.match(app, /rpc\/solicitar_correcao_nome/);
+  assert.match(app, /rpc\/revisar_correcao_nome/);
+});
