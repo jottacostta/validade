@@ -460,7 +460,7 @@ header .hdr-in.interna .header-bell{display:none}
 .opt-item{display:flex;align-items:center;gap:8px;width:100%;padding:9px 10px;border:1px solid #2c5373;border-radius:11px;background:#071a2b;color:#fff;text-align:left;font:inherit}
 .opt-item>span:first-child{flex:1;min-width:0}.opt-item b{display:block}.opt-item small{display:block;color:var(--mu);font-size:12px}
 .opt-note{margin:10px 0 0;font-size:12px;color:var(--mu)}
-.perm-title{margin:16px 0 6px;font-size:15px}.perm-row{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid #2c5373;font-size:14px;min-height:44px}.perm-row input{width:22px;height:22px;flex:none;margin-top:1px}.perm-row small{display:block;color:var(--mu);font-size:11.5px;margin-top:2px}.perm-row.off{opacity:.6}
+.perm-title{margin:16px 0 6px;font-size:15px}.perm-row{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid #2c5373;font-size:14px;min-height:44px}.perm-row input{width:22px;height:22px;flex:none;margin-top:1px}.perm-row small{display:block;color:var(--mu);font-size:11.5px;margin-top:2px}.perm-status{margin:14px 0 10px;font-size:13px;color:var(--mu)}.perm-status.pend{color:#ffd60a;font-weight:700}
 .edit-row-name{grid-template-columns:30px minmax(0,1fr)!important}.edit-row-name input{grid-column:1/-1;width:100%}
 .edit-row{display:grid;grid-template-columns:30px minmax(86px,.62fr) minmax(0,1fr);align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #2c5373}
 .edit-row:last-child{border-bottom:0}.edit-row .ico{width:26px;height:26px}.edit-row label{font-size:clamp(15px,4.2vw,18px)}
@@ -895,6 +895,8 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
     <select id="permPapel"><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option></select>
     <h3 class="perm-title">Permissões básicas</h3><div id="permBasicas"></div>
     <h3 class="perm-title">Permissões especiais</h3><p style="font-size:12px;color:var(--mu);margin:0 0 6px">Concedidas pelo Administrador quando necessário.</p><div id="permEspeciais"></div>
+    <p id="permStatus" class="perm-status" aria-live="polite">Nenhuma alteração pendente.</p>
+    <button class="btn" id="bPermSalvar" type="button" disabled>Salvar permissões do perfil</button>
   </div>
   <div class="card" data-sec="usuarios" id="cardUsuarios" style="display:none">
     <h2>Gestão de usuários <span class="ean">(assistente, analista e admin)</span></h2>
@@ -1170,7 +1172,7 @@ function ir(v){if(v==='catalogo'&&!podeVerCatalogo()){toast('O catálogo é excl
   if($('slogan'))$('slogan').textContent=(interna&&subtitulosTela[v])||CFG.slogan||'Área do Operador';
   if($('operatorRolePill'))$('operatorRolePill').hidden=!interna;
   document.querySelectorAll('#abas button').forEach(function(b){b.classList.toggle('on',b.dataset.v===(v==='reg'?'home':v==='busca'?'prod':v==='catalogo'?'aj':v==='detail'||v==='edit'?areaContextual:v));});
-  if(v==='home')renderHome();if(v==='busca')renderBusca();if(v==='catalogo')renderCatalogo();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();mostrarVisaoAlertas('alerts');}if(v==='aj'){renderPerfilOperador();ajustes();carregarSolicitacoesExclusao();carregarSolicitacoesNome();renderPerfisAcesso();mostrarVistaAjustes(podeVerMenuAjustes()?'system':'settings');}window.scrollTo(0,0);}
+  if(v==='home')renderHome();if(v==='busca')renderBusca();if(v==='catalogo')renderCatalogo();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();mostrarVisaoAlertas('alerts');}if(v==='aj'){renderPerfilOperador();ajustes();carregarSolicitacoesExclusao();carregarSolicitacoesNome();renderPerfisAcesso(true);mostrarVistaAjustes(podeVerMenuAjustes()?'system':'settings');}window.scrollTo(0,0);}
 $('headerBack').onclick=function(){if(vistaAtual==='aj'&&ajVista==='syssection'){mostrarVistaAjustes('system');return;}if(vistaAtual==='aj'&&podeVerMenuAjustes()&&['password','about','profile'].includes(ajVista)){mostrarVistaAjustes('system');return;}if(vistaAtual==='aj'&&(ajVista==='password'||ajVista==='about')){mostrarVistaAjustes('settings');return;}ir(vistaAnterior==='reg'?'home':vistaAnterior||'home');};
 $('abas').onclick=function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.v==='pere')subPere('lista');ir(b.dataset.v);};
 $('alertViewTabs').onclick=function(e){var b=e.target.closest('[data-alert-view]');if(b)mostrarVisaoAlertas(b.dataset.alertView);};
@@ -1932,17 +1934,32 @@ function temPermissao(id){return permissaoDoPapel(id,papelAtual());}
 function carregarPermissoes(){if(!sbOn()||!logado())return Promise.resolve();
   return sbReq('/rest/v1/papel_permissoes?select=papel,permissao,permitido').then(function(r){if(!r.ok||!Array.isArray(r.dados))return;
     var m={};r.dados.forEach(function(x){m[x.papel+'|'+x.permissao]=!!x.permitido;});SYNC.permissoes=m;salvarSync();atualizarInterfacePapel();},function(){});}
-function renderPerfisAcesso(){var card=$('cardPerfisAcesso');if(!card)return;var vis=sbOn()&&logado()&&ehAdmin();card.style.display=vis?'':'none';if(!vis)return;
-  var papel=$('permPapel').value||'operador';
-  function linhas(grupo){return PERMISSOES.filter(function(d){return d.grupo===grupo;}).map(function(d){var ed=permissaoEditavel(d,papel);
-    return '<label class="perm-row'+(ed?'':' off')+'"><input type="checkbox" data-perm="'+d.id+'"'+(permissaoDoPapel(d.id,papel)?' checked':'')+(ed?'':' disabled')+'><span>'+esc(d.titulo)+(ed?'':'<small>Regra fixa do servidor nesta etapa</small>')+'</span></label>';}).join('');}
+/* As caixas ficam pendentes até o Administrador tocar em "Salvar permissões do perfil". */
+var permPapelAtual='operador',permPendentes={},permSalvando=false;
+var PAPEL_ROTULO={operador:'Operador',assistente:'Assistente',analista:'Analista',gerente:'Gerente'};
+function atualizarBarraPermissoes(msg){var n=Object.keys(permPendentes).length,b=$('bPermSalvar');if(!b)return;b.disabled=!n||permSalvando;
+  $('permStatus').textContent=msg||(n?(n+(n===1?' alteração não salva':' alterações não salvas')):'Nenhuma alteração pendente.');
+  $('permStatus').classList.toggle('pend',!!n);}
+function renderPerfisAcesso(manter){var card=$('cardPerfisAcesso');if(!card)return;var vis=sbOn()&&logado()&&ehAdmin();card.style.display=vis?'':'none';if(!vis)return;
+  var papel=$('permPapel').value||'operador';if(manter!==true||papel!==permPapelAtual)permPendentes={};permPapelAtual=papel;
+  function marcado(id){return Object.prototype.hasOwnProperty.call(permPendentes,id)?permPendentes[id]:permissaoDoPapel(id,papel);}
+  function linhas(grupo){return PERMISSOES.filter(function(d){return d.grupo===grupo;}).map(function(d){
+    return '<label class="perm-row"><input type="checkbox" data-perm="'+d.id+'"'+(marcado(d.id)?' checked':'')+'><span>'+esc(d.titulo)+'</span></label>';}).join('');}
   $('permBasicas').innerHTML=linhas('basica');$('permEspeciais').innerHTML=linhas('especial');
-  card.querySelectorAll('[data-perm]').forEach(function(c){c.onchange=function(){definirPermissao(papel,c.dataset.perm,c.checked,c);};});}
-function definirPermissao(papel,id,valor,caixa){caixa.disabled=true;
-  sbReq('/rest/v1/rpc/definir_permissao_papel',{method:'POST',body:{p_papel:papel,p_permissao:id,p_permitido:valor}})
-    .then(function(r){if(!r.ok)throw new Error(r.dados&&r.dados.message||'Não foi possível salvar a permissão');
-      SYNC.permissoes=SYNC.permissoes||{};SYNC.permissoes[papel+'|'+id]=valor;salvarSync();toast('Permissão salva');auditar('permissao_alterada',{papel:papel,permissao:id,permitido:valor});})
-    .catch(function(e){caixa.checked=!valor;toast(e.message||'Não foi possível salvar a permissão');}).then(function(){caixa.disabled=false;});}
+  card.querySelectorAll('[data-perm]').forEach(function(c){c.onchange=function(){var id=c.dataset.perm;
+    if(c.checked===permissaoDoPapel(id,papel))delete permPendentes[id];else permPendentes[id]=c.checked;atualizarBarraPermissoes();};});
+  atualizarBarraPermissoes();}
+function trocarPerfilPermissoes(){if(Object.keys(permPendentes).length&&!confirm('Há alterações não salvas neste perfil. Descartar?')){$('permPapel').value=permPapelAtual;return;}
+  permPendentes={};renderPerfisAcesso();}
+function salvarPermissoesPerfil(){var papel=permPapelAtual,ids=Object.keys(permPendentes);if(!ids.length||permSalvando)return;
+  permSalvando=true;atualizarBarraPermissoes('Salvando…');var falha='';
+  ids.reduce(function(p,id){return p.then(function(){var valor=permPendentes[id];
+    return sbReq('/rest/v1/rpc/definir_permissao_papel',{method:'POST',body:{p_papel:papel,p_permissao:id,p_permitido:valor}}).then(function(r){
+      if(!r.ok){falha=falha||(r.dados&&r.dados.message)||'Não foi possível salvar';return;}
+      SYNC.permissoes=SYNC.permissoes||{};SYNC.permissoes[papel+'|'+id]=valor;delete permPendentes[id];},function(){falha=falha||'Sem conexão com o servidor';});});},Promise.resolve())
+  .then(function(){permSalvando=false;salvarSync();renderPerfisAcesso(true);
+    if(falha){atualizarBarraPermissoes('Parte das alterações não foi salva: '+falha);toast('Não foi possível salvar todas as permissões');}
+    else{atualizarBarraPermissoes('Permissões de '+PAPEL_ROTULO[papel]+' salvas.');toast('Permissões salvas');}});}
 function papelAtual(){return (sbOn()&&SESS&&SESS.papel)||(sbOn()?'operador':'admin');}
 function pode(acao){var p=papelAtual();if(p==='admin')return true;
   if(acao==='registrar')return ['operador','assistente','analista','gerente'].includes(p)&&temPermissao('registrar');
@@ -2128,7 +2145,7 @@ function contaCard(){atualizarContextoLoja();if(!sbOn()){$('cardConta').style.di
 // ── Solicitações de exclusão (RLS/RPC no backend) ──
 function podeRevisarExclusao(){return temPermissao('exclusoes_aprovar');}
 $('bCorrecoesNomeRefresh').onclick=carregarSolicitacoesNome;
-$('permPapel').onchange=renderPerfisAcesso;
+$('permPapel').onchange=trocarPerfilPermissoes;$('bPermSalvar').onclick=salvarPermissoesPerfil;
 function carregarSolicitacoesExclusao(){
   var card=$('cardSolicitacoes');if(!card)return;
   var vis=sbOn()&&logado()&&SESS.lojaId;card.style.display=vis?'':'none';if(!vis)return;
