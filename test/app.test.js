@@ -1755,8 +1755,15 @@ tflaky('Perfis de acesso: administrador vê básicas e especiais do perfil e con
   await a.p.selectOption('#permPapel', 'operador');
   assert.strictEqual(await a.p.isChecked('#permEspeciais [data-perm="nome_editar"]'), false);
   assert.strictEqual(await a.p.isChecked('#permBasicas [data-perm="registrar"]'), true);
+  assert.strictEqual(await a.p.isVisible('#bPermSalvar'), true, 'há um botão para salvar as permissões do perfil');
+  assert.strictEqual(await a.p.isDisabled('#bPermSalvar'), true, 'sem alterações o botão fica inativo');
   await a.p.check('#permEspeciais [data-perm="nome_editar"]');
-  await a.p.waitForFunction(() => /salva/i.test(document.getElementById('toast').textContent));
+  await a.p.check('#permBasicas [data-perm="relatorios"]'); await a.p.uncheck('#permBasicas [data-perm="relatorios"]');
+  assert.deepStrictEqual(cap, [], 'nada é enviado antes de salvar');
+  assert.ok((await a.p.textContent('#permStatus')).includes('1 alteração'), 'mostra o que falta salvar (marcar e desmarcar volta ao estado salvo)');
+  await a.p.click('#bPermSalvar');
+  await a.p.waitForFunction(() => /Permissões de Operador salvas/.test(document.getElementById('permStatus').textContent));
+  assert.strictEqual(await a.p.isDisabled('#bPermSalvar'), true);
   assert.deepStrictEqual(cap, [{ p_papel: 'operador', p_permissao: 'nome_editar', p_permitido: true }]);
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
@@ -1863,6 +1870,24 @@ tflaky('Perfis de acesso etapa 3: gerente perde Usuários e ganha Auditoria e Ca
   assert.ok(!menu.includes('usuarios') && menu.includes('auditoria') && menu.includes('catalogo') && !menu.includes('lojas') && !menu.includes('dados'), menu.join(','));
   await a.p.click('#sysMenu [data-sys-open="catalogo"]');
   assert.strictEqual(await a.p.isVisible('#v-catalogo'), true);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Perfis de acesso: trocar de perfil com alterações pendentes pede confirmação e falha ao salvar mantém a pendência', { skip: pular }, async () => {
+  const a = await abrirLogado(async p => { await rotasPerm(p, 'admin', []);
+    await p.route(/\/rest\/v1\/rpc\/definir_permissao_papel$/, r => r.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ message: 'Somente o Administrador define permissões' }) })); },
+    { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="usuarios"]');
+  await a.p.check('#permEspeciais [data-perm="auditoria_ver"]');
+  a.respostas.push(false);
+  await a.p.selectOption('#permPapel', 'gerente');
+  assert.strictEqual(await a.p.inputValue('#permPapel'), 'operador', 'recusar a confirmação mantém o perfil');
+  assert.strictEqual(await a.p.isChecked('#permEspeciais [data-perm="auditoria_ver"]'), true);
+  await a.p.click('#bPermSalvar');
+  await a.p.waitForFunction(() => /não foi salv|Somente o Administrador/i.test(document.getElementById('permStatus').textContent));
+  assert.strictEqual(await a.p.isDisabled('#bPermSalvar'), false, 'continua pendente para tentar de novo');
+  assert.strictEqual(await a.p.isChecked('#permEspeciais [data-perm="auditoria_ver"]'), true);
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
 
