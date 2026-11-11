@@ -182,7 +182,7 @@ test('Ajustes administrativos: telas existentes são agrupadas sem duplicar IDs 
   for (const [id, sec] of [
     ['aDig','pereciveis'], ['aValor','pereciveis'], ['aDias','alertas'], ['aNotif','alertas'],
     ['aCosmos','config'], ['cardConta','config'], ['cardAuditoria','auditoria'],
-    ['cardSolicitacoes','dados'], ['cardUsuarios','usuarios'], ['cardLojasAdmin','lojas'], ['bExp','dados']
+    ['cardSolicitacoes','pereciveis'], ['cardUsuarios','usuarios'], ['cardLojasAdmin','lojas'], ['bExp','dados']
   ]) {
     const at = html.indexOf('id="' + id + '"');
     assert.ok(at >= 0, id + ' continua no DOM');

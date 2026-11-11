@@ -1798,3 +1798,23 @@ tflaky('Perfis de acesso: básica desligada tira do operador a solicitação de 
   assert.strictEqual(await a.p.locator('#sysMenu [data-sys-open="relatorios"]').count(), 1);
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
+
+tflaky('Perfis de acesso etapa 2: registros e exclusões ficam liberados para marcar; operador com permissão edita registro de outro', { skip: pular }, async () => {
+  let a = await abrirLogado(p => rotasPerm(p, 'admin', []), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="usuarios"]');
+  for (const perm of ['registrar', 'editar_proprios', 'solicitar_exclusao', 'registros_editar_outros', 'exclusoes_aprovar', 'nome_editar'])
+    assert.strictEqual(await a.p.isDisabled('#cardPerfisAcesso [data-perm="' + perm + '"]'), false, perm + ' habilitada para o operador');
+  await a.fechar();
+  const dados = dadosNome(); dados.prod['7891000315507'].lotes[0].created_by = 'outro';
+  a = await abrirLogado(p => rotasPerm(p, 'operador', []), dados, { papel: 'operador', nome: 'Op' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="prod"]'); await a.p.click('[data-detail-lote="l1"]');
+  assert.strictEqual(await a.p.isVisible('#bDetailEdit'), false, 'sem a permissão, operador não edita registro de outro');
+  await a.fechar();
+  a = await abrirLogado(p => rotasPerm(p, 'operador', [{ papel: 'operador', permissao: 'registros_editar_outros', permitido: true }]), dados, { papel: 'operador', nome: 'Op' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="prod"]'); await a.p.click('[data-detail-lote="l1"]'); await a.p.click('#bDetailEdit');
+  assert.strictEqual(await a.p.isVisible('#edLote'), true, 'com a permissão, edita');
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
