@@ -229,17 +229,8 @@ test('Alertas pessoais e Push: cartão unificado preserva controles e separa esc
 });
 
 
-test('Google Calendar fica no cartão pessoal, independente do Push interno da loja', () => {
-  for (const id of ['calendarCard','calendarStatus','calendarFeedback','bCalendarConnect','bCalendarSync','bCalendarDisconnect']) assert.match(html, new RegExp('id="'+id+'"'));
-  assert.match(html, /Google Calendar/);
-  assert.match(html, /calendário principal Google/);
-  assert.match(html, /todas as lojas elegíveis/);
-  assert.match(html, /próximos 365 dias/);
-  assert.match(html, /function calendarAcao\(action\).*functions\/v1\/google-calendar/);
-  assert.match(html, /body:\{action:action\}/);
-  assert.doesNotMatch(html.match(/function calendarAcao\(action\)[\s\S]*?function calendarRender/)[0], /userId\s*[:=]|refresh_token\s*[:=]|localStorage/);
-  assert.match(html, /Os eventos já criados no Google serão mantidos/);
-  assert.match(html, /Date\.now\(\)-calendarUltimoSync<300000/);
+test('Google Calendar foi retirado do frontend (decisão do proprietário em 11/11/2026)', () => {
+  assert.doesNotMatch(html, /calendar/i);
 });
 
 test('Aviso do sistema: banner global só exibe personalizados não lidos e confirma a linha do usuário', () => {

@@ -1570,75 +1570,6 @@ tflaky('alertas internos da loja: todos consultam, somente gerente/admin altera 
 });
 
 
-tflaky('Google Calendar: JWT, autorização por redirect, sync/logout preservam sessão e disconnect confirma', { skip: pular }, async () => {
-  const calls=[];let calendarConnected=false;
-  const a = await abrirLogado(async p => {
-    await p.route(/\/rest\/v1\/perfis/, r => r.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{papel:'operador',nome:'Teste'}])}));
-    await p.route(/\/rest\/v1\/(produtos|lotes|pere_itens|pere_regs|auditoria|preferencias|lojas|loja_membros)/, r => r.fulfill({status:200,contentType:'application/json',body:'[]'}));
-    await p.route('**/functions/v1/google-calendar', async r => {
-      const h=r.request().headers(), body=r.request().postDataJSON();calls.push({auth:h.authorization,body});
-      if(body.action==='authorize')calendarConnected=true;const result=body.action==='status'?{connected:calendarConnected,last_synced_at:null}:body.action==='authorize'?{url:'https://accounts.google.test/authorize'}:body.action==='sync'?{created:1,updated:0,deleted:0,failed:0,connected:true}:{ok:true};
-      await r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(result)});
-    });
-  }, null);
-  const before=await a.p.evaluate(()=>localStorage.getItem('validade_sessao'));
-  await a.p.click('nav button[data-v="aj"]');
-  if(await a.p.isVisible('#sysMenuCard')) await a.p.click('#sysMenu [data-sys-open="op-alertas"]');
-  await a.p.waitForFunction(()=>document.querySelector('#calendarStatus').textContent.includes('Google Calendar'));
-  assert.ok(calls.some(x=>x.body.action==='status'&&x.auth==='Bearer tok'));
-  assert.equal(await a.p.isVisible('#bCalendarConnect'),true);
-  assert.ok(calls.every(x=>!('userId' in x.body)));
-  await a.p.route('https://accounts.google.test/**',r=>r.fulfill({status:200,contentType:'text/html',body:'OAuth mock'}));
-  await a.p.click('#bCalendarConnect');
-  await a.p.waitForURL('https://accounts.google.test/authorize');
-  await a.p.goBack();await a.p.waitForLoadState('domcontentloaded');
-  assert.equal(await a.p.evaluate(()=>localStorage.getItem('validade_sessao')),before);
-  await a.p.click('nav button[data-v="aj"]');if(await a.p.isVisible('#sysMenuCard'))await a.p.click('#sysMenu [data-sys-open="op-alertas"]');
-  await a.p.waitForFunction(()=>document.querySelector('#calendarStatus').textContent.includes('Google Calendar'));
-  // Redirecionamento OAuth não altera nem remove a sessão; sincronização manual também preserva login.
-  calendarConnected=true;await a.p.click('nav button[data-v="aj"]');if(await a.p.isVisible('#sysMenuCard'))await a.p.click('#sysMenu [data-sys-open="op-alertas"]');
-  await a.p.waitForFunction(()=>document.querySelector('#calendarStatus').textContent.includes('Google Calendar'));
-  await a.p.click('#bCalendarSync');await a.p.waitForFunction(()=>document.querySelector('#calendarFeedback').textContent.includes('1 criados'));
-  assert.equal(await a.p.evaluate(()=>localStorage.getItem('validade_sessao')),before);
-  a.respostas.push(false);await a.p.click('#bCalendarDisconnect');
-  assert.match(a.dialogos.at(-1).msg,/eventos já criados.*mantidos/i);assert.equal(calls.filter(x=>x.body.action==='disconnect').length,0);
-  a.respostas.push(true);await a.p.click('#bCalendarDisconnect');
-  await a.p.waitForFunction(()=>document.querySelector('#calendarFeedback').textContent.includes('Conexão removida'));
-  assert.equal(await a.p.evaluate(()=>localStorage.getItem('validade_sessao')),before);
-  calendarConnected=false;
-  assert.ok(calls.some(x=>x.body.action==='sync'));assert.ok(calls.some(x=>x.body.action==='disconnect'));
-  assert.deepStrictEqual(a.erros,[]);await a.fechar();
-});
-
-tflaky('Google Calendar: refresh revogado pede reconexão e oferece conectar novamente', { skip: pular }, async () => {
-  const a=await abrirLogado(async p=>{
-    await p.route(/\/rest\/v1\/perfis/,r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{papel:'operador',nome:'Teste'}])}));
-    await p.route(/\/rest\/v1\/(produtos|lotes|pere_itens|pere_regs|auditoria|preferencias|lojas|loja_membros)/,r=>r.fulfill({status:200,contentType:'application/json',body:'[]'}));
-    await p.route('**/functions/v1/google-calendar',r=>{
-      const action=r.request().postDataJSON().action;
-      if(action==='status')return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({connected:true,last_synced_at:null})});
-      if(action==='sync')return r.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'refresh_token_revoked',code:'refresh_token_revoked',connected:false})});
-      return r.fulfill({status:200,contentType:'application/json',body:'{}'});
-    });
-  },null);
-  await a.p.click('nav button[data-v="aj"]');if(await a.p.isVisible('#sysMenuCard'))await a.p.click('#sysMenu [data-sys-open="op-alertas"]');
-  await a.p.waitForFunction(()=>document.querySelector('#calendarStatus').textContent.includes('Google Calendar'));
-  await a.p.click('#bCalendarSync');
-  await a.p.waitForFunction(()=>document.querySelector('#calendarFeedback').textContent.includes('revogada'));
-  assert.equal(await a.p.isVisible('#bCalendarConnect'),true,'deve permitir nova autorização');
-  assert.equal(await a.p.isVisible('#bCalendarSync'),false,'não deve continuar sinalizando conexão válida');
-  assert.deepStrictEqual(a.erros,[]);await a.fechar();
-});
-
-tflaky('Google Calendar: função ainda não configurada mostra feedback sem derrubar app', { skip: pular }, async () => {
-  const a=await abrirLogado(async p=>{await p.route(/\/rest\/v1\/perfis/,r=>r.fulfill({status:200,contentType:'application/json',body:'[]'}));await p.route(/\/rest\/v1\/(produtos|lotes|pere_itens|pere_regs|auditoria|preferencias|lojas|loja_membros)/,r=>r.fulfill({status:200,contentType:'application/json',body:'[]'}));},null);
-  await a.p.route('**/functions/v1/google-calendar',r=>r.fulfill({status:404,contentType:'application/json',body:'{}'}));
-  await a.p.click('nav button[data-v="aj"]');if(await a.p.isVisible('#sysMenuCard'))await a.p.click('#sysMenu [data-sys-open="op-alertas"]');
-  await a.p.waitForFunction(()=>document.querySelector('#calendarFeedback').textContent.includes('ainda não está configurada'));
-  assert.deepStrictEqual(a.erros,[]);await a.fechar();
-});
-
-/* Editar registro: o administrador corrige o nome do produto na própria tela de edição. */
 tflaky('Editar registro: administrador altera o nome do produto e o catálogo é atualizado', { skip: pular }, async () => {
   const a = await abrir({ dados: { prod: { '0070341558737': { lotes: [lote('l1', '2032-12-01', 15, '1382')] } }, cat: {}, pere: { itens: {}, regs: [] } } });
   await a.p.click('nav button[data-v="prod"]'); await a.p.click('[data-detail-lote="l1"]'); await a.p.click('#bDetailEdit');
@@ -2193,5 +2124,20 @@ tflaky('Notificações: alertas personalizados aparecem mesmo gravados em outra 
   await a.p.click('nav button[data-v="alertas"]'); await a.p.click('[data-alert-view="notifications"]');
   await a.p.waitForFunction(() => /Inventário amanhã/.test(document.getElementById('listaNotificacoes').textContent));
   assert.ok(urls.some(u => u.includes('or=(loja_id.eq.L1,tipo.eq.sistema_personalizado)')), urls.join(' | '));
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Google Calendar não aparece mais no aplicativo nem é chamado', { skip: pular }, async () => {
+  const chamadas = [];
+  const a = await abrirLogado(async p => { await rotasPerm(p, 'admin', []);
+    await p.route(/\/functions\/v1\/google-calendar/, r => { chamadas.push(r.request().url()); r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }); }); },
+    { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="alertas"]');
+  assert.strictEqual(await a.p.isVisible('#pushCard'), true);
+  assert.strictEqual(await a.p.locator('#calendarCard, #bCalendarConnect').count(), 0);
+  assert.ok(!/Google Calendar/i.test(await a.p.textContent('body')));
+  await a.p.waitForTimeout(400);
+  assert.deepStrictEqual(chamadas, []);
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
