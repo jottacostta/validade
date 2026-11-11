@@ -331,8 +331,7 @@ test('refresh revogado remove a conexão e solicita nova autorização sem expor
   assert.match(calendarEdge, /error\.message === "refresh_token_revoked"/);
   assert.match(calendarEdge, /from\("google_calendar_connections"\)\.delete\(\)\.eq\("user_id", user\.id\)/);
   assert.match(calendarEdge, /code: "refresh_token_revoked", connected: false }, 409/);
-  assert.match(app, /r\.status===409&&r\.dados&&r\.dados\.code==='refresh_token_revoked'/);
-  assert.match(app, /A autorização do Google expirou ou foi revogada\. Reconecte o Calendar\./);
+  assert.doesNotMatch(app, /google-calendar/, 'o frontend não usa mais o Google Calendar (retirado em 11/11/2026)');
   assert.doesNotMatch(calendarEdge, /console\.(log|error|warn)/);
 });
 
