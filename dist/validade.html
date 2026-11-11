@@ -931,7 +931,7 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
   </div>
   <div class="card" data-sec="alertas" id="cardAlertaPersonalizado" style="display:none">
     <h2>Enviar alerta personalizado</h2>
-    <p style="font-size:13px;color:var(--mu)">O aviso aparece em Notificações → Sistema de cada destinatário e chega por push para quem ativou neste aparelho.</p>
+    <p style="font-size:13px;color:var(--mu)">O aviso aparece em Notificações → Sistema de cada destinatário (e na sua, como confirmação) e chega por push para quem ativou as notificações.</p>
     <label class="f" for="apTitulo">Título</label><input id="apTitulo" maxlength="80" autocomplete="off" placeholder="Ex.: Inventário amanhã">
     <label class="f" for="apMensagem">Mensagem</label><textarea id="apMensagem" maxlength="500" rows="3" placeholder="Escreva o aviso para a equipe"></textarea>
     <div class="row"><div><label class="f" for="apLoja">Loja</label><select id="apLoja"><option value="">Todas as lojas</option></select></div>
@@ -1295,7 +1295,7 @@ if(CFG.logo){var hl=$('hdrLogo');if(hl){hl.src=CFG.logo;hl.style.display='';}var
 var K='validade_dados', D={};
 try{var s=localStorage.getItem(K);
   if(s===null){var ant='validade_'+CFG.nome;s=localStorage.getItem(ant);
-    if(s===null){var cs=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('validade_')===0&&k!==K&&k!=='validade_sessao'&&k!=='validade_sync')cs.push(k);}
+    if(s===null){var cs=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('validade_')===0&&k!==K&&k!=='validade_sessao'&&k!=='validade_sync'&&k!=='validade_ultima_loja'&&k.indexOf('validade_alertas_regras_')!==0)cs.push(k);}
       if(cs.length===1){ant=cs[0];s=localStorage.getItem(ant);}}
     if(s!==null){localStorage.setItem(K,s);localStorage.removeItem(ant);}}
   if(s)D=JSON.parse(s);}catch(e){}
@@ -1331,7 +1331,7 @@ function idbStore(modo,fn){return new Promise(function(ok,erro){try{var r=indexe
     t.oncomplete=function(){db.close();ok(q&&q.result);};t.onerror=t.onabort=function(){db.close();erro(t.error);};};}catch(e){erro(e);}});}
 /* remove só chaves antigas deste app (nome de loja antigo); nunca toca em dados de outros aplicativos do mesmo endereço */
 function limparSobras(){try{if(localStorage.getItem(K)===null&&!temIdb[K])return;var ks=[];
-  for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('validade_')===0&&CHAVES_APP.indexOf(k)<0)ks.push(k);}
+  for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('validade_')===0&&CHAVES_APP.indexOf(k)<0&&k.indexOf('validade_alertas_regras_')!==0)ks.push(k);}
   ks.forEach(function(k){localStorage.removeItem(k);});}catch(e){}}
 function guardar(chave,texto){
   function gravou(){if(idbLido&&temIdb[chave]){temIdb[chave]=false;idbStore('readwrite',function(st){return st.delete(chave);}).catch(function(){});}return true;}
@@ -1988,7 +1988,7 @@ function carregarNotificacoes(silencioso,forcar){if(!sbOn()||!logado()||!SESS.lo
   if(silencioso&&!forcar&&Date.now()-notificacoesConsultadasEm<60000)return Promise.resolve(notificacoesCache);notificacoesConsultadasEm=Date.now();
   if(!silencioso)$('listaNotificacoes').innerHTML='<div class="vazio"><span class="gira"></span> carregando…</div>';
   /* removida_em chega com a migration de "Limpar notificações"; enquanto o servidor não a tiver, lê sem o filtro e esconde o botão */
-  var base='/rest/v1/notificacoes?select=id,tipo,titulo,mensagem,payload,criado,lida_em&loja_id=eq.'+encodeURIComponent(SESS.lojaId),fim='&order=criado.desc&limit=50';
+  var base='/rest/v1/notificacoes?select=id,tipo,titulo,mensagem,payload,criado,lida_em&or=(loja_id.eq.'+encodeURIComponent(SESS.lojaId)+',tipo.eq.sistema_personalizado)',fim='&order=criado.desc&limit=50';
   return sbReq(base+'&removida_em=is.null'+fim).then(function(r){if(r.ok){$('bLimparNotificacoes').hidden=false;return r;}$('bLimparNotificacoes').hidden=true;return sbReq(base+fim);}).then(function(r){
     if(!SESS||notificacoesEscopoCache!==escopo||escopo!==String(SESS.uid||'')+':'+String(SESS.lojaId||''))return notificacoesCache;
     if(!r.ok)throw erroSQL(r,'notificações');notificacoesCache=Array.isArray(r.dados)?r.dados:[];
@@ -1996,9 +1996,9 @@ function carregarNotificacoes(silencioso,forcar){if(!sbOn()||!logado()||!SESS.lo
     atualizarBadgeAlertas();return notificacoesCache;
   }).catch(function(e){if(!silencioso&&SESS&&notificacoesEscopoCache===escopo&&escopo===String(SESS.uid||'')+':'+String(SESS.lojaId||''))$('listaNotificacoes').innerHTML='<div class="aviso wa">As notificações do servidor ainda não estão disponíveis. Os alertas visuais sincronizados continuam ativos. ('+esc(e.message||'erro')+')</div>';return [];});}
 $('bLerNotificacoes').onclick=function(){var ids=notificacoesCache.filter(function(n){return !n.lida_em;}).map(function(n){return n.id;});if(!ids.length){toast('Não há notificações novas');return;}
-  var f='id=in.('+ids.map(encodeURIComponent).join(',')+')';sbReq('/rest/v1/notificacoes?loja_id=eq.'+encodeURIComponent(SESS.lojaId)+'&'+f,{method:'PATCH',body:{lida_em:new Date().toISOString()}}).then(function(r){if(!r.ok)throw erroSQL(r,'marcar notificações');toast('Notificações marcadas como lidas');carregarNotificacoes();}).catch(function(e){toast('Não foi possível atualizar: '+e.message);});};
+  var f='id=in.('+ids.map(encodeURIComponent).join(',')+')';sbReq('/rest/v1/notificacoes?'+f,{method:'PATCH',body:{lida_em:new Date().toISOString()}}).then(function(r){if(!r.ok)throw erroSQL(r,'marcar notificações');toast('Notificações marcadas como lidas');carregarNotificacoes();}).catch(function(e){toast('Não foi possível atualizar: '+e.message);});};
 $('bLimparNotificacoes').onclick=function(){var ids=notificacoesCache.map(function(n){return n.id;});if(!ids.length){toast('Não há notificações para limpar');return;}if(!confirm('Limpar todas as suas notificações desta loja?'))return;
-  sbReq('/rest/v1/notificacoes?loja_id=eq.'+encodeURIComponent(SESS.lojaId)+'&id=in.('+ids.map(encodeURIComponent).join(',')+')',{method:'PATCH',body:{removida_em:new Date().toISOString()}}).then(function(r){if(!r.ok)throw erroSQL(r,'limpar notificações');toast('Notificações limpas');return carregarNotificacoes();}).catch(function(e){toast('Não foi possível limpar: '+e.message);});};
+  sbReq('/rest/v1/notificacoes?id=in.('+ids.map(encodeURIComponent).join(',')+')',{method:'PATCH',body:{removida_em:new Date().toISOString()}}).then(function(r){if(!r.ok)throw erroSQL(r,'limpar notificações');toast('Notificações limpas');return carregarNotificacoes();}).catch(function(e){toast('Não foi possível limpar: '+e.message);});};
 $('profileSessions').onclick=function(){if(!logado())return;if(!confirm('Sair desta conta em todos os aparelhos?'))return;var t=SESS.access_token;
   fetch(CFG.supaUrl+'/auth/v1/logout?scope=global',{method:'POST',headers:{apikey:CFG.supaKey,Authorization:'Bearer '+t}}).catch(function(){}).then(function(){sairParaLogin();});};
 
@@ -2373,7 +2373,7 @@ function tokenCosmos(){return (((sbOn()&&logado())?(SESS&&SESS.cosmos)||'':(D.aj
 /* Integração Google Calendar via Edge Function autenticada; nunca persiste credenciais Google. */
 var calendarConectado=false,calendarUltimoSync=0,calendarEmAndamento=false;
 function calendarMensagem(txt){var el=$('calendarFeedback');if(el)el.textContent=txt||'';}
-function calendarAcao(action){if(!sbOn()||!logado()||!SESS.access_token)return Promise.reject(new Error('Entre novamente para continuar.'));if(!navigator.onLine)return Promise.reject(new Error('Sem conexão com a internet.'));return sbReq('/functions/v1/google-calendar',{method:'POST',body:{action:action}}).then(function(r){if(!r.ok){var msg=r.dados&&(r.dados.message||r.dados.error);if(r.status===409&&r.dados&&r.dados.code==='refresh_token_revoked'){calendarConectado=false;calendarUltimoSync=0;calendarRender();throw new Error('A autorização do Google expirou ou foi revogada. Reconecte o Calendar.');}if(r.status===404||r.status===502)throw new Error('Integração Google Calendar ainda não está configurada.');if(r.status===401)throw new Error('Sua sessão expirou. Entre novamente e tente de novo.');throw new Error(msg||'Não foi possível concluir a operação no Google Calendar.');}return r.dados||{};});}
+function calendarAcao(action){if(!sbOn()||!logado()||!SESS.access_token)return Promise.reject(new Error('Entre novamente para continuar.'));if(!navigator.onLine)return Promise.reject(new Error('Sem conexão com a internet.'));return sbReq('/functions/v1/google-calendar',{method:'POST',body:{action:action}}).then(function(r){if(!r.ok){var msg=r.dados&&(r.dados.message||r.dados.error);if(r.status===409&&r.dados&&r.dados.code==='refresh_token_revoked'){calendarConectado=false;calendarUltimoSync=0;calendarRender();throw new Error('A autorização do Google expirou ou foi revogada. Reconecte o Calendar.');}if(r.status===404||r.status===502||r.status===503)throw new Error('Integração Google Calendar ainda não está configurada.');if(r.status===401)throw new Error('Sua sessão expirou. Entre novamente e tente de novo.');throw new Error(msg||'Não foi possível concluir a operação no Google Calendar.');}return r.dados||{};});}
 function calendarRender(){var st=$('calendarStatus');if(st)st.textContent=calendarConectado?'Conectado ao Google Calendar'+(calendarUltimoSync?' · última sincronização '+new Date(calendarUltimoSync).toLocaleString():''):'Não conectado ao Google Calendar';$('bCalendarConnect').hidden=calendarConectado;$('bCalendarSync').hidden=!calendarConectado;$('bCalendarDisconnect').hidden=!calendarConectado;}
 function sincronizarCalendar(silencioso){if(calendarEmAndamento||!calendarConectado)return Promise.resolve();calendarEmAndamento=true;$('bCalendarSync').disabled=true;if(!silencioso)calendarMensagem('Sincronizando eventos pessoais…');return calendarAcao('sync').then(function(x){calendarUltimoSync=Date.now();calendarMensagem('Sincronização concluída: '+Number(x.created||0)+' criados, '+Number(x.updated||0)+' atualizados, '+Number(x.deleted||0)+' removidos, '+Number(x.failed||0)+' falharam.');calendarRender();return x;}).catch(function(e){calendarMensagem(e.message||'Falha ao sincronizar o calendário.');if(!silencioso)toast('Não foi possível sincronizar o Google Calendar');return null;}).then(function(x){calendarEmAndamento=false;$('bCalendarSync').disabled=false;return x;});}
 function carregarCalendarStatus(){if(!sbOn()||!logado())return;calendarMensagem('Consultando conexão…');calendarAcao('status').then(function(x){calendarConectado=x.connected===true;calendarUltimoSync=x.last_synced_at?Date.parse(x.last_synced_at):0;calendarRender();if(calendarConectado&&calendarCallbackPendente){calendarCallbackPendente=false;return sincronizarCalendar(false);}}).catch(function(e){calendarConectado=false;calendarRender();calendarMensagem(e.message||'Não foi possível consultar o Google Calendar.');});}
@@ -2385,8 +2385,12 @@ $('bCalendarDisconnect').onclick=function(){if(!confirm('Desconectar o Google Ca
 function agendarSyncCalendar(){if(!calendarConectado||!navigator.onLine||Date.now()-calendarUltimoSync<300000)return;sincronizarCalendar(true);}
 /* Regras pessoais de alerta: cache e fila sempre isolados pelo UID autenticado. */
 function chaveCacheRegras(uid){return 'validade_alertas_regras_'+encodeURIComponent(String(uid||''));}
-function lerCacheRegras(uid){try{return JSON.parse(localStorage.getItem(chaveCacheRegras(uid))||'{"items":[],"pendentes":[]}')||{items:[],pendentes:[]};}catch(e){return {items:[],pendentes:[]};}}
-function guardarCacheRegras(uid,c){if(!uid)return;try{localStorage.setItem(chaveCacheRegras(uid),JSON.stringify(c));}catch(e){}}
+/* A cópia em memória é a fonte durante a sessão: com o armazenamento do aparelho cheio o localStorage recusa a
+   gravação, e sem ela a regra recém-criada se perdia antes de chegar ao servidor. */
+var regrasMem={};
+function lerCacheRegras(uid){var k=String(uid||'');if(regrasMem[k])return JSON.parse(regrasMem[k]);
+  try{var c=JSON.parse(localStorage.getItem(chaveCacheRegras(uid))||'null');if(c&&Array.isArray(c.items)&&Array.isArray(c.pendentes))return c;}catch(e){}return {items:[],pendentes:[]};}
+function guardarCacheRegras(uid,c){if(!uid)return;var txt=JSON.stringify(c);regrasMem[String(uid)]=txt;try{localStorage.setItem(chaveCacheRegras(uid),txt);}catch(e){}}
 function horaRegraValida(v){return /^([01]\d|2[0-3]):[0-5]\d$/.test(String(v||''));}
 function renderRegrasAlertas(items){var box=$('listaRegrasAlertas');if(!box)return;var ativos=(items||[]).slice().sort(function(a,b){return (+a.dias)-(+b.dias)||String(a.hora_local).localeCompare(String(b.hora_local));});
   box.innerHTML=ativos.length?ativos.map(function(r){var hh=String(r.hora_local||'08:00:00').slice(0,5);return '<div class="alert-rule" data-regra="'+esc(r.id)+'"><div class="alert-rule-main"><b>'+esc(String(r.dias))+' dias · '+esc(hh)+'</b><small>'+esc(r.fuso||'America/Sao_Paulo')+'</small></div><div class="alert-rule-actions"><label aria-label="Ativar regra"><input type="checkbox" data-regra-toggle="'+esc(r.id)+'" '+(r.ativo===false?'':'checked')+'></label><button type="button" class="btn perigo" data-regra-delete="'+esc(r.id)+'" aria-label="Remover regra">Remover</button></div></div>';}).join(''):'<div class="vazio">Nenhuma regra pessoal cadastrada.</div>';}
