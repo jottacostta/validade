@@ -151,16 +151,18 @@ test('Push e regras pessoais: cartão dedicado aparece em Configurações e não
   assert.match(html, /id="pushStatus"/);
   assert.match(aj, /data-sec="alertas"[^>]*id="pushCard"|id="pushCard"[^>]*data-sec="alertas"/);
   assert.match(al, /id="bIrPush"/);
-  assert.match(html, /\$\('pushCard'\)\.style\.display=\(v==='system'\|\|v==='settings'/);
+  assert.match(html, /\{id:'alertas',titulo:'Alertas e Notificações'/);
+  assert.match(html, /naSecaoAlertas=v==='syssection'&&\(sysSecAtual==='alertas'\|\|sysSecAtual==='op-alertas'\)/);
+  assert.match(html, /\$\('pushCard'\)\.style\.display=mostrarAlertas\?'':'none'/);
 });
 
-test('Ajustes administrativos: menu de dez seções respeita a hierarquia dos perfis', () => {
+test('Ajustes administrativos: menu de onze seções respeita a hierarquia dos perfis', () => {
   for (const id of ['sysMenuCard', 'sysMenu', 'sysSectionHead', 'sysBackToMenu', 'sysSectionTitle', 'sysSectionView', 'sysReportsPanel']) {
     assert.match(html, new RegExp('id="' + id + '"'), id + ' existe');
   }
   const entries = [...html.matchAll(/\{id:'([^']+)',titulo:'([^']+)',sub:'[^']+',roles:\[([^\]]+)\]/g)].filter(x => !x[1].startsWith('op-'));
-  assert.equal(entries.length, 10, 'dez seções administrativas definidas');
-  assert.deepEqual(entries.map(x => x[1]), ['perfil','usuarios','lojas','catalogo','pereciveis','relatorios','auditoria','config','dados','sobre']);
+  assert.equal(entries.length, 11, 'onze seções administrativas definidas');
+  assert.deepEqual(entries.map(x => x[1]), ['perfil','usuarios','lojas','catalogo','pereciveis','relatorios','auditoria','config','dados','alertas','sobre']);
   const access = Object.fromEntries(entries.map(x => [x[1], x[3].replace(/'/g, '').split(',')]));
   assert.deepEqual(access.perfil, ['analista','gerente','admin']);
   assert.deepEqual(access.usuarios, ['analista','gerente','admin']);
@@ -195,7 +197,7 @@ test('Ajustes administrativos: telas existentes são agrupadas sem duplicar IDs 
 
 test('Ajustes do Operador: menu próprio reutiliza recursos pessoais sem expor administração', () => {
   const items = [...html.matchAll(/\{id:'(op-[^']+)',titulo:'([^']+)',sub:'[^']+',roles:\[([^\]]+)\]/g)];
-  assert.deepEqual(items.map(x => x[1]), ['op-perfil', 'op-preferencias', 'op-sobre']);
+  assert.deepEqual(items.map(x => x[1]), ['op-perfil', 'op-preferencias', 'op-alertas', 'op-sobre']);
   for (const item of items) assert.deepEqual(item[3].replace(/'/g, '').split(','), ['operador']);
   assert.match(html, /function podeVerMenuOperador\(\)\{return papelAtual\(\)==='operador';\}/);
   assert.match(html, /data-sec-ativa="operador"/);
