@@ -418,3 +418,11 @@ test('perfis de acesso etapa 3: áreas administrativas obedecem às permissões 
   assert.match(gerir, /rpc\("papel_tem_permissao", \{ p_papel: papelCaller, p_permissao: "usuarios_gerenciar" \}\)/);
   assert.match(gerir, /if \(permErr\) return json\(/, 'falha ao consultar permissão nega o acesso');
 });
+
+test('aprovar exclusão de registro já removido conclui a solicitação em vez de travar', () => {
+  const m = fs.readFileSync(path.join(root, 'supabase/migrations/20261111130000_aprovar_exclusao_ja_removida.sql'), 'utf8');
+  assert.match(m, /if not found then v_ja_removido := true; end if;/);
+  assert.match(m, /v_ja_removido boolean := false/);
+  assert.match(m, /'ja_removido',v_ja_removido/);
+  assert.equal([...m.matchAll(/não encontrad[oa]'; end if;\n/g)].length, 3, 'falha inteira se a função mudou');
+});
