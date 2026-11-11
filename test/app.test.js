@@ -107,7 +107,7 @@ tflaky('lembretes: mudar dias reagenda, desligar cancela, apagar tudo cancela', 
     pere: { itens: { 12: { desc: 'Picanha' } }, regs: [{ id: 'r', cod: '12', peso: 1, val: '2031-01-01' }] } } });
   const zera = () => a.p.evaluate(() => { __ag = []; __ca = []; }), ver = () => a.p.evaluate(() => [__ag.slice().sort(), __ca.slice().sort()]);
   await a.p.click('nav button[data-v="aj"]');
-  if (await a.p.isVisible('#sysMenuCard')) await a.p.click('#sysMenu [data-sys-open="config"]');
+  if (await a.p.isVisible('#sysMenuCard')) await a.p.click('#sysMenu [data-sys-open="alertas"]');
   await zera();
   await a.p.fill('#aDias', '10'); await a.p.press('#aDias', 'Tab');
   assert.deepStrictEqual(await ver(), [['r_a', 'r_v', 'x_a', 'x_v'], ['r_a', 'r_v', 'x_a', 'x_v']]);
@@ -1111,11 +1111,11 @@ tflaky('Configurações: dados reais, preferências persistem e Sobre mostra a v
   const a = await abrirLogado(p => rotasBase(p, 'operador'), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador', nome: 'Jonatas', lojaNome: 'Filial 31' });
   await a.p.click('nav button[data-v="aj"]');
   assert.strictEqual(await a.p.textContent('#sysMenuTitle'), 'Ajustes do Operador');
-  assert.strictEqual(await a.p.locator('#sysMenu [data-sys-open]').count(), 3);
+  assert.strictEqual(await a.p.locator('#sysMenu [data-sys-open]').count(), 4);
   await a.p.click('#sysMenu [data-sys-open="op-preferencias"]');
-  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Preferências e Alertas');
+  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Preferências');
   assert.strictEqual(await a.p.isVisible('#aCosmos'), true, 'token pessoal continua disponível ao Operador');
-  assert.strictEqual(await a.p.isVisible('#aDias'), true, 'alertas de validade continuam disponíveis');
+  assert.strictEqual(await a.p.isVisible('#aDias'), false, 'alertas de validade ficam na seção Alertas e Notificações');
   assert.strictEqual(await a.p.isVisible('#cardUsuarios'), false, 'gestão de usuários não aparece ao Operador');
   assert.strictEqual(await a.p.isVisible('#cardLojasAdmin'), false, 'gestão de lojas não aparece ao Operador');
   assert.strictEqual(await a.p.isVisible('#bExp'), false, 'backup administrativo não aparece ao Operador');
@@ -1397,11 +1397,12 @@ tflaky('Push: operador, assistente, analista, gerente e administrador ativam em 
         window.PushManager = function () {}; window.Notification = function () {}; });
     }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel });
     await a.p.click('nav button[data-v="aj"]');
+    if (await a.p.isVisible('#sysMenuCard')) await a.p.click('#sysMenu [data-sys-open="' + (papel === 'operador' ? 'op-alertas' : 'alertas') + '"]');
     await a.p.waitForFunction(() => /ainda não ativado/.test(document.getElementById('pushStatus').textContent));
     assert.strictEqual(await a.p.isVisible('#pushCard'), true, papel + ' vê o cartão de push');
     assert.strictEqual(await a.p.isVisible('#bPushAtivar'), true, papel + ' vê o botão Ativar');
     if (papel === 'operador') { await a.p.click('nav button[data-v="alertas"]'); await a.p.click('[data-alert-view="notifications"]'); await a.p.click('#bIrPush');
-      assert.strictEqual(await a.p.textContent('#screenTitle'), 'Ajustes do Operador'); assert.strictEqual(await a.p.isVisible('#pushCard'), true); }
+      assert.strictEqual(await a.p.textContent('#screenTitle'), 'Alertas e Notificações'); assert.strictEqual(await a.p.isVisible('#pushCard'), true); }
     await a.fechar();
   }
 });
@@ -1512,7 +1513,7 @@ tflaky('alertas pessoais: regras multi-horário validam, cacheiam por UID e não
     await p.route(/\/rest\/v1\/perfis/, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ papel: 'operador', nome: 'Teste' }]) }));
     await p.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
   }, null, { papel: 'operador' });
-  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="op-preferencias"]');
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="op-alertas"]');
   await a.p.fill('#alertaRegraDias', '0'); await a.p.fill('#alertaRegraHora', '08:00'); await a.p.click('#bAlertaRegraAdicionar');
   assert.equal(await a.p.locator('#listaRegrasAlertas .alert-rule').count(), 0, 'dias inválidos são rejeitados');
   for (const [dias, hora, count] of [[30,'08:00',1],[15,'09:00',2],[7,'08:00',3]]) {
@@ -1546,8 +1547,8 @@ tflaky('alertas internos da loja: todos consultam, somente gerente/admin altera 
     },{prod:{},cat:{},pere:{itens:{},regs:[]}},{papel});
     await a.p.waitForFunction(role=>{try{return JSON.parse(localStorage.getItem('validade_sessao')).papel===role;}catch(e){return false;}},papel);
     await a.p.click('nav button[data-v="aj"]');
-    if(papel==='operador')await a.p.click('#sysMenu [data-sys-open="op-preferencias"]');
-    else if(['gerente','admin'].includes(papel))await a.p.click('#sysMenu [data-sys-open="config"]');
+    if(papel==='operador')await a.p.click('#sysMenu [data-sys-open="op-alertas"]');
+    else if(['analista','gerente','admin'].includes(papel))await a.p.click('#sysMenu [data-sys-open="alertas"]');
     await a.p.waitForFunction(()=>document.getElementById('alertaLojaDias').value==='21');
     const autorizado=['gerente','admin'].includes(papel);
     assert.equal(await a.p.locator('#alertaLojaDias').isDisabled(),!autorizado,papel+' edição da janela');
@@ -1578,7 +1579,7 @@ tflaky('Google Calendar: JWT, autorização por redirect, sync/logout preservam 
   }, null);
   const before=await a.p.evaluate(()=>localStorage.getItem('validade_sessao'));
   await a.p.click('nav button[data-v="aj"]');
-  if(await a.p.isVisible('#sysMenuCard')) await a.p.click('#sysMenu [data-sys-open="op-preferencias"]');
+  if(await a.p.isVisible('#sysMenuCard')) await a.p.click('#sysMenu [data-sys-open="op-alertas"]');
   await a.p.waitForFunction(()=>document.querySelector('#calendarStatus').textContent.includes('Google Calendar'));
   assert.ok(calls.some(x=>x.body.action==='status'&&x.auth==='Bearer tok'));
   assert.equal(await a.p.isVisible('#bCalendarConnect'),true);
@@ -1588,10 +1589,10 @@ tflaky('Google Calendar: JWT, autorização por redirect, sync/logout preservam 
   await a.p.waitForURL('https://accounts.google.test/authorize');
   await a.p.goBack();await a.p.waitForLoadState('domcontentloaded');
   assert.equal(await a.p.evaluate(()=>localStorage.getItem('validade_sessao')),before);
-  await a.p.click('nav button[data-v="aj"]');if(await a.p.isVisible('#sysMenuCard'))await a.p.click('#sysMenu [data-sys-open="op-preferencias"]');
+  await a.p.click('nav button[data-v="aj"]');if(await a.p.isVisible('#sysMenuCard'))await a.p.click('#sysMenu [data-sys-open="op-alertas"]');
   await a.p.waitForFunction(()=>document.querySelector('#calendarStatus').textContent.includes('Google Calendar'));
   // Redirecionamento OAuth não altera nem remove a sessão; sincronização manual também preserva login.
-  calendarConnected=true;await a.p.click('nav button[data-v="aj"]');if(await a.p.isVisible('#sysMenuCard'))await a.p.click('#sysMenu [data-sys-open="op-preferencias"]');
+  calendarConnected=true;await a.p.click('nav button[data-v="aj"]');if(await a.p.isVisible('#sysMenuCard'))await a.p.click('#sysMenu [data-sys-open="op-alertas"]');
   await a.p.waitForFunction(()=>document.querySelector('#calendarStatus').textContent.includes('Google Calendar'));
   await a.p.click('#bCalendarSync');await a.p.waitForFunction(()=>document.querySelector('#calendarFeedback').textContent.includes('1 criados'));
   assert.equal(await a.p.evaluate(()=>localStorage.getItem('validade_sessao')),before);
@@ -1616,7 +1617,7 @@ tflaky('Google Calendar: refresh revogado pede reconexão e oferece conectar nov
       return r.fulfill({status:200,contentType:'application/json',body:'{}'});
     });
   },null);
-  await a.p.click('nav button[data-v="aj"]');if(await a.p.isVisible('#sysMenuCard'))await a.p.click('#sysMenu [data-sys-open="op-preferencias"]');
+  await a.p.click('nav button[data-v="aj"]');if(await a.p.isVisible('#sysMenuCard'))await a.p.click('#sysMenu [data-sys-open="op-alertas"]');
   await a.p.waitForFunction(()=>document.querySelector('#calendarStatus').textContent.includes('Google Calendar'));
   await a.p.click('#bCalendarSync');
   await a.p.waitForFunction(()=>document.querySelector('#calendarFeedback').textContent.includes('revogada'));
@@ -1628,7 +1629,7 @@ tflaky('Google Calendar: refresh revogado pede reconexão e oferece conectar nov
 tflaky('Google Calendar: função ainda não configurada mostra feedback sem derrubar app', { skip: pular }, async () => {
   const a=await abrirLogado(async p=>{await p.route(/\/rest\/v1\/perfis/,r=>r.fulfill({status:200,contentType:'application/json',body:'[]'}));await p.route(/\/rest\/v1\/(produtos|lotes|pere_itens|pere_regs|auditoria|preferencias|lojas|loja_membros)/,r=>r.fulfill({status:200,contentType:'application/json',body:'[]'}));},null);
   await a.p.route('**/functions/v1/google-calendar',r=>r.fulfill({status:404,contentType:'application/json',body:'{}'}));
-  await a.p.click('nav button[data-v="aj"]');if(await a.p.isVisible('#sysMenuCard'))await a.p.click('#sysMenu [data-sys-open="op-preferencias"]');
+  await a.p.click('nav button[data-v="aj"]');if(await a.p.isVisible('#sysMenuCard'))await a.p.click('#sysMenu [data-sys-open="op-alertas"]');
   await a.p.waitForFunction(()=>document.querySelector('#calendarFeedback').textContent.includes('ainda não está configurada'));
   assert.deepStrictEqual(a.erros,[]);await a.fechar();
 });
@@ -1708,5 +1709,25 @@ tflaky('Correções de nome: operador não recebe botões de aprovação', { ski
   await a.p.click('nav button[data-v="aj"]'); await a.p.waitForTimeout(500);
   assert.strictEqual(await a.p.locator('[data-nome-review]').count(), 0);
   assert.strictEqual(await a.p.isVisible('#cardCorrecoesNome'), false);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+/* Alertas e Notificações: seção própria dentro do menu de Ajustes, não um cartão solto abaixo dele. */
+for (const [papel, chave, depois] of [['admin', 'alertas', 'sobre'], ['gerente', 'alertas', 'sobre'], ['analista', 'alertas', 'sobre'], ['operador', 'op-alertas', 'op-sobre']]) tflaky('Ajustes: ' + papel + ' abre Alertas e Notificações pelo menu, acima de Sobre', { skip: pular }, async () => {
+  const a = await abrirLogado(p => rotasBase(p, papel), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel, nome: 'Teste' });
+  await a.p.click('nav button[data-v="aj"]');
+  assert.strictEqual(await a.p.isVisible('#sysMenuCard'), true);
+  assert.strictEqual(await a.p.isVisible('#pushCard'), false, 'o cartão de alertas não fica solto abaixo do menu');
+  const ordem = await a.p.locator('#sysMenu [data-sys-open]').evaluateAll(bs => bs.map(b => b.dataset.sysOpen));
+  assert.strictEqual(ordem.indexOf(chave), ordem.indexOf(depois) - 1, 'fica logo acima de Sobre: ' + ordem.join(','));
+  assert.ok((await a.p.textContent('#sysMenu [data-sys-open="' + chave + '"]')).includes('Alertas e Notificações'));
+  await a.p.click('#sysMenu [data-sys-open="' + chave + '"]');
+  assert.strictEqual(await a.p.textContent('#screenTitle'), 'Alertas e Notificações');
+  assert.strictEqual(await a.p.isVisible('#pushCard'), true);
+  assert.strictEqual(await a.p.isVisible('#alertaRegraDias'), true);
+  assert.strictEqual(await a.p.isVisible('#sysMenuCard'), false);
+  await a.p.click('#sysBackToMenu');
+  assert.strictEqual(await a.p.isVisible('#sysMenuCard'), true);
+  assert.strictEqual(await a.p.isVisible('#pushCard'), false);
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });

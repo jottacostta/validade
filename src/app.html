@@ -1086,13 +1086,15 @@ var SYS_SECOES=[
  {id:'pereciveis',titulo:'Perecíveis e Validade',sub:'Etiquetas, prazos e alertas',roles:['analista','gerente','admin'],icon:'<path d="M20.5 3.5c-8 0-15 3-15 10a6 6 0 0 0 6 6c7 0 10-7 9-16zM4 21c2-5 6-8 11-11"/>'},
  {id:'relatorios',titulo:'Relatórios e Indicadores',sub:'Validade, registros e exportações',roles:['analista','gerente','admin'],icon:'<path d="M4 20V11h4v9M10 20V5h4v15M16 20V2h4v18"/>'},
  {id:'auditoria',titulo:'Auditoria do Sistema',sub:'Histórico e rastreabilidade das ações',roles:['admin'],icon:'<path d="M12 3 5 5.8v5.7c0 4.3 2.9 7.6 7 9 4.1-1.4 7-4.7 7-9V5.8zM9 12l2.2 2.2L15.2 10"/>'},
- {id:'config',titulo:'Configuração Geral',sub:'Notificações, parâmetros e integrações',roles:['gerente','admin'],icon:'<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="18" r="2"/>'},
+ {id:'config',titulo:'Configuração Geral',sub:'Parâmetros e integrações',roles:['gerente','admin'],icon:'<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="18" r="2"/>'},
  {id:'dados',titulo:'Dados e Manutenção',sub:'Backup, restauração e sincronização',roles:['admin'],icon:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/>'},
+ {id:'alertas',titulo:'Alertas e Notificações',sub:'Avisos de validade, push e agenda',roles:['analista','gerente','admin'],icon:'<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20h4"/>'},
  {id:'sobre',titulo:'Sobre o Sistema',sub:'Versão, ambiente, documentação e suporte',roles:['analista','gerente','admin'],icon:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v.2"/>'}
 ];
 var OPERADOR_SECOES=[
  {id:'op-perfil',titulo:'Meu Perfil e Conta',sub:'Dados da loja, segurança e acesso',roles:['operador'],icon:'<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/>'},
- {id:'op-preferencias',titulo:'Preferências e Alertas',sub:'Notificações, etiqueta e busca de produtos',roles:['operador'],icon:'<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="18" r="2"/>'},
+ {id:'op-preferencias',titulo:'Preferências',sub:'Som, etiqueta e busca de produtos',roles:['operador'],icon:'<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="18" r="2"/>'},
+ {id:'op-alertas',titulo:'Alertas e Notificações',sub:'Avisos de validade, push e agenda',roles:['operador'],icon:'<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20h4"/>'},
  {id:'op-sobre',titulo:'Ajuda e Sobre',sub:'Versão e informações do aplicativo',roles:['operador'],icon:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v.2"/>'}
 ];
 function podeVerMenuSistema(){return ['analista','gerente','admin'].includes(papelAtual());}
@@ -1108,6 +1110,7 @@ function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var men
     if(item.id==='op-perfil'){$('profileArea').style.display='';}
     else if(item.id==='op-preferencias'){$('settingsRefArea').style.display='';$('preferencesArea').style.display='';$('preferencesArea').dataset.secAtiva='operador';}
     else if(item.id==='op-sobre'){$('aboutArea').style.display='';}
+    else if(item.id==='alertas'||item.id==='op-alertas'){/* só o cartão de alertas, exibido abaixo */}
     else if(item.id==='config'){$('settingsRefArea').style.display='';$('preferencesArea').style.display='';$('preferencesArea').dataset.secAtiva='config';}
     else if(['usuarios','lojas','pereciveis','auditoria','dados'].includes(item.id)){$('preferencesArea').style.display='';$('preferencesArea').dataset.secAtiva=item.id;}
     else if(item.id==='relatorios'){$('sysSectionView').style.display='';$('sysReportsPanel').style.display='';}
@@ -1116,9 +1119,11 @@ function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var men
     Object.keys(m).forEach(function(id){$(id).style.display=m[id]===v?'':'none';});
     if(v==='settings'&&menu){$('sysMenuCard').hidden=false;$('sysMenuCard').style.display='';renderMenuAjustes();}
   }
-  $('pushCard').style.display=(v==='system'||v==='settings'||(v==='syssection'&&(sysSecAtual==='config'||sysSecAtual==='op-preferencias')))?'':'none';
+  /* Alertas e Notificações é uma seção do menu; fora dele (perfis sem menu) continua em Configurações */
+  var naSecaoAlertas=v==='syssection'&&(sysSecAtual==='alertas'||sysSecAtual==='op-alertas'),mostrarAlertas=naSecaoAlertas||(v==='settings'&&!menu);
+  $('pushCard').style.display=mostrarAlertas?'':'none';
   $('settingsTabs').style.display=(v==='settings'||v==='profile')&&!menu?'':'none';
-  if(logado()&&(v==='system'||v==='settings'||(v==='syssection'&&(sysSecAtual==='config'||sysSecAtual==='op-preferencias'))))carregarCalendarStatus();
+  if(logado()&&mostrarAlertas)carregarCalendarStatus();
   document.querySelectorAll('#settingsTabs [data-settings-view]').forEach(function(b){var on=b.dataset.settingsView===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
   if($('screenTitle'))$('screenTitle').textContent=(v==='system'||(v==='settings'&&menu))?(op?'Ajustes do Operador':'Ajustes do Sistema'):v==='syssection'?$('sysSectionTitle').textContent:AJ_TITULOS[v];
   if(v==='password')limparTrocaSenha();renderConfiguracoes();window.scrollTo(0,0);}
@@ -1675,7 +1680,7 @@ function chamarAlertas(body){return sbReq('/functions/v1/alertas',{method:'POST'
 function atualizarPushStatus(){var st=$('pushStatus');if(!st)return;var ok=!!(window.isSecureContext&&navigator.serviceWorker&&window.PushManager&&window.Notification);
   if(!ok){st.textContent='Push não suportado neste navegador/contexto. Os alertas internos e a lista compartilhada continuam disponíveis.';$('bPushAtivar').style.display='none';$('bPushDesativar').style.display='none';return;}
   navigator.serviceWorker.register('./service-worker.js').then(function(sw){return sw.pushManager.getSubscription().then(function(sub){st.textContent=sub?'Push ativo neste aparelho.':'Push ainda não ativado neste aparelho.';$('bPushAtivar').style.display=sub?'none':'';$('bPushDesativar').style.display=sub?'':'none';});}).catch(function(){st.textContent='Não foi possível instalar o Service Worker. Push indisponível até a publicação do app.';});}
-$('bIrPush').onclick=function(){ir('aj');$('pushCard').scrollIntoView({block:'center'});};
+$('bIrPush').onclick=function(){ir('aj');if(podeVerMenuAjustes())abrirSecaoSistema(podeVerMenuOperador()?'op-alertas':'alertas');else $('pushCard').scrollIntoView({block:'center'});};
 $('bPushAtivar').onclick=function(){if(!sbOn()||!logado()||!SESS.lojaId){toast('Entre e escolha uma loja antes de ativar o push');return;}
   if(!window.isSecureContext||!navigator.serviceWorker||!window.PushManager||!window.Notification){toast('Este navegador não oferece suporte a push');return;}
   Notification.requestPermission().then(function(permission){if(permission!=='granted')throw new Error('Permissão de notificações não concedida');return navigator.serviceWorker.register('./service-worker.js');})
