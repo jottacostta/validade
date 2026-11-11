@@ -107,7 +107,9 @@ test('Listas: paginação, botão Filtrar e nenhum emoji nas telas de registros'
 });
 
 test('Ajustes: Configurações, Perfil, Alterar Senha e Sobre existem; ajustes técnicos preservados', () => {
-  const aj = html.match(/<section class="vista" id="v-aj">([\s\S]*?)<\/section>/)[1];
+  const inicioAj = html.indexOf('<section class="vista" id="v-aj">');
+  const fimMain = html.indexOf('</main>', inicioAj);
+  const aj = html.slice(inicioAj, fimMain);
   const ordem = ['id="settingsRefArea"', 'id="preferencesArea"', 'id="passwordArea"', 'id="aboutArea"'].map(t => aj.indexOf(t));
   assert.ok(ordem.every(i => i >= 0), String(ordem)); assert.deepEqual(ordem, [...ordem].sort((a, b) => a - b));
   for (const id of ['aSom', 'aVibra', 'cfgLoja', 'cfgOperador', 'cfgVersao', 'cfgSync', 'cfgSenha', 'cfgSobre', 'cfgSair', 'pwAtual', 'pwNova', 'pwConfirma', 'bPwSalvar', 'bPwCancelar', 'aboutVersao', 'aboutPlataforma', 'profileLastAccess', 'profilePassword',
@@ -142,13 +144,14 @@ test('Catálogo: tela própria, com entrada só em Configurações (administraç
   assert.doesNotMatch(cat[1], /[\u{1F300}-\u{1FAFF}]/u);
 });
 
-test('Push: a ativação fica em Configurações (todos os perfis) e sai da tela de Notificações', () => {
+test('Push e regras pessoais: cartão dedicado aparece em Configurações e não em Alertas da loja', () => {
   const aj = html.match(/<section class="vista" id="v-aj">([\s\S]*?)<\/section>/)[1];
   const al = html.match(/<section class="vista" id="v-alertas">([\s\S]*?)<\/section>/)[1];
-  const menu = aj.slice(aj.indexOf('id="sysMenuCard"'), aj.indexOf('id="sysSectionHead"'));
-  for (const id of ['pushCard', 'pushStatus', 'bPushAtivar', 'bPushDesativar']) { assert.match(menu, new RegExp(`id="${id}"`), id + ' disponível na entrada de Ajustes'); assert.doesNotMatch(al, new RegExp(`id="${id}"`), id + ' fora de Alertas'); }
-  assert.match(al, /id="bIrPush"/, 'Notificações aponta para Configurações');
-  assert.match(html, /\$\('pushCard'\)\.style\.display=\(v==='system'\|\|v==='settings'\|\|v==='profile'/, 'push aparece no início de Ajustes/Perfil para todos os perfis');
+  for (const id of ['pushCard', 'bPushAtivar', 'bPushDesativar', 'listaRegrasAlertas']) { assert.match(html, new RegExp(`id="${id}"`)); assert.doesNotMatch(al, new RegExp(`id="${id}"`)); }
+  assert.match(html, /id="pushStatus"/);
+  assert.match(aj, /data-sec="alertas"[^>]*id="pushCard"|id="pushCard"[^>]*data-sec="alertas"/);
+  assert.match(al, /id="bIrPush"/);
+  assert.match(html, /\$\('pushCard'\)\.style\.display=\(v==='system'\|\|v==='settings'/);
 });
 
 test('Ajustes administrativos: menu de dez seções respeita a hierarquia dos perfis', () => {
@@ -175,7 +178,7 @@ test('Ajustes administrativos: menu de dez seções respeita a hierarquia dos pe
 
 test('Ajustes administrativos: telas existentes são agrupadas sem duplicar IDs ou mover controles', () => {
   for (const [id, sec] of [
-    ['aDig','pereciveis'], ['aValor','pereciveis'], ['aDias','pereciveis'], ['aNotif','pereciveis'],
+    ['aDig','pereciveis'], ['aValor','pereciveis'], ['aDias','alertas'], ['aNotif','alertas'],
     ['aCosmos','config'], ['cardConta','config'], ['cardAuditoria','auditoria'],
     ['cardSolicitacoes','dados'], ['cardUsuarios','usuarios'], ['cardLojasAdmin','lojas'], ['bExp','dados']
   ]) {
@@ -198,4 +201,41 @@ test('Ajustes do Operador: menu próprio reutiliza recursos pessoais sem expor a
   assert.match(html, /data-sec-ativa="operador"/);
   assert.match(html, /#preferencesArea\[data-sec-ativa="operador"\]>.card\[data-sec\]:not\(\[data-sec="operador"\]\):not\(\[data-sec="pereciveis"\]\):not\(\[data-sec="config"\]\)/);
   assert.match(html, /if\(item\.id==='op-preferencias'\)\{\$\('settingsRefArea'\)\.style\.display='';\$\('preferencesArea'\)\.style\.display='';\$\('preferencesArea'\)\.dataset\.secAtiva='operador';\}/);
+});
+
+
+test('Alertas pessoais e Push: cartão unificado preserva controles e separa escopo pessoal/loja', () => {
+  const area = html.match(/<div id="preferencesArea">([\s\S]*?)<\/div>\s*<\/div>/)[1];
+  assert.match(html, /id="pushCard"[^>]*data-sec="alertas"|data-sec="alertas"[^>]*id="pushCard"/);
+  for (const id of ['alertaRegraDias','alertaRegraHora','bAlertaRegraAdicionar','listaRegrasAlertas','alertasRegraSugestao','pushStatus','bPushAtivar','bPushDesativar','alertaLojaDias','alertaLojaStatus','pushInternoAutorizado','aDias','aNotif']) assert.match(html, new RegExp('id="'+id+'"'), id);
+  assert.equal([...html.matchAll(/id="pushCard"/g)].length, 1);
+  assert.doesNotMatch(html, /<div class="card" data-sec="pereciveis"><h2>Alertas<\/h2>/);
+  assert.match(html, /Alertas internos compartilhados da loja/);
+  assert.match(html, /validade_alertas_regras_/);
+  assert.match(html, /rest\/v1\/alertas_regras\?select=id,user_id,dias,hora_local,fuso,ativo/);
+  assert.match(html, /on_conflict=id/);
+  assert.match(html, /data-regra-toggle/);
+  assert.match(html, /data-regra-delete/);
+  assert.match(html, /Destaque local quando faltarem \(dias\)/);
+  assert.match(html, /function podeGerenciarAlertasLoja\(\)\{return \['admin','gerente'\]\.includes\(papelAtual\(\)\);\}/);
+  assert.match(html, /function carregarAjustesAlertasLoja\(\)/);
+  assert.match(html, /rest\/v1\/ajustes\?select=loja_id,dias,push_interno,push_interno_desde/);
+  assert.match(html, /Autorizar Push dos alertas internos desta loja/);
+  assert.match(html, /function novoIdRegra\(\).*xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx/);
+  assert.ok(html.includes('function horaRegraValida(v){return /^([01]\\d|2[0-3]):[0-5]\\d$/'), 'valida o horário local HH:MM');
+  assert.doesNotMatch(area, /data-sec="alertas"[\s\S]*?data-sec="pereciveis"/);
+});
+
+
+test('Google Calendar fica no cartão pessoal, independente do Push interno da loja', () => {
+  for (const id of ['calendarCard','calendarStatus','calendarFeedback','bCalendarConnect','bCalendarSync','bCalendarDisconnect']) assert.match(html, new RegExp('id="'+id+'"'));
+  assert.match(html, /Google Calendar/);
+  assert.match(html, /calendário principal Google/);
+  assert.match(html, /todas as lojas elegíveis/);
+  assert.match(html, /próximos 365 dias/);
+  assert.match(html, /function calendarAcao\(action\).*functions\/v1\/google-calendar/);
+  assert.match(html, /body:\{action:action\}/);
+  assert.doesNotMatch(html.match(/function calendarAcao\(action\)[\s\S]*?function calendarRender/)[0], /userId\s*[:=]|refresh_token\s*[:=]|localStorage/);
+  assert.match(html, /Os eventos já criados no Google serão mantidos/);
+  assert.match(html, /Date\.now\(\)-calendarUltimoSync<300000/);
 });

@@ -107,7 +107,7 @@ tflaky('lembretes: mudar dias reagenda, desligar cancela, apagar tudo cancela', 
     pere: { itens: { 12: { desc: 'Picanha' } }, regs: [{ id: 'r', cod: '12', peso: 1, val: '2031-01-01' }] } } });
   const zera = () => a.p.evaluate(() => { __ag = []; __ca = []; }), ver = () => a.p.evaluate(() => [__ag.slice().sort(), __ca.slice().sort()]);
   await a.p.click('nav button[data-v="aj"]');
-  if (await a.p.isVisible('#sysMenuCard')) await a.p.click('#sysMenu [data-sys-open="pereciveis"]');
+  if (await a.p.isVisible('#sysMenuCard')) await a.p.click('#sysMenu [data-sys-open="config"]');
   await zera();
   await a.p.fill('#aDias', '10'); await a.p.press('#aDias', 'Tab');
   assert.deepStrictEqual(await ver(), [['r_a', 'r_v', 'x_a', 'x_v'], ['r_a', 'r_v', 'x_a', 'x_v']]);
@@ -1504,4 +1504,131 @@ tflaky('armazenamento cheio: a sincronização conclui, atualiza a tela e não r
   assert.ok(!/Armazenamento cheio|Falha ao gravar|Não foi possível salvar/.test(avisos), 'sem aviso de armazenamento: ' + avisos);
   assert.deepStrictEqual(a.erros, []);
   await a.fechar();
+});
+
+tflaky('alertas pessoais: regras multi-horário validam, cacheiam por UID e não dependem do Push', { skip: pular }, async () => {
+  const a = await abrirLogado(async p => {
+    await p.addInitScript(() => Object.defineProperty(navigator, 'onLine', { configurable: true, value: false }));
+    await p.route(/\/rest\/v1\/perfis/, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ papel: 'operador', nome: 'Teste' }]) }));
+    await p.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  }, null, { papel: 'operador' });
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="op-preferencias"]');
+  await a.p.fill('#alertaRegraDias', '0'); await a.p.fill('#alertaRegraHora', '08:00'); await a.p.click('#bAlertaRegraAdicionar');
+  assert.equal(await a.p.locator('#listaRegrasAlertas .alert-rule').count(), 0, 'dias inválidos são rejeitados');
+  for (const [dias, hora, count] of [[30,'08:00',1],[15,'09:00',2],[7,'08:00',3]]) {
+    await a.p.fill('#alertaRegraDias', String(dias)); await a.p.fill('#alertaRegraHora', hora); await a.p.click('#bAlertaRegraAdicionar');
+    await a.p.waitForFunction(n => document.querySelectorAll('#listaRegrasAlertas .alert-rule').length === n, count);
+  }
+  const rules = await a.p.evaluate(() => JSON.parse(localStorage.getItem('validade_alertas_regras_u1')));
+  assert.deepStrictEqual(rules.items.map(x => [x.dias,x.hora_local,x.user_id]).sort((a,b)=>a[0]-b[0]), [[7,'08:00:00','u1'],[15,'09:00:00','u1'],[30,'08:00:00','u1']]);
+  assert.ok(rules.items.every(x => x.fuso), 'cada regra guarda o fuso');
+  await a.p.fill('#alertaRegraDias','30'); await a.p.fill('#alertaRegraHora','08:00'); await a.p.click('#bAlertaRegraAdicionar');
+  assert.equal(await a.p.locator('#listaRegrasAlertas .alert-rule').count(), 3, 'duplicata idêntica não é incluída');
+  await a.p.locator('#listaRegrasAlertas [data-regra-toggle]').first().uncheck();
+  await a.p.waitForFunction(() => JSON.parse(localStorage.getItem('validade_alertas_regras_u1')).items.some(x => x.ativo === false));
+  assert.equal(await a.p.evaluate(() => localStorage.getItem('validade_alertas_regras_u2')), null, 'cache não aparece sob outro UID');
+  await a.p.locator('#listaRegrasAlertas [data-regra-delete]').first().click();
+  await a.p.waitForFunction(() => document.querySelectorAll('#listaRegrasAlertas .alert-rule').length === 2);
+  assert.equal((await a.p.evaluate(() => JSON.parse(localStorage.getItem('validade_alertas_regras_u1'))).then(c => c.items.length)), 2);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('alertas internos da loja: todos consultam, somente gerente/admin altera janela e autoriza Push', { skip: pular }, async () => {
+  for (const papel of ['operador','analista','gerente','admin']) {
+    const estado={loja_id:'L1',dias:21,push_interno:false,push_interno_desde:null},gravacoes=[];
+    const a=await abrirLogado(async p=>{
+      await rotasBase(p,papel);
+      await p.route(/\/rest\/v1\/ajustes/,r=>{
+        if(r.request().method()==='GET')return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify([estado])});
+        const body=r.request().postDataJSON();gravacoes.push(body[0]);Object.assign(estado,body[0]);
+        return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify([estado])});
+      });
+    },{prod:{},cat:{},pere:{itens:{},regs:[]}},{papel});
+    await a.p.waitForFunction(role=>{try{return JSON.parse(localStorage.getItem('validade_sessao')).papel===role;}catch(e){return false;}},papel);
+    await a.p.click('nav button[data-v="aj"]');
+    if(papel==='operador')await a.p.click('#sysMenu [data-sys-open="op-preferencias"]');
+    else if(['gerente','admin'].includes(papel))await a.p.click('#sysMenu [data-sys-open="config"]');
+    await a.p.waitForFunction(()=>document.getElementById('alertaLojaDias').value==='21');
+    const autorizado=['gerente','admin'].includes(papel);
+    assert.equal(await a.p.locator('#alertaLojaDias').isDisabled(),!autorizado,papel+' edição da janela');
+    assert.equal(await a.p.locator('#pushInternoAutorizado').isDisabled(),!autorizado,papel+' autorização do Push');
+    if(autorizado){
+      await a.p.fill('#alertaLojaDias','45');await a.p.press('#alertaLojaDias','Tab');
+      await a.p.waitForFunction(()=>document.getElementById('alertaLojaDias').value==='45');
+      assert.equal(gravacoes[0].dias,45,'janela compartilhada foi persistida');
+      await a.p.locator('#pushInternoAutorizado').check();
+      await a.p.waitForFunction(()=>document.getElementById('pushInternoAutorizado').checked&&document.getElementById('alertaLojaStatus').textContent.includes('salva'));
+      assert.equal(gravacoes[1].push_interno,true,'autorização do canal interno foi persistida');
+    }
+    assert.deepStrictEqual(a.erros,[]);await a.fechar();
+  }
+});
+
+
+tflaky('Google Calendar: JWT, autorização por redirect, sync/logout preservam sessão e disconnect confirma', { skip: pular }, async () => {
+  const calls=[];let calendarConnected=false;
+  const a = await abrirLogado(async p => {
+    await p.route(/\/rest\/v1\/perfis/, r => r.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{papel:'operador',nome:'Teste'}])}));
+    await p.route(/\/rest\/v1\/(produtos|lotes|pere_itens|pere_regs|auditoria|preferencias|lojas|loja_membros)/, r => r.fulfill({status:200,contentType:'application/json',body:'[]'}));
+    await p.route('**/functions/v1/google-calendar', async r => {
+      const h=r.request().headers(), body=r.request().postDataJSON();calls.push({auth:h.authorization,body});
+      if(body.action==='authorize')calendarConnected=true;const result=body.action==='status'?{connected:calendarConnected,last_synced_at:null}:body.action==='authorize'?{url:'https://accounts.google.test/authorize'}:body.action==='sync'?{created:1,updated:0,deleted:0,failed:0,connected:true}:{ok:true};
+      await r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(result)});
+    });
+  }, null);
+  const before=await a.p.evaluate(()=>localStorage.getItem('validade_sessao'));
+  await a.p.click('nav button[data-v="aj"]');
+  if(await a.p.isVisible('#sysMenuCard')) await a.p.click('#sysMenu [data-sys-open="op-preferencias"]');
+  await a.p.waitForFunction(()=>document.querySelector('#calendarStatus').textContent.includes('Google Calendar'));
+  assert.ok(calls.some(x=>x.body.action==='status'&&x.auth==='Bearer tok'));
+  assert.equal(await a.p.isVisible('#bCalendarConnect'),true);
+  assert.ok(calls.every(x=>!('userId' in x.body)));
+  await a.p.route('https://accounts.google.test/**',r=>r.fulfill({status:200,contentType:'text/html',body:'OAuth mock'}));
+  await a.p.click('#bCalendarConnect');
+  await a.p.waitForURL('https://accounts.google.test/authorize');
+  await a.p.goBack();await a.p.waitForLoadState('domcontentloaded');
+  assert.equal(await a.p.evaluate(()=>localStorage.getItem('validade_sessao')),before);
+  await a.p.click('nav button[data-v="aj"]');if(await a.p.isVisible('#sysMenuCard'))await a.p.click('#sysMenu [data-sys-open="op-preferencias"]');
+  await a.p.waitForFunction(()=>document.querySelector('#calendarStatus').textContent.includes('Google Calendar'));
+  // Redirecionamento OAuth não altera nem remove a sessão; sincronização manual também preserva login.
+  calendarConnected=true;await a.p.click('nav button[data-v="aj"]');if(await a.p.isVisible('#sysMenuCard'))await a.p.click('#sysMenu [data-sys-open="op-preferencias"]');
+  await a.p.waitForFunction(()=>document.querySelector('#calendarStatus').textContent.includes('Google Calendar'));
+  await a.p.click('#bCalendarSync');await a.p.waitForFunction(()=>document.querySelector('#calendarFeedback').textContent.includes('1 criados'));
+  assert.equal(await a.p.evaluate(()=>localStorage.getItem('validade_sessao')),before);
+  a.respostas.push(false);await a.p.click('#bCalendarDisconnect');
+  assert.match(a.dialogos.at(-1).msg,/eventos já criados.*mantidos/i);assert.equal(calls.filter(x=>x.body.action==='disconnect').length,0);
+  a.respostas.push(true);await a.p.click('#bCalendarDisconnect');
+  await a.p.waitForFunction(()=>document.querySelector('#calendarFeedback').textContent.includes('Conexão removida'));
+  assert.equal(await a.p.evaluate(()=>localStorage.getItem('validade_sessao')),before);
+  calendarConnected=false;
+  assert.ok(calls.some(x=>x.body.action==='sync'));assert.ok(calls.some(x=>x.body.action==='disconnect'));
+  assert.deepStrictEqual(a.erros,[]);await a.fechar();
+});
+
+tflaky('Google Calendar: refresh revogado pede reconexão e oferece conectar novamente', { skip: pular }, async () => {
+  const a=await abrirLogado(async p=>{
+    await p.route(/\/rest\/v1\/perfis/,r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{papel:'operador',nome:'Teste'}])}));
+    await p.route(/\/rest\/v1\/(produtos|lotes|pere_itens|pere_regs|auditoria|preferencias|lojas|loja_membros)/,r=>r.fulfill({status:200,contentType:'application/json',body:'[]'}));
+    await p.route('**/functions/v1/google-calendar',r=>{
+      const action=r.request().postDataJSON().action;
+      if(action==='status')return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({connected:true,last_synced_at:null})});
+      if(action==='sync')return r.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'refresh_token_revoked',code:'refresh_token_revoked',connected:false})});
+      return r.fulfill({status:200,contentType:'application/json',body:'{}'});
+    });
+  },null);
+  await a.p.click('nav button[data-v="aj"]');if(await a.p.isVisible('#sysMenuCard'))await a.p.click('#sysMenu [data-sys-open="op-preferencias"]');
+  await a.p.waitForFunction(()=>document.querySelector('#calendarStatus').textContent.includes('Google Calendar'));
+  await a.p.click('#bCalendarSync');
+  await a.p.waitForFunction(()=>document.querySelector('#calendarFeedback').textContent.includes('revogada'));
+  assert.equal(await a.p.isVisible('#bCalendarConnect'),true,'deve permitir nova autorização');
+  assert.equal(await a.p.isVisible('#bCalendarSync'),false,'não deve continuar sinalizando conexão válida');
+  assert.deepStrictEqual(a.erros,[]);await a.fechar();
+});
+
+tflaky('Google Calendar: função ainda não configurada mostra feedback sem derrubar app', { skip: pular }, async () => {
+  const a=await abrirLogado(async p=>{await p.route(/\/rest\/v1\/perfis/,r=>r.fulfill({status:200,contentType:'application/json',body:'[]'}));await p.route(/\/rest\/v1\/(produtos|lotes|pere_itens|pere_regs|auditoria|preferencias|lojas|loja_membros)/,r=>r.fulfill({status:200,contentType:'application/json',body:'[]'}));},null);
+  await a.p.route('**/functions/v1/google-calendar',r=>r.fulfill({status:404,contentType:'application/json',body:'{}'}));
+  await a.p.click('nav button[data-v="aj"]');if(await a.p.isVisible('#sysMenuCard'))await a.p.click('#sysMenu [data-sys-open="op-preferencias"]');
+  await a.p.waitForFunction(()=>document.querySelector('#calendarFeedback').textContent.includes('ainda não está configurada'));
+  assert.deepStrictEqual(a.erros,[]);await a.fechar();
 });
