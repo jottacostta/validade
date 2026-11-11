@@ -215,8 +215,7 @@ test('perfis de escopo global recebem avisos de todas as lojas; ninguém lê not
   const corpo = s => s.slice(s.indexOf('create or replace function public.gerar_alertas_validade()'), s.indexOf('$$;', s.indexOf('create or replace function public.gerar_alertas_validade()')));
   const antes = corpo(migration).split('\n'), depois = corpo(m).split('\n');
   assert.deepEqual(antes.filter(l => !depois.includes(l)), ['    from candidatos c join public.loja_membros m on m.loja_id=c.loja_id']);
-  assert.match(edge, /PAPEIS_GLOBAIS = \["analista", "gerente", "admin"\]/);
-  assert.match(edge, /if \(!error && data\) return true;[\s\S]*PAPEIS_GLOBAIS\.includes\(perfil\.papel\)\) return false;[\s\S]*from\("lojas"\)/, 'global só em loja existente');
+  assert.match(edge, /if \(!error && data\) return true;[\s\S]*rpc\("papel_tem_permissao", \{ p_papel: perfil\.papel, p_permissao: "avisos_todas_lojas" \}\)[\s\S]*global !== true\) return false;[\s\S]*from\("lojas"\)/, 'global só com permissão e em loja existente');
 });
 
 test('regras pessoais isoladas, timezone validado, outbox deduplicada e RPCs privadas', () => {
@@ -385,7 +384,8 @@ test('perfis de acesso: permissões por papel gravadas e validadas no banco', ()
   assert.match(m, /private\.tem_permissao\('nome_solicitar'\)/);
   // a lista de permissões do app e a do banco são a mesma
   const noApp = [...app.matchAll(/\{id:'([a-z_]+)',grupo:'(?:basica|especial)'/g)].map(x => x[1]).sort();
-  const noBanco = [...m.slice(m.indexOf('function private.permissao_padrao'), m.indexOf('function private.tem_permissao')).matchAll(/\('([a-z_]+)',\s*array\[/g)].map(x => x[1]).sort();
+  const m3 = fs.readFileSync(path.join(root, 'supabase/migrations/20261111090000_permissoes_areas_administrativas.sql'), 'utf8');
+  const noBanco = [...m3.slice(m3.indexOf('function private.permissao_padrao'), m3.indexOf('definir_permissao_papel')).matchAll(/\('([a-z_]+)',\s*array\[/g)].map(x => x[1]).sort();
   assert.ok(noApp.length >= 10); assert.deepEqual(noApp, noBanco);
   assert.match(app, /rpc\/definir_permissao_papel/);
 });
@@ -400,4 +400,21 @@ test('perfis de acesso etapa 2: registros e exclusões obedecem às permissões 
   assert.match(m, /private\.tem_escopo_global\(\) or private\.membro_da\(loja_id\)/, 'alcance por loja preservado');
   assert.match(m, /created_by = \(select auth\.uid\(\)\) and \(select private\.tem_permissao\('editar_proprios'\)\)/);
   assert.equal([...m.matchAll(/trecho de (papel|acesso) não encontrado/g)].length, 2, 'falha inteira se a função mudou');
+});
+
+test('perfis de acesso etapa 3: áreas administrativas obedecem às permissões e nada fica travado', () => {
+  const m = fs.readFileSync(path.join(root, 'supabase/migrations/20261111090000_permissoes_areas_administrativas.sql'), 'utf8');
+  for (const perm of ['auditoria_ver', 'catalogo_gerenciar', 'alertas_loja_configurar', 'lojas_gerenciar', 'usuarios_gerenciar', 'avisos_todas_lojas'])
+    assert.match(m, new RegExp("'" + perm + "'"), perm + ' validada no banco');
+  const fn = m.slice(m.indexOf('function public.papel_tem_permissao'), m.indexOf('-- Auditoria'));
+  assert.match(fn, /security definer\s+set search_path = ''/);
+  assert.match(fn, /when p_papel = 'admin' then true/);
+  assert.match(fn, /revoke all on function public\.papel_tem_permissao\(text,text\) from public, anon/);
+  assert.equal([...m.matchAll(/não encontrad[oa]/g)].length, 4, 'falha inteira se alguma função mudou');
+  const lista = app.slice(app.indexOf('var PERMISSOES=['), app.indexOf('function permissaoDef'));
+  assert.equal([...lista.matchAll(/\{id:'/g)].length, 16);
+  assert.equal([...lista.matchAll(/teto:TODOS4,servidor:true\}/g)].length, 16, 'todas as permissões podem ser concedidas a qualquer perfil');
+  const gerir = fs.readFileSync(path.join(root, 'supabase/functions/gerir-usuarios/index.ts'), 'utf8');
+  assert.match(gerir, /rpc\("papel_tem_permissao", \{ p_papel: papelCaller, p_permissao: "usuarios_gerenciar" \}\)/);
+  assert.match(gerir, /if \(permErr\) return json\(/, 'falha ao consultar permissão nega o acesso');
 });

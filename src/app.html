@@ -911,7 +911,7 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
     <div id="listaUsuarios" style="margin-top:12px"><div class="vazio">Carregue a lista para começar.</div></div>
   </div>
   <div class="card" data-sec="lojas" id="cardLojasAdmin" style="display:none"><h2>Administração de lojas</h2><p style="font-size:13px;color:var(--mu)">Cadastro global de unidades (Administrador).</p><label class="f" for="lojaNovaNome">Nome da loja</label><input id="lojaNovaNome" placeholder="ex.: Filial 31"><button class="btn big" id="bLojaNova" style="margin-top:8px">Criar loja</button><div id="listaLojasAdmin" style="margin-top:12px"></div><button class="btn sec" id="bLojasAdminRefresh" style="margin-top:8px">Atualizar lojas</button></div>
-  <div class="card" data-sec="dados"><h2>Backup</h2>
+  <div class="card" data-sec="dados" id="cardBackup"><h2>Backup</h2>
     <div class="row"><button class="btn sec" id="bExp">Exportar backup</button><label class="btn sec" for="fImp">Importar backup</label></div>
     <input type="file" id="fImp" accept=".json,application/json" style="display:none">
     <button class="btn perigo big" id="bZerar" style="margin-top:12px">Apagar todos os dados</button>
@@ -1109,9 +1109,12 @@ var OPERADOR_SECOES=[
 function podeVerMenuSistema(){return ['analista','gerente','admin'].includes(papelAtual());}
 function podeVerMenuOperador(){return papelAtual()==='operador';}
 function podeVerMenuAjustes(){return podeVerMenuSistema()||podeVerMenuOperador();}
-var SECAO_PERMISSAO={usuarios:'usuarios_gerenciar',relatorios:'relatorios'};
-function secaoPermitida(item){return !!item&&item.roles.includes(papelAtual())&&(!SECAO_PERMISSAO[item.id]||temPermissao(SECAO_PERMISSAO[item.id]));}
-function secoesMenuAjustes(){return podeVerMenuOperador()?OPERADOR_SECOES:SYS_SECOES;}
+/* Seções ligadas a uma permissão aparecem para qualquer perfil que a tenha; as demais seguem `roles`. */
+var SECAO_PERMISSAO={usuarios:'usuarios_gerenciar',lojas:'lojas_gerenciar',catalogo:'catalogo_gerenciar',relatorios:'relatorios',auditoria:'auditoria_ver',dados:'dados_manutencao'};
+function secaoPermitida(item){if(!item)return false;var perm=SECAO_PERMISSAO[item.id];return perm?temPermissao(perm):item.roles.includes(papelAtual());}
+function secoesMenuAjustes(){if(!podeVerMenuOperador())return SYS_SECOES;
+  var extras=SYS_SECOES.filter(function(x){return SECAO_PERMISSAO[x.id];}),i=OPERADOR_SECOES.length-2;
+  return OPERADOR_SECOES.slice(0,i).concat(extras,OPERADOR_SECOES.slice(i));}
 function renderMenuAjustes(){var menu=$('sysMenu');if(!menu)return;var p=papelAtual(),operador=podeVerMenuOperador();$('sysMenuTitle').textContent=operador?'Ajustes do Operador':'Ajustes do Sistema';$('sysMenuSubtitle').textContent=operador?'Preferências pessoais, conta e informações do aplicativo':'Configurações, acessos e manutenção';menu.innerHTML=secoesMenuAjustes().filter(secaoPermitida).map(function(s){return '<button class="sys-menu-item" type="button" data-sys-open="'+s.id+'"><span class="sys-menu-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">'+s.icon+'</svg></span><span class="sys-menu-copy"><b>'+s.titulo+'</b><small>'+s.sub+'</small></span><svg class="ico sys-menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>';}).join('');}
 function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var menu=podeVerMenuAjustes(),op=podeVerMenuOperador(),ids=['profileArea','settingsRefArea','preferencesArea','passwordArea','aboutArea','sysMenuCard','sysSectionHead','sysSectionView','pushCard'];ids.forEach(function(id){if($(id))$(id).style.display='none';});
   $('preferencesArea').removeAttribute('data-sec-ativa');$('sysReportsPanel').style.display='none';
@@ -1137,6 +1140,7 @@ function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var men
   if(logado()&&mostrarAlertas)carregarCalendarStatus();
   document.querySelectorAll('#settingsTabs [data-settings-view]').forEach(function(b){var on=b.dataset.settingsView===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
   if($('screenTitle'))$('screenTitle').textContent=(v==='system'||(v==='settings'&&menu))?(op?'Ajustes do Operador':'Ajustes do Sistema'):v==='syssection'?$('sysSectionTitle').textContent:AJ_TITULOS[v];
+  if($('cardBackup'))$('cardBackup').style.display=temPermissao('dados_manutencao')?'':'none';
   if(v==='password')limparTrocaSenha();renderConfiguracoes();window.scrollTo(0,0);}
 function abrirSecaoSistema(key){var item=SYS_SECOES.concat(OPERADOR_SECOES).find(function(s){return s.id===key;});if(!secaoPermitida(item)){toast('Acesso não autorizado a esta seção.');return;}
   if(key==='perfil'){mostrarVistaAjustes('profile');return;}if(key==='sobre'){mostrarVistaAjustes('about');return;}if(key==='catalogo'){ir('catalogo');return;}
@@ -1146,7 +1150,7 @@ $('sysBackToMenu').onclick=function(){mostrarVistaAjustes('system');};
 document.querySelectorAll('[data-sys-action]').forEach(function(b){b.onclick=function(){var alvo=$(b.dataset.sysAction);if(alvo)alvo.click();else toast('Ação indisponível nesta versão.');};});
 /* Catálogo: a tela é exclusiva do administrador (restrição visual; a consulta de nomes
    por código continua valendo para todos os perfis, pois o registro depende dela). */
-function podeVerCatalogo(){return papelAtual()==='admin';}
+function podeVerCatalogo(){return temPermissao('catalogo_gerenciar');}
 var catFiltro='all';
 function renderCatalogo(){if(!$('listaCatalogo'))return;var q=$('qCatalogo').value.trim().toLowerCase(),eans={};
   Object.keys(D.cat||{}).forEach(function(e){eans[e]=1;});Object.keys(D.prod||{}).forEach(function(e){eans[e]=1;});
@@ -1719,7 +1723,7 @@ $('bRelPe').onclick=function(){var t='*'+CFG.nome+' — Perecíveis* ('+new Date
 /* ───── ajustes ───── */
 function ajustes(){$('aCosmos').value=tokenCosmos();$('aDig').value=String(D.aj.dig);$('aValor').value=D.aj.valor;$('aDias').value=D.aj.dias;$('aNotif').checked=!!D.aj.notif;$('aOcr').checked=!!D.aj.ocr;carregarAjustesAlertasLoja();contaCard();auditoriaCard();carregarLojasAdmin();}
 var ALERTA_LOJA={lojaId:null,dias:30,push:false,disponivel:false};
-function podeGerenciarAlertasLoja(){return ['admin','gerente'].includes(papelAtual());}
+function podeGerenciarAlertasLoja(){return temPermissao('alertas_loja_configurar');}
 function renderAjustesAlertasLoja(status){var dias=$('alertaLojaDias'),push=$('pushInternoAutorizado'),msg=$('alertaLojaStatus');if(!dias||!push||!msg)return;
   var podeEditar=sbOn()&&logado()&&!!(SESS&&SESS.lojaId)&&podeGerenciarAlertasLoja()&&ALERTA_LOJA.disponivel&&navigator.onLine!==false;
   dias.value=String(ALERTA_LOJA.dias||30);push.checked=!!ALERTA_LOJA.push;dias.disabled=!podeEditar;push.disabled=!podeEditar;
@@ -1906,17 +1910,18 @@ var PERMISSOES=[
  {id:'editar_proprios',grupo:'basica',titulo:'Editar os próprios registros',padrao:TODOS4,teto:TODOS4,servidor:true},
  {id:'solicitar_exclusao',grupo:'basica',titulo:'Solicitar exclusão de registro',padrao:TODOS4,teto:TODOS4,servidor:true},
  {id:'nome_solicitar',grupo:'basica',titulo:'Solicitar correção de nome de produto',padrao:TODOS4,teto:TODOS4,servidor:true},
- {id:'relatorios',grupo:'basica',titulo:'Ver e exportar relatórios',padrao:['analista','gerente'],teto:['analista','gerente']},
+ {id:'relatorios',grupo:'basica',titulo:'Ver e exportar relatórios',padrao:['analista','gerente'],teto:TODOS4,servidor:true},
  {id:'registros_editar_outros',grupo:'especial',titulo:'Editar registros de outros usuários',padrao:['analista','gerente'],teto:TODOS4,servidor:true},
  {id:'exclusoes_aprovar',grupo:'especial',titulo:'Aprovar ou rejeitar exclusões',padrao:['assistente','analista','gerente'],teto:TODOS4,servidor:true},
  {id:'nome_editar',grupo:'especial',titulo:'Editar nome de produto e aprovar correções',padrao:['gerente'],teto:TODOS4,servidor:true},
- {id:'usuarios_gerenciar',grupo:'especial',titulo:'Gerenciar usuários',padrao:['analista','gerente'],teto:['analista','gerente']},
- {id:'alertas_loja_configurar',grupo:'especial',titulo:'Alterar a configuração de alertas da loja',padrao:['gerente'],teto:[]},
- {id:'avisos_todas_lojas',grupo:'especial',titulo:'Receber avisos de todas as lojas',padrao:['analista','gerente'],teto:[]},
- {id:'lojas_gerenciar',grupo:'especial',titulo:'Gerenciar lojas',padrao:[],teto:[]},
- {id:'catalogo_gerenciar',grupo:'especial',titulo:'Catálogo de Produtos',padrao:[],teto:[]},
- {id:'auditoria_ver',grupo:'especial',titulo:'Auditoria do Sistema',padrao:[],teto:[]},
- {id:'dados_manutencao',grupo:'especial',titulo:'Backup e manutenção de dados',padrao:[],teto:[]}
+ {id:'usuarios_gerenciar',grupo:'especial',titulo:'Gerenciar usuários',padrao:['analista','gerente'],teto:TODOS4,servidor:true},
+ {id:'usuarios_excluir',grupo:'especial',titulo:'Excluir usuários',padrao:['gerente'],teto:TODOS4,servidor:true},
+ {id:'alertas_loja_configurar',grupo:'especial',titulo:'Alterar a configuração de alertas da loja',padrao:['gerente'],teto:TODOS4,servidor:true},
+ {id:'avisos_todas_lojas',grupo:'especial',titulo:'Receber avisos de todas as lojas',padrao:['analista','gerente'],teto:TODOS4,servidor:true},
+ {id:'lojas_gerenciar',grupo:'especial',titulo:'Gerenciar lojas',padrao:[],teto:TODOS4,servidor:true},
+ {id:'catalogo_gerenciar',grupo:'especial',titulo:'Catálogo de Produtos',padrao:[],teto:TODOS4,servidor:true},
+ {id:'auditoria_ver',grupo:'especial',titulo:'Auditoria do Sistema',padrao:[],teto:TODOS4,servidor:true},
+ {id:'dados_manutencao',grupo:'especial',titulo:'Backup e manutenção de dados',padrao:[],teto:TODOS4,servidor:true}
 ];
 function permissaoDef(id){return PERMISSOES.filter(function(x){return x.id===id;})[0];}
 function permissaoEditavel(def,papel){return !!def.servidor||def.teto.includes(papel);}
@@ -2083,7 +2088,7 @@ function renderBusca(){var q=$('qBusca').value.trim().toLowerCase(),itens=regist
     ||'<div class="operator-empty">'+(q?'Nenhum registro encontrado para esta busca.':'Nenhum registro ainda.')+'</div>';}
 $('qBusca').oninput=renderBusca;
 $('qCatalogo').oninput=renderCatalogo;
-function alterarEstadoCatalogo(ean,inativar){if(!ehAdmin()||!sbOn()||!logado()){toast('Ação exclusiva do Administrador autenticado.');return Promise.resolve(false);}
+function alterarEstadoCatalogo(ean,inativar){if(!temPermissao('catalogo_gerenciar')||!sbOn()||!logado()){toast('Seu perfil não pode alterar o catálogo.');return Promise.resolve(false);}
   ean=String(ean||'');var cat=D.cat[ean];if(!ean||!cat){toast('Item do catálogo não encontrado neste aparelho. Atualize a lista e tente novamente.');return Promise.resolve(false);}
   var nome=cat.nome||ean,acao=inativar?'inativar':'restaurar',confirmacao=inativar?'Inativar '+nome+' ('+ean+') no catálogo global? Os registros e lotes das lojas serão preservados.':'Restaurar '+nome+' ('+ean+') no catálogo global?';
   if(!confirm(confirmacao))return Promise.resolve(false);
@@ -2104,7 +2109,7 @@ $('bAbrirBusca').onclick=function(){$('qBusca').value=$('qProd').value;buscaTipo
 $('bBuscaScan').onclick=function(){abrirScanner('busca');};
 $('profileLogout').onclick=function(){if(logado()&&confirm('Deseja sair da conta?'))sairParaLogin();};
 function auditar(acao,detalhe){if(!sbOn()||!logado())return;try{sbReq('/rest/v1/auditoria',{method:'POST',headers:{Prefer:'return=minimal'},body:[{user_id:SESS.uid||null,usuario:SESS.usuario||SESS.email||'',papel:SESS.papel||null,loja_id:SESS.lojaId||null,loja_nome:SESS.lojaNome||null,acao:acao,detalhe:detalhe||{}}]}).catch(function(){});}catch(e){}}
-function auditoriaCard(){var c=$('cardAuditoria');if(!c)return;if(!sbOn()||!ehAdmin()){c.style.display='none';return;}c.style.display='';
+function auditoriaCard(){var c=$('cardAuditoria');if(!c)return;if(!sbOn()||!temPermissao('auditoria_ver')){c.style.display='none';return;}c.style.display='';
   $('listaAud').innerHTML='<div class="vazio"><span class="gira"></span> carregando…</div>';
   sbReq('/rest/v1/auditoria?select=usuario,papel,loja_nome,acao,detalhe,criado&order=criado.desc&limit=50').then(function(r){
     if(!r.ok||!Array.isArray(r.dados)){$('listaAud').innerHTML='<div class="vazio">Não foi possível carregar.</div>';return;}
@@ -2189,7 +2194,7 @@ $('bSolicitacoesRefresh').onclick=carregarSolicitacoesExclusao;
 
 // ── CRUD de lojas (somente Administrador; RLS no Supabase) ──
 function carregarLojasAdmin(){
-  var card=$('cardLojasAdmin');if(!card)return;var vis=sbOn()&&logado()&&ehAdmin();card.style.display=vis?'':'none';if(!vis)return;
+  var card=$('cardLojasAdmin');if(!card)return;var vis=sbOn()&&logado()&&temPermissao('lojas_gerenciar');card.style.display=vis?'':'none';if(!vis)return;
   $('listaLojasAdmin').innerHTML='<div class="vazio"><span class="gira"></span> carregando lojas…</div>';
   sbReq('/rest/v1/lojas?select=id,nome&order=nome.asc').then(function(r){
     if(!r.ok||!Array.isArray(r.dados))throw new Error('Falha ao consultar lojas');
@@ -2204,7 +2209,7 @@ $('bLojasAdminRefresh').onclick=carregarLojasAdmin;
 // ── Gestão de usuários via Edge Function ──
 function iniciarGestaoUsuarios(){
   var card=$('cardUsuarios');if(!card)return;
-  var p=papelAtual(),vis=sbOn()&&logado()&&['assistente','analista','gerente','admin'].includes(p);
+  var p=papelAtual(),vis=sbOn()&&logado()&&(temPermissao('usuarios_gerenciar')||p==='assistente');
   card.style.display=vis?'':'none';if(!vis)return;
   var endpoint='/functions/v1/gerir-usuarios';
   function callGestao(body){return sbReq(endpoint,{method:'POST',body:body}).then(function(r){if(!r.ok)throw new Error(r.dados&&r.dados.error||'Falha na gestão de usuários (HTTP '+r.status+').');return r.dados||{};});}

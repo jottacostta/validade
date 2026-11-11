@@ -44,10 +44,19 @@ Deno.serve(async (req) => {
   if (perfilCallerErr || !perfilCaller) return json({ error: "Perfil do usuário não encontrado." }, 403);
   const papelCaller = perfilCaller.papel || "operador";
   const ehAdmin = papelCaller === "admin";
-  const ehGerente = papelCaller === "gerente";
-  const ehAnalista = papelCaller === "analista";
-  const podeCriar = ["assistente", "analista", "gerente", "admin"].includes(papelCaller);
-  const podeEditar = ["analista", "gerente", "admin"].includes(papelCaller);
+  // Perfis de acesso: "Gerenciar usuários" é definido pelo Administrador em papel_permissoes.
+  // Quem tem a permissão (e não é admin) atua como gestor: cria/edita Operador e Assistente.
+  let gerenciaUsuarios = ehAdmin;
+  if (!ehAdmin) {
+    const { data: perm, error: permErr } = await admin.rpc("papel_tem_permissao", { p_papel: papelCaller, p_permissao: "usuarios_gerenciar" });
+    if (permErr) return json({ error: "Não foi possível verificar as permissões do perfil." }, 500);
+    gerenciaUsuarios = perm === true;
+  }
+  const ehGerente = !ehAdmin && gerenciaUsuarios;
+  const ehAnalista = false;
+  const escopoTotal = ehAdmin || gerenciaUsuarios;
+  const podeCriar = escopoTotal || papelCaller === "assistente";
+  const podeEditar = escopoTotal;
 
   let body: Record<string, unknown> = {};
   try { body = await req.json(); } catch { return json({ error: "Requisição inválida" }, 400); }
@@ -64,7 +73,7 @@ Deno.serve(async (req) => {
     } catch { /* auditoria é best-effort */ }
   };
   const lojasPermitidas = async (): Promise<Set<string>> => {
-    if (["admin", "gerente", "analista"].includes(papelCaller)) {
+    if (escopoTotal) {
       const { data } = await admin.from("lojas").select("id");
       return new Set((data || []).map((l: { id: string }) => l.id));
     }
@@ -85,7 +94,7 @@ Deno.serve(async (req) => {
       const { data: lojas, error: lojasErr } = await admin.from("lojas").select("id, nome").order("nome");
       if (membrosErr || lojasErr) return json({ error: "Falha ao consultar lojas e vínculos." }, 500);
       const permitidas = await lojasPermitidas();
-      const perfisVisiveis = ["admin", "gerente", "analista"].includes(papelCaller) ? (perfis || []) : (perfis || []).filter((p: { id: string }) => (membros || []).some((m: { user_id: string; loja_id: string }) => m.user_id === p.id && permitidas.has(m.loja_id)));
+      const perfisVisiveis = escopoTotal ? (perfis || []) : (perfis || []).filter((p: { id: string }) => (membros || []).some((m: { user_id: string; loja_id: string }) => m.user_id === p.id && permitidas.has(m.loja_id)));
       const nomeLoja: Record<string, string> = {};
       for (const l of (lojas || [])) nomeLoja[l.id] = l.nome;
       const porUser: Record<string, { id: string; nome: string }[]> = {};
@@ -93,7 +102,7 @@ Deno.serve(async (req) => {
       const usuarios = perfisVisiveis.map((p: { id: string; nome: string; papel: string }) => ({
         id: p.id, nome: p.nome || "", papel: p.papel,
         usuario: (emailPorId[p.id] || "").split("@")[0],
-        lojas: (porUser[p.id] || []).filter((l) => ["admin", "gerente", "analista"].includes(papelCaller) || permitidas.has(l.id)),
+        lojas: (porUser[p.id] || []).filter((l) => escopoTotal || permitidas.has(l.id)),
       })).sort((a, b) => (a.usuario || "").localeCompare(b.usuario || ""));
       return json({ usuarios, lojas: (lojas || []).filter((l: { id: string }) => permitidas.has(l.id)), euPapel: papelCaller });
     }
@@ -220,8 +229,14 @@ Deno.serve(async (req) => {
     }
 
     if (acao === "excluir") {
-      if (!(ehAdmin || ehGerente)) return json({ error: "Somente Gerente ou Administrador pode excluir usuários." }, 403);
-      if (ehGerente) {
+      let podeExcluir = ehAdmin;
+      if (!ehAdmin) {
+        const { data: permExcluir, error: permExcluirErr } = await admin.rpc("papel_tem_permissao", { p_papel: papelCaller, p_permissao: "usuarios_excluir" });
+        if (permExcluirErr) return json({ error: "Não foi possível verificar as permissões do perfil." }, 500);
+        podeExcluir = permExcluir === true;
+      }
+      if (!podeExcluir) return json({ error: "Seu perfil não tem permissão para excluir usuários." }, 403);
+      if (!ehAdmin) {
         const { data: targetStores } = await admin.from("loja_membros").select("loja_id").eq("user_id", String(body.id || ""));
         const allowedStores = await lojasPermitidas();
         if (!targetStores || targetStores.length === 0) return json({ error: "Não é possível excluir usuário sem vínculo de loja; valide o cadastro com Administrador." }, 403);
