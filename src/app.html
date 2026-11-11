@@ -460,6 +460,7 @@ header .hdr-in.interna .header-bell{display:none}
 .opt-item{display:flex;align-items:center;gap:8px;width:100%;padding:9px 10px;border:1px solid #2c5373;border-radius:11px;background:#071a2b;color:#fff;text-align:left;font:inherit}
 .opt-item>span:first-child{flex:1;min-width:0}.opt-item b{display:block}.opt-item small{display:block;color:var(--mu);font-size:12px}
 .opt-note{margin:10px 0 0;font-size:12px;color:var(--mu)}
+.edit-row-name{grid-template-columns:30px minmax(0,1fr)!important}.edit-row-name input{grid-column:1/-1;width:100%}
 .edit-row{display:grid;grid-template-columns:30px minmax(86px,.62fr) minmax(0,1fr);align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #2c5373}
 .edit-row:last-child{border-bottom:0}.edit-row .ico{width:26px;height:26px}.edit-row label{font-size:clamp(15px,4.2vw,18px)}
 .edit-row input,.edit-row select{min-height:48px;border-color:#5d87ab;background:#0b2238;border-radius:12px;font-weight:700}
@@ -713,6 +714,9 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 <section class="vista" id="v-edit">
   <div class="prod-head"><span class="reg-thumb" id="editThumb"></span><div class="prod-head-copy"><h2 id="editProductName">Editar registro</h2><p id="editProductMeta"></p></div><span class="chip" id="editStatus"></span></div>
   <div class="card edit-card"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 19 1-4L16.5 4.5l3 3L9 18zM14.5 6.5l3 3"/></svg>Dados do registro</h3>
+    <div class="edit-rows" id="editNameFields" style="display:none">
+      <div class="edit-row edit-row-name"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg><label for="edNome">Nome do produto</label><input id="edNome" autocomplete="off" maxlength="120" placeholder="Digite o nome do produto"></div>
+    </div>
     <div class="edit-rows" id="editProdFields">
       <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14M7.5 5v14M10.5 5v14M14 5v14M17 5v14M20 5v14"/></svg><label for="edLote">Lote *</label><input id="edLote" autocomplete="off"></div>
       <div class="edit-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg><label for="edVal">Validade *</label><input id="edVal" type="date"></div>
@@ -1378,10 +1382,14 @@ function abrirDetalhePere(id){var r=D.pere.regs.filter(function(x){return x.id==
   $('detailHistoryList').innerHTML=outros.map(function(x){return itemHistorico(attr(x),'Lote '+(x.sif||'—')+' · '+kg(x.peso)+' kg',x);}).join('')||'<div class="operator-empty">Não há outros registros deste produto.</div>';
   $('detailOtherLots').innerHTML=outros.filter(function(x){return (x.sif||'')===(r.sif||'');}).map(function(x){return itemHistorico(attr(x),'Lote '+(x.sif||'—')+' · '+kg(x.peso)+' kg',x);}).join('')||'<div class="operator-empty">Não há outros registros deste lote.</div>';
   var local=!sbOn()||!logado(),own=!!(SESS&&SESS.uid&&(r.created_by===SESS.uid||!r.created_by)),full=['analista','gerente','admin'].includes(papelAtual());fimDetalhe(r,local||full||own);}
+/* o nome do produto só pode ser corrigido pelo administrador (no modo local o papel é admin) */
+function podeEditarNomeProduto(){return papelAtual()==='admin';}
+function prepararNomeEdicao(nome){$('editNameFields').style.display=podeEditarNomeProduto()?'':'none';$('edNome').value=nome||'';}
+function nomeEditado(){return podeEditarNomeProduto()?$('edNome').value.replace(/\s+/g,' ').trim():'';}
 function abrirEdicaoLote(id,ean){var p=D.prod[ean],l=p&&p.lotes.filter(function(x){return x.id===id;})[0];if(!l)return;if(!podeEditarLote(l)){toast('Você só pode editar suas próprias inserções');return;}
-  registroContexto={tipo:'lote',id:id,ean:ean};$('editProdFields').style.display='';$('editPereFields').style.display='none';$('edLote').value=l.lote||'';$('edVal').value=l.val||'';$('edQtd').value=l.qtd||'';$('edSetor').value=l.setor||'';$('editProductName').textContent=detalheProduto(ean).nome||ean;$('editProductMeta').textContent='EAN: '+ean;$('editThumb').innerHTML=miniatura(detalheProduto(ean).img,'lote');pintarChip($('editStatus'),seloValidade(l.val));ir('edit');}
+  registroContexto={tipo:'lote',id:id,ean:ean};$('editProdFields').style.display='';$('editPereFields').style.display='none';$('edLote').value=l.lote||'';$('edVal').value=l.val||'';$('edQtd').value=l.qtd||'';$('edSetor').value=l.setor||'';prepararNomeEdicao(detalheProduto(ean).nome||'');$('editProductName').textContent=detalheProduto(ean).nome||ean;$('editProductMeta').textContent='EAN: '+ean;$('editThumb').innerHTML=miniatura(detalheProduto(ean).img,'lote');pintarChip($('editStatus'),seloValidade(l.val));ir('edit');}
 function abrirEdicaoPere(id){var r=D.pere.regs.filter(function(x){return x.id===id;})[0];if(!r)return;var local=!sbOn()||!logado(),own=!!(SESS&&SESS.uid&&(r.created_by===SESS.uid||!r.created_by)),full=['analista','gerente','admin'].includes(papelAtual());if(!local&&!full&&!own){toast('Você só pode editar seus próprios registros');return;}
-  registroContexto={tipo:'pere',id:id,cod:r.cod};$('editProdFields').style.display='none';$('editPereFields').style.display='';$('edSif').value=r.sif||'';$('edPereVal').value=fdata(r.val);$('edPeso').value=r.peso||'';$('edPereSetor').value=r.setor||'';$('editProductName').textContent=(D.pere.itens[r.cod]||{}).desc||('Código '+r.cod);$('editProductMeta').textContent='PLU: '+r.cod+' · Perecível';$('editThumb').innerHTML=miniatura('','pere');pintarChip($('editStatus'),seloValidade(r.val));ir('edit');}
+  registroContexto={tipo:'pere',id:id,cod:r.cod};$('editProdFields').style.display='none';$('editPereFields').style.display='';$('edSif').value=r.sif||'';$('edPereVal').value=fdata(r.val);$('edPeso').value=r.peso||'';$('edPereSetor').value=r.setor||'';prepararNomeEdicao((D.pere.itens[r.cod]||{}).desc||'');$('editProductName').textContent=(D.pere.itens[r.cod]||{}).desc||('Código '+r.cod);$('editProductMeta').textContent='PLU: '+r.cod+' · Perecível';$('editThumb').innerHTML=miniatura('','pere');pintarChip($('editStatus'),seloValidade(r.val));ir('edit');}
 document.addEventListener('click',function(e){var b;
   if((b=e.target.closest('[data-register-ean]'))){if(!pode('registrar')){toast('Seu perfil não permite registrar produtos');return;}mostrarEscolhaRegistro();ir('reg');$('bTipoIndustrial').click();$('tCodigo').value=b.dataset.registerEan;$('bBuscar').click();return;}
   if((b=e.target.closest('[data-edit-lote]'))){abrirEdicaoLote(b.dataset.editLote,b.dataset.ean);return;}
@@ -1397,9 +1405,11 @@ $('bEditCancel').onclick=function(){if(registroContexto){ir('detail');vistaAnter
 $('bEditSave').onclick=function(){if(!registroContexto)return;var ctx=registroContexto;
   if(ctx.tipo==='lote'){var p=D.prod[ctx.ean],l=p&&p.lotes.filter(function(x){return x.id===ctx.id;})[0];if(!l)return;if(!podeEditarLote(l)){toast('Você só pode editar suas próprias inserções');return;}
     var qtd=num($('edQtd').value),val=$('edVal').value,lote=$('edLote').value.trim().toUpperCase(),setor=$('edSetor').value;if(!lote||!val||!SETORES.includes(setor)||qtd<=0){toast('Confira lote, validade, quantidade e setor');return;}
+    var nomeNovo=nomeEditado();if(nomeNovo&&nomeNovo!==(detalheProduto(ctx.ean).nome||'')){if(p.desc)p.desc=nomeNovo;catalogar(ctx.ean,{nome:nomeNovo});auditar('editou_nome_produto',{ean:ctx.ean,nome:nomeNovo});}
     l.rpcConfirmado=false;l.lote=lote;l.val=val;l.qtd=qtd;l.setor=setor;l.atualizado=Date.now();auditar('editou_lote_proprio',{ean:ctx.ean,id:l.id,qtd:qtd,val:val,lote:lote,setor:setor});salvar();cancelarLembrete(l.id);lembrete(l,detalheProduto(ctx.ean).nome);listaProdutos();abrirDetalheLote(l.id,ctx.ean);vistaAnterior=areaContextual;toast('Alterações salvas neste aparelho');return;}
   var r=D.pere.regs.filter(function(x){return x.id===ctx.id;})[0];if(!r)return;var local=!sbOn()||!logado(),own=!!(SESS&&SESS.uid&&(r.created_by===SESS.uid||!r.created_by)),full=['analista','gerente','admin'].includes(papelAtual());if(!local&&!full&&!own){toast('Você só pode editar seus próprios registros');return;}
   var peso=num($('edPeso').value),valPe=lerData($('edPereVal').value),sif=$('edSif').value.trim(),setorPe=$('edPereSetor').value;if(peso<=0||!valPe||!SETORES.includes(setorPe)){toast('Confira peso, validade e setor');return;}
+  var nomePe=nomeEditado(),itPe=D.pere.itens[r.cod];if(nomePe&&itPe&&nomePe!==itPe.desc){itPe.desc=nomePe;auditar('editou_nome_produto',{cod:r.cod,nome:nomePe});}
   r.rpcConfirmado=false;r.peso=peso;r.val=valPe;r.sif=sif;r.setor=setorPe;r.atualizado=Date.now();salvar();cancelarLembrete(r.id);lembrete(r,(D.pere.itens[r.cod]||{}).desc||('código '+r.cod));listaPere();abrirDetalhePere(r.id);vistaAnterior=areaContextual;toast('Alterações salvas neste aparelho');};
 $('bEditDelete').onclick=function(){if(!registroContexto)return;var ctx=registroContexto;
   if(ctx.tipo==='lote'){var p=D.prod[ctx.ean],l=p&&p.lotes.filter(function(x){return x.id===ctx.id;})[0];if(!l||!podeEditarLote(l))return;

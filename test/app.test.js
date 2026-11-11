@@ -1632,3 +1632,41 @@ tflaky('Google Calendar: função ainda não configurada mostra feedback sem der
   await a.p.waitForFunction(()=>document.querySelector('#calendarFeedback').textContent.includes('ainda não está configurada'));
   assert.deepStrictEqual(a.erros,[]);await a.fechar();
 });
+
+/* Editar registro: o administrador corrige o nome do produto na própria tela de edição. */
+tflaky('Editar registro: administrador altera o nome do produto e o catálogo é atualizado', { skip: pular }, async () => {
+  const a = await abrir({ dados: { prod: { '0070341558737': { lotes: [lote('l1', '2032-12-01', 15, '1382')] } }, cat: {}, pere: { itens: {}, regs: [] } } });
+  await a.p.click('nav button[data-v="prod"]'); await a.p.click('[data-detail-lote="l1"]'); await a.p.click('#bDetailEdit');
+  assert.strictEqual(await a.p.isVisible('#edNome'), true, 'campo do nome aparece para o administrador');
+  assert.strictEqual(await a.p.inputValue('#edNome'), '', 'produto sem nome começa vazio, sem repetir o EAN');
+  await a.p.fill('#edNome', '  Creme de Leite 200g ');
+  await a.p.selectOption('#edSetor', 'Mercearia');
+  await a.p.click('#bEditSave');
+  assert.strictEqual((await a.salvo()).cat['0070341558737'].nome, 'Creme de Leite 200g');
+  assert.ok((await a.p.textContent('#v-detail')).includes('Creme de Leite 200g'), 'o detalhe mostra o nome novo');
+  await a.p.click('#bDetailEdit');
+  assert.strictEqual(await a.p.inputValue('#edNome'), 'Creme de Leite 200g');
+  assert.strictEqual(await a.p.textContent('#editProductName'), 'Creme de Leite 200g');
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Editar registro: administrador logado envia o nome novo ao catálogo compartilhado', { skip: pular }, async () => {
+  const envios = [];
+  const a = await abrirLogado(async p => { await rotasBase(p, 'admin');
+    await p.route(/\/rest\/v1\/catalogo\?on_conflict/, r => { envios.push(r.request().postDataJSON()); r.fulfill({ status: 201, body: '' }); }); },
+    { prod: { '7891000315507': { lotes: [Object.assign(lote('l1', '2032-12-01', 5, 'L1'), { setor: 'Mercearia', created_by: 'outro' })] } }, cat: { '7891000315507': { nome: 'Cafe' } }, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin' });
+  await a.p.click('nav button[data-v="prod"]'); await a.p.click('[data-detail-lote="l1"]'); await a.p.click('#bDetailEdit');
+  await a.p.fill('#edNome', 'Café Torrado 500g'); await a.p.click('#bEditSave');
+  await a.p.waitForFunction(() => true); await a.p.waitForTimeout(300);
+  assert.ok(envios.some(e => e[0].ean === '7891000315507' && e[0].nome === 'Café Torrado 500g'), 'catálogo recebeu o nome: ' + JSON.stringify(envios));
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Editar registro: operador não vê o campo de nome do produto', { skip: pular }, async () => {
+  const a = await abrirLogado(p => rotasBase(p, 'operador'),
+    { prod: { '7891000315507': { lotes: [Object.assign(lote('l1', '2032-12-01', 5, 'L1'), { setor: 'Mercearia', created_by: 'u1' })] } }, cat: { '7891000315507': { nome: 'Café' } }, pere: { itens: {}, regs: [] } }, { papel: 'operador', nome: 'Op' });
+  await a.p.click('nav button[data-v="prod"]'); await a.p.click('[data-detail-lote="l1"]'); await a.p.click('#bDetailEdit');
+  assert.strictEqual(await a.p.isVisible('#edLote'), true);
+  assert.strictEqual(await a.p.isVisible('#edNome'), false);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
