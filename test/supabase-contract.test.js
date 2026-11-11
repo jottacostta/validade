@@ -10,6 +10,10 @@ const adminCatalogMigration = fs.readFileSync(path.join(root, 'supabase/migratio
 const reviewerHardening = fs.readFileSync(path.join(root, 'supabase/migrations/20261109122158_harden_review_role_null.sql'), 'utf8');
 const personalTokenPolicy = fs.readFileSync(path.join(root, 'supabase/migrations/20261109122302_restrict_personal_cosmos_token_access.sql'), 'utf8');
 const foreignKeyIndexes = fs.readFileSync(path.join(root, 'supabase/migrations/20261109122348_index_audit_and_creator_foreign_keys.sql'), 'utf8');
+const internalPushMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261110170000_push_interno_autorizado.sql'), 'utf8');
+const calendarMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261110180000_google_calendar.sql'), 'utf8');
+const calendarEdge = fs.readFileSync(path.join(root, 'supabase/functions/google-calendar/index.ts'), 'utf8');
+const calendarLogic = fs.readFileSync(path.join(root, 'supabase/functions/google-calendar/sync-logic.mjs'), 'utf8');
 const edge = fs.readFileSync(path.join(root, 'supabase/functions/alertas/index.ts'), 'utf8');
 const build = fs.readFileSync(path.join(root, 'build.js'), 'utf8');
 
@@ -120,6 +124,21 @@ test('alertas internos são escopados à loja e só o destinatário pode ler/mar
   assert.match(migration, /coalesce\(auth\.role\(\),''\) <> 'service_role'/);
 });
 
+test('janela compartilhada e autorização de Push interno exigem gerente/admin no banco', () => {
+  assert.match(internalPushMigration, /add column if not exists push_interno boolean not null default false/);
+  assert.match(internalPushMigration, /new\.dias is distinct from old\.dias or coalesce\(new\.push_interno,false\) is distinct from coalesce\(old\.push_interno,false\)/);
+  assert.match(internalPushMigration, /coalesce\(v_papel,''\) not in \('admin','gerente'\)/);
+  assert.match(internalPushMigration, /Somente gerente ou administrador pode definir alertas internos da loja/);
+  assert.match(internalPushMigration, /private\.validar_ajustes_alertas_gerenciais/);
+  assert.match(internalPushMigration, /from public\.notificacoes n join public\.ajustes a[\s\S]*a\.push_interno[\s\S]*n\.criado>=a\.push_interno_desde/);
+  assert.match(internalPushMigration, /unique references public\.notificacoes\(id\)/);
+  assert.match(edge, /preparar_alertas_push_internos/);
+  assert.match(edge, /reivindicar_alertas_push_internos/);
+  assert.match(edge, /registrar_resultado_alerta_push_interno/);
+  assert.match(edge, /push_kind: "personal"/);
+  assert.match(edge, /push_kind: "internal"/);
+});
+
 test('PWA publica service worker, manifest e ícones necessários', () => {
   assert.match(app, /rel="manifest" href="\.\/manifest\.webmanifest"/);
   assert.match(app, /serviceWorker\.register\('\.\/service-worker\.js'\)/);
@@ -198,4 +217,127 @@ test('perfis de escopo global recebem avisos de todas as lojas; ninguém lê not
   assert.deepEqual(antes.filter(l => !depois.includes(l)), ['    from candidatos c join public.loja_membros m on m.loja_id=c.loja_id']);
   assert.match(edge, /PAPEIS_GLOBAIS = \["analista", "gerente", "admin"\]/);
   assert.match(edge, /if \(!error && data\) return true;[\s\S]*PAPEIS_GLOBAIS\.includes\(perfil\.papel\)\) return false;[\s\S]*from\("lojas"\)/, 'global só em loja existente');
+});
+
+test('regras pessoais isoladas, timezone validado, outbox deduplicada e RPCs privadas', () => {
+  const m = fs.readFileSync(path.join(root, 'supabase/migrations/20261110160000_alertas_regras_pessoais.sql'), 'utf8');
+  assert.match(m, /create extension if not exists pg_cron/);
+  assert.match(m, /create extension if not exists pg_net/);
+  assert.match(m, /create table public\.alertas_regras/);
+  assert.match(m, /dias between 1 and 365/);
+  assert.match(m, /default 'America\/Sao_Paulo'/);
+  assert.match(m, /pg_catalog\.pg_timezone_names/);
+  assert.match(m, /unique\(user_id,dias,hora_local,fuso\)/);
+  assert.match(m, /enable row level security/);
+  assert.match(m, /using \(user_id=\(select auth\.uid\(\)\)\)/);
+  assert.match(m, /registro_id text not null/, 'IDs operacionais de lotes/perecíveis são text');
+  assert.match(m, /unique\(regra_id,user_id,loja_id,registro_id,validade,data_local\)/);
+  assert.match(m, /skip locked/);
+  assert.match(m, /lease_until/);
+  assert.match(m, /o\.data_local<>\(now\(\) at time zone ar\.fuso\)::date/, 'eventos atrasados/desativados não disparam em outra data');
+  assert.match(m, /f\.validade < \(now\(\) at time zone ar\.fuso\)::date/, 'a mensagem usa data civil do fuso pessoal');
+  assert.match(m, /make_interval\(secs=>least\(3600/);
+  assert.match(m, /attempts>=8 then 'dead'/, 'backoff termina em estado terminal após oito tentativas');
+  assert.match(m, /revoke all on function public\.preparar_alertas_push\(\) from public,anon,authenticated/);
+  assert.match(m, /grant execute on function public\.reivindicar_alertas_push\(integer\) to service_role/);
+});
+
+test('cron diário e minutely distintos, sem duplicações e com semântica interna preservada', () => {
+  const m = fs.readFileSync(path.join(root, 'supabase/migrations/20261110160000_alertas_regras_pessoais.sql'), 'utf8');
+  assert.match(m, /where jobname='gerar-alertas-validade-diario' loop perform cron\.unschedule\(j\.jobid\)/);
+  assert.match(m, /cron\.schedule\('gerar-alertas-validade-diario','0 9 \* \* \*',\$\$select public\.gerar_alertas_validade\(\)\$\$\)/);
+  assert.match(m, /where jobname='despachar-alertas-push-minutely' loop perform cron\.unschedule\(j\.jobid\)/);
+  assert.match(m, /cron\.schedule\('despachar-alertas-push-minutely','\* \* \* \* \*'/);
+  assert.doesNotMatch(m, /create or replace function public\.gerar_alertas_validade\(\)/, 'a migration não redefine a geração interna');
+  assert.match(m, /p\.papel in \('analista','gerente','admin'\)/);
+});
+
+test('dispatch processa outboxes pessoal e interna e mantém segredo, VAPID e subscriptions', () => {
+  assert.match(edge, /admin\.rpc\("preparar_alertas_push"\)/);
+  assert.match(edge, /admin\.rpc\("preparar_alertas_push_internos"\)/);
+  assert.match(edge, /admin\.rpc\("reivindicar_alertas_push"/);
+  assert.match(edge, /admin\.rpc\(rpc, \{ p_id: notification\.id/);
+  assert.match(edge, /registrar_resultado_alerta_push_interno/);
+  assert.doesNotMatch(edge, /admin\.rpc\("gerar_alertas_validade"\)/);
+  assert.match(edge, /ALERTAS_CRON_SECRET/);
+  assert.match(edge, /VAPID_PRIVATE_KEY/);
+  assert.match(edge, /eq\("owner_id", notification\.user_id\)/);
+  assert.match(edge, /action !== "subscribe" && action !== "unsubscribe"/);
+});
+
+test('Google Calendar protege credenciais, OAuth states e mapping por RLS/grants service_role', () => {
+  for (const table of ['google_calendar_connections', 'google_calendar_oauth_states', 'google_calendar_event_map']) {
+    const block = calendarMigration.match(new RegExp(`create table public\\.${table}([\\s\\S]*?);[\\s\\S]*?alter table public\\.${table} enable row level security;[\\s\\S]*?revoke all on public\\.${table} from public, anon, authenticated;[\\s\\S]*?grant all on public\\.${table} to service_role;`));
+    assert.ok(block, `${table} com RLS e acesso exclusivo ao service_role`);
+  }
+  assert.match(calendarMigration, /refresh_token_ciphertext/);
+  assert.doesNotMatch(calendarMigration, /grant[^;]*to authenticated/i);
+});
+
+test('OAuth Calendar consome state uma única vez, exige expiração e guarda somente hash', () => {
+  assert.match(calendarMigration, /state_hash text primary key/);
+  assert.match(calendarMigration, /consumed_at is null and expires_at>now\(\)/);
+  assert.match(calendarMigration, /update public\.google_calendar_oauth_states set consumed_at=now\(\)/);
+  assert.match(calendarEdge, /expires_at: new Date\(Date\.now\(\) \+ 10 \* 60_000\)/);
+  assert.match(calendarEdge, /p_hash: await sha\(state\)/);
+  assert.match(calendarEdge, /state_hash: await sha\(state\)/);
+});
+
+test('OAuth Google usa scope restrito, callback fixo, offline access e JWT obrigatório em todas as ações POST', () => {
+  assert.match(calendarEdge, /calendar\.events\.owned/);
+  assert.match(calendarEdge, /access_type: "offline"/);
+  assert.match(calendarEdge, /https:\/\/jottacostta\.github\.io\/validade\//);
+  assert.match(calendarEdge, /admin\.auth\.getUser\(token\)/);
+  assert.match(calendarEdge, /const user = await userFromRequest\(req\)/);
+  assert.match(calendarEdge, /\["status", "authorize", "sync", "disconnect"\]/);
+  assert.match(calendarEdge, /GOOGLE_CALENDAR_REDIRECT_URI/);
+  assert.match(calendarEdge, /Response\.redirect/);
+});
+
+test('refresh token é cifrado AES-GCM com chave runtime; escopo de usuário deriva exclusivamente do JWT', () => {
+  assert.match(calendarEdge, /AES-GCM/);
+  assert.match(calendarEdge, /GOOGLE_CALENDAR_TOKEN_KEY/);
+  assert.match(calendarEdge, /raw\.length !== 32/);
+  assert.match(calendarEdge, /await encrypt\(token\.refresh_token\)/);
+  assert.match(calendarEdge, /eq\("user_id", user\.id\)/);
+  assert.doesNotMatch(calendarEdge, /console\.(log|error|warn)/);
+  assert.doesNotMatch(calendarEdge, /JSON\.stringify\([^\n]*refresh_token/);
+});
+
+test('refresh revogado remove a conexão e solicita nova autorização sem expor erro/token do Google', () => {
+  assert.match(calendarLogic, /grantType === "refresh_token" && providerError === "invalid_grant"/);
+  assert.match(calendarEdge, /error\.message === "refresh_token_revoked"/);
+  assert.match(calendarEdge, /from\("google_calendar_connections"\)\.delete\(\)\.eq\("user_id", user\.id\)/);
+  assert.match(calendarEdge, /code: "refresh_token_revoked", connected: false }, 409/);
+  assert.match(app, /r\.status===409&&r\.dados&&r\.dados\.code==='refresh_token_revoked'/);
+  assert.match(app, /A autorização do Google expirou ou foi revogada\. Reconecte o Calendar\./);
+  assert.doesNotMatch(calendarEdge, /console\.(log|error|warn)/);
+});
+
+test('projeção Calendar aplica loja_membros/perfis globais, soft delete, janela e fuso da regra', () => {
+  assert.match(calendarMigration, /l\.deleted_at is null and l\.val is not null/);
+  assert.match(calendarMigration, /r\.deleted_at is null and r\.val is not null/);
+  assert.match(calendarMigration, /lm\.user_id=p_user and lm\.loja_id=f\.loja_id/);
+  assert.match(calendarMigration, /p\.papel in \('analista','gerente','admin'\)/);
+  assert.match(calendarMigration, /ar\.user_id=p_user and ar\.ativo/);
+  assert.match(calendarMigration, /between \(now\(\) at time zone ar\.fuso\)::date and \(\(now\(\) at time zone ar\.fuso\)::date\+365\)/);
+  assert.match(calendarMigration, /d\.inicio,d\.inicio\+interval '15 minutes',d\.fuso/);
+  assert.match(calendarEdge, /dateTime\(row\.start_at, row\.time_zone\)/);
+});
+
+test('eventos Calendar têm ID determinístico, hash, mapping sem FK destrutiva e cancelam apenas futuros', () => {
+  assert.match(calendarMigration, /substr\(encode\(public\.digest\([\s\S]*?,1,32\)/);
+  assert.match(calendarMigration, /primary key \(user_id,dedupe_key\)/);
+  assert.match(calendarMigration, /preservar tombstones até o cancelamento remoto/);
+  assert.match(calendarEdge, /reconciliarEventoCalendar\(/);
+  assert.match(calendarEdge, /payloadIgual: activePrior\?\.payload_hash === payloadHash/);
+  assert.match(calendarLogic, /response\.status === 409/);
+  assert.match(calendarLogic, /eventoAusente\(response\)/);
+  assert.match(calendarEdge, /status: "cancelled".*eq\("status", "active"\)/);
+  assert.match(calendarEdge, /const event = \{ summary: row\.title/);
+  assert.match(calendarEdge, /"POST", "https:\/\/www\.googleapis\.com\/calendar\/v3\/calendars\/primary\/events"/);
+  assert.match(calendarLogic, /response\.status === 409/);
+  assert.match(calendarEdge, /prior\.status === "active" && !desiredKeys\.has\(key\) && new Date\(prior\.start_at\)\.getTime\(\) > Date\.now\(\)/);
+  assert.match(calendarEdge, /Math\.min\(5, items\.length\)/);
+  assert.match(calendarEdge, /"DELETE"/);
 });

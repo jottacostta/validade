@@ -70,15 +70,31 @@ Deno.serve(async (req) => {
     const publicKey = env("VAPID_PUBLIC_KEY"), privateKey = env("VAPID_PRIVATE_KEY"), subject = env("VAPID_SUBJECT");
     if (!publicKey || !privateKey || !subject) return json({ error: "Credenciais VAPID não configuradas" }, 503);
     webpush.setVapidDetails(subject, publicKey, privateKey);
-    const { data: inserted, error: rpcError } = await admin.rpc("gerar_alertas_validade");
-    if (rpcError) return json({ error: "Falha ao gerar alertas" }, 500);
-    const notifications = Array.isArray(inserted) ? inserted : [];
+    const { error: prepareError } = await admin.rpc("preparar_alertas_push");
+    if (prepareError) return json({ error: "Falha ao preparar fila Push" }, 500);
+    const { error: internalPrepareError } = await admin.rpc("preparar_alertas_push_internos");
+    if (internalPrepareError) return json({ error: "Falha ao preparar Push interno" }, 500);
+    const [personalClaim, internalClaim] = await Promise.all([
+      admin.rpc("reivindicar_alertas_push", { p_limite: 100 }),
+      admin.rpc("reivindicar_alertas_push_internos", { p_limite: 100 }),
+    ]);
+    if (personalClaim.error || internalClaim.error) return json({ error: "Falha ao reivindicar fila Push" }, 500);
+    const notifications = [
+      ...(Array.isArray(personalClaim.data) ? personalClaim.data.map((n) => ({ ...n, push_kind: "personal" })) : []),
+      ...(Array.isArray(internalClaim.data) ? internalClaim.data.map((n) => ({ ...n, push_kind: "internal" })) : []),
+    ];
     let enviados = 0, removidas = 0, falhas = 0;
     for (const notification of notifications) {
       const { data: subscriptions, error } = await admin.from("push_subscriptions")
         .select("id,endpoint,p256dh,auth").eq("owner_id", notification.user_id);
-      if (error) { falhas++; continue; }
+      if (error) {
+        falhas++;
+        const rpc = notification.push_kind === "internal" ? "registrar_resultado_alerta_push_interno" : "registrar_resultado_alerta_push";
+        await admin.rpc(rpc, { p_id: notification.id, p_ok: false, p_erro: "falha ao consultar subscriptions" });
+        continue;
+      }
       const payload = JSON.stringify({ title: notification.titulo, body: notification.mensagem, data: notification.payload });
+      let eventFailed = false;
       for (const sub of subscriptions ?? []) {
         try {
           await webpush.sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, payload);
@@ -88,9 +104,12 @@ Deno.serve(async (req) => {
           if (status === 404 || status === 410) {
             await admin.from("push_subscriptions").delete().eq("id", sub.id);
             removidas++;
-          } else falhas++;
+          } else { falhas++; eventFailed = true; }
         }
       }
+      if (!subscriptions?.length) eventFailed = true;
+      const rpc = notification.push_kind === "internal" ? "registrar_resultado_alerta_push_interno" : "registrar_resultado_alerta_push";
+      await admin.rpc(rpc, { p_id: notification.id, p_ok: !eventFailed, p_erro: eventFailed ? "uma ou mais entregas Push falharam" : null });
     }
     return json({ notificacoes: notifications.length, enviados, removidas, falhas });
   }

@@ -126,8 +126,8 @@ nav.abas #alertBadge{font-size:10px;line-height:16px;background:var(--da);color:
 #preferencesArea[data-sec-ativa="pereciveis"]>.card[data-sec]:not([data-sec="pereciveis"]),
 #preferencesArea[data-sec-ativa="auditoria"]>.card[data-sec]:not([data-sec="auditoria"]),
 #preferencesArea[data-sec-ativa="dados"]>.card[data-sec]:not([data-sec="dados"]),
-#preferencesArea[data-sec-ativa="operador"]>.card[data-sec]:not([data-sec="operador"]):not([data-sec="pereciveis"]):not([data-sec="config"]),
-#preferencesArea[data-sec-ativa="config"]>.card[data-sec]:not([data-sec="config"]){display:none!important}
+#preferencesArea[data-sec-ativa="operador"]>.card[data-sec]:not([data-sec="operador"]):not([data-sec="pereciveis"]):not([data-sec="config"]):not([data-sec="alertas"]),
+#preferencesArea[data-sec-ativa="config"]>.card[data-sec]:not([data-sec="config"]):not([data-sec="alertas"]){display:none!important}
 #sysReportsPanel{padding:14px;border:1px solid #294967;border-radius:16px;background:linear-gradient(145deg,#142f49,#0c2238)}
 #sysReportsPanel h3{margin:0 0 5px;font-size:17px}
 #sysReportsPanel p{margin:0 0 12px;color:#c1d0df;font-size:13px}
@@ -249,7 +249,8 @@ nav.abas #alertBadge{font-size:10px;line-height:16px;background:#f32635;color:#f
 #v-alertas #listaNotificacoes .vazio{background:#0a1d2d;border:1px dashed #35536b;border-radius:13px}
 #v-alertas #bLerNotificacoes,#v-alertas #bPushAtivar,#v-alertas #bPushDesativar{min-height:46px}
 #v-alertas #pushStatus{padding:12px 13px;background:#091d2e;border:1px solid #294b67;border-radius:12px}
-#v-aj>.card{padding:18px;margin-bottom:14px;position:relative;overflow:hidden}
+#v-aj>.card{padding:18px;margin-bottom:14px;position:relative;overflow:hidden}#pushCard .card.sys-card{padding:14px;border-color:#315773;background:linear-gradient(145deg,#0d263b,#091c2d)}#pushCard #listaRegrasAlertas .alert-rule{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border-bottom:1px solid var(--bd)}#pushCard #listaRegrasAlertas .alert-rule:last-child{border-bottom:0}#pushCard .alert-rule-main{min-width:0}#pushCard .alert-rule-main b{display:block}#pushCard .alert-rule-main small{color:var(--mu)}#pushCard .alert-rule-actions{display:flex;align-items:center;gap:8px;flex:none}#pushCard .alert-rule-actions input{width:22px;height:22px;accent-color:#ffdf00}#pushCard .alert-rule-actions button{padding:7px 9px;min-height:38px}#pushCard #pushStatus{padding:10px;background:#091d2e;border:1px solid #294b67;border-radius:12px}
+
 #v-aj>.card>h2{font-size:17px;padding-bottom:11px;margin-bottom:12px;border-bottom:1px solid #294a64}
 #v-aj>.card>p{line-height:1.55}
 #v-aj>.card input:not([type=checkbox]),#v-aj>.card select{margin-bottom:3px}
@@ -797,7 +798,37 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
     <div class="sys-menu-intro"><h2 id="sysMenuTitle">Ajustes do Sistema</h2><p id="sysMenuSubtitle">Configurações, acessos e manutenção</p></div>
     <div id="sysMenu" aria-label="Seções de ajustes"></div>
   </div>
-  <div class="card sys-card" id="pushCard"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 6-2.5 6.5-2.5 8.5h17c0-2-2.5-2.5-2.5-8.5M10 20.5h4"/></svg>Notificações push</h3><p class="push-sub">Receba os avisos de validade neste aparelho, mesmo com o app fechado.</p><p id="pushStatus">Verificando suporte…</p><button class="btn" id="bPushAtivar" type="button">Ativar notificações push</button><button class="btn sec" id="bPushDesativar" type="button" style="display:none">Desativar push neste aparelho</button></div>
+  <div class="card" data-sec="alertas" id="pushCard">
+    <h2>Alertas pessoais e Push</h2>
+    <p style="margin:0 0 12px;font-size:13px;color:var(--mu)">Defina quando deseja receber avisos pessoais de antecipação. Essas regras são da sua conta e não alteram os alertas internos compartilhados pela loja.</p>
+    <div class="card sys-card" style="margin:0 0 12px"><h3>Regras de antecipação</h3>
+      <div id="alertasRegraSugestao" class="aviso wa" style="display:none"></div>
+      <div class="g2"><div><label class="f" for="alertaRegraDias">Dias de antecedência</label><input id="alertaRegraDias" type="number" inputmode="numeric" min="1" max="365" step="1" placeholder="ex.: 30"></div><div><label class="f" for="alertaRegraHora">Horário local</label><input id="alertaRegraHora" type="time" step="60" value="08:00"></div></div>
+      <p style="margin:5px 0;font-size:12px;color:var(--mu)">Fuso horário: <span id="alertaRegraFuso">America/Sao_Paulo</span></p>
+      <button class="btn" id="bAlertaRegraAdicionar" type="button" style="margin-top:8px">Adicionar regra</button>
+      <div id="listaRegrasAlertas" style="margin-top:10px"><div class="vazio">Entre na sua conta para carregar as regras pessoais.</div></div>
+      <section id="calendarCard" class="card sys-card" aria-labelledby="calendarTitle" style="margin:14px 0 0">
+        <h3 id="calendarTitle">Google Calendar</h3>
+        <p style="margin:0 0 8px;font-size:13px;color:var(--mu)">Eventos pessoais cobrem suas regras ativas da conta em todas as lojas elegíveis, nos próximos 365 dias, no horário e fuso definidos em cada regra. Os eventos são gravados no calendário principal Google. Isso é separado dos alertas internos compartilhados por loja.</p>
+        <p id="calendarStatus" role="status" aria-live="polite">Verificando conexão…</p>
+        <div class="row"><button class="btn" id="bCalendarConnect" type="button">Conectar</button><button class="btn sec" id="bCalendarSync" type="button">Sincronizar</button><button class="btn perigo" id="bCalendarDisconnect" type="button">Desconectar</button></div>
+        <p id="calendarFeedback" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+    <div class="card sys-card" style="margin:0 0 12px"><h3>Alertas internos compartilhados da loja</h3>
+      <p style="margin:0;font-size:13px;color:var(--mu)">A janela abaixo vale para todos os membros da loja. Só gerente ou administrador pode alterá-la; suas regras pessoais de Push não mudam este ajuste.</p>
+      <label class="f" for="alertaLojaDias">Avisar a loja com esta antecedência (dias)</label><input id="alertaLojaDias" type="number" inputmode="numeric" min="1" max="365" value="30" disabled>
+      <p id="alertaLojaStatus" style="margin:5px 0;font-size:12px;color:var(--mu)" aria-live="polite">Entre e selecione uma loja para consultar a configuração compartilhada.</p>
+      <label style="display:flex;gap:10px;align-items:center;margin-top:12px;font-size:14px"><input type="checkbox" id="pushInternoAutorizado" style="width:22px;height:22px" disabled> Autorizar Push dos alertas internos desta loja</label>
+      <p style="margin:5px 0 12px;font-size:12px;color:var(--mu)">A autorização é do gerente/administrador. Cada pessoa ainda precisa ativar o Push no próprio aparelho para receber.</p>
+      <hr style="border:0;border-top:1px solid var(--bd);margin:12px 0">
+      <h3>Preferências locais</h3><p style="margin:0;font-size:13px;color:var(--mu)">O destaque da lista e o lembrete nativo abaixo afetam somente este aparelho.</p>
+      <label class="f" for="aDias">Destaque local quando faltarem (dias)</label><input id="aDias" type="number" inputmode="numeric" min="1" max="365">
+      <label style="display:flex;gap:10px;align-items:center;margin-top:12px;font-size:14px"><input type="checkbox" id="aNotif" style="width:22px;height:22px"> Notificação local neste aparelho</label>
+    </div>
+    <div class="card sys-card" style="margin:0"><h3>Push neste aparelho</h3><p class="push-sub">O Push é opcional e ativado separadamente em cada dispositivo.</p><p id="pushStatus">Verificando suporte…</p><button class="btn" id="bPushAtivar" type="button">Ativar notificações push</button><button class="btn sec" id="bPushDesativar" type="button" style="display:none">Desativar push neste aparelho</button></div>
+  </div>
+
   <div id="sysSectionHead" style="display:none">
     <button id="sysBackToMenu" type="button" aria-label="Voltar aos ajustes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
     <div><h2 id="sysSectionTitle">Ajustes</h2><p id="sysSectionSubtitle">Configurações do sistema</p></div>
@@ -833,6 +864,7 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
     <h3 class="adv-title">Configurações avançadas</h3>
   </div>
   <div id="preferencesArea">
+
   <div class="card" data-sec="pereciveis"><h2>Etiqueta da balança</h2>
     <p style="margin:0;font-size:13px;color:var(--mu)">Etiquetas de balança (EAN-13) começam com <b>2</b>: 2 + código do produto (6 posições, com zeros de preenchimento) + valor (5 dígitos) + dígito verificador.</p>
     <div class="g2"><div><label class="f" for="aDig">Dígitos do código</label><select id="aDig"><option value="4">4 dígitos (2 CCCC 00 VVVVV D)</option><option value="5">5 dígitos (2 CCCCC 0 VVVVV D)</option><option value="6">6 dígitos (2 CCCCCC VVVVV D)</option></select></div>
@@ -845,10 +877,7 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
     <label class="f" for="aCosmos">Seu token do Cosmos (pessoal)</label><input id="aCosmos" autocomplete="off" spellcheck="false" placeholder="cole aqui o seu token">
     <p style="margin:6px 0 0;font-size:12px;color:var(--mu)">Cada usuário usa o seu próprio token. Crie o seu grátis em cosmos.bluesoft.com.br — ele fica salvo na sua conta e vale em qualquer aparelho.</p>
   </div>
-  <div class="card" data-sec="pereciveis"><h2>Alertas</h2>
-    <label class="f" for="aDias">Avisar quando faltar (dias)</label><input id="aDias" type="number" inputmode="numeric" min="1" max="365">
-    <label style="display:flex;gap:10px;align-items:center;margin-top:12px;font-size:14px"><input type="checkbox" id="aNotif" style="width:22px;height:22px"> Notificação no celular antes de vencer</label>
-  </div>
+
   <div class="card" data-sec="config" id="cardConta" style="display:none"><h2>Conta e sincronização</h2><div id="contaInfo"></div></div>
   <div class="card" data-sec="auditoria" id="cardAuditoria" style="display:none"><h2>Auditoria <span class="ean">(somente admin)</span></h2><div id="listaAud"></div><button class="btn sec" id="bAudRefresh" style="margin-top:10px">Atualizar</button></div>
   <div class="card" data-sec="dados" id="cardSolicitacoes" style="display:none"><h2>Solicitações de exclusão</h2><p style="font-size:13px;color:var(--mu)">Solicitações pendentes e histórico de revisão. Exclusões aprovadas são tombstones sincronizados.</p><div id="listaSolicitacoes"><div class="vazio">Carregando…</div></div><button class="btn sec" id="bSolicitacoesRefresh" style="margin-top:10px">Atualizar solicitações</button></div>
@@ -1081,8 +1110,9 @@ function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var men
     Object.keys(m).forEach(function(id){$(id).style.display=m[id]===v?'':'none';});
     if(v==='settings'&&menu){$('sysMenuCard').hidden=false;$('sysMenuCard').style.display='';renderMenuAjustes();}
   }
-  $('pushCard').style.display=(v==='system'||v==='settings'||v==='profile'||(v==='syssection'&&(sysSecAtual==='config'||sysSecAtual==='op-preferencias')))?'':'none';
+  $('pushCard').style.display=(v==='system'||v==='settings'||(v==='syssection'&&(sysSecAtual==='config'||sysSecAtual==='op-preferencias')))?'':'none';
   $('settingsTabs').style.display=(v==='settings'||v==='profile')&&!menu?'':'none';
+  if(logado()&&(v==='system'||v==='settings'||(v==='syssection'&&(sysSecAtual==='config'||sysSecAtual==='op-preferencias'))))carregarCalendarStatus();
   document.querySelectorAll('#settingsTabs [data-settings-view]').forEach(function(b){var on=b.dataset.settingsView===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
   if($('screenTitle'))$('screenTitle').textContent=(v==='system'||(v==='settings'&&menu))?(op?'Ajustes do Operador':'Ajustes do Sistema'):v==='syssection'?$('sysSectionTitle').textContent:AJ_TITULOS[v];
   if(v==='password')limparTrocaSenha();renderConfiguracoes();window.scrollTo(0,0);}
@@ -1628,7 +1658,27 @@ $('bRelPe').onclick=function(){var t='*'+CFG.nome+' — Perecíveis* ('+new Date
   t+='\n'+(n<0?'⚠️ ':n<=D.aj.dias?'⏰ ':'')+(it.desc||r.cod)+' — SIF '+(r.sif||'—')+' — '+kg(r.peso)+' kg — '+fdata(r.val);});compartilhar(t);};
 
 /* ───── ajustes ───── */
-function ajustes(){$('aCosmos').value=tokenCosmos();$('aDig').value=String(D.aj.dig);$('aValor').value=D.aj.valor;$('aDias').value=D.aj.dias;$('aNotif').checked=!!D.aj.notif;$('aOcr').checked=!!D.aj.ocr;contaCard();auditoriaCard();carregarLojasAdmin();}
+function ajustes(){$('aCosmos').value=tokenCosmos();$('aDig').value=String(D.aj.dig);$('aValor').value=D.aj.valor;$('aDias').value=D.aj.dias;$('aNotif').checked=!!D.aj.notif;$('aOcr').checked=!!D.aj.ocr;carregarAjustesAlertasLoja();contaCard();auditoriaCard();carregarLojasAdmin();}
+var ALERTA_LOJA={lojaId:null,dias:30,push:false,disponivel:false};
+function podeGerenciarAlertasLoja(){return ['admin','gerente'].includes(papelAtual());}
+function renderAjustesAlertasLoja(status){var dias=$('alertaLojaDias'),push=$('pushInternoAutorizado'),msg=$('alertaLojaStatus');if(!dias||!push||!msg)return;
+  var podeEditar=sbOn()&&logado()&&!!(SESS&&SESS.lojaId)&&podeGerenciarAlertasLoja()&&ALERTA_LOJA.disponivel&&navigator.onLine!==false;
+  dias.value=String(ALERTA_LOJA.dias||30);push.checked=!!ALERTA_LOJA.push;dias.disabled=!podeEditar;push.disabled=!podeEditar;
+  msg.textContent=status||(podeGerenciarAlertasLoja()?'Somente gerente ou administrador pode alterar a configuração compartilhada.':'Configuração compartilhada da loja; edição restrita a gerente ou administrador.');}
+function carregarAjustesAlertasLoja(){var lojaId=SESS&&SESS.lojaId?String(SESS.lojaId):'';ALERTA_LOJA={lojaId:lojaId,dias:30,push:false,disponivel:false};
+  if(!sbOn()||!logado()||!lojaId){renderAjustesAlertasLoja('Entre e selecione uma loja para consultar a configuração compartilhada.');return Promise.resolve();}
+  renderAjustesAlertasLoja('Carregando configuração compartilhada…');
+  return sbReq('/rest/v1/ajustes?select=loja_id,dias,push_interno,push_interno_desde&loja_id=eq.'+encodeURIComponent(lojaId)+'&limit=1').then(function(r){if(String(SESS&&SESS.lojaId||'')!==lojaId)return;
+    if(!r.ok||!Array.isArray(r.dados))throw new Error('Configuração ainda indisponível no banco.');var row=r.dados[0]||{};ALERTA_LOJA={lojaId:lojaId,dias:Number(row.dias)||30,push:!!row.push_interno,disponivel:true};renderAjustesAlertasLoja(podeGerenciarAlertasLoja()?'Configuração da loja carregada.':'Definida pela gerência da loja.');
+  }).catch(function(){if(String(SESS&&SESS.lojaId||'')!==lojaId)return;ALERTA_LOJA.disponivel=false;renderAjustesAlertasLoja('Não foi possível carregar do Supabase. Verifique se a migration desta configuração está aplicada.');});}
+function salvarAjusteAlertaLoja(changes){var lojaId=SESS&&SESS.lojaId?String(SESS.lojaId):'';if(!lojaId||!logado()||!podeGerenciarAlertasLoja()||!ALERTA_LOJA.disponivel){toast('Somente gerente ou administrador pode alterar a configuração compartilhada.');renderAjustesAlertasLoja();return Promise.resolve(false);}
+  if(navigator.onLine===false){toast('Conecte-se à internet para alterar alertas compartilhados da loja.');renderAjustesAlertasLoja();return Promise.resolve(false);}
+  var payload=Object.assign({loja_id:lojaId},changes),prev={dias:ALERTA_LOJA.dias,push:ALERTA_LOJA.push};$('alertaLojaDias').disabled=true;$('pushInternoAutorizado').disabled=true;$('alertaLojaStatus').textContent='Salvando configuração compartilhada…';
+  return sbReq('/rest/v1/ajustes?on_conflict=loja_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:[payload]}).then(function(r){if(!r.ok)throw new Error(r.dados&&r.dados.message||'Falha ao salvar no Supabase.');var row=Array.isArray(r.dados)&&r.dados[0];if(String(SESS&&SESS.lojaId||'')!==lojaId)return false;
+    if(row){ALERTA_LOJA.dias=Number(row.dias)||30;ALERTA_LOJA.push=!!row.push_interno;}else Object.keys(changes).forEach(function(k){if(k==='dias')ALERTA_LOJA.dias=Number(changes[k]);if(k==='push_interno')ALERTA_LOJA.push=!!changes[k];});ALERTA_LOJA.disponivel=true;renderAjustesAlertasLoja('Configuração compartilhada salva no Supabase.');toast('Alertas da loja atualizados');return true;
+  }).catch(function(e){if(String(SESS&&SESS.lojaId||'')===lojaId){ALERTA_LOJA.dias=prev.dias;ALERTA_LOJA.push=prev.push;renderAjustesAlertasLoja();}toast(e.message||'Falha ao salvar a configuração da loja');return false;});}
+$('alertaLojaDias').onchange=function(){var n=Number(this.value);if(!Number.isInteger(n)||n<1||n>365){toast('Informe de 1 a 365 dias para o alerta da loja');renderAjustesAlertasLoja();return;}salvarAjusteAlertaLoja({dias:n});};
+$('pushInternoAutorizado').onchange=function(){salvarAjusteAlertaLoja({push_interno:this.checked});};
 $('bAudRefresh')&&($('bAudRefresh').onclick=auditoriaCard);
 $('aOcr').onchange=function(){D.aj.ocr=this.checked;salvar();toast(D.aj.ocr?'OCR ligado':'OCR desligado');};
 $('aDig').onchange=function(){D.aj.dig=+this.value;salvar();toast('Formato da etiqueta salvo');};
@@ -1673,7 +1723,7 @@ function sbReq(path,opt){opt=opt||{};
 function sbLogin(user,pass){return sbReq('/auth/v1/token?grant_type=password',{method:'POST',auth:false,body:{email:user+'@'+DOM_LOGIN,password:pass}})
   .then(function(r){if(!r.ok||!r.dados||!r.dados.access_token)throw new Error((r.dados&&(r.dados.error_description||r.dados.msg||r.dados.error))||'Usuário ou senha inválidos');
     var u=r.dados.user||{},meta=u.app_metadata||{};SESS={access_token:r.dados.access_token,refresh_token:r.dados.refresh_token,expira:Date.now()+((r.dados.expires_in||3600)*1000),usuario:user,email:u.email,uid:u.id,loginEm:Date.now(),lojaId:null,lojaNome:null,forcePasswordChange:meta.force_password_change===true};salvarSess();return SESS;});}
-function sbLogout(){var token=SESS&&SESS.access_token;SESS=null;salvarSess();refreshSessaoEmAndamento=null;try{localStorage.removeItem('validade_ultima_loja');}catch(e){}if(token&&sbOn()){return fetch(CFG.supaUrl+'/auth/v1/logout',{method:'POST',headers:{apikey:CFG.supaKey,Authorization:'Bearer '+token}}).catch(function(e){console.warn('Falha ao invalidar sessão remota (sessão local já encerrada):',e);});}return Promise.resolve();}
+function sbLogout(){var token=SESS&&SESS.access_token;SESS=null;salvarSess();refreshSessaoEmAndamento=null;calendarConectado=false;calendarUltimoSync=0;calendarRender();try{localStorage.removeItem('validade_ultima_loja');}catch(e){}if(token&&sbOn()){return fetch(CFG.supaUrl+'/auth/v1/logout',{method:'POST',headers:{apikey:CFG.supaKey,Authorization:'Bearer '+token}}).catch(function(e){console.warn('Falha ao invalidar sessão remota (sessão local já encerrada):',e);});}return Promise.resolve();}
 function sairParaLogin(){sbLogout();try{history.replaceState({loggedOut:true},'',location.href.split('#')[0]);}catch(e){}var modal=$('conta');if(modal)modal.classList.add('on');mostrarLoginForm();contaCard();atualizarBotaoLogout();atualizarGate();toast('Você saiu');}
 function sbLojas(){return sbReq('/rest/v1/lojas?select=id,nome&order=nome.asc').then(function(r){if(!r.ok)throw new Error('falha');return Array.isArray(r.dados)?r.dados:[];});}
 /* ───── catálogo compartilhado (EAN → nome), entre todas as lojas ───── */
@@ -1724,7 +1774,7 @@ function sincronizarLoja(){
     guardar(K,JSON.stringify(D));
     renderAlertas();var abaAtiva=document.querySelector('#abas button.on');if(abaAtiva){if(abaAtiva.dataset.v==='home')renderHome();if(abaAtiva.dataset.v==='prod')listaProdutos();else if(abaAtiva.dataset.v==='pere')subPere(subAtual);else if(abaAtiva.dataset.v==='alertas')carregarNotificacoes();else if(abaAtiva.dataset.v==='aj')contaCard();}
     SYNC.loja=SESS.lojaId;SYNC.recebido=Date.now();salvarSync();return n;
-  }).catch(function(e){console.warn('Sincronização da loja falhou:',e);return -1;}).then(function(n){sincronizacaoEmAndamento=false;return n;},function(e){sincronizacaoEmAndamento=false;throw e;});
+  }).catch(function(e){console.warn('Sincronização da loja falhou:',e);return -1;}).then(function(n){sincronizacaoEmAndamento=false;if(n>=0)agendarSyncCalendar();return n;},function(e){sincronizacaoEmAndamento=false;throw e;});
 }
 function agendarSincronizacaoPeriodica(){clearInterval(temporizadorSincronizacao);if(!sbOn()||!logado()||!SESS.lojaId)return;temporizadorSincronizacao=setInterval(function(){if(!document.hidden)sincronizarLoja();},20000);}
 function sincronizarAoRetornar(){if(sbOn()&&logado()&&SESS.lojaId&&!document.hidden)catalogoPull().then(sincronizarLoja);}
@@ -1800,7 +1850,7 @@ function aplicarPapel(){var reg=pode('registrar'),ed=pode('editar'),aj=pode('aju
   var ac=$('aCosmos');if(ac)ac.disabled=false;/* token do Cosmos é pessoal: todo usuário edita o seu */
   if(!reg){var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='reg')ir('prod');}}
 function carregarPapel(){if(!sbOn()||!logado())return Promise.resolve();
-  carregarPrefs();
+  carregarPrefs();carregarRegrasAlertas();carregarCalendarStatus();
   /* Filtra pelo próprio id: admin/analista/gerente enxergam vários perfis (RLS),
      então sem o filtro o limit=1 traria o papel de OUTRO usuário. */
   var alvo='/rest/v1/perfis?select=papel,nome'+((SESS&&SESS.uid)?'&id=eq.'+encodeURIComponent(SESS.uid):'')+'&limit=1';
@@ -1821,6 +1871,44 @@ function atualizarInterfacePapel(){
    Com Supabase: cada usuário guarda o seu token em public.preferencias (RLS: só a própria linha),
    então ele vale em qualquer aparelho. Sem Supabase (modo local), usa D.aj.cosmos. */
 function tokenCosmos(){return (((sbOn()&&logado())?(SESS&&SESS.cosmos)||'':(D.aj.cosmos||''))+'').trim();}
+/* Integração Google Calendar via Edge Function autenticada; nunca persiste credenciais Google. */
+var calendarConectado=false,calendarUltimoSync=0,calendarEmAndamento=false;
+function calendarMensagem(txt){var el=$('calendarFeedback');if(el)el.textContent=txt||'';}
+function calendarAcao(action){if(!sbOn()||!logado()||!SESS.access_token)return Promise.reject(new Error('Entre novamente para continuar.'));if(!navigator.onLine)return Promise.reject(new Error('Sem conexão com a internet.'));return sbReq('/functions/v1/google-calendar',{method:'POST',body:{action:action}}).then(function(r){if(!r.ok){var msg=r.dados&&(r.dados.message||r.dados.error);if(r.status===409&&r.dados&&r.dados.code==='refresh_token_revoked'){calendarConectado=false;calendarUltimoSync=0;calendarRender();throw new Error('A autorização do Google expirou ou foi revogada. Reconecte o Calendar.');}if(r.status===404||r.status===502)throw new Error('Integração Google Calendar ainda não está configurada.');if(r.status===401)throw new Error('Sua sessão expirou. Entre novamente e tente de novo.');throw new Error(msg||'Não foi possível concluir a operação no Google Calendar.');}return r.dados||{};});}
+function calendarRender(){var st=$('calendarStatus');if(st)st.textContent=calendarConectado?'Conectado ao Google Calendar'+(calendarUltimoSync?' · última sincronização '+new Date(calendarUltimoSync).toLocaleString():''):'Não conectado ao Google Calendar';$('bCalendarConnect').hidden=calendarConectado;$('bCalendarSync').hidden=!calendarConectado;$('bCalendarDisconnect').hidden=!calendarConectado;}
+function sincronizarCalendar(silencioso){if(calendarEmAndamento||!calendarConectado)return Promise.resolve();calendarEmAndamento=true;$('bCalendarSync').disabled=true;if(!silencioso)calendarMensagem('Sincronizando eventos pessoais…');return calendarAcao('sync').then(function(x){calendarUltimoSync=Date.now();calendarMensagem('Sincronização concluída: '+Number(x.created||0)+' criados, '+Number(x.updated||0)+' atualizados, '+Number(x.deleted||0)+' removidos, '+Number(x.failed||0)+' falharam.');calendarRender();return x;}).catch(function(e){calendarMensagem(e.message||'Falha ao sincronizar o calendário.');if(!silencioso)toast('Não foi possível sincronizar o Google Calendar');return null;}).then(function(x){calendarEmAndamento=false;$('bCalendarSync').disabled=false;return x;});}
+function carregarCalendarStatus(){if(!sbOn()||!logado())return;calendarMensagem('Consultando conexão…');calendarAcao('status').then(function(x){calendarConectado=x.connected===true;calendarUltimoSync=x.last_synced_at?Date.parse(x.last_synced_at):0;calendarRender();if(calendarConectado&&calendarCallbackPendente){calendarCallbackPendente=false;return sincronizarCalendar(false);}}).catch(function(e){calendarConectado=false;calendarRender();calendarMensagem(e.message||'Não foi possível consultar o Google Calendar.');});}
+var calendarCallbackPendente=false;
+(function consumirCalendarCallback(){try{var u=new URL(location.href),resultado=u.searchParams.get('calendar_oauth');if(!resultado)return;u.searchParams.delete('calendar_oauth');history.replaceState(history.state,'',u.pathname+(u.search?'?'+u.searchParams.toString():'')+u.hash);calendarCallbackPendente=true;calendarMensagem(resultado==='connected'?'Google autorizou a conexão; verificando status…':'A autorização do Google não foi concluída. Você pode tentar novamente.');}catch(e){}})();
+$('bCalendarConnect').onclick=function(){calendarMensagem('Preparando autorização…');calendarAcao('authorize').then(function(x){if(!x.url)throw new Error('O serviço não retornou o endereço de autorização.');location.assign(x.url);}).catch(function(e){calendarMensagem(e.message||'Não foi possível iniciar a conexão.');});};
+$('bCalendarSync').onclick=function(){sincronizarCalendar(false);};
+$('bCalendarDisconnect').onclick=function(){if(!confirm('Desconectar o Google Calendar? Os eventos já criados no Google serão mantidos.'))return;calendarAcao('disconnect').then(function(){calendarConectado=false;calendarUltimoSync=0;calendarRender();calendarMensagem('Conexão removida. Os eventos existentes no Google foram mantidos.');}).catch(function(e){calendarMensagem(e.message||'Não foi possível desconectar.');});};
+function agendarSyncCalendar(){if(!calendarConectado||!navigator.onLine||Date.now()-calendarUltimoSync<300000)return;sincronizarCalendar(true);}
+/* Regras pessoais de alerta: cache e fila sempre isolados pelo UID autenticado. */
+function chaveCacheRegras(uid){return 'validade_alertas_regras_'+encodeURIComponent(String(uid||''));}
+function lerCacheRegras(uid){try{return JSON.parse(localStorage.getItem(chaveCacheRegras(uid))||'{"items":[],"pendentes":[]}')||{items:[],pendentes:[]};}catch(e){return {items:[],pendentes:[]};}}
+function guardarCacheRegras(uid,c){if(!uid)return;try{localStorage.setItem(chaveCacheRegras(uid),JSON.stringify(c));}catch(e){}}
+function horaRegraValida(v){return /^([01]\d|2[0-3]):[0-5]\d$/.test(String(v||''));}
+function renderRegrasAlertas(items){var box=$('listaRegrasAlertas');if(!box)return;var ativos=(items||[]).slice().sort(function(a,b){return (+a.dias)-(+b.dias)||String(a.hora_local).localeCompare(String(b.hora_local));});
+  box.innerHTML=ativos.length?ativos.map(function(r){var hh=String(r.hora_local||'08:00:00').slice(0,5);return '<div class="alert-rule" data-regra="'+esc(r.id)+'"><div class="alert-rule-main"><b>'+esc(String(r.dias))+' dias · '+esc(hh)+'</b><small>'+esc(r.fuso||'America/Sao_Paulo')+'</small></div><div class="alert-rule-actions"><label aria-label="Ativar regra"><input type="checkbox" data-regra-toggle="'+esc(r.id)+'" '+(r.ativo===false?'':'checked')+'></label><button type="button" class="btn perigo" data-regra-delete="'+esc(r.id)+'" aria-label="Remover regra">Remover</button></div></div>';}).join(''):'<div class="vazio">Nenhuma regra pessoal cadastrada.</div>';}
+function exibirSugestaoRegra(){var box=$('alertasRegraSugestao');if(!box)return;var dias=Number(D&&D.aj&&D.aj.dias);if(Number.isInteger(dias)&&dias>=1&&dias<=365){box.style.display='';box.innerHTML='Você pode adicionar sua configuração anterior: <b>'+dias+' dias às 08:00</b>. <button class="btn sec" type="button" id="bMigrarRegraLegada" style="margin:6px 0 0">Adicionar sugestão</button>';$('bMigrarRegraLegada').onclick=function(){adicionarRegraAlerta(dias,'08:00');};}else box.style.display='none';}
+function carregarRegrasAlertas(){if(!sbOn()||!logado()||!SESS.uid){if($('listaRegrasAlertas'))$('listaRegrasAlertas').innerHTML='<div class="vazio">Entre na sua conta para carregar as regras pessoais.</div>';return Promise.resolve();}
+  var uid=String(SESS.uid),cache=lerCacheRegras(uid);renderRegrasAlertas(cache.items);$('alertaRegraFuso').textContent=Intl.DateTimeFormat().resolvedOptions().timeZone||'America/Sao_Paulo';
+  if(!navigator.onLine){exibirSugestaoRegra();return Promise.resolve();}
+  var enviar=Promise.resolve();(cache.pendentes||[]).forEach(function(op){enviar=enviar.then(function(){if(op.tipo==='delete')return sbReq('/rest/v1/alertas_regras?id=eq.'+encodeURIComponent(op.id),{method:'DELETE',headers:{Prefer:'return=minimal'}}).then(function(r){if(!r.ok)throw new Error('sync delete');});
+      return sbReq('/rest/v1/alertas_regras?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:[op.regra]}).then(function(r){if(!r.ok)throw new Error('sync upsert');});});});
+  return enviar.then(function(){return sbReq('/rest/v1/alertas_regras?select=id,user_id,dias,hora_local,fuso,ativo&order=dias.asc,hora_local.asc');}).then(function(r){if(!r.ok)throw new Error('load rules');var server=Array.isArray(r.dados)?r.dados:[],fresh=lerCacheRegras(uid);fresh.items=server;fresh.pendentes=[];guardarCacheRegras(uid,fresh);renderRegrasAlertas(server);if(!server.length)exibirSugestaoRegra();else $('alertasRegraSugestao').style.display='none';}).catch(function(){var latest=lerCacheRegras(uid);renderRegrasAlertas(latest.items);exibirSugestaoRegra();});}
+function salvarRegraLocal(uid,regra,tipo){var c=lerCacheRegras(uid);if(tipo==='delete'){c.items=c.items.filter(function(x){return x.id!==regra.id;});c.pendentes=c.pendentes.filter(function(x){return x.id!==regra.id;});c.pendentes.push({tipo:'delete',id:regra.id});}else{var i=c.items.findIndex(function(x){return x.id===regra.id;});if(i<0)c.items.push(regra);else c.items[i]=regra;c.pendentes=c.pendentes.filter(function(x){return x.id!==regra.id;});c.pendentes.push({tipo:'upsert',id:regra.id,regra:regra});}guardarCacheRegras(uid,c);renderRegrasAlertas(c.items);agendarSyncCalendar();}
+function novoIdRegra(){if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16);});}
+function adicionarRegraAlerta(diasArg,horaArg){if(!sbOn()||!logado()||!SESS.uid){toast('Entre na sua conta para salvar regras pessoais');return;}
+  var dias=Number(diasArg!==undefined?diasArg:$('alertaRegraDias').value),hora=String(horaArg!==undefined?horaArg:$('alertaRegraHora').value||'').trim();if(!Number.isInteger(dias)||dias<1||dias>365){toast('Informe dias inteiros entre 1 e 365');$('alertaRegraDias').focus();return;}if(!horaRegraValida(hora)){toast('Informe um horário válido no formato HH:MM');$('alertaRegraHora').focus();return;}
+  var fuso=Intl.DateTimeFormat().resolvedOptions().timeZone||'America/Sao_Paulo',cache=lerCacheRegras(SESS.uid);if(cache.items.some(function(r){return +r.dias===dias&&String(r.hora_local).slice(0,5)===hora&&String(r.fuso||'America/Sao_Paulo')===fuso;})){toast('Esta regra já existe');return;}
+  var reg={id:novoIdRegra(),user_id:SESS.uid,dias:dias,hora_local:hora+':00',fuso:fuso,ativo:true};salvarRegraLocal(String(SESS.uid),reg,'upsert');$('alertaRegraDias').value='';$('alertaRegraHora').value='08:00';if(navigator.onLine)carregarRegrasAlertas();toast('Regra pessoal adicionada');}
+$('bAlertaRegraAdicionar').onclick=function(){adicionarRegraAlerta();};
+$('listaRegrasAlertas').onclick=function(e){var del=e.target.closest('[data-regra-delete]');if(!del)return;var id=del.dataset.regraDelete,uid=SESS&&SESS.uid;if(!uid)return;var c=lerCacheRegras(uid),reg=c.items.find(function(x){return x.id===id;});if(!reg)return;salvarRegraLocal(String(uid),reg,'delete');if(navigator.onLine)carregarRegrasAlertas();};
+$('listaRegrasAlertas').onchange=function(e){var input=e.target.closest('[data-regra-toggle]');if(!input)return;var uid=SESS&&SESS.uid;if(!uid)return;var c=lerCacheRegras(uid),reg=c.items.find(function(x){return x.id===input.dataset.regraToggle;});if(!reg)return;reg.ativo=input.checked;salvarRegraLocal(String(uid),reg,'upsert');if(navigator.onLine)carregarRegrasAlertas();};
+window.addEventListener('online',function(){carregarRegrasAlertas();});
+
 function carregarPrefs(){if(!sbOn()||!logado())return;
   sbReq('/rest/v1/preferencias?select=cosmos_token&limit=1').then(function(r){
     var d=r.ok&&Array.isArray(r.dados)&&r.dados[0];SESS.cosmos=(d&&d.cosmos_token)||'';salvarSess();

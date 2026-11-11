@@ -1,52 +1,59 @@
-# Configurar alertas internos e push
+# Alertas internos compartilhados e Push pessoal
 
-Este guia descreve a configuração posterior dos alertas e Web Push. Estado verificado em 2026-11-09: as migrations de solicitações de exclusão, matriz de papéis/ownership, validação fail-closed da revisão, isolamento dos tokens pessoais e índices de chaves estrangeiras já foram aplicadas ao Supabase. A migration de associação catálogo/produto (`20261107120000_produtos_como_associacao.sql`) e a migration desta área (`20261109000000_area_operador_compartilhamento_alertas.sql`) ainda não foram aplicadas; nenhuma Edge Function foi publicada e nenhum Cron foi criado.
+Este documento descreve o desenho no código versionado. **As migrations desta entrega ainda não foram aplicadas em produção e a Edge Function/cron não foram reimplantados por este trabalho.** Confirme o estado real do Supabase antes de qualquer rollout.
 
-As migrations remotas foram aplicadas como versões `20261109121203_solicitacoes_exclusao_com_aprovacao`, `20261109121652_matriz_papeis_ownership_rls`, `20261109122158_harden_review_role_null`, `20261109122302_restrict_personal_cosmos_token_access` e `20261109122348_index_audit_and_creator_foreign_keys`. A migration de associação de produtos e a migration do Operador devem aguardar a publicação do frontend compatível: a versão atualmente publicada ainda envia `nome` para `produtos` e não envia setor em novos lotes/perecíveis. Aplicar essas duas migrations antes do frontend atualizado interromperia cadastros.
+## Semântica e permissões
 
-## O que será configurado
+- **Alertas internos no app:** continuam compartilhados no escopo da loja; notificações são geradas para os destinatários da loja e para perfis globais conforme as políticas existentes. A janela de antecedência é uma configuração compartilhada da loja (`public.ajustes.dias`), não uma preferência local.
+- **Quem configura a loja:** somente **gerente ou administrador** pode alterar a janela compartilhada e autorizar/desautorizar o Push interno. O banco aplica a restrição no trigger; o frontend também deixa os controles somente leitura para os demais papéis. Administradores mantêm acesso irrestrito.
+- **Push interno da loja:** é um canal distinto, desligado por padrão e habilitado apenas após autorização gerencial. Depois de autorizado, os alertas internos novos podem ser enviados aos destinatários com subscription Push válida. Cada pessoa ainda precisa ativar o Push no próprio aparelho; desativar o Push da loja impede novas entregas internas.
+- **Push pessoal:** cada usuário configura várias regras próprias de antecedência em dias e hora local, por exemplo `30 dias / 08:00`, `15 dias / 09:00` e `7 dias / 08:00`. A autorização do Push interno não altera essas regras pessoais.
+- **Escopo e aparelho:** as regras pessoais são da conta; a subscription é vinculada ao usuário e ao aparelho. Sem subscription válida, a preferência é mantida, mas não há entrega Push naquele aparelho.
+- **Fuso:** cada regra pessoal armazena timezone IANA; o padrão é `America/Sao_Paulo`. “30 dias” significa diferença de data civil nesse fuso, não 720 horas.
+- **Ajustes locais:** o destaque da lista e o lembrete nativo seguem locais ao aparelho; não controlam os alertas internos compartilhados nem o cron do Push.
 
-A migration `supabase/migrations/20261109000000_area_operador_compartilhamento_alertas.sql` adiciona setor e snapshot de autoria, RPCs de registro, tabela de notificações internas e subscriptions Web Push. A Function `alertas` valida JWT nas ações de inscrição e valida segredo separado na ação de dispatch. A ação de dispatch chama a RPC que cria notificações idempotentes para todos os membros de cada loja e envia push às subscriptions registradas para cada usuário destinatário.
+## Arquivos envolvidos
 
-## Secrets fora do repositório
+- `supabase/migrations/20261110160000_alertas_regras_pessoais.sql`: cria `alertas_regras` com RLS por usuário e a outbox pessoal idempotente; preserva a geração diária dos alertas internos e instala o dispatcher minutely.
+- `supabase/migrations/20261110170000_push_interno_autorizado.sql`: acrescenta autorização de Push por loja, restringe mudanças em `ajustes.dias` e `push_interno` a gerente/admin, e cria outbox idempotente separada para notificações internas.
+- `supabase/functions/alertas/index.ts`: valida segredo de dispatch e VAPID; prepara/reivindica filas pessoais e internas separadamente, envia aos subscribers do destinatário e registra resultados. Inscrição e cancelamento continuam exigindo JWT válido e escopo de loja.
+- `src/app.html`: cartão dedicado combina regras pessoais e Push, apresenta a janela interna da loja em leitura para papéis sem permissão, e mantém o cache das regras offline separado por UID.
 
-Configure estes valores no painel do Supabase (Edge Functions → Secrets) ou pelo mecanismo seguro de secrets do projeto. **Não os coloque em arquivos versionados, código frontend, tickets, logs ou comandos gravados no histórico do shell.** A Function também precisa das variáveis padrão do ambiente Supabase `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`; esta última só é lida no servidor.
+## Dependências e credenciais
 
-- `VAPID_PUBLIC_KEY`: chave pública VAPID; pode ser retornada ao cliente por `GET ?action=public-key`.
-- `VAPID_PRIVATE_KEY`: chave privada VAPID; somente no servidor.
-- `VAPID_SUBJECT`: subject VAPID, normalmente um `mailto:` operacional ou URL institucional.
-- `ALERTAS_CRON_SECRET`: segredo aleatório longo, independente das chaves VAPID, enviado somente pelo agendador no header `x-alertas-cron-secret`.
+A migration usa `pg_cron`, `pg_net` e os valores já esperados no Vault pelo agendador: `alertas_function_url`, `alertas_anon_key` e `alertas_cron_secret`. A Function também exige as variáveis de runtime do Supabase e os secrets `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` e `ALERTAS_CRON_SECRET`. Não grave tokens, chaves privadas, endpoints Push ou corpos de subscriptions no Git, no frontend, em tickets ou logs.
 
-Gere as chaves VAPID localmente com ferramenta confiável instalada no seu computador/ambiente administrativo, por exemplo `npx web-push generate-vapid-keys`. Guarde o par em um cofre de secrets; cadastre a pública e a privada nos secrets da Function. Gere `ALERTAS_CRON_SECRET` com gerador criptográfico de aleatoriedade (p.ex. `openssl rand -hex 32`) e transfira-o diretamente ao secret store e ao Cron. Não registre a saída em documentação ou Git.
+O gateway JWT da Function deve permanecer habilitado. Antes do rollout, valide em homologação que a chamada do Cron com a credencial guardada no Vault passa pelo gateway e que o segredo de cron é conferido pela Function; não contorne um 401 desabilitando a validação JWT. Nenhum segredo deve ser copiado para migrations ou documentação.
 
-## Publicação após autorização
+## Cadência e confiabilidade
 
-1. Faça backup e revisão das migrations, confirme a publicação do frontend compatível e confira a sequência/estado das migrations no projeto; programe janela apropriada.
-2. **Somente com autorização explícita**, aplique as migrations versionadas pelo fluxo de deploy de banco aprovado.
-3. **Somente com autorização explícita**, faça deploy de `supabase/functions/alertas` preservando o gateway JWT padrão (não configurar `verify_jwt = false`).
-4. Cadastre os secrets acima no projeto Supabase correto. Não exponha service role nem chave VAPID privada ao navegador.
+- Geração de notificações internas: diariamente às 09:00 UTC, conforme a convenção existente no projeto; a janela de antecedência é a definida pelo gerente/admin para cada loja.
+- Push pessoal: o dispatcher é chamado a cada minuto e materializa a regra quando o horário local configurado é alcançado na data prevista.
+- Push interno: a fila só inclui notificações criadas enquanto o Push da loja estiver autorizado; notificações anteriores à autorização não são enviadas retroativamente.
+- Chaves únicas por regra/usuário/loja/registro/validade/data local e por notificação interna evitam duplicatas durante reexecuções concorrentes.
+- As outboxes usam lease e backoff, encerrando após oito tentativas. O provedor Web Push é externo e não garante entrega estritamente uma vez; uma falha após entrega remota e antes da confirmação pode causar reenvio.
+- Notificações internas persistentes continuam como canal de consulta no app mesmo quando Push pessoal ou Push interno está desativado/indisponível.
 
-A chamada de scheduler exige o JWT padrão da Edge Function além do segredo de cron: envie `Authorization: Bearer <JWT de serviço de curta duração apropriado>` e `x-alertas-cron-secret: <secret>`. Não copie tokens/segredos para o repositório. Use um provedor de agendamento com armazenamento seguro de headers; se não houver forma segura de manter um JWT válido, escolha uma integração Supabase suportada com credenciais seguras em vez de desativar a validação JWT do gateway. Não usar anon key como autenticação do dispatch.
+## Rollout seguro
 
-## Agendamento sugerido
+1. Revisar as migrations, contratos de RLS e sequência no ambiente de homologação.
+2. Confirmar os secrets requeridos no Vault/Supabase sem revelar valores.
+3. Aplicar migrations apenas com autorização explícita e pelo fluxo de deploy aprovado.
+4. Fazer deploy da Edge Function apenas com autorização explícita, mantendo JWT habilitado.
+5. Testar como gerente/admin a configuração compartilhada e autorização do Push interno; confirmar que operador, assistente e analista conseguem consultar a janela da loja, mas não a alteram.
+6. Testar múltiplas regras pessoais, lojas diferentes, perfis globais, dispositivos sem subscription, retries, endpoint expirado, desligamento do Push interno e isolamento das preferências por UID.
+7. Não considerar a aceitação local dos testes como prova de aplicação de migration, configuração do Vault, execução do cron ou entrega real de Push.
 
-Configure externamente um Cron **diário às 09:00 no fuso `America/Sao_Paulo`** (`0 9 * * *`, com timezone configurado explicitamente pelo provedor). POST para a URL da Function `alertas` com JSON `{"action":"dispatch"}` e headers `Content-Type: application/json`, `Authorization: Bearer ...` e `x-alertas-cron-secret: ...`. Configure retries limitados e alertas operacionais sem registrar headers nem corpo de subscriptions.
+## Google Calendar pessoal
 
-O cron **não está configurado** nesta entrega. A RPC gera alertas de validade até `ajustes.dias` dias (fallback 30) e alertas vencidos. Chaves únicas por destinatário, registro, data de validade e tipo impedem duplicação. Registros novos sem setor válido são rejeitados; registros legados podem continuar com setor `NULL`.
+A integração Google é opcional e pertence à conta individual do usuário. Quando autorizada, os avisos pessoais são sincronizados com o calendário principal da conta Google, considerando as regras pessoais ativas, os registros das lojas às quais esse usuário tem acesso, a hora/fuso de cada regra e ocorrências futuras em uma janela limitada. Isso não habilita nem substitui o Push interno compartilhado da loja. Desconectar remove a autorização guardada pelo app; eventos já criados no Google Calendar não são apagados automaticamente.
 
-## Validação após publicação
+A sincronização automática atual é iniciada pelo PWA ao restaurar a sessão e durante a sincronização periódica da loja, com intervalo mínimo entre reconciliações; também há botão de sincronização manual. **Não existe dispatcher server-side para Calendar nesta entrega**, então mudanças de estoque não chegam ao Google enquanto o PWA do usuário não voltar a ficar ativo.
 
-1. Use ambiente de homologação com usuários de teste vinculados a pelo menos duas lojas; nunca faça o teste inicial em produção.
-2. Com JWT de usuário membro, consulte `GET ?action=public-key`, habilite push com gesto explícito do usuário no navegador e chame `POST` `{"action":"subscribe","lojaId":"…","subscription":{"endpoint":"…","keys":{"p256dh":"…","auth":"…"}}}`. Confirme que usuário sem vínculo recebe `403`.
-3. Chame `unsubscribe` autenticado e confirme que somente o endpoint pertencente àquele usuário é removido; `lojaId` serve para validar que ele ainda tem acesso a uma loja ativa. Endpoint já vinculado a outra conta deve ser rejeitado.
-4. Registre lote e perecível por suas RPCs; confira atomicidade, autoria e setor na loja correta. Teste payload inválido, duplicidade de lote normalizada, mesmo `p_id`, ausência de acesso à loja e setor inválido.
-5. Execute dispatch com credenciais válidas em homologação. Confirme notificações internas, ausência de notificações duplicadas em reexecução, escopo estrito por loja, envio push e remoção de subscriptions que respondam 404/410. Teste também segredo incorreto e falta de configuração VAPID.
-6. Verifique a tela de notificações e o estado `lida_em` com usuário destinatário; teste tentativa de leitura/alteração por outro usuário.
+Os IDs determinísticos e o mapping por usuário tornam as tentativas repetidas idempotentes: se duas sincronizações criarem o mesmo evento ao mesmo tempo, a resposta `409` é reconciliada atualizando o evento existente; eventos previamente mapeados que sumiram do Calendar são verificados e recriados com o mesmo ID. Se o Google responder `invalid_grant` ao renovar o token, a conexão local é removida e a interface pede que o usuário conecte novamente; a falha não expõe nem registra o refresh token.
 
-## Limitações e permissões
+O OAuth deve ser iniciado no servidor após validar o JWT Supabase e usar um `state` aleatório de uso único no callback HTTPS. O refresh token é cifrado no backend e nunca enviado ao PWA. Use o scope mínimo necessário, preferencialmente `https://www.googleapis.com/auth/calendar.events.owned`, e o calendário `primary`; a API permite criar eventos com horário e fuso IANA. Consulte a [documentação oficial do fluxo OAuth Web Server](https://developers.google.com/identity/protocols/oauth2/web-server), [scopes do Calendar](https://developers.google.com/workspace/calendar/api/auth) e [criação de eventos](https://developers.google.com/workspace/calendar/api/v3/reference/events/insert).
 
-- Notificações internas são persistentes; RLS permite leitura e atualização apenas pelo destinatário que ainda seja membro da loja. A criação é restrita a `service_role` por grants, sem policy de inserção para clientes.
-- Subscriptions são associadas ao usuário e ao aparelho, com endpoint único global; assim, o mesmo usuário pode receber alertas das lojas às quais continua vinculado. A Function valida membership ao ativar e administra subscriptions via service role. As chaves/endpoint são dados sensíveis; não devem ser logados nem enviados a analytics.
-- Push depende de navegador compatível, permissão explícita, service worker instalado, conexão e endpoint ainda válido. O envio pode falhar ou ser atrasado; a notificação interna persiste como canal de fallback.
-- A remoção automática ocorre em respostas HTTP 404/410. Outras falhas são contabilizadas sem registrar endpoint/chaves; considere métricas agregadas e política de retry no scheduler.
-- A camada não substitui os controles atuais de acesso por loja. Revisar políticas e grants das migrations anteriores antes de aplicar.
+Para habilitar em produção, o proprietário do projeto precisa ativar Google Calendar API no Google Cloud, configurar a tela de consentimento e registrar um OAuth Client ID do tipo Web. A URI de callback HTTPS deve coincidir exatamente com a URI configurada no Google Cloud. O tipo External em estado Testing aplica expiração curta aos refresh tokens quando se pedem scopes do Calendar; a documentação do Google informa sete dias nesse cenário. Para uso contínuo, configure o público/publicação e conclua a verificação exigida para o scope e público escolhidos ([OAuth consent e verificação](https://developers.google.com/workspace/guides/configure-oauth-consent), [ciclo de vida dos refresh tokens](https://developers.google.com/identity/protocols/oauth2)).
+
+O backend requer os secrets `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALENDAR_REDIRECT_URI` e uma chave de 32 bytes em Base64 chamada `GOOGLE_CALENDAR_TOKEN_KEY`, além do Supabase Edge Function runtime. Configure os valores somente no cofre de secrets da Edge Function; não os coloque em `config.json`, HTML, GitHub, issue ou log. A Function que recebe o callback Google precisa de `verify_jwt=false` no gateway porque o navegador retorna do Google sem JWT Supabase; seus endpoints de status, autorização, sincronização e desconexão continuam validando o JWT Supabase dentro da Function. O rollout dessa integração exige credenciais e consentimento Google configurados pelo proprietário e não está concluído apenas por existir código local.
