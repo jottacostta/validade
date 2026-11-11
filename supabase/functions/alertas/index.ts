@@ -116,6 +116,43 @@ Deno.serve(async (req) => {
     return json({ notificacoes: notifications.length, enviados, removidas, falhas });
   }
 
+  // Push de um alerta personalizado: só o remetente, só de um envio recente gravado por
+  // public.enviar_alerta_personalizado (que já validou a permissão `alertas_enviar`).
+  if (action === "custom-push") {
+    const user = await authenticatedUser(req);
+    if (!user) return json({ error: "JWT inválido" }, 401);
+    const envioId = typeof body.envioId === "string" ? body.envioId : "";
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(envioId)) return json({ error: "Envio inválido" }, 400);
+    const publicKey = env("VAPID_PUBLIC_KEY"), privateKey = env("VAPID_PRIVATE_KEY"), subject = env("VAPID_SUBJECT");
+    if (!publicKey || !privateKey || !subject) return json({ error: "Credenciais VAPID não configuradas" }, 503);
+    const desde = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const { data: rows, error } = await admin.from("notificacoes").select("user_id,titulo,mensagem")
+      .eq("tipo", "sistema_personalizado").eq("payload->>envio_id", envioId).eq("payload->>remetente_id", user.id)
+      .gte("criado", desde).limit(5000);
+    if (error) return json({ error: "Falha ao consultar o envio" }, 500);
+    if (!rows || rows.length === 0) return json({ error: "Envio não encontrado" }, 404);
+    webpush.setVapidDetails(subject, publicKey, privateKey);
+    const payload = JSON.stringify({ title: rows[0].titulo, body: rows[0].mensagem, tag: `personalizado-${envioId}`, data: { tipo: "sistema_personalizado" } });
+    const ids = [...new Set(rows.map((r: { user_id: string }) => r.user_id))];
+    let enviados = 0, removidas = 0, falhas = 0;
+    for (let i = 0; i < ids.length; i += 200) {
+      const { data: subs, error: subsErr } = await admin.from("push_subscriptions")
+        .select("id,endpoint,p256dh,auth").in("owner_id", ids.slice(i, i + 200));
+      if (subsErr) { falhas++; continue; }
+      for (const sub of subs ?? []) {
+        try {
+          await webpush.sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, payload);
+          enviados++;
+        } catch (e) {
+          const status = Number((e as { statusCode?: number }).statusCode ?? 0);
+          if (status === 404 || status === 410) { await admin.from("push_subscriptions").delete().eq("id", sub.id); removidas++; }
+          else falhas++;
+        }
+      }
+    }
+    return json({ destinatarios: ids.length, enviados, removidas, falhas });
+  }
+
   if (action !== "subscribe" && action !== "unsubscribe") return json({ error: "Ação inválida" }, 400);
   const user = await authenticatedUser(req);
   if (!user) return json({ error: "JWT inválido" }, 401);
