@@ -33,7 +33,7 @@ test('frontend não lê nome do produto da tabela de associação', () => {
 });
 
 test('perfis autorizados a cadastrar e campos de setor validados no cliente', () => {
-  assert.match(app, /if\(acao==='registrar'\)return \['operador','assistente','analista','gerente'\]\.includes\(p\);/);
+  assert.match(app, /if\(acao==='registrar'\)return \['operador','assistente','analista','gerente'\]\.includes\(p\)&&temPermissao\('registrar'\);/);
   assert.match(app, /SETORES\.includes\(setor\)/);
   assert.match(app, /p_setor:setor/);
 });
@@ -364,4 +364,28 @@ test('correção de nome do catálogo: solicitação com avaliação e trava no 
   assert.match(m, /create trigger catalogo_nome_guard\s+before update on public\.catalogo/);
   assert.match(app, /rpc\/solicitar_correcao_nome/);
   assert.match(app, /rpc\/revisar_correcao_nome/);
+});
+
+test('perfis de acesso: permissões por papel gravadas e validadas no banco', () => {
+  const m = fs.readFileSync(path.join(root, 'supabase/migrations/20261111070000_perfis_de_acesso.sql'), 'utf8');
+  assert.match(m, /create table if not exists public\.papel_permissoes/);
+  assert.match(m, /check \(papel in \('operador','assistente','analista','gerente'\)\)/, 'administrador não é editável');
+  assert.match(m, /alter table public\.papel_permissoes enable row level security/);
+  assert.doesNotMatch(m, /grant[^;]*\b(insert|update|delete)\b[^;]*on public\.papel_permissoes/i);
+  const definir = m.slice(m.indexOf('function public.definir_permissao_papel'));
+  assert.match(definir, /security definer\s+set search_path\s*=\s*''/);
+  assert.match(definir, /auth\.uid\(\) is null/);
+  assert.match(definir, /is distinct from 'admin'/, 'só administrador define permissões');
+  assert.match(definir, /insert into public\.auditoria/);
+  assert.match(m, /revoke all on function public\.definir_permissao_papel\(text,text,boolean\) from public, ?anon/);
+  const tem = m.slice(m.indexOf('function private.tem_permissao'), m.indexOf('function public.definir_permissao_papel'));
+  assert.match(tem, /v_papel = 'admin' then return true/);
+  assert.match(tem, /from public\.papel_permissoes/);
+  assert.match(m, /private\.tem_permissao\('nome_editar'\)/, 'edição e avaliação de nome obedecem à permissão');
+  assert.match(m, /private\.tem_permissao\('nome_solicitar'\)/);
+  // a lista de permissões do app e a do banco são a mesma
+  const noApp = [...app.matchAll(/\{id:'([a-z_]+)',grupo:'(?:basica|especial)'/g)].map(x => x[1]).sort();
+  const noBanco = [...m.slice(m.indexOf('function private.permissao_padrao'), m.indexOf('function private.tem_permissao')).matchAll(/\('([a-z_]+)',\s*array\[/g)].map(x => x[1]).sort();
+  assert.ok(noApp.length >= 10); assert.deepEqual(noApp, noBanco);
+  assert.match(app, /rpc\/definir_permissao_papel/);
 });

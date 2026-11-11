@@ -1731,3 +1731,70 @@ for (const [papel, chave, depois] of [['admin', 'alertas', 'sobre'], ['gerente',
   assert.strictEqual(await a.p.isVisible('#pushCard'), false);
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
+
+/* Perfis de acesso: o administrador define as permissões de cada perfil. */
+const rotasPerm = (p, papel, linhas, cap) => rotasBase(p, papel).then(async () => {
+  await p.route(/\/rest\/v1\/papel_permissoes/, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(linhas || []) }));
+  await p.route(/\/rest\/v1\/solicitacoes_(nome|exclusao)/, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await p.route(/\/rest\/v1\/rpc\/definir_permissao_papel$/, r => { if (cap) cap.push(r.request().postDataJSON()); r.fulfill({ status: 204, body: '' }); });
+});
+const dadosNome = () => ({ prod: { '7891000315507': { lotes: [Object.assign(lote('l1', '2032-12-01', 5, 'L1'), { setor: 'Mercearia', created_by: 'u1' })] } }, cat: { '7891000315507': { nome: 'Cafe' } }, pere: { itens: {}, regs: [] } });
+const permsCarregadas = p => p.waitForFunction(() => { try { return !!JSON.parse(localStorage.getItem('validade_sync') || '{}').permissoes; } catch (e) { return false; } });
+
+tflaky('Perfis de acesso: administrador vê básicas e especiais do perfil e concede uma especial', { skip: pular }, async () => {
+  const cap = [];
+  const a = await abrirLogado(p => rotasPerm(p, 'admin', [], cap), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="usuarios"]');
+  assert.strictEqual(await a.p.isVisible('#cardPerfisAcesso'), true);
+  assert.deepStrictEqual(await a.p.locator('#permPapel option').evaluateAll(o => o.map(x => x.value)), ['operador', 'assistente', 'analista', 'gerente']);
+  await a.p.selectOption('#permPapel', 'gerente');
+  assert.ok(await a.p.locator('#permBasicas [data-perm]').count() >= 4);
+  assert.ok(await a.p.locator('#permEspeciais [data-perm]').count() >= 6);
+  assert.strictEqual(await a.p.isChecked('#permEspeciais [data-perm="nome_editar"]'), true, 'gerente já edita nome por padrão');
+  assert.strictEqual(await a.p.isDisabled('#permEspeciais [data-perm="lojas_gerenciar"]'), true, 'permissão ainda não ligada ao servidor fica travada');
+  await a.p.selectOption('#permPapel', 'operador');
+  assert.strictEqual(await a.p.isChecked('#permEspeciais [data-perm="nome_editar"]'), false);
+  assert.strictEqual(await a.p.isChecked('#permBasicas [data-perm="registrar"]'), true);
+  await a.p.check('#permEspeciais [data-perm="nome_editar"]');
+  await a.p.waitForFunction(() => /salva/i.test(document.getElementById('toast').textContent));
+  assert.deepStrictEqual(cap, [{ p_papel: 'operador', p_permissao: 'nome_editar', p_permitido: true }]);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Perfis de acesso: cartão não aparece para gerente', { skip: pular }, async () => {
+  const a = await abrirLogado(p => rotasPerm(p, 'gerente', []), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'gerente', nome: 'G' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="usuarios"]');
+  assert.strictEqual(await a.p.isVisible('#cardPerfisAcesso'), false);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Perfis de acesso: operador com permissão especial edita o nome direto; gerente sem ela passa a solicitar', { skip: pular }, async () => {
+  let a = await abrirLogado(p => rotasPerm(p, 'operador', [{ papel: 'operador', permissao: 'nome_editar', permitido: true }]), dadosNome(), { papel: 'operador', nome: 'Op' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="prod"]'); await a.p.click('[data-detail-lote="l1"]'); await a.p.click('#bDetailEdit');
+  assert.strictEqual(await a.p.isVisible('#edNome'), true);
+  assert.strictEqual(await a.p.isVisible('#bSolicitarNome'), false);
+  await a.fechar();
+  a = await abrirLogado(p => rotasPerm(p, 'gerente', [{ papel: 'gerente', permissao: 'nome_editar', permitido: false }]), dadosNome(), { papel: 'gerente', nome: 'G' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="prod"]'); await a.p.click('[data-detail-lote="l1"]'); await a.p.click('#bDetailEdit');
+  assert.strictEqual(await a.p.isVisible('#bSolicitarNome'), true);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Perfis de acesso: básica desligada tira do operador a solicitação de nome; especial desligada tira Usuários do menu do gerente', { skip: pular }, async () => {
+  let a = await abrirLogado(p => rotasPerm(p, 'operador', [{ papel: 'operador', permissao: 'nome_solicitar', permitido: false }]), dadosNome(), { papel: 'operador', nome: 'Op' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="prod"]'); await a.p.click('[data-detail-lote="l1"]'); await a.p.click('#bDetailEdit');
+  assert.strictEqual(await a.p.isVisible('#edLote'), true);
+  assert.strictEqual(await a.p.isVisible('#edNome'), false);
+  await a.fechar();
+  a = await abrirLogado(p => rotasPerm(p, 'gerente', [{ papel: 'gerente', permissao: 'usuarios_gerenciar', permitido: false }]), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'gerente', nome: 'G' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="aj"]');
+  assert.strictEqual(await a.p.locator('#sysMenu [data-sys-open="usuarios"]').count(), 0);
+  assert.strictEqual(await a.p.locator('#sysMenu [data-sys-open="relatorios"]').count(), 1);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
