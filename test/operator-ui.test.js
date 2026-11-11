@@ -241,3 +241,17 @@ test('Google Calendar fica no cartão pessoal, independente do Push interno da l
   assert.match(html, /Os eventos já criados no Google serão mantidos/);
   assert.match(html, /Date\.now\(\)-calendarUltimoSync<300000/);
 });
+
+test('Aviso do sistema: banner global só exibe personalizados não lidos e confirma a linha do usuário', () => {
+  assert.match(html, /id="systemAlertBanner"[^>]*role="alert"[^>]*aria-live="assertive"[^>]*hidden/);
+  assert.match(html, /id="systemAlertTitle"/);
+  assert.match(html, /id="systemAlertMessage"/);
+  assert.match(html, /id="bSystemAlertOk"[^>]*>OK<\/button>/);
+  assert.match(html, /String\(x\.tipo\|\|''\)\.toLowerCase\(\)==='sistema_personalizado'&&!x\.lida_em/);
+  assert.match(html, /\$\('systemAlertTitle'\)\.textContent=String\(n\.titulo/);
+  assert.match(html, /\$\('systemAlertMessage'\)\.textContent=String\(n\.mensagem/);
+  assert.match(html, /notificacoes\?loja_id=eq\.'\+encodeURIComponent\(SESS\.lojaId\)\+'&id=eq\.'\+encodeURIComponent\(id\)/);
+  assert.match(html, /method:'PATCH',body:\{lida_em:quando\}/);
+  assert.match(html, /Date\.now\(\)-notificacoesConsultadasEm<60000/);
+  assert.match(html, /notificacoesEscopoCache!==escopo/);
+});

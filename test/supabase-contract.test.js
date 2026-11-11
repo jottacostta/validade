@@ -15,6 +15,7 @@ const calendarMigration = fs.readFileSync(path.join(root, 'supabase/migrations/2
 const calendarEdge = fs.readFileSync(path.join(root, 'supabase/functions/google-calendar/index.ts'), 'utf8');
 const calendarLogic = fs.readFileSync(path.join(root, 'supabase/functions/google-calendar/sync-logic.mjs'), 'utf8');
 const edge = fs.readFileSync(path.join(root, 'supabase/functions/alertas/index.ts'), 'utf8');
+const cronAlertsFix = fs.readFileSync(path.join(root, 'supabase/migrations/20261111173500_gerar_alertas_via_edge_function.sql'), 'utf8');
 const build = fs.readFileSync(path.join(root, 'build.js'), 'utf8');
 
 test('sincronização lê associação loja/EAN e busca a ficha no catálogo compartilhado', () => {
@@ -180,7 +181,7 @@ test('troca de senha voluntária passa pela função do servidor, que confere a 
   assert.doesNotMatch(app, /service_role|SERVICE_ROLE/);
 });
 
-test('alertas de validade são gerados diariamente pelo agendador do banco, sem segredo embutido', () => {
+test('migration inicial histórica agenda alertas por SQL sem embutir segredo', () => {
   const m = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261110020000_agendar_alertas_validade.sql'), 'utf8');
   assert.match(m, /create extension if not exists pg_cron/);
   assert.match(m, /cron\.schedule\(\s*'gerar-alertas-validade-diario',\s*'0 9 \* \* \*',\s*\$\$select public\.gerar_alertas_validade\(\)\$\$/);
@@ -188,7 +189,7 @@ test('alertas de validade são gerados diariamente pelo agendador do banco, sem 
   assert.doesNotMatch(m, /net\.http_post|x-alertas-cron-secret|Bearer|eyJ/);
 });
 
-test('agendador diário dispara a função alertas (push) lendo endereço, chave e segredo do Vault', () => {
+test('migration histórica do dispatcher lê endereço, chave e segredo do Vault', () => {
   const m = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261110030000_agendador_dispara_push.sql'), 'utf8');
   const sql = m.split('\n').filter(l => !l.trim().startsWith('--')).join('\n');
   assert.match(sql, /cron\.schedule\(\s*'gerar-alertas-validade-diario',\s*'0 9 \* \* \*'/, 'mesmo job e horário (substitui o anterior)');
@@ -206,6 +207,7 @@ test('perfis de escopo global recebem avisos de todas as lojas; ninguém lê not
   assert.match(m, /on conflict\(user_id,dedupe_key\) do nothing/, 'deduplicação preservada');
   assert.match(m, /<> 'service_role' then raise exception/, 'continua restrita ao service_role');
   assert.match(m, /revoke all on function public\.gerar_alertas_validade\(\) from public,anon,authenticated/);
+  assert.match(m, /grant execute on function public\.gerar_alertas_validade\(\) to service_role/);
   for (const pol of ['notificacoes_sel_own_store', 'notificacoes_upd_own_store']) {
     const bloco = m.match(new RegExp('alter policy ' + pol + '[\\s\\S]*?;'))[0];
     assert.match(bloco, /user_id=\(select auth\.uid\(\)\) and \(private\.membro_da\(loja_id\) or private\.tem_escopo_global\(\)\)/, pol);
@@ -241,7 +243,7 @@ test('regras pessoais isoladas, timezone validado, outbox deduplicada e RPCs pri
   assert.match(m, /grant execute on function public\.reivindicar_alertas_push\(integer\) to service_role/);
 });
 
-test('cron diário e minutely distintos, sem duplicações e com semântica interna preservada', () => {
+test('cron diário corrigido usa Edge Function protegida e mantém dispatcher minutely separado', () => {
   const m = fs.readFileSync(path.join(root, 'supabase/migrations/20261110160000_alertas_regras_pessoais.sql'), 'utf8');
   assert.match(m, /where jobname='gerar-alertas-validade-diario' loop perform cron\.unschedule\(j\.jobid\)/);
   assert.match(m, /cron\.schedule\('gerar-alertas-validade-diario','0 9 \* \* \*',\$\$select public\.gerar_alertas_validade\(\)\$\$\)/);
@@ -249,6 +251,24 @@ test('cron diário e minutely distintos, sem duplicações e com semântica inte
   assert.match(m, /cron\.schedule\('despachar-alertas-push-minutely','\* \* \* \* \*'/);
   assert.doesNotMatch(m, /create or replace function public\.gerar_alertas_validade\(\)/, 'a migration não redefine a geração interna');
   assert.match(m, /p\.papel in \('analista','gerente','admin'\)/);
+  const fix = cronAlertsFix.split('\n').filter(l => !l.trim().startsWith('--')).join('\n');
+  assert.match(fix, /where jobname = 'gerar-alertas-validade-diario'[\s\S]*?loop\s+perform cron\.unschedule\(j\.jobid\)/);
+  assert.match(fix, /cron\.schedule\(\s*'gerar-alertas-validade-diario',\s*'0 9 \* \* \*'/);
+  assert.match(fix, /net\.http_post\(/);
+  assert.match(fix, /"action":"generate-alerts"/);
+  assert.doesNotMatch(fix, /select\s+public\.gerar_alertas_validade\(\)/, 'pg_cron não invoca diretamente RPC que exige JWT service_role');
+  for (const nome of ['alertas_function_url', 'alertas_anon_key', 'alertas_cron_secret'])
+    assert.match(fix, new RegExp(`vault\\.decrypted_secrets where name = '${nome}'`), nome);
+  assert.match(fix, /'x-alertas-cron-secret',\s*\(select decrypted_secret/);
+  assert.match(fix, /'Authorization', 'Bearer ' \|\| \(select decrypted_secret from vault\.decrypted_secrets where name = 'alertas_anon_key'\)/, 'gateway JWT continua habilitado');
+  const generation = edge.match(/if \(action === "generate-alerts"\) \{([\s\S]*?)\n  \}/);
+  assert.ok(generation, 'ação server-side de geração existe');
+  assert.match(generation[1], /cronAuthorized\(req\)/, 'rota exige segredo de cron');
+  assert.match(generation[1], /admin\.rpc\("gerar_alertas_validade"\)/, 'RPC roda pelo cliente server-side service_role');
+  assert.match(generation[1], /return json\(\{ ok: true, gerados: Array\.isArray\(data\) \? data\.length : 0 \}\)/, 'retorno não expõe dados de destinatários');
+  assert.match(edge, /function cronAuthorized\(req: Request\): boolean/);
+  assert.match(edge, /return !!expected && constantTimeEqual\(supplied, expected\)/, 'segredo só é aceito com comparação constante');
+  assert.match(edge, /const serviceKey = env\("SUPABASE_SERVICE_ROLE_KEY"\)/, 'chave de serviço permanece apenas no backend');
 });
 
 test('dispatch processa outboxes pessoal e interna e mantém segredo, VAPID e subscriptions', () => {
@@ -257,8 +277,11 @@ test('dispatch processa outboxes pessoal e interna e mantém segredo, VAPID e su
   assert.match(edge, /admin\.rpc\("reivindicar_alertas_push"/);
   assert.match(edge, /admin\.rpc\(rpc, \{ p_id: notification\.id/);
   assert.match(edge, /registrar_resultado_alerta_push_interno/);
-  assert.doesNotMatch(edge, /admin\.rpc\("gerar_alertas_validade"\)/);
+  const dispatch = edge.match(/if \(action === "dispatch"\) \{([\s\S]*?)\n  \}\n\n  \/\/ Push de um alerta personalizado/);
+  assert.ok(dispatch, 'bloco de dispatch continua independente da geração diária');
+  assert.doesNotMatch(dispatch[1], /gerar_alertas_validade/);
   assert.match(edge, /ALERTAS_CRON_SECRET/);
+  assert.match(dispatch[1], /cronAuthorized\(req\)/, 'dispatcher continua exigindo o segredo de cron');
   assert.match(edge, /VAPID_PRIVATE_KEY/);
   assert.match(edge, /eq\("owner_id", notification\.user_id\)/);
   assert.match(edge, /action !== "subscribe" && action !== "unsubscribe"/);
