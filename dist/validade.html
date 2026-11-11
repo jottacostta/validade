@@ -460,6 +460,7 @@ header .hdr-in.interna .header-bell{display:none}
 .opt-item{display:flex;align-items:center;gap:8px;width:100%;padding:9px 10px;border:1px solid #2c5373;border-radius:11px;background:#071a2b;color:#fff;text-align:left;font:inherit}
 .opt-item>span:first-child{flex:1;min-width:0}.opt-item b{display:block}.opt-item small{display:block;color:var(--mu);font-size:12px}
 .opt-note{margin:10px 0 0;font-size:12px;color:var(--mu)}
+.perm-title{margin:16px 0 6px;font-size:15px}.perm-row{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid #2c5373;font-size:14px;min-height:44px}.perm-row input{width:22px;height:22px;flex:none;margin-top:1px}.perm-row small{display:block;color:var(--mu);font-size:11.5px;margin-top:2px}.perm-row.off{opacity:.6}
 .edit-row-name{grid-template-columns:30px minmax(0,1fr)!important}.edit-row-name input{grid-column:1/-1;width:100%}
 .edit-row{display:grid;grid-template-columns:30px minmax(86px,.62fr) minmax(0,1fr);align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #2c5373}
 .edit-row:last-child{border-bottom:0}.edit-row .ico{width:26px;height:26px}.edit-row label{font-size:clamp(15px,4.2vw,18px)}
@@ -887,6 +888,14 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
   <div class="card" data-sec="auditoria" id="cardAuditoria" style="display:none"><h2>Auditoria <span class="ean">(somente admin)</span></h2><div id="listaAud"></div><button class="btn sec" id="bAudRefresh" style="margin-top:10px">Atualizar</button></div>
   <div class="card" data-sec="pereciveis" id="cardCorrecoesNome" style="display:none"><h2>Correções de nome de produto</h2><p style="font-size:13px;color:var(--mu)">Sugestões enviadas pela equipe. Ao aprovar, o nome muda no catálogo de todas as lojas.</p><div id="listaSolicitacoesNome"></div><button class="btn sec" id="bCorrecoesNomeRefresh" style="margin-top:10px">Atualizar correções</button></div>
   <div class="card" data-sec="dados" id="cardSolicitacoes" style="display:none"><h2>Solicitações de exclusão</h2><p style="font-size:13px;color:var(--mu)">Solicitações pendentes e histórico de revisão. Exclusões aprovadas são tombstones sincronizados.</p><div id="listaSolicitacoes"><div class="vazio">Carregando…</div></div><button class="btn sec" id="bSolicitacoesRefresh" style="margin-top:10px">Atualizar solicitações</button></div>
+  <div class="card" data-sec="usuarios" id="cardPerfisAcesso" style="display:none">
+    <h2>Perfis de acesso</h2>
+    <p style="font-size:13px;color:var(--mu)">Defina o que cada perfil pode fazer. Vale para todos os usuários do perfil. O Administrador tem sempre acesso total.</p>
+    <label class="f" for="permPapel">Perfil</label>
+    <select id="permPapel"><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option></select>
+    <h3 class="perm-title">Permissões básicas</h3><div id="permBasicas"></div>
+    <h3 class="perm-title">Permissões especiais</h3><p style="font-size:12px;color:var(--mu);margin:0 0 6px">Concedidas pelo Administrador quando necessário.</p><div id="permEspeciais"></div>
+  </div>
   <div class="card" data-sec="usuarios" id="cardUsuarios" style="display:none">
     <h2>Gestão de usuários <span class="ean">(assistente, analista e admin)</span></h2>
     <p style="font-size:13px;color:var(--mu)">Contas de acesso ao sistema. As permissões são validadas no servidor.</p>
@@ -1259,12 +1268,14 @@ var OPERADOR_SECOES=[
 function podeVerMenuSistema(){return ['analista','gerente','admin'].includes(papelAtual());}
 function podeVerMenuOperador(){return papelAtual()==='operador';}
 function podeVerMenuAjustes(){return podeVerMenuSistema()||podeVerMenuOperador();}
+var SECAO_PERMISSAO={usuarios:'usuarios_gerenciar',relatorios:'relatorios'};
+function secaoPermitida(item){return !!item&&item.roles.includes(papelAtual())&&(!SECAO_PERMISSAO[item.id]||temPermissao(SECAO_PERMISSAO[item.id]));}
 function secoesMenuAjustes(){return podeVerMenuOperador()?OPERADOR_SECOES:SYS_SECOES;}
-function renderMenuAjustes(){var menu=$('sysMenu');if(!menu)return;var p=papelAtual(),operador=podeVerMenuOperador();$('sysMenuTitle').textContent=operador?'Ajustes do Operador':'Ajustes do Sistema';$('sysMenuSubtitle').textContent=operador?'Preferências pessoais, conta e informações do aplicativo':'Configurações, acessos e manutenção';menu.innerHTML=secoesMenuAjustes().filter(function(s){return s.roles.includes(p);}).map(function(s){return '<button class="sys-menu-item" type="button" data-sys-open="'+s.id+'"><span class="sys-menu-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">'+s.icon+'</svg></span><span class="sys-menu-copy"><b>'+s.titulo+'</b><small>'+s.sub+'</small></span><svg class="ico sys-menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>';}).join('');}
+function renderMenuAjustes(){var menu=$('sysMenu');if(!menu)return;var p=papelAtual(),operador=podeVerMenuOperador();$('sysMenuTitle').textContent=operador?'Ajustes do Operador':'Ajustes do Sistema';$('sysMenuSubtitle').textContent=operador?'Preferências pessoais, conta e informações do aplicativo':'Configurações, acessos e manutenção';menu.innerHTML=secoesMenuAjustes().filter(secaoPermitida).map(function(s){return '<button class="sys-menu-item" type="button" data-sys-open="'+s.id+'"><span class="sys-menu-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">'+s.icon+'</svg></span><span class="sys-menu-copy"><b>'+s.titulo+'</b><small>'+s.sub+'</small></span><svg class="ico sys-menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>';}).join('');}
 function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var menu=podeVerMenuAjustes(),op=podeVerMenuOperador(),ids=['profileArea','settingsRefArea','preferencesArea','passwordArea','aboutArea','sysMenuCard','sysSectionHead','sysSectionView','pushCard'];ids.forEach(function(id){if($(id))$(id).style.display='none';});
   $('preferencesArea').removeAttribute('data-sec-ativa');$('sysReportsPanel').style.display='none';
   if(v==='system'||(v==='settings'&&menu)){$('sysMenuCard').hidden=false;$('sysMenuCard').style.display=menu?'':'none';renderMenuAjustes();}
-  else if(v==='syssection'){var item=SYS_SECOES.concat(OPERADOR_SECOES).find(function(s){return s.id===sysSecAtual;});if(!item||!item.roles.includes(papelAtual())){mostrarVistaAjustes('system');return;}
+  else if(v==='syssection'){var item=SYS_SECOES.concat(OPERADOR_SECOES).find(function(s){return s.id===sysSecAtual;});if(!secaoPermitida(item)){mostrarVistaAjustes('system');return;}
     $('sysSectionHead').style.display='';$('sysSectionTitle').textContent=item.titulo;$('sysSectionSubtitle').textContent=item.sub;
     if(item.id==='op-perfil'){$('profileArea').style.display='';}
     else if(item.id==='op-preferencias'){$('settingsRefArea').style.display='';$('preferencesArea').style.display='';$('preferencesArea').dataset.secAtiva='operador';}
@@ -1286,7 +1297,7 @@ function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var men
   document.querySelectorAll('#settingsTabs [data-settings-view]').forEach(function(b){var on=b.dataset.settingsView===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
   if($('screenTitle'))$('screenTitle').textContent=(v==='system'||(v==='settings'&&menu))?(op?'Ajustes do Operador':'Ajustes do Sistema'):v==='syssection'?$('sysSectionTitle').textContent:AJ_TITULOS[v];
   if(v==='password')limparTrocaSenha();renderConfiguracoes();window.scrollTo(0,0);}
-function abrirSecaoSistema(key){var item=SYS_SECOES.concat(OPERADOR_SECOES).find(function(s){return s.id===key;});if(!item||!item.roles.includes(papelAtual())){toast('Acesso não autorizado a esta seção.');return;}
+function abrirSecaoSistema(key){var item=SYS_SECOES.concat(OPERADOR_SECOES).find(function(s){return s.id===key;});if(!secaoPermitida(item)){toast('Acesso não autorizado a esta seção.');return;}
   if(key==='perfil'){mostrarVistaAjustes('profile');return;}if(key==='sobre'){mostrarVistaAjustes('about');return;}if(key==='catalogo'){ir('catalogo');return;}
   sysSecAtual=key;mostrarVistaAjustes('syssection');}
 $('sysMenu').onclick=function(e){var b=e.target.closest('[data-sys-open]');if(b)abrirSecaoSistema(b.dataset.sysOpen);};
@@ -1314,7 +1325,7 @@ function ir(v){if(v==='catalogo'&&!podeVerCatalogo()){toast('O catálogo é excl
   if($('slogan'))$('slogan').textContent=(interna&&subtitulosTela[v])||CFG.slogan||'Área do Operador';
   if($('operatorRolePill'))$('operatorRolePill').hidden=!interna;
   document.querySelectorAll('#abas button').forEach(function(b){b.classList.toggle('on',b.dataset.v===(v==='reg'?'home':v==='busca'?'prod':v==='catalogo'?'aj':v==='detail'||v==='edit'?areaContextual:v));});
-  if(v==='home')renderHome();if(v==='busca')renderBusca();if(v==='catalogo')renderCatalogo();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();mostrarVisaoAlertas('alerts');}if(v==='aj'){renderPerfilOperador();ajustes();carregarSolicitacoesExclusao();carregarSolicitacoesNome();mostrarVistaAjustes(podeVerMenuAjustes()?'system':'settings');}window.scrollTo(0,0);}
+  if(v==='home')renderHome();if(v==='busca')renderBusca();if(v==='catalogo')renderCatalogo();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();mostrarVisaoAlertas('alerts');}if(v==='aj'){renderPerfilOperador();ajustes();carregarSolicitacoesExclusao();carregarSolicitacoesNome();renderPerfisAcesso();mostrarVistaAjustes(podeVerMenuAjustes()?'system':'settings');}window.scrollTo(0,0);}
 $('headerBack').onclick=function(){if(vistaAtual==='aj'&&ajVista==='syssection'){mostrarVistaAjustes('system');return;}if(vistaAtual==='aj'&&podeVerMenuAjustes()&&['password','about','profile'].includes(ajVista)){mostrarVistaAjustes('system');return;}if(vistaAtual==='aj'&&(ajVista==='password'||ajVista==='about')){mostrarVistaAjustes('settings');return;}ir(vistaAnterior==='reg'?'home':vistaAnterior||'home');};
 $('abas').onclick=function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.v==='pere')subPere('lista');ir(b.dataset.v);};
 $('alertViewTabs').onclick=function(e){var b=e.target.closest('[data-alert-view]');if(b)mostrarVisaoAlertas(b.dataset.alertView);};
@@ -1521,7 +1532,7 @@ function lotesDoAtual(){var p=D.prod[atual];if(!p||!p.lotes.length){$('pLotes').
 function ordenar(ls){return ls.slice().sort(function(a,b){return (a.val||'9').localeCompare(b.val||'9');});}
 var registroContexto=null;
 function formatadoEm(v){if(!v)return '—';var d=new Date(v);return isNaN(d.getTime())?'—':d.toLocaleString('pt-BR');}
-function podeEditarLote(l){if(!sbOn())return true;var proprio=!!(SESS&&SESS.uid&&l.created_by===SESS.uid),papel=papelAtual();return ['analista','gerente','admin'].includes(papel)||(['operador','assistente'].includes(papel)&&proprio);}
+function podeEditarLote(l){if(!sbOn())return true;var proprio=!!(SESS&&SESS.uid&&l.created_by===SESS.uid);return temPermissao('registros_editar_outros')||(proprio&&temPermissao('editar_proprios'));}
 function dataHoraRef(v){if(!v)return '—';var d=new Date(v);if(isNaN(d.getTime()))return '—';return d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
 function linhaInfo(i,rotulo,valor){return '<div class="info-row">'+ic(i)+'<span>'+rotulo+'</span><b>'+valor+'</b></div>';}
 function valorValidade(v){var x=seloValidade(v);return x.c==='da'?'<span class="val-da">'+fdata(v)+'</span> <em class="val-da-t">('+esc(x.t)+')</em>':fdata(v);}
@@ -1550,8 +1561,8 @@ function abrirDetalhePere(id){var r=D.pere.regs.filter(function(x){return x.id==
   var local=!sbOn()||!logado(),own=!!(SESS&&SESS.uid&&(r.created_by===SESS.uid||!r.created_by)),full=['analista','gerente','admin'].includes(papelAtual());fimDetalhe(r,local||full||own);}
 /* Nome do produto: gerente e administrador alteram direto (no modo local o papel é admin);
    os demais perfis enviam a correção para avaliação. O servidor valida as duas regras. */
-function podeEditarNomeProduto(){return ['gerente','admin'].includes(papelAtual());}
-function prepararNomeEdicao(nome,tipo){var direto=podeEditarNomeProduto(),pedir=!direto&&tipo==='lote'&&sbOn()&&logado();
+function podeEditarNomeProduto(){return temPermissao('nome_editar');}
+function prepararNomeEdicao(nome,tipo){var direto=podeEditarNomeProduto(),pedir=!direto&&tipo==='lote'&&sbOn()&&logado()&&temPermissao('nome_solicitar');
   $('editNameFields').style.display=(direto||pedir)?'':'none';$('editNameRequest').style.display=pedir?'':'none';
   $('edNomeLabel').textContent=pedir?'Sugerir correção do nome':'Nome do produto';$('edNome').value=nome||'';}
 function limparNome(v){return String(v||'').replace(/\s+/g,' ').trim();}
@@ -1584,7 +1595,7 @@ function revisarCorrecaoNome(id,aprovar){
     .catch(function(e){toast(e.message||'Falha ao avaliar a correção');});}
 function abrirEdicaoLote(id,ean){var p=D.prod[ean],l=p&&p.lotes.filter(function(x){return x.id===id;})[0];if(!l)return;if(!podeEditarLote(l)){toast('Você só pode editar suas próprias inserções');return;}
   registroContexto={tipo:'lote',id:id,ean:ean};$('editProdFields').style.display='';$('editPereFields').style.display='none';$('edLote').value=l.lote||'';$('edVal').value=l.val||'';$('edQtd').value=l.qtd||'';$('edSetor').value=l.setor||'';prepararNomeEdicao(detalheProduto(ean).nome||'','lote');$('editProductName').textContent=detalheProduto(ean).nome||ean;$('editProductMeta').textContent='EAN: '+ean;$('editThumb').innerHTML=miniatura(detalheProduto(ean).img,'lote');pintarChip($('editStatus'),seloValidade(l.val));ir('edit');}
-function abrirEdicaoPere(id){var r=D.pere.regs.filter(function(x){return x.id===id;})[0];if(!r)return;var local=!sbOn()||!logado(),own=!!(SESS&&SESS.uid&&(r.created_by===SESS.uid||!r.created_by)),full=['analista','gerente','admin'].includes(papelAtual());if(!local&&!full&&!own){toast('Você só pode editar seus próprios registros');return;}
+function abrirEdicaoPere(id){var r=D.pere.regs.filter(function(x){return x.id===id;})[0];if(!r)return;var local=!sbOn()||!logado(),own=!!(SESS&&SESS.uid&&(r.created_by===SESS.uid||!r.created_by)),full=temPermissao('registros_editar_outros');own=own&&temPermissao('editar_proprios');if(!local&&!full&&!own){toast('Você só pode editar seus próprios registros');return;}
   registroContexto={tipo:'pere',id:id,cod:r.cod};$('editProdFields').style.display='none';$('editPereFields').style.display='';$('edSif').value=r.sif||'';$('edPereVal').value=fdata(r.val);$('edPeso').value=r.peso||'';$('edPereSetor').value=r.setor||'';prepararNomeEdicao((D.pere.itens[r.cod]||{}).desc||'','pere');$('editProductName').textContent=(D.pere.itens[r.cod]||{}).desc||('Código '+r.cod);$('editProductMeta').textContent='PLU: '+r.cod+' · Perecível';$('editThumb').innerHTML=miniatura('','pere');pintarChip($('editStatus'),seloValidade(r.val));ir('edit');}
 document.addEventListener('click',function(e){var b;
   if((b=e.target.closest('[data-register-ean]'))){if(!pode('registrar')){toast('Seu perfil não permite registrar produtos');return;}mostrarEscolhaRegistro();ir('reg');$('bTipoIndustrial').click();$('tCodigo').value=b.dataset.registerEan;$('bBuscar').click();return;}
@@ -1604,7 +1615,7 @@ $('bEditSave').onclick=function(){if(!registroContexto)return;var ctx=registroCo
     var qtd=num($('edQtd').value),val=$('edVal').value,lote=$('edLote').value.trim().toUpperCase(),setor=$('edSetor').value;if(!lote||!val||!SETORES.includes(setor)||qtd<=0){toast('Confira lote, validade, quantidade e setor');return;}
     var nomeNovo=nomeEditado();if(nomeNovo&&nomeNovo!==(detalheProduto(ctx.ean).nome||'')){if(p.desc)p.desc=nomeNovo;catalogar(ctx.ean,{nome:nomeNovo});auditar('editou_nome_produto',{ean:ctx.ean,nome:nomeNovo});}
     l.rpcConfirmado=false;l.lote=lote;l.val=val;l.qtd=qtd;l.setor=setor;l.atualizado=Date.now();auditar('editou_lote_proprio',{ean:ctx.ean,id:l.id,qtd:qtd,val:val,lote:lote,setor:setor});salvar();cancelarLembrete(l.id);lembrete(l,detalheProduto(ctx.ean).nome);listaProdutos();abrirDetalheLote(l.id,ctx.ean);vistaAnterior=areaContextual;toast('Alterações salvas neste aparelho');return;}
-  var r=D.pere.regs.filter(function(x){return x.id===ctx.id;})[0];if(!r)return;var local=!sbOn()||!logado(),own=!!(SESS&&SESS.uid&&(r.created_by===SESS.uid||!r.created_by)),full=['analista','gerente','admin'].includes(papelAtual());if(!local&&!full&&!own){toast('Você só pode editar seus próprios registros');return;}
+  var r=D.pere.regs.filter(function(x){return x.id===ctx.id;})[0];if(!r)return;var local=!sbOn()||!logado(),own=!!(SESS&&SESS.uid&&(r.created_by===SESS.uid||!r.created_by)),full=temPermissao('registros_editar_outros');own=own&&temPermissao('editar_proprios');if(!local&&!full&&!own){toast('Você só pode editar seus próprios registros');return;}
   var peso=num($('edPeso').value),valPe=lerData($('edPereVal').value),sif=$('edSif').value.trim(),setorPe=$('edPereSetor').value;if(peso<=0||!valPe||!SETORES.includes(setorPe)){toast('Confira peso, validade e setor');return;}
   var nomePe=nomeEditado(),itPe=D.pere.itens[r.cod];if(nomePe&&itPe&&nomePe!==itPe.desc){itPe.desc=nomePe;auditar('editou_nome_produto',{cod:r.cod,nome:nomePe});}
   r.rpcConfirmado=false;r.peso=peso;r.val=valPe;r.sif=sif;r.setor=setorPe;r.atualizado=Date.now();salvar();cancelarLembrete(r.id);lembrete(r,(D.pere.itens[r.cod]||{}).desc||('código '+r.cod));listaPere();abrirDetalhePere(r.id);vistaAnterior=areaContextual;toast('Alterações salvas neste aparelho');};
@@ -2044,9 +2055,51 @@ $('bVoltarLoja').onclick=fecharConta;
 $('bSairConta').onclick=sairParaLogin;
 $('bLogoutHdr').onclick=function(){if(!logado())return;if(confirm('Sair da conta?'))sairParaLogin();};
 var PAPEIS={operador:'Operador',assistente:'Assistente',analista:'Analista',gerente:'Gerente',admin:'Administrador'};
+/* ───── Perfis de acesso ─────
+   Mesma lista de private.permissao_padrao (migration perfis_de_acesso). `padrao` = perfis que já têm a permissão;
+   `teto` = perfis que o servidor aceita hoje. Com `servidor:true` o banco já lê a tabela e qualquer perfil pode receber;
+   sem isso, o app só consegue restringir dentro do teto (a regra do servidor ainda é fixa). */
+var PAPEIS_EDITAVEIS=['operador','assistente','analista','gerente'],TODOS4=PAPEIS_EDITAVEIS;
+var PERMISSOES=[
+ {id:'registrar',grupo:'basica',titulo:'Registrar produtos e perecíveis',padrao:TODOS4,teto:TODOS4},
+ {id:'editar_proprios',grupo:'basica',titulo:'Editar os próprios registros',padrao:TODOS4,teto:TODOS4},
+ {id:'solicitar_exclusao',grupo:'basica',titulo:'Solicitar exclusão de registro',padrao:TODOS4,teto:TODOS4},
+ {id:'nome_solicitar',grupo:'basica',titulo:'Solicitar correção de nome de produto',padrao:TODOS4,teto:TODOS4,servidor:true},
+ {id:'relatorios',grupo:'basica',titulo:'Ver e exportar relatórios',padrao:['analista','gerente'],teto:['analista','gerente']},
+ {id:'registros_editar_outros',grupo:'especial',titulo:'Editar registros de outros usuários',padrao:['analista','gerente'],teto:['analista','gerente']},
+ {id:'exclusoes_aprovar',grupo:'especial',titulo:'Aprovar ou rejeitar exclusões',padrao:['assistente','analista','gerente'],teto:['assistente','analista','gerente']},
+ {id:'nome_editar',grupo:'especial',titulo:'Editar nome de produto e aprovar correções',padrao:['gerente'],teto:TODOS4,servidor:true},
+ {id:'usuarios_gerenciar',grupo:'especial',titulo:'Gerenciar usuários',padrao:['analista','gerente'],teto:['analista','gerente']},
+ {id:'alertas_loja_configurar',grupo:'especial',titulo:'Alterar a configuração de alertas da loja',padrao:['gerente'],teto:[]},
+ {id:'avisos_todas_lojas',grupo:'especial',titulo:'Receber avisos de todas as lojas',padrao:['analista','gerente'],teto:[]},
+ {id:'lojas_gerenciar',grupo:'especial',titulo:'Gerenciar lojas',padrao:[],teto:[]},
+ {id:'catalogo_gerenciar',grupo:'especial',titulo:'Catálogo de Produtos',padrao:[],teto:[]},
+ {id:'auditoria_ver',grupo:'especial',titulo:'Auditoria do Sistema',padrao:[],teto:[]},
+ {id:'dados_manutencao',grupo:'especial',titulo:'Backup e manutenção de dados',padrao:[],teto:[]}
+];
+function permissaoDef(id){return PERMISSOES.filter(function(x){return x.id===id;})[0];}
+function permissaoEditavel(def,papel){return !!def.servidor||def.teto.includes(papel);}
+function permissaoDoPapel(id,papel){var def=permissaoDef(id);if(!def)return false;if(papel==='admin')return true;
+  var mapa=(SYNC&&SYNC.permissoes)||{},v=mapa[papel+'|'+id];
+  if(typeof v==='boolean'&&permissaoEditavel(def,papel))return v;return def.padrao.includes(papel);}
+function temPermissao(id){return permissaoDoPapel(id,papelAtual());}
+function carregarPermissoes(){if(!sbOn()||!logado())return Promise.resolve();
+  return sbReq('/rest/v1/papel_permissoes?select=papel,permissao,permitido').then(function(r){if(!r.ok||!Array.isArray(r.dados))return;
+    var m={};r.dados.forEach(function(x){m[x.papel+'|'+x.permissao]=!!x.permitido;});SYNC.permissoes=m;salvarSync();atualizarInterfacePapel();},function(){});}
+function renderPerfisAcesso(){var card=$('cardPerfisAcesso');if(!card)return;var vis=sbOn()&&logado()&&ehAdmin();card.style.display=vis?'':'none';if(!vis)return;
+  var papel=$('permPapel').value||'operador';
+  function linhas(grupo){return PERMISSOES.filter(function(d){return d.grupo===grupo;}).map(function(d){var ed=permissaoEditavel(d,papel);
+    return '<label class="perm-row'+(ed?'':' off')+'"><input type="checkbox" data-perm="'+d.id+'"'+(permissaoDoPapel(d.id,papel)?' checked':'')+(ed?'':' disabled')+'><span>'+esc(d.titulo)+(ed?'':'<small>Regra fixa do servidor nesta etapa</small>')+'</span></label>';}).join('');}
+  $('permBasicas').innerHTML=linhas('basica');$('permEspeciais').innerHTML=linhas('especial');
+  card.querySelectorAll('[data-perm]').forEach(function(c){c.onchange=function(){definirPermissao(papel,c.dataset.perm,c.checked,c);};});}
+function definirPermissao(papel,id,valor,caixa){caixa.disabled=true;
+  sbReq('/rest/v1/rpc/definir_permissao_papel',{method:'POST',body:{p_papel:papel,p_permissao:id,p_permitido:valor}})
+    .then(function(r){if(!r.ok)throw new Error(r.dados&&r.dados.message||'Não foi possível salvar a permissão');
+      SYNC.permissoes=SYNC.permissoes||{};SYNC.permissoes[papel+'|'+id]=valor;salvarSync();toast('Permissão salva');auditar('permissao_alterada',{papel:papel,permissao:id,permitido:valor});})
+    .catch(function(e){caixa.checked=!valor;toast(e.message||'Não foi possível salvar a permissão');}).then(function(){caixa.disabled=false;});}
 function papelAtual(){return (sbOn()&&SESS&&SESS.papel)||(sbOn()?'operador':'admin');}
 function pode(acao){var p=papelAtual();if(p==='admin')return true;
-  if(acao==='registrar')return ['operador','assistente','analista','gerente'].includes(p);
+  if(acao==='registrar')return ['operador','assistente','analista','gerente'].includes(p)&&temPermissao('registrar');
   if(acao==='editar'||acao==='ajustes'||acao==='codigos')return p==='assistente'||p==='analista'||p==='gerente';
   if(acao==='admin')return false;return true;}
 function aplicarPapel(){var reg=pode('registrar'),ed=pode('editar'),aj=pode('ajustes');
@@ -2057,7 +2110,7 @@ function aplicarPapel(){var reg=pode('registrar'),ed=pode('editar'),aj=pode('aju
   var ac=$('aCosmos');if(ac)ac.disabled=false;/* token do Cosmos é pessoal: todo usuário edita o seu */
   if(!reg){var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='reg')ir('prod');}}
 function carregarPapel(){if(!sbOn()||!logado())return Promise.resolve();
-  carregarPrefs();carregarRegrasAlertas();carregarCalendarStatus();
+  carregarPrefs();carregarRegrasAlertas();carregarCalendarStatus();carregarPermissoes();
   /* Filtra pelo próprio id: admin/analista/gerente enxergam vários perfis (RLS),
      então sem o filtro o limit=1 traria o papel de OUTRO usuário. */
   var alvo='/rest/v1/perfis?select=papel,nome'+((SESS&&SESS.uid)?'&id=eq.'+encodeURIComponent(SESS.uid):'')+'&limit=1';
@@ -2227,8 +2280,9 @@ function contaCard(){atualizarContextoLoja();if(!sbOn()){$('cardConta').style.di
 
 
 // ── Solicitações de exclusão (RLS/RPC no backend) ──
-function podeRevisarExclusao(){return ['assistente','analista','gerente','admin'].includes(papelAtual());}
+function podeRevisarExclusao(){return temPermissao('exclusoes_aprovar');}
 $('bCorrecoesNomeRefresh').onclick=carregarSolicitacoesNome;
+$('permPapel').onchange=renderPerfisAcesso;
 function carregarSolicitacoesExclusao(){
   var card=$('cardSolicitacoes');if(!card)return;
   var vis=sbOn()&&logado()&&SESS.lojaId;card.style.display=vis?'':'none';if(!vis)return;
@@ -2274,6 +2328,7 @@ function adminExcluirRegistro(tipo,registroId){
 }
 function solicitarExclusao(tipo,registroId){
   if(!sbOn()||!logado()||!SESS.lojaId){toast('Entre na conta para solicitar aprovação.');return Promise.resolve(false);}
+  if(!temPermissao('solicitar_exclusao')){toast('Seu perfil não pode solicitar exclusões.');return Promise.resolve(false);}
   var motivo=prompt('Motivo para solicitar a exclusão:');if(motivo===null)return Promise.resolve(false);motivo=motivo.trim();if(motivo.length<3){toast('Informe um motivo com pelo menos 3 caracteres.');return Promise.resolve(false);}
   var item={loja_id:SESS.lojaId,tipo:tipo,registro_id:String(registroId),motivo:motivo};
   if(navigator.onLine===false){guardarSolicitacaoOffline(tipo,registroId,motivo);return Promise.resolve(true);}
