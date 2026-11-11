@@ -811,6 +811,16 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
     <div class="sys-menu-intro"><h2 id="sysMenuTitle">Ajustes do Sistema</h2><p id="sysMenuSubtitle">Configurações, acessos e manutenção</p></div>
     <div id="sysMenu" aria-label="Seções de ajustes"></div>
   </div>
+  <div class="card" data-sec="alertas" id="cardAlertaPersonalizado" style="display:none">
+    <h2>Enviar alerta personalizado</h2>
+    <p style="font-size:13px;color:var(--mu)">O aviso aparece em Notificações → Sistema de cada destinatário e chega por push para quem ativou neste aparelho.</p>
+    <label class="f" for="apTitulo">Título</label><input id="apTitulo" maxlength="80" autocomplete="off" placeholder="Ex.: Inventário amanhã">
+    <label class="f" for="apMensagem">Mensagem</label><textarea id="apMensagem" maxlength="500" rows="3" placeholder="Escreva o aviso para a equipe"></textarea>
+    <div class="row"><div><label class="f" for="apLoja">Loja</label><select id="apLoja"><option value="">Todas as lojas</option></select></div>
+      <div><label class="f" for="apPapel">Perfil</label><select id="apPapel"><option value="">Todos os perfis</option><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option><option value="admin">Administrador</option></select></div></div>
+    <p id="apStatus" class="perm-status" aria-live="polite"></p>
+    <button class="btn" id="bApEnviar" type="button">Enviar alerta</button>
+  </div>
   <div class="card" data-sec="alertas" id="pushCard">
     <h2>Alertas pessoais e Push</h2>
     <p style="margin:0 0 12px;font-size:13px;color:var(--mu)">Defina quando deseja receber avisos pessoais de antecipação. Essas regras são da sua conta e não alteram os alertas internos compartilhados pela loja.</p>
@@ -1306,6 +1316,7 @@ function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var men
   /* Alertas e Notificações é uma seção do menu; fora dele (perfis sem menu) continua em Configurações */
   var naSecaoAlertas=v==='syssection'&&(sysSecAtual==='alertas'||sysSecAtual==='op-alertas'),mostrarAlertas=naSecaoAlertas||(v==='settings'&&!menu);
   $('pushCard').style.display=mostrarAlertas?'':'none';
+  var podeEnviarAlerta=mostrarAlertas&&sbOn()&&logado()&&temPermissao('alertas_enviar');$('cardAlertaPersonalizado').style.display=podeEnviarAlerta?'':'none';if(podeEnviarAlerta)carregarLojasAlerta();
   $('settingsTabs').style.display=(v==='settings'||v==='profile')&&!menu?'':'none';
   if(logado()&&mostrarAlertas)carregarCalendarStatus();
   document.querySelectorAll('#settingsTabs [data-settings-view]').forEach(function(b){var on=b.dataset.settingsView===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
@@ -1861,6 +1872,29 @@ $('profileSessions').onclick=function(){if(!logado())return;if(!confirm('Sair de
   fetch(CFG.supaUrl+'/auth/v1/logout?scope=global',{method:'POST',headers:{apikey:CFG.supaKey,Authorization:'Bearer '+t}}).catch(function(){}).then(function(){sairParaLogin();});};
 
 function bytesChavePush(base64){var s=String(base64||'').replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';var raw=atob(s),out=new Uint8Array(raw.length);for(var i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);return out;}
+/* ───── Alertas personalizados ───── */
+var apLojasCarregadas=false,apEnviando=false;
+function carregarLojasAlerta(){if(apLojasCarregadas)return;apLojasCarregadas=true;
+  sbReq('/rest/v1/lojas?select=id,nome&order=nome.asc').then(function(r){if(!r.ok||!Array.isArray(r.dados))throw new Error('lojas');
+    var global=['analista','gerente','admin'].includes(papelAtual());
+    $('apLoja').innerHTML=(global?'<option value="">Todas as lojas</option>':'')+r.dados.map(function(l){return '<option value="'+esc(l.id)+'">'+esc(l.nome)+'</option>';}).join('');
+    if(!global&&SESS&&SESS.lojaId)$('apLoja').value=SESS.lojaId;},function(){apLojasCarregadas=false;}).catch(function(){apLojasCarregadas=false;});}
+function enviarAlertaPersonalizado(){if(apEnviando)return;var st=$('apStatus'),titulo=limparNome($('apTitulo').value),msg=$('apMensagem').value.trim();
+  st.classList.remove('pend');
+  if(titulo.length<3){st.textContent='Escreva um título com pelo menos 3 letras.';st.classList.add('pend');return;}
+  if(msg.length<3){st.textContent='Escreva a mensagem do alerta.';st.classList.add('pend');return;}
+  if(navigator.onLine===false){st.textContent='Sem internet: envie quando reconectar.';st.classList.add('pend');return;}
+  var loja=$('apLoja').value||null,papel=$('apPapel').value||null,alvo=(loja?$('apLoja').selectedOptions[0].textContent:'todas as lojas')+' · '+(papel?$('apPapel').selectedOptions[0].textContent:'todos os perfis');
+  if(!confirm('Enviar este alerta para '+alvo+'?'))return;
+  apEnviando=true;$('bApEnviar').disabled=true;st.textContent='Enviando…';
+  sbReq('/rest/v1/rpc/enviar_alerta_personalizado',{method:'POST',body:{p_titulo:titulo,p_mensagem:msg,p_loja_id:loja,p_papel:papel}}).then(function(r){
+    if(!r.ok)throw new Error(r.dados&&r.dados.message||'Não foi possível enviar o alerta');
+    var n=Number(r.dados&&r.dados.destinatarios||0),envio=r.dados&&r.dados.envio_id;
+    $('apTitulo').value='';$('apMensagem').value='';
+    st.textContent=n?('Alerta enviado para '+n+' usuário'+(n===1?'':'s')+'.'):'Nenhum usuário corresponde a esse destino.';
+    if(n&&envio)return chamarAlertas({action:'custom-push',envioId:envio}).then(function(p){st.textContent+=' Push entregue em '+Number(p.enviados||0)+' aparelho'+(Number(p.enviados||0)===1?'':'s')+'.';},
+      function(){st.textContent+=' O aviso está nas Notificações; o push não pôde ser disparado.';});
+  }).catch(function(e){st.textContent=e.message||'Não foi possível enviar o alerta';st.classList.add('pend');}).then(function(){apEnviando=false;$('bApEnviar').disabled=false;});}
 function chamarAlertas(body){return sbReq('/functions/v1/alertas',{method:'POST',body:body}).then(function(r){if(!r.ok)throw erroSQL(r,'push');return r.dados||{};});}
 function atualizarPushStatus(){var st=$('pushStatus');if(!st)return;var ok=!!(window.isSecureContext&&navigator.serviceWorker&&window.PushManager&&window.Notification);
   if(!ok){st.textContent='Push não suportado neste navegador/contexto. Os alertas internos e a lista compartilhada continuam disponíveis.';$('bPushAtivar').style.display='none';$('bPushDesativar').style.display='none';return;}
@@ -2088,6 +2122,7 @@ var PERMISSOES=[
  {id:'usuarios_excluir',grupo:'especial',titulo:'Excluir usuários',padrao:['gerente'],teto:TODOS4,servidor:true},
  {id:'alertas_loja_configurar',grupo:'especial',titulo:'Alterar a configuração de alertas da loja',padrao:['gerente'],teto:TODOS4,servidor:true},
  {id:'avisos_todas_lojas',grupo:'especial',titulo:'Receber avisos de todas as lojas',padrao:['analista','gerente'],teto:TODOS4,servidor:true},
+ {id:'alertas_enviar',grupo:'especial',titulo:'Enviar alertas personalizados',padrao:[],teto:TODOS4,servidor:true},
  {id:'lojas_gerenciar',grupo:'especial',titulo:'Gerenciar lojas',padrao:[],teto:TODOS4,servidor:true},
  {id:'catalogo_gerenciar',grupo:'especial',titulo:'Catálogo de Produtos',padrao:[],teto:TODOS4,servidor:true},
  {id:'auditoria_ver',grupo:'especial',titulo:'Auditoria do Sistema',padrao:[],teto:TODOS4,servidor:true},
@@ -2313,6 +2348,7 @@ function contaCard(){atualizarContextoLoja();if(!sbOn()){$('cardConta').style.di
 // ── Solicitações de exclusão (RLS/RPC no backend) ──
 function podeRevisarExclusao(){return temPermissao('exclusoes_aprovar');}
 $('bCorrecoesNomeRefresh').onclick=carregarSolicitacoesNome;
+$('bApEnviar').onclick=enviarAlertaPersonalizado;
 /* ───── Instalação como aplicativo (PWA) ───── */
 /* a chave não começa com 'validade_' de propósito: a migração de dados antigos trata chaves com esse prefixo como dados */
 var promptInstalar=null,INSTALL_ADIAR_MS=7*24*60*60*1000;

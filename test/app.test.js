@@ -1831,7 +1831,7 @@ tflaky('Perfis de acesso etapa 3: nenhuma permissão fica travada para o adminis
   await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="usuarios"]');
   for (const papel of ['operador', 'assistente', 'analista', 'gerente']) {
     await a.p.selectOption('#permPapel', papel);
-    assert.strictEqual(await a.p.locator('#cardPerfisAcesso [data-perm]').count(), 16);
+    assert.strictEqual(await a.p.locator('#cardPerfisAcesso [data-perm]').count(), 17);
     assert.strictEqual(await a.p.locator('#cardPerfisAcesso [data-perm]:disabled').count(), 0, papel + ': nada desabilitado');
   }
   assert.ok(!(await a.p.textContent('#cardPerfisAcesso')).includes('Regra fixa'));
@@ -1888,6 +1888,47 @@ tflaky('Perfis de acesso: trocar de perfil com alterações pendentes pede confi
   await a.p.waitForFunction(() => /não foi salv|Somente o Administrador/i.test(document.getElementById('permStatus').textContent));
   assert.strictEqual(await a.p.isDisabled('#bPermSalvar'), false, 'continua pendente para tentar de novo');
   assert.strictEqual(await a.p.isChecked('#permEspeciais [data-perm="auditoria_ver"]'), true);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+/* Alertas personalizados: quem tem a permissão envia um aviso de sistema para os usuários. */
+tflaky('Alerta personalizado: administrador envia para os usuários e o push é disparado', { skip: pular }, async () => {
+  const rpc = [], fn = [];
+  const a = await abrirLogado(async p => { await rotasPerm(p, 'admin', []);
+    await p.route(/\/rest\/v1\/lojas\?/, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ id: 'L1', nome: 'FL05' }, { id: 'L2', nome: 'FL06' }]) }));
+    await p.route(/\/rest\/v1\/rpc\/enviar_alerta_personalizado$/, r => { rpc.push(r.request().postDataJSON()); r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ envio_id: 'e-1', destinatarios: 7 }) }); });
+    await p.route(/\/functions\/v1\/alertas/, r => { if (r.request().method() === 'POST') fn.push(r.request().postDataJSON()); r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enviados: 3 }) }); }); },
+    { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="alertas"]');
+  assert.strictEqual(await a.p.isVisible('#cardAlertaPersonalizado'), true);
+  await a.p.click('#bApEnviar');
+  assert.deepStrictEqual(rpc, [], 'não envia sem título e mensagem');
+  await a.p.fill('#apTitulo', ' Inventário amanhã ');
+  await a.p.fill('#apMensagem', 'Conferir a câmara fria até as 10h.');
+  await a.p.waitForFunction(() => document.querySelectorAll('#apLoja option').length === 3);
+  await a.p.selectOption('#apLoja', 'L2'); await a.p.selectOption('#apPapel', 'operador');
+  await a.p.click('#bApEnviar');
+  await a.p.waitForFunction(() => /7 usuário/.test(document.getElementById('apStatus').textContent));
+  assert.deepStrictEqual(rpc, [{ p_titulo: 'Inventário amanhã', p_mensagem: 'Conferir a câmara fria até as 10h.', p_loja_id: 'L2', p_papel: 'operador' }]);
+  assert.ok(fn.some(b => b.action === 'custom-push' && b.envioId === 'e-1'), 'push disparado: ' + JSON.stringify(fn));
+  assert.strictEqual(await a.p.inputValue('#apTitulo'), '', 'formulário limpo após enviar');
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Alerta personalizado: só aparece para quem o administrador habilitou', { skip: pular }, async () => {
+  const rotas = linhas => async p => { await rotasPerm(p, 'operador', linhas);
+    await p.route(/\/rest\/v1\/lojas\?/, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' })); };
+  let a = await abrirLogado(rotas([]), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador', nome: 'Op' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="op-alertas"]');
+  assert.strictEqual(await a.p.isVisible('#pushCard'), true);
+  assert.strictEqual(await a.p.isVisible('#cardAlertaPersonalizado'), false);
+  await a.fechar();
+  a = await abrirLogado(rotas([{ papel: 'operador', permissao: 'alertas_enviar', permitido: true }]), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador', nome: 'Op' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="op-alertas"]');
+  assert.strictEqual(await a.p.isVisible('#cardAlertaPersonalizado'), true);
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
 

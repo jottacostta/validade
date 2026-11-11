@@ -384,7 +384,7 @@ test('perfis de acesso: permissões por papel gravadas e validadas no banco', ()
   assert.match(m, /private\.tem_permissao\('nome_solicitar'\)/);
   // a lista de permissões do app e a do banco são a mesma
   const noApp = [...app.matchAll(/\{id:'([a-z_]+)',grupo:'(?:basica|especial)'/g)].map(x => x[1]).sort();
-  const m3 = fs.readFileSync(path.join(root, 'supabase/migrations/20261111090000_permissoes_areas_administrativas.sql'), 'utf8');
+  const m3 = fs.readFileSync(path.join(root, 'supabase/migrations/20261111140000_alertas_personalizados.sql'), 'utf8');
   const noBanco = [...m3.slice(m3.indexOf('function private.permissao_padrao'), m3.indexOf('definir_permissao_papel')).matchAll(/\('([a-z_]+)',\s*array\[/g)].map(x => x[1]).sort();
   assert.ok(noApp.length >= 10); assert.deepEqual(noApp, noBanco);
   assert.match(app, /rpc\/definir_permissao_papel/);
@@ -412,11 +412,36 @@ test('perfis de acesso etapa 3: áreas administrativas obedecem às permissões 
   assert.match(fn, /revoke all on function public\.papel_tem_permissao\(text,text\) from public, anon/);
   assert.equal([...m.matchAll(/não encontrad[oa]/g)].length, 4, 'falha inteira se alguma função mudou');
   const lista = app.slice(app.indexOf('var PERMISSOES=['), app.indexOf('function permissaoDef'));
-  assert.equal([...lista.matchAll(/\{id:'/g)].length, 16);
-  assert.equal([...lista.matchAll(/teto:TODOS4,servidor:true\}/g)].length, 16, 'todas as permissões podem ser concedidas a qualquer perfil');
+  assert.equal([...lista.matchAll(/\{id:'/g)].length, 17);
+  assert.equal([...lista.matchAll(/teto:TODOS4,servidor:true\}/g)].length, 17, 'todas as permissões podem ser concedidas a qualquer perfil');
   const gerir = fs.readFileSync(path.join(root, 'supabase/functions/gerir-usuarios/index.ts'), 'utf8');
   assert.match(gerir, /rpc\("papel_tem_permissao", \{ p_papel: papelCaller, p_permissao: "usuarios_gerenciar" \}\)/);
   assert.match(gerir, /if \(permErr\) return json\(/, 'falha ao consultar permissão nega o acesso');
+});
+
+test('aprovar exclusão de registro já removido conclui a solicitação em vez de travar', () => {
+  const m = fs.readFileSync(path.join(root, 'supabase/migrations/20261111130000_aprovar_exclusao_ja_removida.sql'), 'utf8');
+  assert.match(m, /if not found then v_ja_removido := true; end if;/);
+  assert.match(m, /v_ja_removido boolean := false/);
+  assert.match(m, /'ja_removido',v_ja_removido/);
+  assert.equal([...m.matchAll(/não encontrad[oa]'; end if;\n/g)].length, 3, 'falha inteira se a função mudou');
+});
+
+test('alertas personalizados: envio validado no banco e push só pelo remetente', () => {
+  const m = fs.readFileSync(path.join(root, 'supabase/migrations/20261111140000_alertas_personalizados.sql'), 'utf8');
+  const fn = m.slice(m.indexOf('function public.enviar_alerta_personalizado'));
+  assert.match(fn, /security definer\s+set search_path = ''/);
+  assert.match(fn, /auth\.uid\(\) is null/);
+  assert.match(fn, /private\.tem_permissao\('alertas_enviar'\)/);
+  assert.match(fn, /private\.tem_escopo_global\(\)/, 'envio para todas as lojas exige alcance global');
+  assert.match(fn, /private\.membro_da\(p_loja_id\)/);
+  assert.match(fn, /insert into public\.auditoria/);
+  assert.match(m, /revoke all on function public\.enviar_alerta_personalizado\(text,text,uuid,text\) from public, ?anon/);
+  assert.match(m, /\('alertas_enviar',\s*array\[\]::text\[\]\)/, 'por padrão só o Administrador envia');
+  assert.match(app, /\{id:'alertas_enviar',grupo:'especial'/);
+  const edge = fs.readFileSync(path.join(root, 'supabase/functions/alertas/index.ts'), 'utf8');
+  assert.match(edge, /action === "custom-push"/);
+  assert.match(edge, /\.eq\("payload->>remetente_id", user\.id\)/, 'só o remetente dispara o push do próprio envio');
 });
 
 test('PWA instalável: manifest com ícones 192 e 512 e service worker registrado ao abrir', () => {
