@@ -1101,7 +1101,7 @@ tflaky('Meus Registros: cartão não repete o setor, mostra validade e selo, e p
 });
 
 tflaky('Cabeçalho: subtítulo próprio em cada tela interna; contador de alertas fica sobre o sino', { skip: pular }, async () => {
-  const a = await abrir({ dados: { prod: { '7891000315507': { lotes: [lote('v', '2020-01-01', 1, 'L1')] } }, cat: {}, pere: { itens: {}, regs: [] } } });
+  const a = await abrir({ dados: { prod: { '7891000315507': { lotes: [lote('v', new Date(Date.now() - 86400000).toISOString().slice(0, 10), 1, 'L1')] } }, cat: {}, pere: { itens: {}, regs: [] } } });
   await a.p.click('nav button[data-v="prod"]');
   assert.strictEqual(await a.p.textContent('#slogan'), 'Produtos (Industrializados)');
   await a.p.click('nav button[data-v="pere"]');
@@ -2178,4 +2178,125 @@ tflaky('Relatórios: gráfico mobile identifica quem fez mais registros e separa
     assert.match(await beatriz.textContent(), /1 lote · 1 perecível/);
     assert.deepStrictEqual(a.erros, []);
   } finally { await a.fechar(); }
+});
+
+
+const offsetValidade = dias => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + dias); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const dadoRetencao = () => {
+  const loteTeste = (id, dias, extra = {}) => Object.assign(lote(id, offsetValidade(dias), 2, 'LOTE-'+id), { setor: 'Mercearia', created_by: 'u1', created_by_nome: 'Operador 1' }, extra);
+  return {
+    prod: { '7891000315507': { lotes: [loteTeste('vence-em-2', 2), loteTeste('vencido-5', -5), loteTeste('vencido-6', -6), loteTeste('ja-recolhido', 2, { recolhido_em: '2026-11-11T12:00:00Z', recolhido_por: 'u1' })] } },
+    cat: { '7891000315507': { nome: 'Produto Retenção' } },
+    pere: { itens: { '6019': { desc: 'Perecível Retenção' } }, regs: [
+      { id: 'pere-vence-1', cod: '6019', sif: 'SIF-A', peso: 0.65, val: offsetValidade(1), setor: 'Açougue', created_by: 'u1', created_by_nome: 'Operador 1' },
+      { id: 'pere-vencido-6', cod: '6019', sif: 'SIF-B', peso: 0.4, val: offsetValidade(-6), setor: 'Açougue', created_by: 'u1', created_by_nome: 'Operador 1' },
+      { id: 'pere-recolhido', cod: '6019', sif: 'SIF-C', peso: 0.2, val: offsetValidade(2), setor: 'Açougue', created_by: 'u1', created_by_nome: 'Operador 1', recolhido_em: '2026-11-11T12:00:00Z' }
+    ] }
+  };
+};
+
+tflaky('retenção operacional: conserva o vencido até o quinto dia e oculta depois/recolhidos nos dois tipos', { skip: pular }, async () => {
+  const a = await abrir({ dados: dadoRetencao() });
+  await a.p.click('nav button[data-v="prod"]');
+  let industrializados = await a.p.textContent('#listaProd');
+  assert.ok(industrializados.includes('vence-em-2'));
+  assert.ok(industrializados.includes('vencido-5'));
+  assert.ok(!industrializados.includes('vencido-6'));
+  assert.ok(!industrializados.includes('ja-recolhido'));
+  assert.strictEqual(await a.p.textContent('#tLotes'), '2');
+  await a.p.click('nav button[data-v="pere"]');
+  const pereciveis = await a.p.textContent('#listaPe');
+  assert.ok(pereciveis.includes('SIF-A'));
+  assert.ok(!pereciveis.includes('SIF-B'));
+  assert.ok(!pereciveis.includes('SIF-C'));
+  assert.strictEqual(await a.p.textContent('#tPeTotal'), '1');
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
+
+tflaky('recolhimento: operador autorizado confirma pela RPC e o registro some sem ser apagado', { skip: pular }, async () => {
+  const chamadas = [];
+  const dados = dadoRetencao();
+  dados.prod['7891000315507'].lotes = [lote('lote-recolher', offsetValidade(3), 4, 'L-RECOLHER')];
+  Object.assign(dados.prod['7891000315507'].lotes[0], { setor: 'Mercearia', created_by: 'u1', created_by_nome: 'Operador 1' });
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'operador', []);
+    await p.route(/\/rest\/v1\/rpc\/marcar_registro_recolhido$/, async r => {
+      chamadas.push(r.request().postDataJSON());
+      return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tipo: 'lote', id: 'lote-recolher', recolhido_em: new Date().toISOString(), recolhido_por: 'u1', ja_recolhido: false }) });
+    });
+  }, dados, { uid: 'u1', usuario: 'operador1', nome: 'Operador 1', papel: 'operador' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="prod"]');
+  assert.strictEqual(await a.p.isVisible('#listaProd [data-recolher]'), true);
+  await a.p.click('#listaProd [data-recolher]');
+  await a.p.waitForFunction(() => !document.querySelector('#listaProd [data-recolher]'));
+  assert.deepStrictEqual(chamadas, [{ p_tipo: 'lote', p_id: 'lote-recolher', p_loja_id: 'L1' }]);
+  const salvo = await a.salvo();
+  assert.ok(salvo.prod['7891000315507'].lotes[0].recolhido_em, 'estado fica salvo no aparelho até sincronizar');
+  assert.strictEqual(salvo.prod['7891000315507'].lotes.length, 1, 'registro é preservado, não apagado');
+  assert.match(await a.p.textContent('#toast'), /tratado e recolhido/i);
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
+
+tflaky('recolhimento: mantém o registro visível se o servidor recusar a ação', { skip: pular }, async () => {
+  const dados = dadoRetencao();
+  dados.prod['7891000315507'].lotes = [lote('lote-negado', offsetValidade(2), 1, 'L-NEGADO')];
+  Object.assign(dados.prod['7891000315507'].lotes[0], { setor: 'Mercearia', created_by: 'u1', created_by_nome: 'Operador 1' });
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'operador', []);
+    await p.route(/\/rest\/v1\/rpc\/marcar_registro_recolhido$/, r => r.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ code: '42501', message: 'Sem autorização' }) }));
+  }, dados, { uid: 'u1', usuario: 'operador1', nome: 'Operador 1', papel: 'operador' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="prod"]');
+  await a.p.click('#listaProd [data-recolher]');
+  await a.p.waitForFunction(() => document.getElementById('toast').classList.contains('on'));
+  assert.strictEqual(await a.p.isVisible('#listaProd [data-recolher]'), true);
+  const salvo = await a.salvo();
+  assert.ok(!salvo.prod['7891000315507'].lotes[0].recolhido_em, 'falha remota não altera o estado local');
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
+
+tflaky('recolhimento: operador não recebe ação para registro de outro usuário', { skip: pular }, async () => {
+  const dados = dadoRetencao();
+  dados.prod['7891000315507'].lotes = [lote('lote-outro', offsetValidade(2), 1, 'L-OUTRO'), Object.assign(lote('lote-recolhido-outro', offsetValidade(2), 1, 'L-RECOLHIDO'), { recolhido_em: '2026-11-11T12:00:00Z', recolhido_por: 'u2' })];
+  Object.assign(dados.prod['7891000315507'].lotes[0], { setor: 'Mercearia', created_by: 'u2', created_by_nome: 'Outro operador' });
+  const a = await abrirLogado(p => rotasPerm(p, 'operador', []), dados, { uid: 'u1', usuario: 'operador1', nome: 'Operador 1', papel: 'operador' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="prod"]');
+  assert.strictEqual(await a.p.locator('#listaProd [data-recolher]').count(), 0);
+  assert.strictEqual(await a.p.isVisible('#retencaoRecProd'), false, 'operador não pode consultar/reativar o arquivo de recolhidos');
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
+
+
+tflaky('reativação: assistente restaura um recolhimento equivocado para toda a loja', { skip: pular }, async () => {
+  const chamadas = [];
+  const dados = dadoRetencao();
+  dados.prod['7891000315507'].lotes = [lote('lote-reativar', offsetValidade(2), 3, 'L-REATIVAR')];
+  Object.assign(dados.prod['7891000315507'].lotes[0], { setor: 'Mercearia', created_by: 'u2', created_by_nome: 'Outro operador', recolhido_em: '2026-11-11T12:00:00Z', recolhido_por: 'u2' });
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'assistente', []);
+    await p.route(/\/rest\/v1\/rpc\/restaurar_registro_recolhido$/, async r => {
+      chamadas.push(r.request().postDataJSON());
+      return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tipo: 'lote', id: 'lote-reativar', reativado: true, ja_ativo: false }) });
+    });
+  }, dados, { uid: 'u3', usuario: 'assistente1', nome: 'Assistente', papel: 'assistente' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="prod"]');
+  assert.strictEqual(await a.p.isVisible('#retencaoRecProd'), true);
+  await a.p.click('#bVerRecolhidosProd');
+  assert.strictEqual(await a.p.locator('#listaProd [data-reativar]').count(), 1);
+  await a.p.click('#listaProd [data-reativar]');
+  await a.p.waitForFunction(() => { try { return JSON.parse(localStorage.getItem('validade_dados')).prod['7891000315507'].lotes[0].recolhido_em === null; } catch (e) { return false; } });
+  await a.p.waitForFunction(() => document.querySelector('#listaProd')?.textContent.includes('L-REATIVAR'));
+  assert.deepStrictEqual(chamadas, [{ p_tipo: 'lote', p_id: 'lote-reativar', p_loja_id: 'L1' }]);
+  const salvo = await a.salvo();
+  assert.strictEqual(salvo.prod['7891000315507'].lotes[0].recolhido_em, null);
+  assert.strictEqual(salvo.prod['7891000315507'].lotes[0].recolhido_por, null);
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
 });

@@ -25,7 +25,7 @@ test('sincronização lê associação loja/EAN e busca a ficha no catálogo com
 });
 
 test('backup nunca envia identidade/nome de autoria definidos pelo trigger', () => {
-  assert.match(app, /delete clean\.created_by;delete clean\.created_by_nome;return clean;/);
+  assert.match(app, /delete clean\.created_by;delete clean\.created_by_nome;delete clean\.recolhido_em;delete clean\.recolhido_por;return clean;/);
   assert.match(app, /created_by é identidade definida pelo trigger do banco/);
 });
 
@@ -78,7 +78,7 @@ test('FKs de autoria e auditoria possuem índices dedicados', () => {
 test('lote é gravado atomicamente por RPC, incluindo catálogo, associação, setor e autoria do servidor', () => {
   assert.match(app, /\/rest\/v1\/rpc\/registrar_lote/);
   assert.match(app, /reg\.created_by_nome=serverRow\.created_by_nome/);
-  assert.match(app, /created_by_nome,updated_at,deleted_at/);
+  assert.match(app, /created_by_nome,recolhido_em,recolhido_por,updated_at,deleted_at/);
   assert.match(migration, /create or replace function public\.registrar_lote/);
   assert.match(migration, /insert into public\.catalogo/);
   assert.match(migration, /private\.membro_da\(p_loja_id\)/);
@@ -484,4 +484,39 @@ test('alerta personalizado: remetente recebe a própria cópia e regras não dep
   assert.match(m, /exclusão do remetente não encontrada/);
   assert.match(app, /var regrasMem=\{\};/);
   assert.match(app, /k\.indexOf\('validade_alertas_regras_'\)!==0\)ks\.push\(k\)/, 'limpeza de sobras preserva as regras');
+});
+
+
+const retentionMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261111223000_recolhimento_retencao_registros.sql'), 'utf8');
+
+test('recolhimento é compartilhado por loja, não exclui registros e reativação é restrita a assistente+', () => {
+  assert.match(retentionMigration, /add column if not exists recolhido_em timestamptz/i);
+  assert.equal((retentionMigration.match(/p_tipo is null or p_tipo not in \('lote','perecivel'\)/g) || []).length, 2, 'tipo nulo ou desconhecido é rejeitado nos dois RPCs');
+  assert.match(retentionMigration, /add column if not exists recolhido_por uuid references auth\.users/i);
+  assert.match(retentionMigration, /private\.membro_da\(p_loja_id\)/);
+  assert.match(retentionMigration, /private\.tem_permissao\('registros_editar_outros'\)/);
+  assert.match(retentionMigration, /private\.tem_permissao\('editar_proprios'\)/);
+  assert.match(retentionMigration, /set_config\('validade\.recolhimento_rpc','on',true\)/);
+  assert.match(retentionMigration, /set_config\('validade\.recolhimento_rpc','restore',true\)/);
+  assert.match(retentionMigration, /old\.recolhido_em is not null/);
+  assert.match(retentionMigration, /grant execute on function public\.marcar_registro_recolhido\(text,uuid,uuid\) to authenticated/i);
+  assert.match(retentionMigration, /create or replace function public\.restaurar_registro_recolhido\(/);
+  assert.match(retentionMigration, /security definer[\s\S]*private\.meu_papel\(\)[\s\S]*in \('assistente','analista','gerente','admin'\)/);
+  assert.match(retentionMigration, /grant execute on function public\.restaurar_registro_recolhido\(text,uuid,uuid\) to authenticated/i);
+  assert.match(app, /rpc\/marcar_registro_recolhido/);
+  assert.match(app, /rpc\/restaurar_registro_recolhido/);
+  assert.match(app, /data-reativar/);
+  assert.match(app, /\['assistente','analista','gerente','admin'\]/);
+  assert.match(app, /delete clean\.recolhido_em;delete clean\.recolhido_por/);
+});
+
+test('retencao: telas operacionais ocultam recolhidos e vencidos há mais de 5 dias; histórico XLSX mantém status', () => {
+  assert.match(app, /function registroOcultoOperacional\(r\).*n< -5/);
+  assert.match(app, /function registroNaJanelaRecolhimento\(r\).*n>=0&&n<=5/);
+  assert.match(app, /function adminStatusOperacional\(r\).*Recolhido.*Oculto após 5 dias vencido.*Ativo/);
+  assert.match(app, /adminStatusOperacional\(r\)/);
+  assert.match(retentionMigration, /f\.val between v_hoje-5 and v_hoje\+/);
+  assert.match(retentionMigration, /l\.recolhido_em is null/);
+  assert.match(retentionMigration, /r\.recolhido_em is null/);
+  assert.match(retentionMigration, /Registro recolhido, removido ou fora da retenção de cinco dias/);
 });
