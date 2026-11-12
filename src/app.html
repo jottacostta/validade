@@ -5499,10 +5499,10 @@ function salvarPermissoesPerfil(){var papel=permPapelAtual,ids=Object.keys(permP
     if(falha){atualizarBarraPermissoes('Parte das alterações não foi salva: '+falha);toast('Não foi possível salvar todas as permissões');}
     else{atualizarBarraPermissoes('Permissões de '+PAPEL_ROTULO[papel]+' salvas.');toast('Permissões salvas');}});}
 /* Hierarquia de promoção (mesma regra de supabase/functions/gerir-usuarios/hierarquia.ts):
-   Administrador tudo; Gerente até Analista; Analista e demais com "Gerenciar usuários" até Assistente. */
+   Administrador tudo; Gerente até Analista; Analista até Assistente; Assistente só cria Operador; Operador não gerencia usuários. */
 var ORDEM_PAPEIS=['operador','assistente','analista','gerente','admin'],NIVEL_PAPEL={operador:1,assistente:2,analista:3,gerente:4,admin:5};
-var TETO_PAPEL={admin:5,gerente:3};
-function tetoPapelApp(){var p=papelAtual();if(p==='admin')return 5;if(!temPermissao('usuarios_gerenciar'))return 0;return TETO_PAPEL[p]||2;}
+var TETO_PAPEL={admin:5,gerente:3,analista:2,assistente:1,operador:0};
+function tetoPapelApp(){var p=papelAtual();if(p==='admin')return 5;if(p!=='assistente'&&!temPermissao('usuarios_gerenciar'))return 0;return TETO_PAPEL[p]||0;}
 function papeisAtribuiveisApp(){var t=tetoPapelApp();return ORDEM_PAPEIS.filter(function(x){return NIVEL_PAPEL[x]<=t;});}
 function podeAdministrarPapelApp(papelAlvo){return !!NIVEL_PAPEL[papelAlvo]&&NIVEL_PAPEL[papelAlvo]<=tetoPapelApp();}
 function papelAtual(){if(!sbOn())return 'admin';if(!SESS||!SESS.access_token)return 'operador';var uid=String(SESS.uid||'');return papelConfirmado&&papelConfirmadoUid===uid&&papelConfirmadoToken===SESS.access_token&&['operador','assistente','analista','gerente','admin'].includes(SESS.papel)?SESS.papel:'operador';}

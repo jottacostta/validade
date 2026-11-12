@@ -110,8 +110,10 @@ Deno.serve(async (req) => {
   // O papel legado de Analista e o Administrador são globais. A permissão de
   // gestão, inclusive para Gerente, não concede acesso a lojas não atribuídas.
   const escopoTotal = ehAdmin || ehAnalista;
-  const podeCriar = ehAdmin || gerenciaUsuarios || papelCaller === "assistente";
-  const podeEditar = ehAdmin || gerenciaUsuarios;
+  // Operador só executa o operacional: nunca cria, edita ou lista usuários, mesmo com a permissão marcada.
+  const ehOperador = papelCaller === "operador";
+  const podeCriar = !ehOperador && (ehAdmin || gerenciaUsuarios || papelCaller === "assistente");
+  const podeEditar = !ehOperador && (ehAdmin || gerenciaUsuarios);
 
   let body: Record<string, unknown> = {};
   try {

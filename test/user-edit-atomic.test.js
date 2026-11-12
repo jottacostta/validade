@@ -141,8 +141,10 @@ test('criação segue a hierarquia: Administrador tudo, Gerente até Analista, d
   const hier = fs.readFileSync(path.join(root, 'supabase/functions/gerir-usuarios/hierarquia.ts'), 'utf8')
     .replace(/\bexport\s+/g, '').replace(/:\s*(string|number|boolean|Record<string, number>)(\s*[,)=;])/g, '$2').replace(/\)\s*:\s*(string\[\]|number|boolean)\s*\{/g, ') {');
   const bloqueado = Function('papelCaller', 'ehAdmin', 'gerenciaUsuarios', 'papel', `${hier}\nreturn (${first[1]}) || (${second[1]});`);
-  const teto = { admin: 5, gerente: 3, analista: 2, assistente: 2, operador: 2 }, nivel = { operador: 1, assistente: 2, analista: 3, gerente: 4, admin: 5 };
-  for (const ator of Object.keys(teto)) for (const papel of Object.keys(nivel)) {
+  const teto = { admin: 5, gerente: 3, analista: 2, assistente: 1, operador: 0 }, nivel = { operador: 1, assistente: 2, analista: 3, gerente: 4, admin: 5 };
+  assert.match(edge, /const podeCriar = !ehOperador && \(/, 'operador nunca cria usuários');
+  assert.match(edge, /const podeEditar = !ehOperador && \(/, 'operador nunca edita usuários');
+  for (const ator of Object.keys(teto).filter((x) => x !== 'operador')) for (const papel of Object.keys(nivel)) {
     assert.equal(bloqueado(ator, ator === 'admin', true, papel), nivel[papel] > teto[ator], `${ator} com gestão criando ${papel}`);
     if (ator !== 'admin') assert.equal(bloqueado(ator, false, false, papel), papel !== 'operador', `${ator} sem gestão criando ${papel}`);
   }
