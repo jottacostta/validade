@@ -1364,6 +1364,15 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 /* Exceções para não quebrar o layout aprovado: os indicadores do resumo (Total, Válidos, Próx. Venc., Vencidos)
    e, abaixo de 360 px, os rótulos da barra inferior mantêm o tamanho original porque não cabem a 12 px. */
 @media (min-width:360px){nav.abas button{font-size:12px!important}}
+/* Exibição padronizada: descrições de produtos em caixa alta, sem alterar dados persistidos. */
+#pNome, #peDesc, #edNome,
+.reg-prod-copy textarea,
+.operator-record-copy > strong,
+.home-recent-copy > strong,
+.alert-copy > b,
+.recall-audit-product-row .recall-audit-name > b {
+  text-transform: uppercase;
+}
 </style>
 </head>
 <body>
