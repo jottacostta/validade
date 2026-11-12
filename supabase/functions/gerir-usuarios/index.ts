@@ -2,9 +2,11 @@
 // Roda no servidor com a service_role (NUNCA vai para o app). Identifica quem chama
 // pelo JWT e aplica as regras de papel:
 //   - assistente: cria usuários (sempre como operador)
-//   - analista:   cria + edita cadastro (nome) e senha (não mexe em papel/lojas)
+//   - analista/gerente: ações autorizadas por permissão; não administram papéis superiores
+//   - gerente: lojas restritas aos vínculos individuais atribuídos pelo Administrador
 //   - admin:      faz tudo (papel, lojas, excluir)
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { buildScopedUserList, resolveListScope, filtrarResultadoEdicao } from "./scope.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -19,6 +21,8 @@ const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const PAPEIS = ["operador", "assistente", "analista", "gerente", "admin"];
 const COMUNS = ["123456","1234567","12345678","123456789","senha","password","qwerty","111111","000000","abc123","admin123","guanabara"];
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const temCampo = (obj, campo) => Object.prototype.hasOwnProperty.call(obj, campo);
 
 const validarUsuario = (u: string) => /^[a-z0-9._-]{3,30}$/.test(u);
 function validarSenha(s: string, usuario: string): string | null {
@@ -26,6 +30,55 @@ function validarSenha(s: string, usuario: string): string | null {
   if (COMUNS.includes(s.toLowerCase())) return "Essa senha é muito comum. Escolha outra.";
   if (s.toLowerCase() === usuario.toLowerCase()) return "A senha não pode ser igual ao usuário.";
   return null;
+}
+
+// Mantida pura para que o contrato de entrada seja testável sem Supabase/Auth.
+// Regras que dependem do ator, alvo e lojas existentes ficam no bloco `editar` e na RPC.
+export function validarEdicaoBase(body) {
+  if (typeof body.id !== "string" || !UUID.test(body.id)) {
+    return { ok: false, error: "Usuário informado inválido." };
+  }
+  const nome = temCampo(body, "nome") ? body.nome : null;
+  if (nome !== null && (typeof nome !== "string" || !nome.trim() || nome.trim().length > 120 || /[\u0000-\u001f\u007f]/.test(nome))) {
+    return { ok: false, error: "O nome deve ter entre 1 e 120 caracteres válidos." };
+  }
+  const papel = temCampo(body, "papel") ? body.papel : null;
+  if (papel !== null && (typeof papel !== "string" || !PAPEIS.includes(papel))) {
+    return { ok: false, error: "Papel inválido." };
+  }
+  let lojas = null;
+  if (temCampo(body, "lojas")) {
+    if (!Array.isArray(body.lojas) || body.lojas.length === 0 || body.lojas.some((id) => typeof id !== "string" || !UUID.test(id))) {
+      return { ok: false, error: "A lista de lojas deve conter IDs UUID válidos." };
+    }
+    lojas = body.lojas;
+    if (new Set(lojas).size !== lojas.length) {
+      return { ok: false, error: "A lista de lojas não pode conter repetições." };
+    }
+  }
+  let senha = null;
+  if (temCampo(body, "senha")) {
+    if (typeof body.senha !== "string") return { ok: false, error: "A senha informada é inválida." };
+    senha = body.senha === "" ? null : body.senha;
+  }
+  if (senha !== null && (senha.length < 6 || COMUNS.includes(senha.toLowerCase()))) {
+    return { ok: false, error: "A senha não atende às regras mínimas." };
+  }
+  const exigirTroca = temCampo(body, "exigir_troca_senha") ? body.exigir_troca_senha : false;
+  if (typeof exigirTroca !== "boolean") return { ok: false, error: "O indicador de troca de senha é inválido." };
+  if (exigirTroca && senha === null) return { ok: false, error: "Exigir troca de senha requer uma nova senha." };
+  if (nome === null && papel === null && lojas === null && senha === null) {
+    return { ok: false, error: "Informe ao menos uma alteração." };
+  }
+  return {
+    ok: true,
+    id: body.id,
+    nome: nome === null ? null : nome.trim(),
+    papel,
+    lojas,
+    senha,
+    exigirTroca,
+  };
 }
 
 Deno.serve(async (req) => {
@@ -52,14 +105,19 @@ Deno.serve(async (req) => {
     if (permErr) return json({ error: "Não foi possível verificar as permissões do perfil." }, 500);
     gerenciaUsuarios = perm === true;
   }
-  const ehGerente = !ehAdmin && gerenciaUsuarios;
-  const ehAnalista = false;
-  const escopoTotal = ehAdmin || gerenciaUsuarios;
-  const podeCriar = escopoTotal || papelCaller === "assistente";
-  const podeEditar = escopoTotal;
+  const ehAnalista = papelCaller === "analista";
+  // O papel legado de Analista e o Administrador são globais. A permissão de
+  // gestão, inclusive para Gerente, não concede acesso a lojas não atribuídas.
+  const escopoTotal = ehAdmin || ehAnalista;
+  const podeCriar = ehAdmin || gerenciaUsuarios || papelCaller === "assistente";
+  const podeEditar = ehAdmin || gerenciaUsuarios;
 
   let body: Record<string, unknown> = {};
-  try { body = await req.json(); } catch { return json({ error: "Requisição inválida" }, 400); }
+  try {
+    const parsed: unknown = await req.json();
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return json({ error: "Requisição inválida" }, 400);
+    body = parsed as Record<string, unknown>;
+  } catch { return json({ error: "Requisição inválida" }, 400); }
   const acao = String(body.acao || "");
   // Domínio fixo: não confiar em configuração enviada pelo cliente.
   const dominio = "loja.validade";
@@ -74,16 +132,31 @@ Deno.serve(async (req) => {
   };
   const lojasPermitidas = async (): Promise<Set<string>> => {
     if (escopoTotal) {
-      const { data } = await admin.from("lojas").select("id");
+      const { data, error } = await admin.from("lojas").select("id");
+      if (error) throw error;
       return new Set((data || []).map((l: { id: string }) => l.id));
     }
-    const { data } = await admin.from("loja_membros").select("loja_id").eq("user_id", caller.id);
+    const { data, error } = await admin.from("loja_membros").select("loja_id").eq("user_id", caller.id);
+    if (error) throw error;
     return new Set((data || []).map((m: { loja_id: string }) => m.loja_id));
+  };
+  // A listagem/criação conserva `escopoTotal` histórico (inclusive a permissão
+  // global do Analista). A edição de vínculos do Gerente, porém, é limitada aos
+  // memberships do ator; a RPC repete essa defesa e preserva vínculos ocultos.
+  const lojasPermitidasEdicao = async (): Promise<{ permitidas: Set<string>; error: unknown }> => {
+    if (ehAdmin || papelCaller === "analista") {
+      const { data, error } = await admin.from("lojas").select("id");
+      return { permitidas: new Set((data || []).map((l: { id: string }) => l.id)), error };
+    }
+    const { data, error } = await admin.from("loja_membros").select("loja_id").eq("user_id", caller.id);
+    return { permitidas: new Set((data || []).map((m: { loja_id: string }) => m.loja_id)), error };
   };
 
   try {
     if (acao === "listar") {
       if (!podeCriar) return json({ error: "Sem permissão" }, 403);
+      const scopeResult = resolveListScope(body);
+      if (!scopeResult.ok) return json({ error: scopeResult.error }, 400);
       const { data: perfis, error: perfisErr } = await admin.from("perfis").select("id, nome, papel");
       if (perfisErr) return json({ error: "Não foi possível consultar perfis." }, 500);
       const { data: lista, error: listaErr } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
@@ -94,17 +167,17 @@ Deno.serve(async (req) => {
       const { data: lojas, error: lojasErr } = await admin.from("lojas").select("id, nome").order("nome");
       if (membrosErr || lojasErr) return json({ error: "Falha ao consultar lojas e vínculos." }, 500);
       const permitidas = await lojasPermitidas();
-      const perfisVisiveis = escopoTotal ? (perfis || []) : (perfis || []).filter((p: { id: string }) => (membros || []).some((m: { user_id: string; loja_id: string }) => m.user_id === p.id && permitidas.has(m.loja_id)));
-      const nomeLoja: Record<string, string> = {};
-      for (const l of (lojas || [])) nomeLoja[l.id] = l.nome;
-      const porUser: Record<string, { id: string; nome: string }[]> = {};
-      for (const m of (membros || [])) (porUser[m.user_id] = porUser[m.user_id] || []).push({ id: m.loja_id, nome: nomeLoja[m.loja_id] || "" });
-      const usuarios = perfisVisiveis.map((p: { id: string; nome: string; papel: string }) => ({
-        id: p.id, nome: p.nome || "", papel: p.papel,
-        usuario: (emailPorId[p.id] || "").split("@")[0],
-        lojas: (porUser[p.id] || []).filter((l) => escopoTotal || permitidas.has(l.id)),
-      })).sort((a, b) => (a.usuario || "").localeCompare(b.usuario || ""));
-      return json({ usuarios, lojas: (lojas || []).filter((l: { id: string }) => permitidas.has(l.id)), euPapel: papelCaller });
+      const scoped = buildScopedUserList({
+        scope: scopeResult.scope,
+        permitidas,
+        perfis: perfis || [],
+        membros: membros || [],
+        lojas: lojas || [],
+        emailPorId,
+        escopoTotal,
+      });
+      if (!scoped.ok) return json({ error: scoped.error }, scoped.status);
+      return json({ ...scoped.data, euPapel: papelCaller });
     }
 
     if (acao === "criar") {
@@ -119,8 +192,8 @@ Deno.serve(async (req) => {
       if (!nome) return json({ error: "Informe o nome do usuário." }, 400);
       const e1 = validarSenha(senha, usuario); if (e1) return json({ error: e1 }, 400);
       if (!PAPEIS.includes(papel)) return json({ error: "Papel inválido." }, 400);
-      if (papel !== "operador" && !(ehAdmin || ehGerente || ehAnalista)) return json({ error: "Seu perfil só pode criar operadores." }, 403);
-      if ((ehAnalista || ehGerente) && !["operador", "assistente"].includes(papel)) return json({ error: "Analista/Gerente só pode criar operadores e assistentes." }, 403);
+      if (papel !== "operador" && !(ehAdmin || gerenciaUsuarios)) return json({ error: "Seu perfil só pode criar operadores." }, 403);
+      if (!ehAdmin && gerenciaUsuarios && !["operador", "assistente"].includes(papel)) return json({ error: "Analista/Gerente só pode criar operadores e assistentes." }, 403);
       const permit = await lojasPermitidas();
       lojas = [...new Set(lojas)];
       if (papelCaller === "assistente" && (permit.size !== 1 || lojas.length !== 1 || !permit.has(lojas[0]))) return json({ error: "Assistente só pode cadastrar operador na sua única loja vinculada." }, 403);
@@ -177,55 +250,93 @@ Deno.serve(async (req) => {
 
     if (acao === "editar") {
       if (!podeEditar) return json({ error: "Sem permissão para editar usuários" }, 403);
-      const id = String(body.id || "");
-      if (!id) return json({ error: "Usuário não informado." }, 400);
+      const edit = validarEdicaoBase(body);
+      if (!edit.ok) return json({ error: edit.error }, 400);
+      const id = edit.id;
       const { data: alvo, error: alvoErr } = await admin.from("perfis").select("papel, nome").eq("id", id).single();
       if (alvoErr || !alvo) return json({ error: "Usuário não encontrado." }, 404);
-      const alvoUser = (await admin.auth.admin.getUserById(id)).data?.user;
+      if (!PAPEIS.includes(alvo.papel)) return json({ error: "Papel atual do usuário é inválido." }, 500);
+      const alvoAuth = await admin.auth.admin.getUserById(id);
+      const alvoUser = alvoAuth.data?.user;
+      if (alvoAuth.error || !alvoUser) return json({ error: "Conta de autenticação do usuário não encontrada." }, 404);
       const usuarioEmail = alvoUser?.email || "";
       const usuarioNome = usuarioEmail.split("@")[0];
       const appMeta = (alvoUser?.app_metadata as Record<string, unknown>) || {};
-      const nome = body.nome != null ? String(body.nome).trim() : null;
-      const senha = body.senha != null && String(body.senha) !== "" ? String(body.senha) : null;
-      const exigirTroca = body.exigir_troca_senha === true;
-      const papel = body.papel != null ? String(body.papel) : null;
-      const lojas = Array.isArray(body.lojas) ? (body.lojas as unknown[]).map(String) : null;
+      const nome = edit.nome;
+      const senha = edit.senha;
+      const exigirTroca = edit.exigirTroca;
+      const papel = edit.papel;
+      const lojas = edit.lojas;
 
-      if ((papel != null || lojas != null) && !(ehAdmin || ehAnalista || ehGerente)) return json({ error: "Seu perfil não pode alterar papel ou lojas." }, 403);
-      if ((ehAnalista || ehGerente) && papel != null && !["operador", "assistente"].includes(papel)) return json({ error: "Analista/Gerente só pode atribuir Operador ou Assistente." }, 403);
-      if ((ehAnalista || ehGerente) && ["analista", "gerente", "admin"].includes(alvo.papel)) return json({ error: "Não pode administrar usuários com papel igual ou superior." }, 403);
-      if (papel != null && !PAPEIS.includes(papel)) return json({ error: "Papel inválido." }, 400);
+      if ((papel != null || lojas != null) && !gerenciaUsuarios) return json({ error: "Seu perfil não pode alterar papel ou lojas." }, 403);
+      if (!ehAdmin && ["analista", "gerente", "admin"].includes(alvo.papel)) return json({ error: "Não pode administrar usuários com papel igual ou superior." }, 403);
+      if (!ehAdmin && papel != null && !["operador", "assistente"].includes(papel)) return json({ error: "Analista/Gerente só pode atribuir Operador ou Assistente." }, 403);
       if (papel != null && alvo.papel === "admin" && papel !== "admin") {
-        const { count } = await admin.from("perfis").select("id", { count: "exact", head: true }).eq("papel", "admin");
+        const { count, error: adminCountErr } = await admin.from("perfis").select("id", { count: "exact", head: true }).eq("papel", "admin");
+        if (adminCountErr) return json({ error: "Não foi possível validar os administradores." }, 500);
         if ((count || 0) <= 1) return json({ error: "Não é possível rebaixar o último admin." }, 400);
       }
-      if (senha != null) { const e2 = validarSenha(senha, usuarioNome); if (e2) return json({ error: e2 }, 400); }
-      if (nome != null && !nome) return json({ error: "O nome não pode ficar vazio." }, 400);
-
-      const upd: Record<string, unknown> = {};
-      if (nome != null) upd.nome = nome;
-      if (papel != null) upd.papel = papel;
-      if (Object.keys(upd).length) {
-        const { error: perr } = await admin.from("perfis").update(upd).eq("id", id);
-        if (perr) return json({ error: "Não foi possível atualizar o cadastro. " + perr.message }, 400);
-      }
       if (senha != null) {
-        // Admin redefine a senha; opcionalmente exige que o usuário troque no próximo acesso.
-        const { error: serr } = await admin.auth.admin.updateUserById(id, { password: senha, app_metadata: { ...appMeta, force_password_change: exigirTroca } });
-        if (serr) return json({ error: "Não foi possível trocar a senha. " + serr.message }, 400);
+        if (!validarUsuario(usuarioNome.toLowerCase())) return json({ error: "O usuário alvo não tem um login válido para redefinir a senha." }, 400);
+        const e2 = validarSenha(senha, usuarioNome); if (e2) return json({ error: e2 }, 400);
       }
-      if (lojas != null) {
-        const uniq = [...new Set(lojas)];
-        if (!uniq.length) return json({ error: "O usuário precisa ter ao menos uma loja." }, 400);
-        const permit = await lojasPermitidas();
-        if (uniq.some((lid) => !permit.has(lid))) return json({ error: "Loja inválida ou sem permissão." }, 400);
-        const { error: delErr } = await admin.from("loja_membros").delete().eq("user_id", id);
-        if (delErr) return json({ error: "Falha ao remover vínculos anteriores." }, 500);
-        const { error: insErr } = await admin.from("loja_membros").insert(uniq.map((lid) => ({ user_id: id, loja_id: lid })));
-        if (insErr) return json({ error: "Falha ao salvar vínculos." }, 500);
+      const escopoEdicaoPorMembership = !escopoTotal;
+      let permitidasNaResposta: Set<string> | null = null;
+      if (escopoEdicaoPorMembership || lojas != null) {
+        const lojasPermitidasResult = await lojasPermitidasEdicao();
+        if (lojasPermitidasResult.error) return json({ error: "Não foi possível validar o escopo de lojas." }, 500);
+        permitidasNaResposta = lojasPermitidasResult.permitidas;
+        if (escopoEdicaoPorMembership && papelCaller === "assistente" && lojasPermitidasResult.permitidas.size !== 1) {
+          return json({ error: "Assistente precisa ter exatamente uma loja vinculada." }, 403);
+        }
+        if (escopoEdicaoPorMembership) {
+          const { data: membrosAlvo, error: membrosAlvoErr } = await admin.from("loja_membros").select("loja_id").eq("user_id", id);
+          if (membrosAlvoErr) return json({ error: "Não foi possível validar o escopo do usuário alvo." }, 500);
+          if (!(membrosAlvo || []).some((m: { loja_id: string }) => lojasPermitidasResult.permitidas.has(m.loja_id))) {
+            return json({ error: "Usuário alvo fora do escopo permitido." }, 403);
+          }
+        }
+        if (lojas != null && lojas.some((lid) => !lojasPermitidasResult.permitidas.has(lid))) return json({ error: "Loja inválida ou sem permissão." }, 403);
       }
-      await audit("editou_usuario", { alvo: usuarioNome, trocou_senha: senha != null, exigir_troca_senha: senha != null ? exigirTroca : undefined, papel: papel || undefined });
-      return json({ ok: true });
+
+      // Nome/papel/vínculos e sua auditoria são uma única transação no banco.
+      // A senha só é chamada depois do commit porque Auth é um serviço externo.
+      const { data: cadastro, error: cadastroErr } = await admin.rpc("editar_usuario_atomico", {
+        p_actor_id: caller.id,
+        p_target_id: id,
+        p_nome: nome,
+        p_papel: papel,
+        p_lojas: lojas,
+        p_senha_solicitada: senha != null,
+      });
+      if (cadastroErr || !cadastro || cadastro.ok !== true) {
+        return json({
+          ok: false,
+          cadastro_atualizado: false,
+          lojas_atualizadas: false,
+          senha_atualizada: false,
+          parcial: false,
+          error: "Não foi possível atualizar o cadastro; nenhuma alteração de cadastro foi confirmada.",
+        }, 400);
+      }
+      const cadastroVisivel = filtrarResultadoEdicao(cadastro, escopoTotal, permitidasNaResposta);
+      if (senha == null) return json({ ...cadastroVisivel, senha_atualizada: false, parcial: false }, 200);
+
+      const { error: serr } = await admin.auth.admin.updateUserById(id, {
+        password: senha,
+        app_metadata: { ...appMeta, force_password_change: exigirTroca },
+      });
+      if (serr) {
+        return json({
+          ...cadastroVisivel,
+          ok: true,
+          cadastro_atualizado: true,
+          senha_atualizada: false,
+          parcial: true,
+          aviso: "Cadastro e lojas atualizados, mas não foi possível alterar a senha. Tente alterar somente a senha novamente.",
+        }, 200);
+      }
+      return json({ ...cadastroVisivel, ok: true, senha_atualizada: true, parcial: false }, 200);
     }
 
     if (acao === "excluir") {

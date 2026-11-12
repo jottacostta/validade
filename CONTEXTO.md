@@ -4,7 +4,7 @@
 > qualquer assistente). Descreve o objetivo, a arquitetura, o backend, a segurança,
 > a hierarquia de usuários e **o que está em construção agora**. Mantido em português.
 >
-> Última atualização: localização por lote (Área de Vendas/Depósito) e permissão de recolhimento configurável por perfil.
+> Última atualização: central desktop de gestão, escopo individual do Gerente, solicitações e correção das RPCs de recolhimento para IDs textuais.
 
 ---
 
@@ -49,7 +49,7 @@ Marcadores substituídos pelo build (têm que sumir no final, senão o build fal
 
 ```bash
 node build.js config.json      # gera dist/validade.html, dist/APP_VALIDADE.js, dist/painel.html
-node --test --test-concurrency=1   # 51 testes (node:test + Playwright headless)
+node --test --test-concurrency=1   # node:test + Playwright headless + PostgreSQL embarcado
 ```
 
 - **Deploy**: `push` no branch `main` dispara GitHub Actions:
@@ -118,7 +118,7 @@ CONTEXTO.md                          # este arquivo
 - Gatilhos: `public.ao_criar_usuario()` (cria linha em `perfis` ao cadastrar no Auth)
   e `public.protege_papel()` (só admin pode mudar `papel`). Sem `execute` para anon/auth.
 - **RLS por papel** (resumo): operador/assistente registram na própria loja;
-  assistente/analista/gerente registram e editam; analista/gerente/admin leem tudo;
+  assistente/analista/gerente registram e editam conforme permissões; analista/admin mantêm alcance global; Gerente lê apenas as lojas atribuídas individualmente pelo Administrador;
   admin faz tudo. (Decisão aprovada: **analista pode registrar dados** — PR #17.)
 
 O estado vivo do banco está refletido em `supabase/schema.sql` e nas migrations.
@@ -163,6 +163,7 @@ Chaves no localStorage: `validade_dados` (D, dados do app), `validade_sessao` (S
   `preferencias` (RLS: só a própria linha) e vale em qualquer aparelho.
 - **Localização por registro**: `lotes.em_area_vendas` e `pere_regs.em_area_vendas` informam se cada lote/registro está na Área de Vendas (`true`, padrão) ou no Depósito (`false`). A localização fica no Supabase e é compartilhada dentro da loja, sincroniza pela fila offline e aparece nos cartões, edição e relatórios XLSX.
 - **Recolhimento configurável**: `registros_recolher` é uma permissão por perfil definida pelo Administrador em Ajustes → Usuários e Permissões → Perfis de acesso. O padrão permite Operador, Assistente, Analista e Gerente; o servidor valida permissão e escopo da loja. Reativar registros recolhidos continua restrito a Assistente e perfis superiores.
+- **Central desktop de gestão**: Administrador e Gerente têm gráficos, indicadores, registros, solicitações, aprovações, relatórios e Ajustes conforme suas permissões. O recorte de filial/todas as lojas permitidas é único; Perfis de acesso continua exclusivo do Administrador. O scanner segue oculto e bloqueado. Gerente usa apenas seus vínculos individuais em `loja_membros`, sem alcance global por papel/permissão; registros e alertas também são protegidos por RLS/RPC/Edge. As RPCs de recolhimento/reativação aceitam IDs textuais; exclusão e edição de cadastro têm auditoria transacional. Detalhes em `docs/ajustes-desktop-gestao.md`.
 
 ---
 
@@ -184,7 +185,7 @@ Chaves no localStorage: `validade_dados` (D, dados do app), `validade_sessao` (S
 
 Papéis: `operador`, `assistente`, `analista`, `gerente`, `admin` (superuser).
 > Nota: há também o papel **`gerente`** (poderes próximos de analista: registra, edita,
-> gere usuários; não é admin). A tabela abaixo foca em operador/assistente/analista/admin.
+> gere usuários conforme permissões; não é admin). Seu alcance é individual: somente as lojas atribuídas pelo Administrador. A tabela abaixo é uma referência histórica; as permissões de ação atuais são configuráveis, sem substituir o escopo de lojas nem a proteção de papéis superiores.
 
 | Ação | operador | assistente | analista | admin |
 |---|:--:|:--:|:--:|:--:|

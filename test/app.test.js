@@ -1991,6 +1991,107 @@ tflaky('Aviso do sistema: banner global exibe texto literal e marca somente o pe
   } finally { await a.fechar(); }
 });
 
+/* Fixtures do dashboard desktop remoto. O cache D continua sendo útil para o shell móvel,
+   mas a central administrativa deve sempre montar as linhas a partir destas tabelas. */
+function adminDesktopRemoteRowsFromDados(dados, lojaId = 'L1', lojaNome = 'Loja Teste') {
+  const cat = dados && dados.cat || {};
+  const prod = dados && dados.prod || {};
+  const pere = dados && dados.pere || { itens: {}, regs: [] };
+  const catalogo = Object.keys(cat).map(ean => Object.assign({ ean: String(ean) }, cat[ean], { loja_id: lojaId }));
+  const lotes = [];
+  Object.keys(prod).forEach(ean => (prod[ean].lotes || []).forEach(row => lotes.push(Object.assign({ ean: String(ean), loja_id: lojaId, loja_nome: lojaNome }, row))));
+  const pereItens = Object.keys(pere.itens || {}).map(cod => Object.assign({ cod: String(cod), loja_id: lojaId, loja_nome: lojaNome }, pere.itens[cod], { descricao: pere.itens[cod].descricao || pere.itens[cod].desc || '' }));
+  const pereRegs = (pere.regs || []).map(row => Object.assign({ loja_id: lojaId, loja_nome: lojaNome }, row));
+  return { stores: [{ id: lojaId, nome: lojaNome }], catalogo, lotes, pere_itens: pereItens, pere_regs: pereRegs, solicitacoes_nome: [], solicitacoes_exclusao: [] };
+}
+function adminDesktopFilterValues(value) {
+  const text = String(value || '');
+  if (!text) return [];
+  if (text.startsWith('eq.')) return [text.slice(3)];
+  if (text.startsWith('in.(') && text.endsWith(')')) return text.slice(4, -1).split(',').map(x => x.trim().replace(/^"|"$/g, '')).filter(Boolean);
+  return [];
+}
+async function rotasAdminDesktopRemoto(p, fixture, cap) {
+  const f = Object.assign({ stores: [], ajustes: [], catalogo: [], lotes: [], pere_itens: [], pere_regs: [], solicitacoes_nome: [], solicitacoes_exclusao: [] }, fixture || {});
+  cap = cap || { requests: [] };
+  cap.requests = cap.requests || [];
+  const resposta = async (r, tabela, rows) => {
+    const request = r.request(), url = new URL(request.url());
+    if (request.method() !== 'GET') return r.fulfill({ status: 201, contentType: 'application/json', body: '[]' });
+    const lojaFiltro = adminDesktopFilterValues(url.searchParams.get('loja_id'));
+    const eanFiltro = adminDesktopFilterValues(url.searchParams.get('ean'));
+    cap.requests.push({ tabela, url: request.url(), loja: url.searchParams.get('loja_id'), ean: url.searchParams.get('ean'), limit: url.searchParams.get('limit'), offset: url.searchParams.get('offset') });
+    if (typeof cap.beforeResponse === 'function') await cap.beforeResponse({ tabela, url, rows });
+    const filtradas = (rows || []).filter(row => {
+      if (lojaFiltro.length && row.loja_id && !lojaFiltro.includes(String(row.loja_id))) return false;
+      if (eanFiltro.length && row.ean && !eanFiltro.includes(String(row.ean))) return false;
+      return true;
+    });
+    if (typeof cap.response === 'function') {
+      const custom = await cap.response({ tabela, url, rows: filtradas });
+      if (custom) return r.fulfill(Object.assign({ contentType: 'application/json' }, custom));
+    }
+    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(filtradas) });
+  };
+  await p.route(/\/rest\/v1\/lojas(?:\?|$)/, r => resposta(r, 'lojas', f.stores));
+  for (const tabela of ['lotes', 'pere_regs', 'pere_itens', 'catalogo','ajustes']) {
+    await p.route(new RegExp('/rest/v1/' + tabela + '(?:\\?|$)'), r => resposta(r, tabela, f[tabela]));
+  }
+  for (const tabela of ['solicitacoes_nome', 'solicitacoes_exclusao']) {
+    await p.route(new RegExp('/rest/v1/' + tabela + '(?:\\?|$)'), r => resposta(r, tabela, f[tabela]));
+  }
+  return cap;
+}
+async function esperarAdminScope(page, lojaId) {
+  await page.waitForFunction(id => {
+    const status = document.getElementById('adminDesktopScopeStatus');
+    const select = document.getElementById('adminDesktopScopeSelect');
+    const selecionada = select && select.value;
+    return status && status.dataset.state === 'ready' && Number(status.dataset.updatedAt) > 0 && (!id || String(selecionada || '') === String(id));
+  }, lojaId);
+}
+function adminDesktopScopeFixture() {
+  const dia = offset => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + offset); return d.toISOString().slice(0, 10); };
+  const agora = Date.now();
+  const catalogo = [
+    { ean: 'EAN-SAME', nome: 'Produto compartilhado', marca: 'Marca Multi' },
+    { ean: 'EAN-FL15', nome: 'Produto Filial 15', marca: 'Marca 15' },
+    { ean: 'EAN-FL05', nome: 'Produto Filial 05', marca: 'Marca 05' },
+    { ean: 'EAN-COL', nome: 'Produto recolhido', marca: 'Marca Hist' }
+  ];
+  const lote = (id, loja_id, ean, qtd, validade, autor, nome, extra) => Object.assign({
+    id, loja_id, ean, lote: id.toUpperCase(), qtd, val: dia(validade), setor: 'Mercearia',
+    em_area_vendas: true, criado: agora - 1000, created_by: autor, created_by_nome: nome,
+    rpcConfirmado: true, recolhido_em: null, recolhido_por: null
+  }, extra || {});
+  return {
+    stores: [{ id: 'FL15', nome: 'Filial 15' }, { id: 'FL05', nome: 'Filial 05' }],
+    catalogo,
+    lotes: [
+      lote('lote-fl15-same', 'FL15', 'EAN-SAME', 4, 2, 'u-multi', 'Multi Loja'),
+      lote('lote-fl15-only', 'FL15', 'EAN-FL15', 2, 8, 'u-ana', 'Ana', { em_area_vendas: false, setor: 'Padaria' }),
+      lote('lote-fl15-col', 'FL15', 'EAN-COL', 9, 3, 'u-old', 'Histórico', { recolhido_em: new Date(agora - 500).toISOString(), recolhido_por: 'u-old' }),
+      lote('lote-fl05-same', 'FL05', 'EAN-SAME', 6, 4, 'u-multi', 'Multi Loja'),
+      lote('lote-fl05-only', 'FL05', 'EAN-FL05', 1, 25, 'u-bea', 'Beatriz')
+    ],
+    pere_itens: [
+      { cod: 'P-15', loja_id: 'FL15', descricao: 'Queijo Filial 15', sif: 'SIF-15' },
+      { cod: 'P-05', loja_id: 'FL05', descricao: 'Queijo Filial 05', sif: 'SIF-05' }
+    ],
+    pere_regs: [
+      { id: 'pere-fl15', loja_id: 'FL15', cod: 'P-15', sif: 'SIF-15', peso: 1.25, val: dia(20), setor: 'Laticínios', em_area_vendas: false, criado: agora - 800, created_by: 'u-multi', created_by_nome: 'Multi Loja', rpcConfirmado: true },
+      { id: 'pere-fl05', loja_id: 'FL05', cod: 'P-05', sif: 'SIF-05', peso: 2, val: dia(10), setor: 'Laticínios', em_area_vendas: false, criado: agora - 700, created_by: 'u-bea', created_by_nome: 'Beatriz', rpcConfirmado: true }
+    ],
+    solicitacoes_nome: [
+      { id: 'req-name-15', loja_id: 'FL15', tipo: 'nome', registro_id: 'lote-fl15-only', solicitante_id: 'u-ana', solicitante_nome: 'Ana', ean: 'EAN-FL15', nome_atual: 'Nome anterior', nome_sugerido: 'Nome atualizado', motivo: 'Nome atualizado', status: 'pendente', criado_em: new Date(agora - 600).toISOString() },
+      { id: 'req-name-05', loja_id: 'FL05', tipo: 'nome', registro_id: 'lote-fl05-only', solicitante_id: 'u-bea', solicitante_nome: 'Beatriz', ean: 'EAN-FL05', nome_atual: 'Nome anterior 05', nome_sugerido: 'Nome revisado', motivo: 'Nome revisado', status: 'pendente', criado_em: new Date(agora - 500).toISOString() }
+    ],
+    solicitacoes_exclusao: [
+      { id: 'req-delete-15', loja_id: 'FL15', tipo: 'lote', registro_id: 'lote-fl15-only', solicitante_id: 'u-ana', solicitante_nome: 'Ana', motivo: 'Registro duplicado', status: 'pendente', criado_em: new Date(agora - 400).toISOString() },
+      { id: 'req-delete-05', loja_id: 'FL05', tipo: 'perecivel', registro_id: 'pere-fl05', solicitante_id: 'u-bea', solicitante_nome: 'Beatriz', motivo: 'Produto descartado', status: 'pendente', criado_em: new Date(agora - 300).toISOString() }
+    ]
+  };
+}
 
 tflaky('Central desktop: admin aguarda confirmação do perfil, usa indicadores da loja ativa e exporta XLSX válido', { skip: pular }, async () => {
   let liberarPerfil;
@@ -2017,6 +2118,7 @@ tflaky('Central desktop: admin aguarda confirmação do perfil, usa indicadores 
   };
   const a = await abrirLogado(async p => {
     await rotasPerm(p, 'admin', []);
+    await rotasAdminDesktopRemoto(p, adminDesktopRemoteRowsFromDados(dados, 'L1', 'Loja Teste'));
     await p.route(/\/rest\/v1\/perfis(?:\?|$)/, async r => {
       await perfilLiberado;
       await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ papel: 'admin', nome: 'Admin Teste' }]) });
@@ -2035,6 +2137,7 @@ tflaky('Central desktop: admin aguarda confirmação do perfil, usa indicadores 
     assert.strictEqual(await a.p.isVisible('#scanner'), false, 'scanner oculto no desktop');
     assert.strictEqual(await a.p.isVisible('#homeRegister'), false, 'entrada do fluxo móvel não aparece no desktop');
     assert.strictEqual(await a.p.textContent('#adminDesktopUser'), 'Admin Teste', 'usa o perfil confirmado, não o dado antigo da sessão');
+    await esperarAdminScope(a.p, 'L1');
     assert.strictEqual((await a.p.textContent('#adminKpiRecords')).trim(), '4');
     assert.strictEqual((await a.p.textContent('#adminKpiExpired')).trim(), '1');
     assert.strictEqual((await a.p.textContent('#adminKpiSoon')).trim(), '1');
@@ -2090,6 +2193,199 @@ tflaky('Central desktop: admin aguarda confirmação do perfil, usa indicadores 
   } finally { liberarPerfil(); await a.fechar(); }
 });
 
+tflaky('Central desktop: escopo remoto FL15, FL05 e todas as lojas atualiza KPIs, insights e usuários sem usar cacheD', { skip: pular }, async () => {
+  const fixture = adminDesktopScopeFixture(), cap = { requests: [] };
+  const cacheD = { prod: { 'EAN-CACHE': { lotes: [{ id: 'cache-only', lote: 'CACHE', qtd: 999, val: '2099-12-31', created_by_nome: 'Cache antigo' }] } }, cat: { 'EAN-CACHE': { nome: 'Somente no cache local' } }, pere: { itens: {}, regs: [] } };
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'admin', []);
+    await rotasAdminDesktopRemoto(p, fixture, cap);
+  }, cacheD, { papel: 'admin', nome: 'Admin Remoto', lojaId: 'FL15', lojaNome: 'Filial 15' });
+  const consulta = (tabela, loja) => cap.requests.find(x => x.tabela === tabela && x.loja === loja && x.limit === '500' && x.offset === '0');
+  try {
+    await a.p.setViewportSize({ width: 1440, height: 960 });
+    await a.p.waitForFunction(() => document.documentElement.classList.contains('desktop-admin'));
+    await esperarAdminScope(a.p, 'FL15');
+    assert.deepStrictEqual(await a.p.locator('#adminDesktopScopeSelect option').evaluateAll(es => es.map(e => e.value)), ['all', 'FL15', 'FL05']);
+    assert.strictEqual(await a.p.inputValue('#adminDesktopScopeSelect'), 'FL15');
+    assert.match(await a.p.textContent('#adminDesktopStore'), /Filial 15/);
+    assert.strictEqual((await a.p.textContent('#adminKpiRecords')).trim(), '3');
+    assert.strictEqual((await a.p.textContent('#adminKpiUnits')).trim(), '6');
+    assert.ok(!(await a.p.textContent('#adminDesktopDashboard')).includes('Somente no cache local'), 'dashboard desktop não usa o cacheD');
+    for (const tabela of ['lotes', 'pere_regs', 'pere_itens']) {
+      const req = consulta(tabela, 'eq.FL15');
+      assert.ok(req, tabela + ': consulta da filial selecionada');
+      assert.deepStrictEqual([req.limit, req.offset], ['500', '0']);
+    }
+    const consultaCatalogo = cap.requests.find(x => x.tabela === 'catalogo' && x.ean);
+    assert.ok(consultaCatalogo, 'descrições do catálogo são buscadas pelos EANs remotos');
+    assert.deepStrictEqual([consultaCatalogo.limit, consultaCatalogo.offset], ['100', null]);
+    assert.deepStrictEqual([
+      await a.p.textContent('#adminInsightMetric05'),
+      await a.p.textContent('#adminInsightMetric615'),
+      await a.p.textContent('#adminInsightMetric1630'),
+      await a.p.textContent('#adminInsightMetricCollected'),
+      await a.p.textContent('#adminInsightMetricUnitsRisk')
+    ].map(x => x.trim()), ['1', '1', '1', '1', '4']);
+
+    const timestamp15 = await a.p.evaluate(() => Number(document.getElementById('adminDesktopScopeStatus').dataset.updatedAt));
+    await a.p.selectOption('#adminDesktopScopeSelect', 'FL05');
+    await esperarAdminScope(a.p, 'FL05');
+    const timestamp05 = await a.p.evaluate(() => Number(document.getElementById('adminDesktopScopeStatus').dataset.updatedAt));
+    assert.ok(timestamp05 >= timestamp15, 'cada troca de filial registra novo timestamp do escopo');
+    assert.match(await a.p.textContent('#adminDesktopStore'), /Filial 05/);
+    assert.strictEqual((await a.p.textContent('#adminKpiRecords')).trim(), '3');
+    assert.strictEqual((await a.p.textContent('#adminKpiUnits')).trim(), '7');
+    assert.strictEqual((await a.p.textContent('#adminInsightMetricCollected')).trim(), '0');
+    assert.deepStrictEqual([await a.p.textContent('#adminInsightMetric05'), await a.p.textContent('#adminInsightMetric615'), await a.p.textContent('#adminInsightMetric1630')].map(x => x.trim()), ['1', '1', '1']);
+    assert.ok(consulta('lotes', 'eq.FL05') && consulta('pere_regs', 'eq.FL05') && consulta('pere_itens', 'eq.FL05'));
+
+    await a.p.selectOption('#adminDesktopScopeSelect', 'all');
+    await esperarAdminScope(a.p, 'all');
+    assert.strictEqual((await a.p.textContent('#adminKpiRecords')).trim(), '6', 'o mesmo EAN em duas filiais conta dois registros');
+    assert.strictEqual((await a.p.textContent('#adminKpiUnits')).trim(), '13', 'quantidades das duas filiais são somadas somente no escopo todas');
+    assert.deepStrictEqual([
+      await a.p.textContent('#adminInsightMetric05'),
+      await a.p.textContent('#adminInsightMetric615'),
+      await a.p.textContent('#adminInsightMetric1630'),
+      await a.p.textContent('#adminInsightMetricCollected'),
+      await a.p.textContent('#adminInsightMetricUnitsRisk')
+    ].map(x => x.trim()), ['2', '2', '2', '1', '10']);
+    assert.strictEqual(await a.p.locator('#adminInsightDaily .adminInsight-day').count(), 14, 'gráfico diário conserva a janela de 14 dias');
+    const locais = await a.p.textContent('#adminInsightLocations');
+    assert.match(locais, /Área de Vendas[\s\S]*3/);
+    assert.match(locais, /Depósito[\s\S]*3/);
+    for (const tabela of ['lotes', 'pere_regs', 'pere_itens']) {
+      const req = consulta(tabela, 'in.(FL15,FL05)');
+      assert.ok(req, tabela + ': consulta usa in para o escopo todas');
+      assert.deepStrictEqual([req.limit, req.offset], ['500', '0']);
+    }
+    await a.p.click('#adminDesktopNav [data-admin-view="reports"]');
+    await a.p.waitForSelector('#adminDesktopReports', { state: 'visible' });
+    const multi = a.p.locator('#adminUserRecordsChart .user-record-row').filter({ hasText: 'Multi Loja' });
+    assert.strictEqual(await multi.count(), 1, 'usuário multiloja aparece uma única vez no escopo todas');
+    assert.match(await multi.textContent(), /3/);
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
+tflaky('Central desktop: resposta atrasada de FL15 não reintroduz dados depois de FL05', { skip: pular }, async () => {
+  const fixture = adminDesktopScopeFixture(), cap = { requests: [] };
+  let liberar;
+  const bloqueio = new Promise(resolve => { liberar = resolve; });
+  cap.beforeResponse = async ({ url }) => {
+    if (url.searchParams.get('loja_id') === 'eq.FL15') await bloqueio;
+  };
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'admin', []);
+    await rotasAdminDesktopRemoto(p, fixture, cap);
+  }, { prod: { CACHE: { lotes: [{ id: 'cache', lote: 'CACHE', qtd: 77, val: '2099-12-31' }] } }, cat: { CACHE: { nome: 'Cache que não deve aparecer' } }, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin', lojaId: 'FL15', lojaNome: 'Filial 15' });
+  try {
+    await a.p.setViewportSize({ width: 1440, height: 960 });
+    await a.p.waitForFunction(() => document.documentElement.classList.contains('desktop-admin'));
+    await a.p.waitForSelector('#adminDesktopScopeSelect');
+    await a.p.selectOption('#adminDesktopScopeSelect', 'FL05');
+    await esperarAdminScope(a.p, 'FL05');
+    assert.match(await a.p.textContent('#adminDesktopStore'), /Filial 05/);
+    assert.strictEqual((await a.p.textContent('#adminKpiRecords')).trim(), '3');
+    liberar();
+    await a.p.waitForTimeout(120);
+    await esperarAdminScope(a.p, 'FL05');
+    assert.match(await a.p.textContent('#adminDesktopStore'), /Filial 05/);
+    assert.strictEqual((await a.p.textContent('#adminKpiRecords')).trim(), '3');
+    assert.ok(!(await a.p.textContent('#adminDesktopDashboard')).includes('Produto Filial 15'), 'resposta stale não contamina o painel atual');
+    assert.ok(cap.requests.some(x => x.tabela === 'lotes' && x.loja === 'eq.FL15'));
+    assert.deepStrictEqual(a.erros, []);
+  } finally { liberar(); await a.fechar(); }
+});
+
+tflaky('Central desktop: falha ao consultar uma filial limpa o painel e não mostra dados da filial anterior', { skip: pular }, async () => {
+  const fixture = adminDesktopScopeFixture(), cap = { requests: [] };
+  cap.response = ({ tabela, url }) => url.searchParams.get('loja_id') === 'eq.FL05' && tabela === 'lotes'
+    ? { status: 503, body: JSON.stringify({ message: 'falha remota fictícia' }) } : null;
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'admin', []);
+    await rotasAdminDesktopRemoto(p, fixture, cap);
+  }, { prod: { OLD: { lotes: [{ id: 'old', lote: 'OLD', qtd: 88, val: '2099-12-31' }] } }, cat: { OLD: { nome: 'Dados anteriores' } }, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin', lojaId: 'FL15', lojaNome: 'Filial 15' });
+  try {
+    await a.p.setViewportSize({ width: 1440, height: 960 });
+    await a.p.waitForFunction(() => document.documentElement.classList.contains('desktop-admin'));
+    await esperarAdminScope(a.p, 'FL15');
+    assert.strictEqual((await a.p.textContent('#adminKpiRecords')).trim(), '3');
+    await a.p.selectOption('#adminDesktopScopeSelect', 'FL05');
+    await a.p.waitForFunction(() => document.getElementById('adminDesktopScopeStatus').dataset.state === 'error');
+    assert.strictEqual((await a.p.textContent('#adminKpiRecords')).trim(), '0', 'falha não preserva o snapshot da filial anterior');
+    assert.ok(!(await a.p.textContent('#adminDesktopDashboard')).includes('Produto Filial 15'));
+    assert.ok(!(await a.p.textContent('#adminDesktopDashboard')).includes('Dados anteriores'));
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
+tflaky('Central desktop: Registros e Solicitações filtram a filial, mostram badges pendentes e respeitam ações autorizadas', { skip: pular }, async () => {
+  const fixture = adminDesktopScopeFixture(), cap = { requests: [] };
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'admin', []);
+    await rotasAdminDesktopRemoto(p, fixture, cap);
+  }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin', lojaId: 'FL15', lojaNome: 'Filial 15' });
+  try {
+    await a.p.setViewportSize({ width: 1440, height: 960 });
+    await a.p.waitForFunction(() => document.documentElement.classList.contains('desktop-admin'));
+    await esperarAdminScope(a.p, 'FL15');
+    assert.strictEqual(await a.p.locator('#adminDesktopNav [data-admin-view="records"]').count(), 1);
+    assert.strictEqual(await a.p.locator('#adminDesktopNav [data-admin-view="requests"]').count(), 1);
+    await a.p.click('#adminDesktopNav [data-admin-view="records"]');
+    await a.p.waitForSelector('#adminDesktopRecords', { state: 'visible' });
+    assert.ok((await a.p.textContent('#adminDesktopRecords')).includes('Produto compartilhado'));
+    await a.p.click('#adminDesktopNav [data-admin-view="requests"]');
+    await a.p.waitForSelector('#adminDesktopRequests', { state: 'visible' });
+    const requestText = await a.p.textContent('#adminDesktopRequests');
+    assert.ok(requestText.includes('Nome atualizado') || requestText.includes('Registro duplicado'));
+    const pendingBadges = a.p.locator('#adminDesktopRequests .admin-request-state');
+    const requestCards = a.p.locator('#adminDesktopRequests [data-request-card], #adminDesktopRequests .admin-request-card, #adminDesktopRequests .request-card');
+    assert.ok(await pendingBadges.count() >= 1, 'solicitações pendentes mostram badge');
+    assert.ok(await requestCards.count() >= 2, 'solicitações são apresentadas em cartões');
+    for (const tabela of ['solicitacoes_nome', 'solicitacoes_exclusao']) {
+      const req = cap.requests.find(x => x.tabela === tabela && x.loja === 'eq.FL15');
+      assert.ok(req, tabela + ': filtro de filial selecionada');
+    }
+    await a.p.selectOption('#adminDesktopScopeSelect', 'all');
+    await esperarAdminScope(a.p, 'all');
+    await a.p.click('#adminDesktopNav [data-admin-view="requests"]');
+    await a.p.waitForSelector('#adminDesktopRequests', { state: 'visible' });
+    assert.ok(cap.requests.some(x => x.tabela === 'solicitacoes_nome' && x.loja === 'in.(FL15,FL05)'));
+    assert.ok(cap.requests.some(x => x.tabela === 'solicitacoes_exclusao' && x.loja === 'in.(FL15,FL05)'));
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
+tflaky('Central desktop: filtro de usuários envia loja_id selecionada à função gerir-usuarios', { skip: pular }, async () => {
+  const fixture = adminDesktopScopeFixture(), corpos = [];
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'admin', []);
+    await rotasAdminDesktopRemoto(p, fixture);
+    await p.route(/\/functions\/v1\/gerir-usuarios/, async r => {
+      let body = {}; try { body = r.request().postDataJSON(); } catch (e) {}
+      corpos.push(body);
+      if (body.acao === 'listar') return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ usuarios: [{ id: 'u-multi', usuario: 'multi', nome: 'Multi Loja', papel: 'operador', lojas: [{ id: 'FL15', nome: 'Filial 15' }, { id: 'FL05', nome: 'Filial 05' }] }], lojas: fixture.stores, euPapel: 'admin' }) });
+      return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
+    });
+  }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin', lojaId: 'FL15', lojaNome: 'Filial 15' });
+  try {
+    await a.p.setViewportSize({ width: 1440, height: 960 });
+    await a.p.waitForFunction(() => document.documentElement.classList.contains('desktop-admin'));
+    await esperarAdminScope(a.p, 'FL15');
+    await a.p.selectOption('#adminDesktopScopeSelect', 'FL05');
+    await esperarAdminScope(a.p, 'FL05');
+    await a.p.click('#adminDesktopNav [data-admin-view="settings"]');
+    await a.p.waitForSelector('#sysMenuCard', { state: 'visible' });
+    if (await a.p.locator('#sysMenu [data-sys-open="usuarios"]').count()) await a.p.click('#sysMenu [data-sys-open="usuarios"]');
+    await a.p.waitForSelector('#cardUsuarios', { state: 'visible' });
+    await a.p.waitForFunction(() => document.getElementById('cardUsuarios').textContent.includes('Multi Loja'));
+    const listar = corpos.filter(x => x && x.acao === 'listar');
+    assert.ok(listar.some(x => x.loja_id === 'FL05'), JSON.stringify(listar));
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
 tflaky('Central desktop: operador em PC não recebe a central administrativa nem perde a navegação existente', { skip: pular }, async () => {
   const a = await abrirLogado(p => rotasPerm(p, 'operador', []), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador', nome: 'Operador Teste' });
   try {
@@ -2105,6 +2401,297 @@ tflaky('Central desktop: operador em PC não recebe a central administrativa nem
     assert.strictEqual((await a.p.textContent('#slogan')).trim(), 'Área do Operador', 'o cabeçalho mantém o papel do operador');
     await a.p.click('nav button[data-v="aj"]');
     assert.strictEqual((await a.p.textContent('#slogan')).trim(), 'Área do Operador', 'o subtítulo de Ajustes acompanha o papel operador');
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
+
+tflaky('Central desktop: Ajustes abre Usuários, conserva 18 permissões por papel e alterna as telas sem scanner móvel', { skip: pular }, async () => {
+  const a = await abrirLogado(p => rotasPerm(p, 'admin', []), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin' });
+  const assertEstruturaUnica = async () => {
+    const r = await a.p.evaluate(() => {
+      const repetidos = valores => [...new Set(valores.filter(Boolean).filter((v, i, todos) => todos.indexOf(v) !== i))];
+      return {
+        ids: repetidos([...document.querySelectorAll('[id]')].map(e => e.id)),
+        idsInputs: repetidos([...document.querySelectorAll('input[id]')].map(e => e.id)),
+        appMain: document.querySelectorAll('#appMain').length,
+        cardPerfis: document.querySelectorAll('#cardPerfisAcesso').length
+      };
+    });
+    assert.deepStrictEqual(r.ids, [], 'não duplica IDs ao reparentar a tela de Ajustes');
+    assert.deepStrictEqual(r.idsInputs, [], 'não duplica IDs de inputs ao reparentar a tela de Ajustes');
+    assert.strictEqual(r.appMain, 1, 'há um único main compartilhado');
+    assert.strictEqual(r.cardPerfis, 1, 'há um único cartão de perfis');
+  };
+  try {
+    await permsCarregadas(a.p);
+    await a.p.setViewportSize({ width: 1440, height: 960 });
+    await a.p.waitForFunction(() => document.documentElement.classList.contains('desktop-admin'));
+
+    await a.p.click('#adminDesktopNav [data-admin-view="settings"]');
+    await a.p.waitForSelector('#adminDesktopSettings', { state: 'visible' });
+    await a.p.waitForSelector('#sysMenuCard', { state: 'visible' });
+    assert.strictEqual(await a.p.evaluate(() => document.getElementById('appMain')?.parentElement?.id), 'adminDesktopSettingsContent', 'Ajustes usa o mesmo appMain dentro do host desktop');
+    assert.strictEqual(await a.p.isVisible('nav.abas'), false, 'navegação móvel fica oculta no desktop');
+    assert.strictEqual(await a.p.isVisible('#scanner'), false, 'scanner fica oculto no desktop');
+
+    await a.p.click('#sysMenu [data-sys-open="usuarios"]');
+    await a.p.waitForSelector('#cardPerfisAcesso', { state: 'visible' });
+    for (const papel of ['operador', 'assistente', 'analista', 'gerente']) {
+      await a.p.selectOption('#permPapel', papel);
+      assert.strictEqual(await a.p.locator('#cardPerfisAcesso input[type="checkbox"]').count(), 18, papel + ': 18 checkboxes');
+      assert.strictEqual(await a.p.locator('#cardPerfisAcesso [data-perm]').count(), 18, papel + ': 18 permissões');
+      assert.strictEqual(await a.p.isChecked('#permBasicas [data-perm="registros_recolher"]'), true, papel + ': Recolher habilitado por padrão');
+      await assertEstruturaUnica();
+    }
+
+    for (const [view, panel] of [['dashboard', '#adminDesktopDashboard'], ['reports', '#adminDesktopReports'], ['settings', '#adminDesktopSettings']]) {
+      await a.p.click('#adminDesktopNav [data-admin-view="' + view + '"]');
+      await a.p.waitForSelector(panel, { state: 'visible' });
+      assert.strictEqual(await a.p.isVisible('nav.abas'), false, view + ': navegação móvel continua oculta');
+      assert.strictEqual(await a.p.isVisible('#scanner'), false, view + ': scanner continua oculto');
+      await assertEstruturaUnica();
+    }
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
+tflaky('Central desktop: atalho de Perfis de acesso edita Recolher somente ao salvar e não altera o dashboard', { skip: pular }, async () => {
+  const cap = [];
+  const remoto = { requests: [] };
+  const dados = { prod: { '7891000315507': { lotes: [Object.assign(lote('desktop-lote', '2099-12-31', 2, 'D1'), { setor: 'Mercearia' })] } }, cat: { '7891000315507': { nome: 'Produto desktop' } }, pere: { itens: {}, regs: [] } };
+  const a = await abrirLogado(async p => { await rotasPerm(p, 'admin', [], cap); await rotasAdminDesktopRemoto(p, adminDesktopRemoteRowsFromDados(dados, 'L1', 'Loja Teste'), remoto); }, dados, { papel: 'admin', nome: 'Admin' });
+  try {
+    await permsCarregadas(a.p);
+    await a.p.setViewportSize({ width: 1440, height: 960 });
+    await a.p.waitForFunction(() => document.documentElement.classList.contains('desktop-admin'));
+    await esperarAdminScope(a.p, 'L1');
+    const registrosAntes = (await a.p.textContent('#adminKpiRecords')).trim();
+
+    await a.p.click('#adminDesktopNav [data-admin-view="permissions"]');
+    await a.p.waitForSelector('#adminDesktopSettings', { state: 'visible' });
+    await a.p.waitForSelector('#cardPerfisAcesso', { state: 'visible' });
+    await a.p.selectOption('#permPapel', 'operador');
+    assert.strictEqual(await a.p.isChecked('#permBasicas [data-perm="registros_recolher"]'), true);
+    await a.p.uncheck('#permBasicas [data-perm="registros_recolher"]');
+    assert.deepStrictEqual(cap, [], 'alterar a caixa não grava antes de Salvar');
+
+    await a.p.click('#bPermSalvar');
+    await a.p.waitForFunction(() => /Permissões de Operador salvas/.test(document.getElementById('permStatus').textContent));
+    assert.deepStrictEqual(cap, [{ p_papel: 'operador', p_permissao: 'registros_recolher', p_permitido: false }]);
+    assert.strictEqual(await a.p.isDisabled('#bPermSalvar'), true);
+
+    await a.p.click('#adminDesktopNav [data-admin-view="dashboard"]');
+    await a.p.waitForSelector('#adminDesktopDashboard', { state: 'visible' });
+    assert.strictEqual((await a.p.textContent('#adminKpiRecords')).trim(), registrosAntes, 'salvar uma permissão não altera o dashboard');
+    assert.strictEqual(await a.p.isVisible('nav.abas'), false);
+    assert.strictEqual(await a.p.isVisible('#scanner'), false);
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
+tflaky('Central desktop: retorno após navegação mobile reabre Ajustes ou Perfis e bloqueia o scanner', { skip: pular }, async () => {
+  const a = await abrirLogado(p => rotasPerm(p, 'admin', []), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin' });
+  try {
+    await permsCarregadas(a.p);
+    for (const desktopView of ['settings', 'permissions']) {
+      for (const mobileView of ['home', 'reg', 'prod']) {
+        await a.p.setViewportSize({ width: 1440, height: 960 });
+        await a.p.waitForFunction(() => document.documentElement.classList.contains('desktop-admin'));
+        await a.p.click('#adminDesktopNav [data-admin-view="' + desktopView + '"]');
+        await a.p.setViewportSize({ width: 390, height: 844 });
+        await a.p.waitForFunction(() => !document.documentElement.classList.contains('desktop-admin'));
+        await a.p.click('nav button[data-v="' + (mobileView === 'reg' ? 'home' : mobileView) + '"]');
+        if (mobileView === 'reg') await a.p.click('#homeRegister');
+        await a.p.setViewportSize({ width: 1440, height: 960 });
+        await a.p.waitForFunction(() => document.documentElement.classList.contains('desktop-admin'));
+        assert.strictEqual(await a.p.isVisible('#v-aj'), true, desktopView + '/' + mobileView + ': retorna à vista correta sem clicar de novo no atalho');
+        assert.strictEqual(await a.p.isVisible(desktopView === 'permissions' ? '#cardPerfisAcesso' : '#sysMenuCard'), true);
+        assert.strictEqual(await a.p.isVisible('#v-home'), false);
+        assert.strictEqual(await a.p.isVisible('#v-reg'), false);
+        assert.strictEqual(await a.p.isVisible('#v-prod'), false);
+        await a.p.evaluate(() => document.getElementById('bEscanear').click());
+        assert.strictEqual(await a.p.locator('#scanner').evaluate(e => e.classList.contains('on')), false, 'clique programático não liga o scanner nos Ajustes desktop');
+      }
+    }
+    await a.p.click('#adminDesktopSettingsBack');
+    await a.p.waitForSelector('#sysMenuCard', { state: 'visible' });
+    await a.p.click('#sysMenu [data-sys-open="catalogo"]');
+    await a.p.waitForSelector('#v-catalogo', { state: 'visible' });
+    await a.p.click('#adminDesktopSettingsBack');
+    await a.p.waitForSelector('#sysMenuCard', { state: 'visible' });
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
+tflaky('Central desktop: mobile→desktop→mobile→desktop preserva um appMain e handlers; logout devolve tudo ao body', { skip: pular }, async () => {
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'admin', []);
+    await p.route('**/auth/v1/logout**', r => r.fulfill({ status: 204, body: '' }));
+  }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin' });
+  const estrutura = () => a.p.evaluate(() => ({
+    appMain: document.querySelectorAll('#appMain').length,
+    cardPerfis: document.querySelectorAll('#cardPerfisAcesso').length,
+    parent: document.getElementById('appMain')?.parentElement?.id || document.getElementById('appMain')?.parentElement?.tagName || null
+  }));
+  try {
+    await permsCarregadas(a.p);
+    let r = await estrutura();
+    assert.deepStrictEqual(r, { appMain: 1, cardPerfis: 1, parent: 'BODY' }, 'no mobile inicial o main fica no body');
+    await a.p.click('#homeRegister');
+    assert.strictEqual(await a.p.isVisible('#bTipoIndustrial'), true, 'handler da navegação móvel continua útil');
+
+    await a.p.setViewportSize({ width: 1440, height: 960 });
+    await a.p.waitForFunction(() => document.documentElement.classList.contains('desktop-admin'));
+    await a.p.click('#adminDesktopNav [data-admin-view="settings"]');
+    await a.p.waitForSelector('#adminDesktopSettings', { state: 'visible' });
+    r = await estrutura();
+    assert.deepStrictEqual(r, { appMain: 1, cardPerfis: 1, parent: 'adminDesktopSettingsContent' }, 'desktop reparenta o mesmo main, sem clonar');
+
+    await a.p.setViewportSize({ width: 390, height: 844 });
+    await a.p.waitForFunction(() => !document.documentElement.classList.contains('desktop-admin'));
+    r = await estrutura();
+    assert.deepStrictEqual(r, { appMain: 1, cardPerfis: 1, parent: 'BODY' }, 'ao voltar ao mobile o main retorna ao body');
+    assert.strictEqual(await a.p.isVisible('nav.abas'), true);
+    await a.p.click('nav button[data-v="aj"]');
+    await a.p.waitForSelector('#sysMenuCard', { state: 'visible' });
+
+    await a.p.setViewportSize({ width: 1440, height: 960 });
+    await a.p.waitForFunction(() => document.documentElement.classList.contains('desktop-admin'));
+    await a.p.click('#adminDesktopNav [data-admin-view="settings"]');
+    await a.p.waitForSelector('#cardPerfisAcesso', { state: 'hidden' });
+    r = await estrutura();
+    assert.deepStrictEqual(r, { appMain: 1, cardPerfis: 1, parent: 'adminDesktopSettingsContent' }, 'segunda ida ao desktop não duplica main nem cartão');
+    assert.strictEqual(await a.p.locator('#adminDesktopNav [data-admin-view]').count() >= 2, true, 'sidebar desktop mantém seus handlers');
+
+    assert.strictEqual(await a.p.locator('#bLogoutHdr').count(), 1);
+    await a.p.evaluate(() => document.getElementById('bLogoutHdr').click());
+    await a.p.waitForSelector('#conta-login', { state: 'visible' });
+    await a.p.waitForFunction(() => localStorage.getItem('validade_sessao') === null);
+    r = await estrutura();
+    assert.deepStrictEqual(r, { appMain: 1, cardPerfis: 1, parent: 'BODY' }, 'logout remove o host admin e devolve o main ao body');
+    assert.strictEqual(await a.p.isVisible('#adminDesktop'), false);
+    assert.strictEqual(await a.p.isVisible('#adminDesktopSettings'), false);
+    assert.strictEqual(await a.p.isVisible('#cardPerfisAcesso'), false, 'cartão exclusivo de admin não fica acessível após logout');
+    assert.strictEqual(await a.p.locator('#adminDesktopNav [data-admin-view]:visible').count(), 0, 'sidebar admin não fica acessível após logout');
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
+for (const papel of ['operador', 'assistente', 'analista']) tflaky('Central desktop: ' + papel + ' não recebe controles da sidebar administrativa', { skip: pular }, async () => {
+  const a = await abrirLogado(p => rotasPerm(p, papel, []), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel, nome: papel });
+  try {
+    await permsCarregadas(a.p);
+    await a.p.setViewportSize({ width: 1440, height: 960 });
+    await a.p.waitForFunction(role => JSON.parse(localStorage.getItem('validade_sessao') || '{}').papel === role, papel);
+    assert.strictEqual(await a.p.isVisible('#adminDesktop'), false, papel + ': central admin não aparece');
+    assert.strictEqual(await a.p.isVisible('#adminDesktopNav'), false, papel + ': sidebar admin não aparece');
+    assert.strictEqual(await a.p.locator('#adminDesktopNav [data-admin-view]:visible').count(), 0, papel + ': nenhum botão admin fica visível');
+    assert.strictEqual(await a.p.isVisible('nav.abas'), true, papel + ': navegação móvel continua disponível');
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
+tflaky('Central desktop: gerente abre dashboard, relatórios e Ajustes, sem Perfis de acesso e retorna ao mobile', { skip: pular }, async () => {
+  const fixture = adminDesktopScopeFixture();
+  const a = await abrirLogado(async p => { await rotasPerm(p, 'gerente', []); await rotasAdminDesktopRemoto(p, fixture); }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'gerente', nome: 'Gerente', lojaId: 'FL15', lojaNome: 'Filial 15' });
+  try {
+    await permsCarregadas(a.p);
+    await a.p.setViewportSize({ width: 1440, height: 960 });
+    await a.p.waitForFunction(() => document.documentElement.classList.contains('desktop-admin'));
+    await esperarAdminScope(a.p, 'FL15');
+    assert.strictEqual(await a.p.isVisible('#adminDesktop'), true, 'gerente confirmado recebe a central desktop');
+    assert.strictEqual(await a.p.textContent('#adminDesktopRole'), 'Gerente', 'a central exibe o papel confirmado');
+    assert.strictEqual((await a.p.textContent('#adminKpiRecords')).trim(), '3', 'gerente lê a fonte remota da filial selecionada');
+    assert.strictEqual(await a.p.isVisible('nav.abas'), false, 'a navegação móvel fica oculta no desktop');
+    assert.strictEqual(await a.p.isVisible('#scanner'), false, 'o scanner fica oculto no desktop');
+
+    const atalhos = await a.p.locator('#adminDesktopNav [data-admin-view]:visible').evaluateAll(bs => bs.map(b => b.dataset.adminView));
+    assert.deepStrictEqual(atalhos, ['dashboard', 'records', 'requests', 'reports', 'settings'], 'gerente vê somente atalhos autorizados');
+    assert.strictEqual(await a.p.locator('#adminDesktopPermissionsNav').count(), 1, 'o atalho de Perfis continua no DOM para a política de visibilidade');
+    assert.strictEqual(await a.p.isVisible('#adminDesktopPermissionsNav'), false, 'gerente não vê o atalho de Perfis de acesso');
+
+    await a.p.click('#adminDesktopReportsNav');
+    await a.p.waitForSelector('#adminDesktopReports', { state: 'visible' });
+    assert.strictEqual(await a.p.isVisible('#adminDesktopDashboard'), false);
+    await a.p.evaluate(() => document.getElementById('bEscanear').click());
+    await a.p.waitForTimeout(80);
+    assert.strictEqual(await a.p.locator('#scanner').evaluate(e => e.classList.contains('on')), false, 'clique programático não inicia scanner no relatório desktop');
+
+    await a.p.click('#adminDesktopNav [data-admin-view="settings"]');
+    await a.p.waitForSelector('#adminDesktopSettings', { state: 'visible' });
+    await a.p.waitForSelector('#sysMenuCard', { state: 'visible' });
+    const menuPadrao = await a.p.locator('#sysMenu [data-sys-open]').evaluateAll(bs => bs.map(b => b.dataset.sysOpen));
+    assert.ok(menuPadrao.includes('usuarios') && menuPadrao.includes('relatorios'), 'Ajustes respeita as permissões padrão do gerente');
+    assert.ok(!menuPadrao.includes('auditoria'), 'Auditoria não aparece sem auditoria_ver');
+    assert.strictEqual(await a.p.isVisible('#cardPerfisAcesso'), false, 'cartão de Perfis é exclusivo do administrador');
+
+    await a.p.evaluate(() => document.getElementById('adminDesktopPermissionsNav').click());
+    await a.p.waitForTimeout(80);
+    assert.strictEqual(await a.p.isVisible('#adminDesktopSettings'), true, 'click programático em permissions não deixa Ajustes');
+    assert.strictEqual(await a.p.isVisible('#sysMenuCard'), true, 'click programático em permissions não abre outra seção');
+    assert.strictEqual(await a.p.isVisible('#cardPerfisAcesso'), false, 'click programático em permissions não abre Perfis de acesso');
+    await a.p.evaluate(() => document.getElementById('bEscanear').click());
+    assert.strictEqual(await a.p.locator('#scanner').evaluate(e => e.classList.contains('on')), false, 'guard do scanner também vale em Ajustes desktop');
+
+    await a.p.setViewportSize({ width: 390, height: 844 });
+    await a.p.waitForFunction(() => !document.documentElement.classList.contains('desktop-admin'));
+    assert.strictEqual(await a.p.isVisible('#adminDesktop'), false, 'gerente retorna ao shell mobile');
+    assert.strictEqual(await a.p.isVisible('nav.abas'), true, 'a navegação original volta no mobile');
+    assert.strictEqual(await a.p.isVisible('#v-aj'), true, 'a vista mobile de Ajustes é preservada');
+    await a.p.click('nav button[data-v="home"]');
+    assert.strictEqual(await a.p.isVisible('#homeRegister'), true, 'o fluxo mobile original continua disponível');
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
+tflaky('Central desktop: gerente aplica overrides de permissões em Ajustes e bloqueia relatórios revogados', { skip: pular }, async () => {
+  const overrides = [
+    { papel: 'gerente', permissao: 'usuarios_gerenciar', permitido: false },
+    { papel: 'gerente', permissao: 'auditoria_ver', permitido: true },
+    { papel: 'gerente', permissao: 'relatorios', permitido: false }
+  ];
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'gerente', overrides);
+    await p.route(/\/rest\/v1\/auditoria(?:\?|$)/, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'gerente', nome: 'Gerente' });
+  try {
+    await permsCarregadas(a.p);
+    await a.p.setViewportSize({ width: 1440, height: 960 });
+    await a.p.waitForFunction(() => document.documentElement.classList.contains('desktop-admin'));
+    assert.strictEqual(await a.p.textContent('#adminDesktopRole'), 'Gerente');
+    assert.deepStrictEqual(await a.p.locator('#adminDesktopNav [data-admin-view]:visible').evaluateAll(bs => bs.map(b => b.dataset.adminView)), ['dashboard', 'records', 'requests', 'settings'], 'relatórios revogados somem da sidebar do gerente');
+    assert.strictEqual(await a.p.isVisible('#adminDesktopReportsNav'), false);
+    assert.strictEqual(await a.p.isVisible('#adminDesktopPermissionsNav'), false);
+
+    await a.p.evaluate(() => document.getElementById('adminDesktopReportsNav').click());
+    await a.p.waitForTimeout(80);
+    assert.strictEqual(await a.p.isVisible('#adminDesktopDashboard'), true, 'click programático em relatórios revogados mantém o dashboard');
+    assert.strictEqual(await a.p.isVisible('#adminDesktopReports'), false);
+    let downloads = 0;
+    const onDownload = () => { downloads++; };
+    a.p.on('download', onDownload);
+    await a.p.evaluate(() => { document.getElementById('adminExportXlsx').click(); document.getElementById('adminGenerateReport').click(); });
+    await a.p.waitForTimeout(120);
+    a.p.off('download', onDownload);
+    assert.strictEqual(downloads, 0, 'relatórios revogados não exportam XLSX nem TXT');
+
+    await a.p.click('#adminDesktopNav [data-admin-view="settings"]');
+    await a.p.waitForSelector('#sysMenuCard', { state: 'visible' });
+    const menuOverride = await a.p.locator('#sysMenu [data-sys-open]').evaluateAll(bs => bs.map(b => b.dataset.sysOpen));
+    assert.ok(!menuOverride.includes('usuarios'), 'usuarios_gerenciar=false remove Usuários');
+    assert.ok(menuOverride.includes('auditoria'), 'auditoria_ver=true libera Auditoria');
+    assert.ok(!menuOverride.includes('relatorios'), 'relatorios=false remove Relatórios de Ajustes');
+    assert.strictEqual(await a.p.isVisible('#cardPerfisAcesso'), false, 'gerente nunca recebe o cartão de Perfis');
+    await a.p.click('#sysMenu [data-sys-open="auditoria"]');
+    await a.p.waitForSelector('#cardAuditoria', { state: 'visible' });
+    assert.strictEqual(await a.p.isVisible('#cardAuditoria'), true, 'Ajustes usa auditoria_ver do gerente');
+    await a.p.evaluate(() => document.getElementById('adminDesktopPermissionsNav').click());
+    await a.p.waitForTimeout(80);
+    assert.strictEqual(await a.p.isVisible('#cardPerfisAcesso'), false, 'permissions não abre Perfis mesmo fora do menu raiz');
+    await a.p.setViewportSize({ width: 390, height: 844 });
+    await a.p.waitForFunction(() => !document.documentElement.classList.contains('desktop-admin'));
+    assert.strictEqual(await a.p.isVisible('nav.abas'), true, 'gerente com overrides também retorna à navegação mobile');
     assert.deepStrictEqual(a.erros, []);
   } finally { await a.fechar(); }
 });
@@ -2480,4 +3067,90 @@ tflaky('auditoria de recolhimento não é consultada no relatório sem a permiss
   assert.deepStrictEqual(consultasAudit, [], 'nenhuma consulta de auditoria é emitida');
   assert.deepStrictEqual(a.erros, []);
   await a.fechar();
+});
+
+tflaky('Central desktop: edição no consolidado usa ID e filial do registro, preserva catálogo e bloqueia duplo clique', { skip: pular }, async () => {
+  const fixture = adminDesktopScopeFixture(), writes = [];
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'admin', []);
+    await rotasAdminDesktopRemoto(p, fixture);
+    await p.route(/\/rest\/v1\/lotes(?:\?|$)/, async route => {
+      if (route.request().method() !== 'PATCH') return route.fallback();
+      const url = new URL(route.request().url()), body = route.request().postDataJSON();
+      writes.push({ url, body });
+      const target = fixture.lotes.find(x => 'eq.'+x.id === url.searchParams.get('id') && 'eq.'+x.loja_id === url.searchParams.get('loja_id'));
+      assert.ok(target);
+      Object.assign(target, body);
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([target]) });
+    });
+  }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', lojaId: 'FL15', lojaNome: 'Filial 15' });
+  try {
+    await a.p.setViewportSize({ width: 1440, height: 960 });
+    await esperarAdminScope(a.p, 'FL15');
+    await a.p.selectOption('#adminDesktopScopeSelect', 'all');
+    await esperarAdminScope(a.p, 'all');
+    await a.p.click('#adminDesktopNav [data-admin-view="records"]');
+    await a.p.click('[data-record-action="edit"][data-record-id="lote-fl05-same"]');
+    assert.match(await a.p.textContent('#adminRecordEditMeta'), /Filial 05/);
+    assert.equal(await a.p.getAttribute('#adminRecordName', 'readonly'), '');
+    await a.p.fill('#adminRecordQtd', '12');
+    await a.p.selectOption('#adminRecordLocalizacao', 'false');
+    await a.p.evaluate(() => { const b = document.getElementById('adminRecordEditSave'); b.click(); b.click(); });
+    await a.p.waitForFunction(() => !document.getElementById('adminRecordEdit').open);
+    await esperarAdminScope(a.p, 'all');
+    assert.equal(writes.length, 1);
+    assert.equal(writes[0].url.searchParams.get('id'), 'eq.lote-fl05-same');
+    assert.equal(writes[0].url.searchParams.get('loja_id'), 'eq.FL05');
+    assert.equal(writes[0].url.searchParams.get('deleted_at'), 'is.null');
+    assert.deepStrictEqual(Object.keys(writes[0].body).sort(), ['em_area_vendas','lote','qtd','setor','val']);
+    assert.equal(writes[0].body.qtd, 12);
+    assert.equal(writes[0].body.em_area_vendas, false);
+    assert.match(await a.p.locator('tr[data-record-row="lote-fl05-same"]').textContent(), /12 un\./);
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
+tflaky('Central desktop: Gerente sem edição de terceiros ou recolhimento não recebe essas ações nem exclusão administrativa', { skip: pular }, async () => {
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'gerente', [
+      { papel: 'gerente', permissao: 'registros_editar_outros', permitido: false },
+      { papel: 'gerente', permissao: 'registros_recolher', permitido: false }
+    ]);
+    await rotasAdminDesktopRemoto(p, adminDesktopScopeFixture());
+  }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'gerente', lojaId: 'FL15', lojaNome: 'Filial 15' });
+  try {
+    await a.p.setViewportSize({ width: 1440, height: 960 });
+    await esperarAdminScope(a.p, 'FL15');
+    await a.p.click('#adminDesktopNav [data-admin-view="records"]');
+    assert.equal(await a.p.locator('#adminDesktopRecords [data-record-action="edit"]').count(), 0);
+    assert.equal(await a.p.locator('#adminDesktopRecords [data-record-action="collect"]').count(), 0);
+    assert.equal(await a.p.locator('#adminDesktopRecords [data-record-action="delete"]').count(), 0);
+    assert.equal(await a.p.locator('#adminDesktopRecords [data-record-action="restore"]').count(), 1);
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
+tflaky('Central desktop: troca de filial invalida e fecha a edição antes de qualquer gravação', { skip: pular }, async () => {
+  let writes = 0;
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'admin', []);
+    await rotasAdminDesktopRemoto(p, adminDesktopScopeFixture());
+    await p.route(/\/rest\/v1\/lotes(?:\?|$)/, route => {
+      if (route.request().method() === 'PATCH') writes++;
+      return route.fallback();
+    });
+  }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', lojaId: 'FL15', lojaNome: 'Filial 15' });
+  try {
+    await a.p.setViewportSize({ width: 1440, height: 960 });
+    await esperarAdminScope(a.p, 'FL15');
+    await a.p.click('#adminDesktopNav [data-admin-view="records"]');
+    await a.p.click('[data-record-action="edit"][data-record-id="lote-fl15-same"]');
+    await a.p.fill('#adminRecordQtd', '77');
+    await a.p.evaluate(() => { const s=document.getElementById('adminDesktopScopeSelect');s.value='FL05';s.dispatchEvent(new Event('change')); });
+    await esperarAdminScope(a.p, 'FL05');
+    assert.equal(await a.p.evaluate(() => document.getElementById('adminRecordEdit').open), false);
+    assert.equal(writes, 0);
+    assert.equal(await a.p.locator('#adminRecordsRows tr[data-record-store="FL15"]').count(), 0);
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
 });

@@ -33,16 +33,37 @@ async function authenticatedUser(req: Request) {
   const { data, error } = await admin.auth.getUser(token);
   return error ? null : data.user;
 }
-// Vinculado à loja, ou perfil de escopo global (recebe avisos de todas as lojas) em uma loja que existe.
+function papelTemEscopoGlobal(papel: string): boolean {
+  // O Gerente pode receber avisos de todas as suas lojas atribuídas, nunca da
+  // rede inteira, mesmo quando `avisos_todas_lojas` foi habilitado no papel.
+  return papel === "admin" || papel === "analista";
+}
+
+async function escopoLojasDoUsuario(userId: string): Promise<{ global: boolean; ids: Set<string> } | null> {
+  const { data: perfil, error: perfilErr } = await admin.from("perfis").select("papel").eq("id", userId).maybeSingle();
+  if (perfilErr || !perfil) return null;
+  if (papelTemEscopoGlobal(perfil.papel)) {
+    const { data: lojas, error: lojasErr } = await admin.from("lojas").select("id");
+    if (lojasErr) return null;
+    return { global: true, ids: new Set((lojas || []).map((loja: { id: string }) => loja.id)) };
+  }
+  const { data: membros, error: membrosErr } = await admin.from("loja_membros").select("loja_id").eq("user_id", userId);
+  if (membrosErr) return null;
+  return { global: false, ids: new Set((membros || []).map((membro: { loja_id: string }) => membro.loja_id)) };
+}
+
+// Vinculado à loja, ou Admin/Analista em uma loja que existe.
 async function isMember(userId: string, lojaId: string) {
   const { data, error } = await admin.from("loja_membros").select("loja_id")
     .eq("user_id", userId).eq("loja_id", lojaId).maybeSingle();
   if (!error && data) return true;
   const { data: perfil, error: perfilErr } = await admin.from("perfis").select("papel").eq("id", userId).maybeSingle();
   if (perfilErr || !perfil) return false;
-  // Perfis de acesso: "Receber avisos de todas as lojas" é definido pelo Administrador.
+  // Mantém a permissão histórica como uma segunda barreira, mas ela nunca
+  // transforma Gerente em global: o papel permitido é validado explicitamente.
   const { data: global, error: permErr } = await admin.rpc("papel_tem_permissao", { p_papel: perfil.papel, p_permissao: "avisos_todas_lojas" });
   if (permErr || global !== true) return false;
+  if (!papelTemEscopoGlobal(perfil.papel)) return false;
   const { data: loja, error: lojaErr } = await admin.from("lojas").select("id").eq("id", lojaId).maybeSingle();
   return !lojaErr && !!loja;
 }
@@ -136,9 +157,14 @@ Deno.serve(async (req) => {
     const publicKey = env("VAPID_PUBLIC_KEY"), privateKey = env("VAPID_PRIVATE_KEY"), subject = env("VAPID_SUBJECT");
     if (!publicKey || !privateKey || !subject) return json({ error: "Credenciais VAPID não configuradas" }, 503);
     const desde = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-    const { data: rows, error } = await admin.from("notificacoes").select("user_id,titulo,mensagem")
+    const escopo = await escopoLojasDoUsuario(user.id);
+    if (!escopo) return json({ error: "Não foi possível validar o escopo do usuário" }, 500);
+    if (!escopo.global && escopo.ids.size === 0) return json({ error: "Envio não encontrado" }, 404);
+    let envioQuery = admin.from("notificacoes").select("user_id,loja_id,titulo,mensagem")
       .eq("tipo", "sistema_personalizado").eq("payload->>envio_id", envioId).eq("payload->>remetente_id", user.id)
       .gte("criado", desde).limit(5000);
+    if (!escopo.global) envioQuery = envioQuery.in("loja_id", [...escopo.ids]);
+    const { data: rows, error } = await envioQuery;
     if (error) return json({ error: "Falha ao consultar o envio" }, 500);
     if (!rows || rows.length === 0) return json({ error: "Envio não encontrado" }, 404);
     webpush.setVapidDetails(subject, publicKey, privateKey);
