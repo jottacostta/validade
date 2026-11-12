@@ -133,15 +133,17 @@ test('resposta de edição preserva vínculos no servidor, mas não expõe IDs e
   assert.match(edit,/\.\.\.cadastroVisivel/);
 });
 
-test('criação permite ao Administrador todos os papéis sem liberar papéis superiores aos demais gestores', () => {
+test('criação segue a hierarquia: Administrador tudo, Gerente até Analista, demais gestores até Assistente', () => {
   const create = edge.slice(edge.indexOf('if (acao === "criar")'), edge.indexOf('if (acao === "trocar_senha_primeiro_acesso")'));
   const first = create.match(/if \((.+)\) return json\(\{ error: "Seu perfil só pode criar operadores\."/);
-  const second = create.match(/if \((.+)\) return json\(\{ error: "Analista\/Gerente só pode criar operadores e assistentes\."/);
+  const second = create.match(/if \((.+)\) return json\(\{ error: "Seu perfil não pode criar usuários com esse papel/);
   assert.ok(first && second, 'guardas reais da criação localizadas');
-  const bloqueado = Function('ehAdmin', 'gerenciaUsuarios', 'papel', `return (${first[1]}) || (${second[1]});`);
-  for (const papel of ['operador', 'assistente', 'analista', 'gerente', 'admin']) {
-    assert.equal(bloqueado(true, true, papel), false, `Administrador pode criar ${papel}`);
-    assert.equal(bloqueado(false, true, papel), !['operador', 'assistente'].includes(papel), `Gestor não-admin: ${papel}`);
-    assert.equal(bloqueado(false, false, papel), papel !== 'operador', `Sem gestão de usuários: ${papel}`);
+  const hier = fs.readFileSync(path.join(root, 'supabase/functions/gerir-usuarios/hierarquia.ts'), 'utf8')
+    .replace(/\bexport\s+/g, '').replace(/:\s*(string|number|boolean|Record<string, number>)(\s*[,)=;])/g, '$2').replace(/\)\s*:\s*(string\[\]|number|boolean)\s*\{/g, ') {');
+  const bloqueado = Function('papelCaller', 'ehAdmin', 'gerenciaUsuarios', 'papel', `${hier}\nreturn (${first[1]}) || (${second[1]});`);
+  const teto = { admin: 5, gerente: 3, analista: 2, assistente: 2, operador: 2 }, nivel = { operador: 1, assistente: 2, analista: 3, gerente: 4, admin: 5 };
+  for (const ator of Object.keys(teto)) for (const papel of Object.keys(nivel)) {
+    assert.equal(bloqueado(ator, ator === 'admin', true, papel), nivel[papel] > teto[ator], `${ator} com gestão criando ${papel}`);
+    if (ator !== 'admin') assert.equal(bloqueado(ator, false, false, papel), papel !== 'operador', `${ator} sem gestão criando ${papel}`);
   }
 });
