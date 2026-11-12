@@ -29,7 +29,7 @@ test('solicitação e revisão de exclusão passam por RPC',()=>{
 test('exclusão de contas respeita permissão por perfil e escopo individual do gerente',()=>{
   assert.match(edge,/p_permissao: "usuarios_excluir"/);
   assert.match(edge,/if \(!podeExcluir\) return json\(/);
-  assert.match(edge,/const podeEditar = ehAdmin \|\| gerenciaUsuarios;/);
+  assert.match(edge,/const podeEditar = !ehOperador && \(ehAdmin \|\| gerenciaUsuarios\);/);
   assert.match(edge,/const escopoTotal = ehAdmin \|\| ehAnalista;/);
   assert.match(edge,/Gerente não pode excluir usuário de loja fora do seu escopo/);
 });
