@@ -863,6 +863,7 @@ tflaky('papel admin remoto substitui sessão antiga de Operador e restaura a cen
   assert.strictEqual(await a.p.textContent('#homeStore'), 'Administrador · Loja Teste', 'home deve atualizar o papel exibido');
   assert.strictEqual(await a.p.locator('#operatorRolePill').textContent(), 'Área do Administrador', 'cabeçalho deve refletir o papel confirmado');
   await a.p.click('nav button[data-v="aj"]');
+  assert.strictEqual((await a.p.textContent('#slogan')).trim(), 'Área do Administrador', 'o subtítulo de Ajustes acompanha o papel admin');
   assert.strictEqual(await a.p.textContent('#sysMenuTitle'), 'Ajustes do Sistema');
   assert.strictEqual(await a.p.isVisible('#sysMenu [data-sys-open="lojas"]'), true, 'admin recupera administração de lojas');
   assert.strictEqual(await a.p.isVisible('#sysMenu [data-sys-open="catalogo"]'), true, 'admin recupera administração do catálogo');
@@ -2073,6 +2074,8 @@ tflaky('Central desktop: operador em PC não recebe a central administrativa nem
     assert.strictEqual(await a.p.locator('html').evaluate(e => e.classList.contains('desktop-admin')), false);
     assert.strictEqual(await a.p.isVisible('nav.abas'), true);
     assert.strictEqual((await a.p.textContent('#slogan')).trim(), 'Área do Operador', 'o cabeçalho mantém o papel do operador');
+    await a.p.click('nav button[data-v="aj"]');
+    assert.strictEqual((await a.p.textContent('#slogan')).trim(), 'Área do Operador', 'o subtítulo de Ajustes acompanha o papel operador');
     assert.deepStrictEqual(a.erros, []);
   } finally { await a.fechar(); }
 });
