@@ -7,6 +7,7 @@
 //   - admin:      faz tudo (papel, lojas, excluir)
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { buildScopedUserList, resolveListScope, filtrarResultadoEdicao } from "./scope.ts";
+import { podeAdministrarPapel, podeAtribuirPapel } from "./hierarquia.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -193,7 +194,7 @@ Deno.serve(async (req) => {
       const e1 = validarSenha(senha, usuario); if (e1) return json({ error: e1 }, 400);
       if (!PAPEIS.includes(papel)) return json({ error: "Papel inválido." }, 400);
       if (papel !== "operador" && !(ehAdmin || gerenciaUsuarios)) return json({ error: "Seu perfil só pode criar operadores." }, 403);
-      if (!ehAdmin && gerenciaUsuarios && !["operador", "assistente"].includes(papel)) return json({ error: "Analista/Gerente só pode criar operadores e assistentes." }, 403);
+      if (papel !== "operador" && !podeAtribuirPapel(papelCaller, gerenciaUsuarios, papel)) return json({ error: "Seu perfil não pode criar usuários com esse papel (Gerente até Analista; Analista até Assistente)." }, 403);
       const permit = await lojasPermitidas();
       lojas = [...new Set(lojas)];
       if (papelCaller === "assistente" && (permit.size !== 1 || lojas.length !== 1 || !permit.has(lojas[0]))) return json({ error: "Assistente só pode cadastrar operador na sua única loja vinculada." }, 403);
@@ -269,8 +270,9 @@ Deno.serve(async (req) => {
       const lojas = edit.lojas;
 
       if ((papel != null || lojas != null) && !gerenciaUsuarios) return json({ error: "Seu perfil não pode alterar papel ou lojas." }, 403);
-      if (!ehAdmin && ["analista", "gerente", "admin"].includes(alvo.papel)) return json({ error: "Não pode administrar usuários com papel igual ou superior." }, 403);
-      if (!ehAdmin && papel != null && !["operador", "assistente"].includes(papel)) return json({ error: "Analista/Gerente só pode atribuir Operador ou Assistente." }, 403);
+      // Hierarquia: Gerente administra/promove até Analista; Analista até Assistente (hierarquia.ts).
+      if (!ehAdmin && !podeAdministrarPapel(papelCaller, gerenciaUsuarios, alvo.papel)) return json({ error: "Seu perfil não pode administrar usuários com esse papel." }, 403);
+      if (papel != null && !podeAtribuirPapel(papelCaller, gerenciaUsuarios, papel)) return json({ error: "Seu perfil não pode atribuir esse papel (Gerente até Analista; Analista até Assistente)." }, 403);
       if (papel != null && alvo.papel === "admin" && papel !== "admin") {
         const { count, error: adminCountErr } = await admin.from("perfis").select("id", { count: "exact", head: true }).eq("papel", "admin");
         if (adminCountErr) return json({ error: "Não foi possível validar os administradores." }, 500);
@@ -354,7 +356,7 @@ Deno.serve(async (req) => {
         if (targetStores.some((m: { loja_id: string }) => !allowedStores.has(m.loja_id))) return json({ error: "Gerente não pode excluir usuário de loja fora do seu escopo." }, 403);
         const { data: targetProfile, error: targetProfileErr } = await admin.from("perfis").select("papel").eq("id", String(body.id || "")).single();
         if (targetProfileErr || !targetProfile) return json({ error: "Perfil do usuário alvo não encontrado." }, 404);
-        if (["admin", "gerente"].includes(targetProfile.papel)) return json({ error: "Gerente não pode excluir Administrador ou outro Gerente." }, 403);
+        if (!podeAdministrarPapel(papelCaller, true, targetProfile.papel)) return json({ error: "Seu perfil não pode excluir usuários com esse papel." }, 403);
       }
       const id = String(body.id || "");
       if (!id) return json({ error: "Usuário não informado." }, 400);

@@ -3154,3 +3154,26 @@ tflaky('Central desktop: troca de filial invalida e fecha a edição antes de qu
     assert.deepStrictEqual(a.erros, []);
   } finally { await a.fechar(); }
 });
+
+/* Hierarquia de promoção: Gerente até Analista; Analista até Assistente. */
+for (const [papel, liberados, editaveis] of [['gerente', ['operador', 'assistente', 'analista'], ['u-op', 'u-an']], ['analista', ['operador', 'assistente'], ['u-op']]])
+tflaky('Editar usuário: ' + papel + ' promove até ' + liberados[liberados.length - 1] + ' e não edita quem está acima', { skip: pular }, async () => {
+  const a = await abrirLogado(async p => { await rotasPerm(p, papel, []);
+    await p.route(/\/functions\/v1\/gerir-usuarios/, r => { let b = {}; try { b = r.request().postDataJSON(); } catch (e) {}
+      if (b.acao === 'listar') return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ euPapel: papel, lojas: [{ id: 'L1', nome: 'FL05' }],
+        usuarios: [{ id: 'u-op', usuario: 'op', nome: 'Operador', papel: 'operador', lojas: [{ id: 'L1', nome: 'FL05' }] },
+                   { id: 'u-an', usuario: 'an', nome: 'Analista', papel: 'analista', lojas: [{ id: 'L1', nome: 'FL05' }] },
+                   { id: 'u-ge', usuario: 'ge', nome: 'Gerente', papel: 'gerente', lojas: [{ id: 'L1', nome: 'FL05' }] }] }) });
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }); }); },
+    { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel, nome: 'Chefe' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="usuarios"]');
+  await a.p.waitForFunction(() => document.querySelectorAll('#listaUsuarios .uEdit').length > 0);
+  assert.deepStrictEqual(await a.p.locator('#listaUsuarios .uEdit').evaluateAll(b => b.map(x => x.dataset.id)), editaveis);
+  const criar = await a.p.locator('#uPapel option:not([disabled])').evaluateAll(o => o.map(x => x.value));
+  assert.deepStrictEqual(criar, liberados, 'criar usuário');
+  await a.p.click('#listaUsuarios .uEdit[data-id="u-op"]');
+  const editar = await a.p.locator('#editarPapel option:not([disabled])').evaluateAll(o => o.map(x => x.value));
+  assert.deepStrictEqual(editar, liberados, 'editar usuário');
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
