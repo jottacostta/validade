@@ -17,3 +17,9 @@
 ## Persistência e rollout
 
 A migration `supabase/migrations/20261111223000_recolhimento_retencao_registros.sql` adiciona as colunas, as RPCs de recolhimento/reativação e a proteção contra alteração via upsert genérico, e atualiza a geração de alertas/Push. Aplicar a migration no Supabase antes de publicar o frontend correspondente. Não há remoção física de registros nem backfill destrutivo.
+
+## Auditoria e indicadores
+
+Cada mudança confirmada de ativo para recolhido ou de recolhido para ativo gera um evento explícito na tabela `auditoria`, dentro da mesma transação que altera o registro. O evento identifica usuário e papel autenticados, loja, tipo/ID do registro, produto, validade e estado anterior/novo. A falha ao gravar o evento cancela a alteração; chamadas repetidas que não mudam o estado não criam evento duplicado. A tabela já é protegida por RLS e pela permissão `auditoria_ver`.
+
+A área **Relatórios e Indicadores** exibe, para quem possui `auditoria_ver`, totais por usuário e por ação no intervalo escolhido e as 12 ações mais recentes desse período. A consulta pagina os resultados até 10.000 eventos; acima disso, o painel avisa para restringir o intervalo. O filtro oferece últimos 7, 30, 90 ou 365 dias, todo o período ou datas personalizadas, aplicando os limites no servidor. A consulta também filtra pela loja e pelas duas ações; os indicadores não alteram nem removem registros. A migration `20261111231500_auditoria_recolhimento.sql` deve ser aplicada antes da publicação do frontend que apresenta os dados.

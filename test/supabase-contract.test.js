@@ -488,6 +488,7 @@ test('alerta personalizado: remetente recebe a própria cópia e regras não dep
 
 
 const retentionMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261111223000_recolhimento_retencao_registros.sql'), 'utf8');
+const recallAuditMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261111231500_auditoria_recolhimento.sql'), 'utf8');
 
 test('recolhimento é compartilhado por loja, não exclui registros e reativação é restrita a assistente+', () => {
   assert.match(retentionMigration, /add column if not exists recolhido_em timestamptz/i);
@@ -508,6 +509,30 @@ test('recolhimento é compartilhado por loja, não exclui registros e reativaç�
   assert.match(app, /data-reativar/);
   assert.match(app, /\['assistente','analista','gerente','admin'\]/);
   assert.match(app, /delete clean\.recolhido_em;delete clean\.recolhido_por/);
+});
+
+test('auditoria de recolhimento/reativação identifica ator no servidor e alimenta indicadores por usuário', () => {
+  assert.match(recallAuditMigration, /create or replace function private\.audit_recolhimento_registro\(\)[\s\S]*security definer\s+set search_path=''/);
+  assert.match(recallAuditMigration, /old\.recolhido_em is not distinct from new\.recolhido_em/);
+  assert.match(recallAuditMigration, /auth\.uid\(\).*?is null[\s\S]*raise exception/s);
+  assert.match(recallAuditMigration, /'registro_recolhido'[\s\S]*'registro_reativado'/);
+  assert.match(recallAuditMigration, /insert into public\.auditoria\(user_id,usuario,papel,loja_id,loja_nome,acao,detalhe\)/);
+  assert.match(recallAuditMigration, /'registro_id',new\.id/);
+  assert.match(recallAuditMigration, /create trigger lotes_audit_recolhimento[\s\S]*after update of recolhido_em,recolhido_por on public\.lotes/);
+  assert.match(recallAuditMigration, /create trigger pere_regs_audit_recolhimento[\s\S]*after update of recolhido_em,recolhido_por on public\.pere_regs/);
+  assert.match(recallAuditMigration, /on public\.auditoria\(loja_id,criado desc\)/);
+  assert.match(app, /function carregarAuditoriaRecolhimento\(forcar\)/);
+  assert.match(app, /function auditoriaPeriodoAtual\(\)/);
+  assert.match(app, /Últimos 7 dias/);
+  assert.match(app, /Todo o período/);
+  assert.match(app, /Personalizado/);
+  assert.match(app, /criado=gte\./);
+  assert.match(app, /criado=lte\./);
+  assert.match(app, /limite de 10\.000/);
+  assert.match(app, /acao=in\.\(registro_recolhido,registro_reativado\)/);
+  assert.match(app, /sysRecallAuditChart/);
+  assert.match(app, /adminRecallAuditChart/);
+  assert.match(app, /temPermissao\('auditoria_ver'\)/);
 });
 
 test('retencao: telas operacionais ocultam recolhidos e vencidos há mais de 5 dias; histórico XLSX mantém status', () => {
