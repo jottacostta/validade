@@ -132,3 +132,16 @@ test('resposta de edição preserva vínculos no servidor, mas não expõe IDs e
   assert.match(edit,/filtrarResultadoEdicao\(cadastro, escopoTotal, permitidasNaResposta\)/);
   assert.match(edit,/\.\.\.cadastroVisivel/);
 });
+
+test('criação permite ao Administrador todos os papéis sem liberar papéis superiores aos demais gestores', () => {
+  const create = edge.slice(edge.indexOf('if (acao === "criar")'), edge.indexOf('if (acao === "trocar_senha_primeiro_acesso")'));
+  const first = create.match(/if \((.+)\) return json\(\{ error: "Seu perfil só pode criar operadores\."/);
+  const second = create.match(/if \((.+)\) return json\(\{ error: "Analista\/Gerente só pode criar operadores e assistentes\."/);
+  assert.ok(first && second, 'guardas reais da criação localizadas');
+  const bloqueado = Function('ehAdmin', 'gerenciaUsuarios', 'papel', `return (${first[1]}) || (${second[1]});`);
+  for (const papel of ['operador', 'assistente', 'analista', 'gerente', 'admin']) {
+    assert.equal(bloqueado(true, true, papel), false, `Administrador pode criar ${papel}`);
+    assert.equal(bloqueado(false, true, papel), !['operador', 'assistente'].includes(papel), `Gestor não-admin: ${papel}`);
+    assert.equal(bloqueado(false, false, papel), papel !== 'operador', `Sem gestão de usuários: ${papel}`);
+  }
+});

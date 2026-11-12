@@ -193,7 +193,7 @@ Deno.serve(async (req) => {
       const e1 = validarSenha(senha, usuario); if (e1) return json({ error: e1 }, 400);
       if (!PAPEIS.includes(papel)) return json({ error: "Papel inválido." }, 400);
       if (papel !== "operador" && !(ehAdmin || gerenciaUsuarios)) return json({ error: "Seu perfil só pode criar operadores." }, 403);
-      if (gerenciaUsuarios && !["operador", "assistente"].includes(papel)) return json({ error: "Analista/Gerente só pode criar operadores e assistentes." }, 403);
+      if (!ehAdmin && gerenciaUsuarios && !["operador", "assistente"].includes(papel)) return json({ error: "Analista/Gerente só pode criar operadores e assistentes." }, 403);
       const permit = await lojasPermitidas();
       lojas = [...new Set(lojas)];
       if (papelCaller === "assistente" && (permit.size !== 1 || lojas.length !== 1 || !permit.has(lojas[0]))) return json({ error: "Assistente só pode cadastrar operador na sua única loja vinculada." }, 403);
