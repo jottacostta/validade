@@ -3177,3 +3177,51 @@ tflaky('Editar usuário: ' + papel + ' promove até ' + liberados[liberados.leng
   assert.deepStrictEqual(editar, liberados, 'editar usuário');
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
+
+/* Acessibilidade: foco visível pelo teclado e texto com no mínimo 12 px nas telas principais. */
+tflaky('Acessibilidade: navegação por teclado mostra o foco em botões, campos e na navegação', { skip: pular }, async () => {
+  const a = await abrir();
+  await a.p.keyboard.press('Tab');
+  const alvos = [];
+  for (let i = 0; i < 6; i++) {
+    const f = await a.p.evaluate(() => { const e = document.activeElement; if (!e || e === document.body) return null;
+      const cs = getComputedStyle(e); return { tag: e.tagName, estilo: cs.outlineStyle, largura: parseFloat(cs.outlineWidth) }; });
+    if (f) alvos.push(f);
+    await a.p.keyboard.press('Tab');
+  }
+  assert.ok(alvos.length >= 3, 'há elementos focáveis pelo teclado');
+  for (const f of alvos) assert.ok(f.estilo !== 'none' && f.largura >= 2, 'foco visível em ' + JSON.stringify(f));
+  await a.p.click('nav button[data-v="reg"]').catch(() => {});
+  const campo = await a.p.$('input:not([type=hidden]):not([disabled])');
+  if (campo) { await campo.focus(); await a.p.keyboard.press('Shift+Tab'); await a.p.keyboard.press('Tab');
+    const cs = await a.p.evaluate(() => { const c = getComputedStyle(document.activeElement); return [c.outlineStyle, parseFloat(c.outlineWidth)]; });
+    assert.ok(cs[0] !== 'none' && cs[1] >= 2, 'campo com foco visível: ' + cs); }
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+for (const largura of [320, 360])
+tflaky('Legibilidade em ' + largura + ' px: textos com pelo menos 12 px e sem rolagem lateral', { skip: pular }, async () => {
+  const a = await abrir({ opcoes: { viewport: { width: largura, height: 780 } }, dados: { prod: { '7891000315507': { lotes: [lote('l1', '2026-11-20', 5, 'L1')] } }, cat: { '7891000315507': { nome: 'Café Torrado e Moído Tradicional 500g' } }, pere: { itens: {}, regs: [] } } });
+  const pequenos = [];
+  for (const v of ['home', 'prod', 'pe', 'alertas', 'aj']) {
+    await a.p.evaluate(x => { const b = document.querySelector('nav button[data-v="' + x + '"]'); if (b) b.click(); }, v);
+    await a.p.waitForTimeout(150);
+    const r = await a.p.evaluate(() => {
+      const fora = document.documentElement.scrollWidth > innerWidth + 1;
+      const achados = [];
+      document.querySelectorAll('body *').forEach(e => {
+        if (!e.offsetParent && getComputedStyle(e).position !== 'fixed') return;
+        const txt = [...e.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent.trim()).join('');
+        if (!txt || /^\d{1,3}\+?$/.test(txt)) return; // contadores numéricos em selos ficam de fora
+        if (e.closest('.operator-summary .tile') || (innerWidth < 360 && e.closest('nav.abas'))) return; // exceções de layout documentadas no CSS
+        const fs = parseFloat(getComputedStyle(e).fontSize);
+        if (fs < 12) achados.push(e.tagName + '.' + (e.className || '') + ' ' + fs + 'px "' + txt.slice(0, 20) + '"');
+      });
+      return { fora, achados };
+    });
+    if (r.fora) pequenos.push(v + ': rolagem lateral');
+    pequenos.push(...r.achados.map(x => v + ': ' + x));
+  }
+  assert.deepStrictEqual(pequenos, []);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
