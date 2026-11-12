@@ -2303,3 +2303,74 @@ tflaky('reativação: assistente restaura um recolhimento equivocado para toda a
   assert.deepStrictEqual(a.erros, []);
   await a.fechar();
 });
+
+
+tflaky('auditoria de recolhimento aparece nos gráficos e indicadores somente para quem tem permissão', { skip: pular }, async () => {
+  const consultas = [];
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'admin', []);
+    await p.route(/\/rest\/v1\/auditoria\?/, async r => {
+      const url = new URL(r.request().url());
+      if (url.searchParams.has('acao')) {
+        consultas.push({ loja: url.searchParams.get('loja_id'), acao: url.searchParams.get('acao'), criado: url.searchParams.getAll('criado'), limite: url.searchParams.get('limit'), offset: url.searchParams.get('offset') });
+        return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+          { user_id: 'u1', usuario: 'Ana Operadora', papel: 'operador', loja_id: 'L1', acao: 'registro_recolhido', criado: '2026-11-11T10:00:00Z', detalhe: { tipo: 'lote', produto: 'Leite Integral', registro_id: 'r1' } },
+          { user_id: 'u2', usuario: 'Bia Assistente', papel: 'assistente', loja_id: 'L1', acao: 'registro_reativado', criado: '2026-11-11T11:00:00Z', detalhe: { tipo: 'perecivel', produto: 'Queijo Minas', registro_id: 'r2' } }
+        ]) });
+      }
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    });
+  }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="aj"]');
+  await a.p.click('#sysMenu [data-sys-open="relatorios"]');
+  await a.p.waitForFunction(() => document.querySelector('#sysRecallAuditEvents')?.textContent.includes('Ana Operadora'));
+  assert.strictEqual(await a.p.isVisible('#sysRecallAudit'), true);
+  assert.strictEqual(await a.p.textContent('#sysRecallAuditTotal'), '2');
+  assert.strictEqual(await a.p.textContent('#sysRecallAuditWithdrawn'), '1');
+  assert.strictEqual(await a.p.textContent('#sysRecallAuditRestored'), '1');
+  assert.ok((await a.p.textContent('#sysRecallAuditEvents')).includes('Recolheu'));
+  assert.ok((await a.p.textContent('#sysRecallAuditEvents')).includes('Reativou'));
+  assert.ok((await a.p.textContent('#sysRecallAuditChart')).includes('Ana Operadora'));
+  assert.strictEqual(consultas[0].loja, 'eq.L1');
+  assert.strictEqual(consultas[0].acao, 'in.(registro_recolhido,registro_reativado)');
+  assert.strictEqual(consultas[0].criado.length, 2, 'período inicial envia limite inicial e final ao servidor');
+  assert.strictEqual(consultas[0].limite, '500');
+  assert.strictEqual(consultas[0].offset, '0');
+  await a.p.selectOption('#sysRecallAuditPeriod', 'custom');
+  await a.p.click('#sysRecallAuditApply');
+  await a.p.waitForFunction(() => document.querySelector('#sysRecallAuditStatus')?.textContent.includes('Informe uma data inicial'));
+  assert.strictEqual(consultas.length, 1, 'datas ausentes não disparam consulta');
+  await a.p.fill('#sysRecallAuditFrom', '2026-11-01');
+  await a.p.fill('#sysRecallAuditTo', '2026-11-12');
+  await a.p.click('#sysRecallAuditApply');
+  await a.p.waitForFunction(() => document.querySelector('#sysRecallAuditStatus')?.textContent.includes('Período: 2026-11-01 a 2026-11-12'));
+  assert.strictEqual(consultas.length, 2);
+  const limites = consultas[1].criado;
+  assert.strictEqual(limites.length, 2);
+  assert.ok(limites[0].startsWith('gte.') && limites[1].startsWith('lte.'));
+  assert.ok(Date.parse(limites[0].slice(4)) < Date.parse(limites[1].slice(4)));
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
+
+
+tflaky('auditoria de recolhimento não é consultada no relatório sem a permissão auditoria_ver', { skip: pular }, async () => {
+  const consultasAudit = [];
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'gerente', [{ papel: 'gerente', permissao: 'auditoria_ver', permitido: false }]);
+    await p.route(/\/rest\/v1\/auditoria\?/, async r => {
+      const url = new URL(r.request().url());
+      if (url.searchParams.has('acao')) consultasAudit.push(url.searchParams.get('acao'));
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    });
+  }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'gerente', nome: 'Gerente' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="aj"]');
+  await a.p.click('#sysMenu [data-sys-open="relatorios"]');
+  assert.strictEqual(await a.p.isVisible('#sysReportsPanel'), true, 'o gerente mantém relatórios');
+  assert.strictEqual(await a.p.isVisible('#sysRecallAudit'), false, 'auditoria fica oculta sem a permissão');
+  assert.deepStrictEqual(consultasAudit, [], 'nenhuma consulta de auditoria é emitida');
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+});
