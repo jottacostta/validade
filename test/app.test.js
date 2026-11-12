@@ -2230,8 +2230,22 @@ tflaky('recolhimento: operador autorizado confirma pela RPC e o registro some se
     });
   }, dados, { uid: 'u1', usuario: 'operador1', nome: 'Operador 1', papel: 'operador' });
   await permsCarregadas(a.p);
+  await a.p.setViewportSize({ width: 390, height: 844 });
   await a.p.click('nav button[data-v="prod"]');
   assert.strictEqual(await a.p.isVisible('#listaProd [data-recolher]'), true);
+  const geometria = await a.p.locator('#listaProd .operator-record').evaluate(card => {
+    const miniatura = card.querySelector('.operator-record-thumb').getBoundingClientRect();
+    const texto = card.querySelector('.operator-record-copy').getBoundingClientRect();
+    const validade = card.querySelector('.operator-record-val').getBoundingClientRect();
+    const acoes = card.querySelector('.operator-record-actions').getBoundingClientRect();
+    return { largura: card.getBoundingClientRect().width, miniaturaRight: miniatura.right, textoLeft: texto.left, validadeLeft: validade.left, textoBottom: texto.bottom, validadeBottom: validade.bottom, acoesTop: acoes.top, acoesHeight: acoes.height };
+  });
+  assert.ok(geometria.largura < 520, 'cenário cobre a largura de um celular');
+  assert.ok(geometria.textoLeft >= geometria.miniaturaRight, 'descrição permanece na coluna ao lado da miniatura');
+  assert.ok(geometria.validadeLeft >= geometria.miniaturaRight, 'validade permanece na coluna de informações');
+  assert.ok(geometria.acoesTop >= geometria.validadeBottom, 'botões ficam abaixo da descrição e da validade');
+  assert.ok(geometria.acoesHeight >= 44, 'a faixa de ações tem altura confortável ao toque');
+  assert.ok(geometria.validadeBottom >= geometria.textoBottom, 'a validade não é espremida ao lado dos botões');
   await a.p.click('#listaProd [data-recolher]');
   await a.p.waitForFunction(() => !document.querySelector('#listaProd [data-recolher]'));
   assert.deepStrictEqual(chamadas, [{ p_tipo: 'lote', p_id: 'lote-recolher', p_loja_id: 'L1' }]);
