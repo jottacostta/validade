@@ -335,9 +335,11 @@ where not exists (
 -- Área do operador: autoria/setor, notificações privadas e subscriptions Web Push.
 -- A migration versionada também define RPCs, triggers de proteção e grants completos.
 alter table public.lotes add column if not exists setor text;
+alter table public.lotes add column if not exists em_area_vendas boolean not null default true;
 alter table public.lotes add column if not exists created_by uuid references auth.users(id) on delete set null;
 alter table public.lotes add column if not exists created_by_nome text;
 alter table public.pere_regs add column if not exists setor text;
+alter table public.pere_regs add column if not exists em_area_vendas boolean not null default true;
 alter table public.pere_regs add column if not exists created_by uuid references auth.users(id) on delete set null;
 alter table public.pere_regs add column if not exists created_by_nome text;
 
@@ -358,6 +360,8 @@ alter table public.notificacoes add column if not exists removida_em timestamptz
 alter table public.notificacoes enable row level security;
 alter table public.push_subscriptions enable row level security;
 comment on column public.lotes.setor is 'Setor validado no servidor para registros novos; legado pode permanecer NULL.';
+comment on column public.lotes.em_area_vendas is 'Indica se o lote está na área de vendas; false representa depósito.';
 comment on column public.lotes.created_by_nome is 'Snapshot da autoria definido pelo servidor e imutável.';
 comment on column public.pere_regs.setor is 'Setor validado no servidor para registros novos; legado pode permanecer NULL.';
+comment on column public.pere_regs.em_area_vendas is 'Indica se o registro está na área de vendas; false representa depósito.';
 comment on column public.pere_regs.created_by_nome is 'Snapshot da autoria definido pelo servidor e imutável.';

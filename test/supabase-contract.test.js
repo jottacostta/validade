@@ -5,6 +5,7 @@ const root = path.join(__dirname, '..');
 const app = fs.readFileSync(path.join(root, 'src/app.html'), 'utf8');
 const migration = fs.readFileSync(path.join(root, 'supabase/migrations/20261109000000_area_operador_compartilhamento_alertas.sql'), 'utf8');
 const offlineRpcMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261109123000_offline_rpc_idempotency.sql'), 'utf8');
+const locationMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261112070000_localizacao_lotes_area_vendas.sql'), 'utf8');
 const rolesMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261108130000_matriz_papeis_ownership_rls.sql'), 'utf8');
 const adminCatalogMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261110150000_admin_catalog_soft_delete.sql'), 'utf8');
 const reviewerHardening = fs.readFileSync(path.join(root, 'supabase/migrations/20261109122158_harden_review_role_null.sql'), 'utf8');
@@ -78,7 +79,7 @@ test('FKs de autoria e auditoria possuem índices dedicados', () => {
 test('lote é gravado atomicamente por RPC, incluindo catálogo, associação, setor e autoria do servidor', () => {
   assert.match(app, /\/rest\/v1\/rpc\/registrar_lote/);
   assert.match(app, /reg\.created_by_nome=serverRow\.created_by_nome/);
-  assert.match(app, /created_by_nome,recolhido_em,recolhido_por,updated_at,deleted_at/);
+  assert.match(app, /created_by_nome,recolhido_em,recolhido_por,em_area_vendas,updated_at,deleted_at/);
   assert.match(migration, /create or replace function public\.registrar_lote/);
   assert.match(migration, /insert into public\.catalogo/);
   assert.match(migration, /private\.membro_da\(p_loja_id\)/);
@@ -98,6 +99,8 @@ test('perecível usa RPC atômica para item + registro e propaga setor/informant
 
 test('fila offline repete as RPCs originais e migration permite retry idempotente por ID/loja/autoria/payload', () => {
   assert.match(app, /SYNC\.filaRegistros/);
+  assert.match(app, /function atualizarPayloadFila\(tipo,id,alteracoes\)/);
+  assert.match(app, /p_em_area_vendas:emAreaVendas/);
   assert.match(app, /function processarFilaRegistros\(loja\)/);
   assert.match(app, /return processarFilaRegistros\(loja\)\.then/);
   assert.match(app, /filaTemRegistro\('lote',l\.id,loja\)/);
@@ -110,6 +113,23 @@ test('fila offline repete as RPCs originais e migration permite retry idempotent
   assert.match(offlineRpcMigration, /Identificador perecível já utilizado por outro registro/);
   assert.match(offlineRpcMigration, /revoke all on function public\.registrar_lote/);
   assert.match(offlineRpcMigration, /revoke all on function public\.registrar_perecivel/);
+});
+
+test('localização de lote é persistida, compartilhada e compatível com RPCs legadas', () => {
+  assert.match(locationMigration, /alter table public\.lotes[\s\S]*add column if not exists em_area_vendas boolean not null default true/);
+  assert.match(locationMigration, /alter table public\.pere_regs[\s\S]*add column if not exists em_area_vendas boolean not null default true/);
+  assert.match(locationMigration, /registrar_lote\([\s\S]*p_em_area_vendas boolean/);
+  assert.match(locationMigration, /registrar_perecivel\([\s\S]*p_em_area_vendas boolean/);
+  assert.match(locationMigration, /v_exist\.em_area_vendas=p_em_area_vendas/);
+  assert.match(locationMigration, /setor,em_area_vendas,criado\)[\s\S]*p_setor,p_em_area_vendas/);
+  assert.match(locationMigration, /grant execute on function public\.registrar_lote\(text,uuid,text,text,text,numeric,date,text,boolean\) to authenticated/);
+  assert.match(locationMigration, /grant execute on function public\.registrar_perecivel\(text,uuid,text,text,text,numeric,date,text,boolean\) to authenticated/);
+  assert.match(offlineRpcMigration, /registrar_lote\([\s\S]*p_setor text\s*\)/, 'a assinatura antiga de 8 parâmetros permanece');
+  assert.match(offlineRpcMigration, /registrar_perecivel\([\s\S]*p_setor text\s*\)/, 'a assinatura antiga de perecíveis permanece');
+  assert.match(app, /p_em_area_vendas:reg\.em_area_vendas!==false/);
+  assert.match(app, /p_em_area_vendas:emAreaVendas/);
+  assert.match(app, /em_area_vendas:row\.em_area_vendas!==false/);
+  assert.match(app, /Localização/);
 });
 
 test('RPCs exigem setor válido, mas trigger aceita NULL de clientes legados durante rollout', () => {
@@ -406,7 +426,7 @@ test('perfis de acesso: permissões por papel gravadas e validadas no banco', ()
   assert.match(m, /private\.tem_permissao\('nome_solicitar'\)/);
   // a lista de permissões do app e a do banco são a mesma
   const noApp = [...app.matchAll(/\{id:'([a-z_]+)',grupo:'(?:basica|especial)'/g)].map(x => x[1]).sort();
-  const m3 = fs.readFileSync(path.join(root, 'supabase/migrations/20261111140000_alertas_personalizados.sql'), 'utf8');
+  const m3 = fs.readFileSync(path.join(root, 'supabase/migrations/20261112080000_recolhimento_configuravel_por_perfil.sql'), 'utf8');
   const noBanco = [...m3.slice(m3.indexOf('function private.permissao_padrao'), m3.indexOf('definir_permissao_papel')).matchAll(/\('([a-z_]+)',\s*array\[/g)].map(x => x[1]).sort();
   assert.ok(noApp.length >= 10); assert.deepEqual(noApp, noBanco);
   assert.match(app, /rpc\/definir_permissao_papel/);
@@ -434,8 +454,8 @@ test('perfis de acesso etapa 3: áreas administrativas obedecem às permissões 
   assert.match(fn, /revoke all on function public\.papel_tem_permissao\(text,text\) from public, anon/);
   assert.equal([...m.matchAll(/não encontrad[oa]/g)].length, 4, 'falha inteira se alguma função mudou');
   const lista = app.slice(app.indexOf('var PERMISSOES=['), app.indexOf('function permissaoDef'));
-  assert.equal([...lista.matchAll(/\{id:'/g)].length, 17);
-  assert.equal([...lista.matchAll(/teto:TODOS4,servidor:true\}/g)].length, 17, 'todas as permissões podem ser concedidas a qualquer perfil');
+  assert.equal([...lista.matchAll(/\{id:'/g)].length, 18);
+  assert.equal([...lista.matchAll(/teto:TODOS4,servidor:true\}/g)].length, 18, 'todas as permissões podem ser concedidas a qualquer perfil');
   const gerir = fs.readFileSync(path.join(root, 'supabase/functions/gerir-usuarios/index.ts'), 'utf8');
   assert.match(gerir, /rpc\("papel_tem_permissao", \{ p_papel: papelCaller, p_permissao: "usuarios_gerenciar" \}\)/);
   assert.match(gerir, /if \(permErr\) return json\(/, 'falha ao consultar permissão nega o acesso');
@@ -489,6 +509,7 @@ test('alerta personalizado: remetente recebe a própria cópia e regras não dep
 
 const retentionMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261111223000_recolhimento_retencao_registros.sql'), 'utf8');
 const recallAuditMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261111231500_auditoria_recolhimento.sql'), 'utf8');
+const recolhimentoPermissionMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261112080000_recolhimento_configuravel_por_perfil.sql'), 'utf8');
 
 test('recolhimento é compartilhado por loja, não exclui registros e reativação é restrita a assistente+', () => {
   assert.match(retentionMigration, /add column if not exists recolhido_em timestamptz/i);
@@ -509,6 +530,19 @@ test('recolhimento é compartilhado por loja, não exclui registros e reativaç�
   assert.match(app, /data-reativar/);
   assert.match(app, /\['assistente','analista','gerente','admin'\]/);
   assert.match(app, /delete clean\.recolhido_em;delete clean\.recolhido_por/);
+});
+
+test('Recolher é configurável por perfil no painel admin e a RPC exige permissão e escopo de loja', () => {
+  assert.match(recolhimentoPermissionMigration, /\('registros_recolher',\s+array\['operador','assistente','analista','gerente'\]\)/);
+  assert.match(recolhimentoPermissionMigration, /'alertas_enviar','registros_recolher'\)/);
+  assert.match(recolhimentoPermissionMigration, /function public\.marcar_registro_recolhido[\s\S]*security definer[\s\S]*private\.membro_da\(p_loja_id\)[\s\S]*private\.tem_permissao\('registros_recolher'\)/);
+  assert.doesNotMatch(recolhimentoPermissionMigration, /v_created_by|private\.tem_permissao\('registros_editar_outros'\)/);
+  assert.match(app, /\{id:'registros_recolher',grupo:'basica',titulo:'Recolher produtos tratados na loja',padrao:TODOS4/);
+  assert.match(app, /function podeRecolherRegistro\(r\)[\s\S]*temPermissao\('registros_recolher'\)/);
+  assert.match(app, /rpc\/marcar_registro_recolhido/);
+  assert.match(app, /function podeRecolherRegistro\(r\)[\s\S]*temPermissao\('registros_recolher'\)/);
+  assert.match(recolhimentoPermissionMigration, /function public\.definir_permissao_papel[\s\S]*private\.meu_papel\(\) is distinct from 'admin'/);
+  assert.match(retentionMigration, /private\.meu_papel\(\)[\s\S]*in \('assistente','analista','gerente','admin'\)/);
 });
 
 test('auditoria de recolhimento/reativação identifica ator no servidor e alimenta indicadores por usuário', () => {

@@ -2,6 +2,8 @@
 
 Sistema de **controle de validade** para supermercado: escaneia o código de barras, busca o nome do produto,
 controla lotes, quantidades e validades, e tem uma área de **perecíveis** (código de balança, SIF e peso).
+Cada registro informa se o lote está na **Área de Vendas** ou no **Depósito**; veja [a documentação da localização dos registros](docs/localizacao-registros.md).
+O botão **Recolher** é configurável por perfil em Ajustes → Perfis de acesso do Administrador; veja [as regras de recolhimento](docs/permissao-recolhimento.md).
 Na área de perecíveis também lê as etiquetas 2D (QR/DataMatrix GS1) das balanças, que já trazem peso e validade.
 E, se o OCR estiver ligado, lê por foto a **descrição** do produto e o **lote** (que vai para o SIF) do texto da etiqueta.
 

@@ -544,7 +544,7 @@ tflaky('sessão: renova token expirado antes de sincronizar produtos e lotes', {
       let rows = [];
       if (r.request().method() === 'GET' && url.pathname === '/rest/v1/catalogo') rows = [{ ean: '7891234567890', nome: 'Produto compartilhado', marca: '', img: '', updated_at: '2026-11-07T20:00:00Z' }];
       if (r.request().method() === 'GET' && url.pathname === '/rest/v1/produtos') rows = [{ ean: '7891234567890', updated_at: '2026-11-07T20:00:00Z', deleted_at: null }];
-      if (r.request().method() === 'GET' && url.pathname === '/rest/v1/lotes') rows = [{ id: 'lote-compartilhado', ean: '7891234567890', lote: 'L05', qtd: 5, val: '2026-12-01', criado: 1, updated_at: '2026-11-07T20:00:00Z', deleted_at: null }];
+      if (r.request().method() === 'GET' && url.pathname === '/rest/v1/lotes') rows = [{ id: 'lote-compartilhado', ean: '7891234567890', lote: 'L05', qtd: 5, val: '2026-12-01', criado: 1, em_area_vendas: false, updated_at: '2026-11-07T20:00:00Z', deleted_at: null }];
       await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows) });
     });
   }, null, { expira: Date.now() - 1000 });
@@ -556,8 +556,10 @@ tflaky('sessão: renova token expirado antes de sincronizar produtos e lotes', {
   assert.strictEqual(dados.cat['7891234567890'].nome, 'Produto compartilhado');
   assert.ok(dados.prod['7891234567890'], 'a associação do produto da loja foi sincronizada');
   assert.strictEqual(dados.prod['7891234567890'].lotes[0].id, 'lote-compartilhado');
+  assert.strictEqual(dados.prod['7891234567890'].lotes[0].em_area_vendas, false, 'a localização compartilhada chega ao cache');
   await a.p.click('nav button[data-v="prod"]');
   assert.ok((await a.p.textContent('#listaProd')).includes('Produto compartilhado'), 'o produto da mesma loja aparece na lista');
+  assert.ok((await a.p.textContent('#listaProd')).includes('Depósito'), 'a localização compartilhada aparece no cartão');
   assert.deepStrictEqual(a.erros, []);
   await a.fechar();
 });
@@ -729,14 +731,15 @@ tflaky('sincronização por loja: Jonatas vê o lote de William com setor e auto
   await a.fechar();
 });
 
-tflaky('cadastro do operador: lote e perecível enviam setor à RPC e armazenam autoria do servidor', { skip: pular }, async () => {
-  const chamadas = {};
+tflaky('cadastro do operador: lote e perecível enviam setor/local à RPC e armazenam autoria do servidor', { skip: pular }, async () => {
+  const chamadas = {}; let falharLote = false;
   const a = await abrirLogado(async p => {
     await p.route('**/rest/v1/**', async r => {
       const u = new URL(r.request().url()), method = r.request().method();
       if (u.pathname === '/rest/v1/perfis') return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ papel: 'operador', nome: 'Jonatas' }]) });
       if (u.pathname === '/rest/v1/rpc/registrar_lote') {
         chamadas.lote = r.request().postDataJSON();
+        if (falharLote) return r.abort();
         return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ created_by: 'u1', created_by_nome: 'Jonatas', criado: 1794170000000 }) });
       }
       if (u.pathname === '/rest/v1/rpc/registrar_perecivel') {
@@ -748,23 +751,45 @@ tflaky('cadastro do operador: lote e perecível enviam setor à RPC e armazenam 
     });
   }, { cat: { '7891234567890': { nome: 'Arroz' } } });
   await a.p.click('#homeRegister'); await a.p.click('#bTipoIndustrial');
+  assert.strictEqual(await a.p.isChecked('#pEmAreaVendas'), true, 'a localização inicial é Área de Vendas');
   await a.p.fill('#tCodigo', '7891234567890'); await a.p.click('#bBuscar');
   await a.p.waitForFunction(() => document.getElementById('pNome').value === 'Arroz');
+  await a.p.uncheck('#pEmAreaVendas');
   await a.p.fill('#pLote', 'L-W'); await a.p.fill('#pQtd', '4'); await a.p.fill('#pVal', '2026-12-20'); await a.p.selectOption('#pSetor', 'Mercearia');
   await a.p.click('#bSalvarLote');
   await a.p.waitForFunction(() => { const d=JSON.parse(localStorage.getItem('validade_dados')); return !!(d.prod['7891234567890']&&d.prod['7891234567890'].lotes.length); });
   assert.strictEqual(chamadas.lote.p_setor, 'Mercearia');
+  assert.strictEqual(chamadas.lote.p_em_area_vendas, false, 'o checkbox desmarcado segue no payload RPC');
   assert.strictEqual(chamadas.lote.p_loja_id, 'L1');
   assert.strictEqual((await a.salvo()).prod['7891234567890'].lotes[0].created_by_nome, 'Jonatas');
+  assert.strictEqual((await a.salvo()).prod['7891234567890'].lotes[0].em_area_vendas, false, 'a escolha permanece no registro local');
 
   await a.p.click('nav button[data-v="pere"]'); await a.p.click('#subPere button[data-s="reg"]');
   await a.p.fill('#tCodBal', '6019'); await a.p.click('#bBuscarBal');
   await a.p.fill('#peDesc', 'Pernil'); await a.p.fill('#peSif', 'SIF-1'); await a.p.fill('#pePeso', '0.650'); await a.p.fill('#peVal', '2026-12-18'); await a.p.selectOption('#peSetor', 'Açougue');
+  assert.strictEqual(await a.p.isChecked('#peEmAreaVendas'), true);
   await a.p.click('#bSalvarPe');
   await a.p.waitForFunction(() => { const d=JSON.parse(localStorage.getItem('validade_dados')); return d.pere.regs.length===1; });
   assert.strictEqual(chamadas.perecivel.p_setor, 'Açougue');
+  assert.strictEqual(chamadas.perecivel.p_em_area_vendas, true, 'Área de Vendas é enviada na RPC de perecíveis');
   assert.strictEqual(chamadas.perecivel.p_cod, '6019');
   assert.strictEqual((await a.salvo()).pere.regs[0].created_by_nome, 'Jonatas');
+  assert.strictEqual((await a.salvo()).pere.regs[0].em_area_vendas, true);
+
+  await a.p.context().setOffline(true);
+  await a.p.click('nav button[data-v="home"]'); await a.p.click('#homeRegister'); await a.p.click('#bTipoIndustrial');
+  await a.p.fill('#tCodigo', '7891234567890'); await a.p.click('#bBuscar');
+  await a.p.waitForFunction(() => document.getElementById('pNome').value === 'Arroz');
+  await a.p.fill('#pLote', 'L-OFFLINE'); await a.p.fill('#pQtd', '1'); await a.p.fill('#pVal', '2026-12-21'); await a.p.selectOption('#pSetor', 'Mercearia');
+  await a.p.uncheck('#pEmAreaVendas'); falharLote = true; await a.p.click('#bSalvarLote');
+  await a.p.waitForFunction(() => { const d=JSON.parse(localStorage.getItem('validade_dados')||'{}'),q=JSON.parse(localStorage.getItem('validade_sync')||'{}').filaRegistros||[]; return !!(d.prod['7891234567890']&&d.prod['7891234567890'].lotes.some(x=>x.lote==='L-OFFLINE'))&&q.some(x=>x.payload&&x.payload.p_lote==='L-OFFLINE'&&x.payload.p_em_area_vendas===false); });
+  let dadosOffline = await a.salvo(); const loteOffline = dadosOffline.prod['7891234567890'].lotes.find(x => x.lote === 'L-OFFLINE');
+  assert.strictEqual(loteOffline.em_area_vendas, false, 'a gravação offline retém Depósito');
+  await a.p.click('nav button[data-v="prod"]'); await a.p.click(`#listaProd [data-edit-lote="${loteOffline.id}"]`);
+  assert.strictEqual(await a.p.isChecked('#edEmAreaVendas'), false, 'a edição carrega a localização pendente');
+  await a.p.check('#edEmAreaVendas'); await a.p.click('#bEditSave');
+  await a.p.waitForFunction(() => { const q=JSON.parse(localStorage.getItem('validade_sync')||'{}').filaRegistros||[]; return q.some(x=>x.payload&&x.payload.p_lote==='L-OFFLINE'&&x.payload.p_em_area_vendas===true); });
+  assert.strictEqual((await a.salvo()).prod['7891234567890'].lotes.find(x => x.lote === 'L-OFFLINE').em_area_vendas, true, 'editar offline atualiza também o payload da fila');
   assert.deepStrictEqual(a.erros, []);
   await a.fechar();
 });
@@ -1677,7 +1702,7 @@ const rotasPerm = (p, papel, linhas, cap) => rotasBase(p, papel).then(async () =
 const dadosNome = () => ({ prod: { '7891000315507': { lotes: [Object.assign(lote('l1', '2032-12-01', 5, 'L1'), { setor: 'Mercearia', created_by: 'u1' })] } }, cat: { '7891000315507': { nome: 'Cafe' } }, pere: { itens: {}, regs: [] } });
 const permsCarregadas = p => p.waitForFunction(() => { try { return !!JSON.parse(localStorage.getItem('validade_sync') || '{}').permissoes; } catch (e) { return false; } });
 
-tflaky('Perfis de acesso: administrador vê básicas e especiais do perfil e concede uma especial', { skip: pular }, async () => {
+tflaky('Perfis de acesso: administrador configura Recolher por perfil e concede permissão especial', { skip: pular }, async () => {
   const cap = [];
   const a = await abrirLogado(p => rotasPerm(p, 'admin', [], cap), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin' });
   await permsCarregadas(a.p);
@@ -1691,16 +1716,18 @@ tflaky('Perfis de acesso: administrador vê básicas e especiais do perfil e con
   await a.p.selectOption('#permPapel', 'operador');
   assert.strictEqual(await a.p.isChecked('#permEspeciais [data-perm="nome_editar"]'), false);
   assert.strictEqual(await a.p.isChecked('#permBasicas [data-perm="registrar"]'), true);
+  assert.strictEqual(await a.p.isChecked('#permBasicas [data-perm="registros_recolher"]'), true, 'Recolher fica habilitado por padrão para o Operador');
   assert.strictEqual(await a.p.isVisible('#bPermSalvar'), true, 'há um botão para salvar as permissões do perfil');
   assert.strictEqual(await a.p.isDisabled('#bPermSalvar'), true, 'sem alterações o botão fica inativo');
   await a.p.check('#permEspeciais [data-perm="nome_editar"]');
+  await a.p.uncheck('#permBasicas [data-perm="registros_recolher"]');
   await a.p.check('#permBasicas [data-perm="relatorios"]'); await a.p.uncheck('#permBasicas [data-perm="relatorios"]');
   assert.deepStrictEqual(cap, [], 'nada é enviado antes de salvar');
-  assert.ok((await a.p.textContent('#permStatus')).includes('1 alteração'), 'mostra o que falta salvar (marcar e desmarcar volta ao estado salvo)');
+  assert.ok((await a.p.textContent('#permStatus')).includes('2 alterações'), 'mostra o que falta salvar (marcar e desmarcar volta ao estado salvo)');
   await a.p.click('#bPermSalvar');
   await a.p.waitForFunction(() => /Permissões de Operador salvas/.test(document.getElementById('permStatus').textContent));
   assert.strictEqual(await a.p.isDisabled('#bPermSalvar'), true);
-  assert.deepStrictEqual(cap, [{ p_papel: 'operador', p_permissao: 'nome_editar', p_permitido: true }]);
+  assert.deepStrictEqual(cap, [{ p_papel: 'operador', p_permissao: 'nome_editar', p_permitido: true }, { p_papel: 'operador', p_permissao: 'registros_recolher', p_permitido: false }]);
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
 
@@ -1767,7 +1794,7 @@ tflaky('Perfis de acesso etapa 3: nenhuma permissão fica travada para o adminis
   await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="usuarios"]');
   for (const papel of ['operador', 'assistente', 'analista', 'gerente']) {
     await a.p.selectOption('#permPapel', papel);
-    assert.strictEqual(await a.p.locator('#cardPerfisAcesso [data-perm]').count(), 17);
+    assert.strictEqual(await a.p.locator('#cardPerfisAcesso [data-perm]').count(), 18);
     assert.strictEqual(await a.p.locator('#cardPerfisAcesso [data-perm]:disabled').count(), 0, papel + ': nada desabilitado');
   }
   assert.ok(!(await a.p.textContent('#cardPerfisAcesso')).includes('Regra fixa'));
@@ -1973,7 +2000,7 @@ tflaky('Central desktop: admin aguarda confirmação do perfil, usa indicadores 
     prod: {
       '7890000000017': { lotes: [
         { id: 'lote-vencido', lote: 'A1', qtd: 4, val: dia(-1), setor: 'Mercearia', criado: Date.now() - 3000, created_by_nome: 'Operador A', rpcConfirmado: true },
-        { id: 'lote-proximo', lote: 'A2', qtd: 3, val: dia(5), setor: 'Mercearia', criado: Date.now() - 2000, created_by_nome: 'Operador B', rpcConfirmado: true }
+        { id: 'lote-proximo', lote: 'A2', qtd: 3, val: dia(5), setor: 'Mercearia', em_area_vendas: false, criado: Date.now() - 2000, created_by_nome: 'Operador B', rpcConfirmado: true }
       ] },
       '7890000000024': { lotes: [
         { id: 'lote-valido', lote: 'B1', qtd: 2, val: '2099-12-31', setor: 'Bebidas', criado: Date.now() - 1000, created_by_nome: 'Operador C', rpcConfirmado: true }
@@ -2038,6 +2065,8 @@ tflaky('Central desktop: admin aguarda confirmação do perfil, usa indicadores 
       offset = start + length;
     }
     assert.ok(entries['[Content_Types].xml'], 'pacote contém tipos Office Open XML');
+    assert.match(entries['xl/worksheets/sheet2.xml'], /Localização/);
+    assert.match(entries['xl/worksheets/sheet2.xml'], /Depósito/, 'XLSX exporta o local do lote');
     assert.match(entries['xl/workbook.xml'], /name="Resumo"/);
     assert.match(entries['xl/workbook.xml'], /name="Validades"/);
     assert.match(entries['xl/workbook.xml'], /name="Perecíveis"/);
@@ -2276,15 +2305,21 @@ tflaky('recolhimento: mantém o registro visível se o servidor recusar a ação
   await a.fechar();
 });
 
-tflaky('recolhimento: operador não recebe ação para registro de outro usuário', { skip: pular }, async () => {
+tflaky('recolhimento: permissão padrão permite a todos os perfis recolher na loja e o administrador pode desativá-la', { skip: pular }, async () => {
   const dados = dadoRetencao();
   dados.prod['7891000315507'].lotes = [lote('lote-outro', offsetValidade(2), 1, 'L-OUTRO'), Object.assign(lote('lote-recolhido-outro', offsetValidade(2), 1, 'L-RECOLHIDO'), { recolhido_em: '2026-11-11T12:00:00Z', recolhido_por: 'u2' })];
   Object.assign(dados.prod['7891000315507'].lotes[0], { setor: 'Mercearia', created_by: 'u2', created_by_nome: 'Outro operador' });
-  const a = await abrirLogado(p => rotasPerm(p, 'operador', []), dados, { uid: 'u1', usuario: 'operador1', nome: 'Operador 1', papel: 'operador' });
+  let a = await abrirLogado(p => rotasPerm(p, 'operador', []), dados, { uid: 'u1', usuario: 'operador1', nome: 'Operador 1', papel: 'operador' });
   await permsCarregadas(a.p);
   await a.p.click('nav button[data-v="prod"]');
-  assert.strictEqual(await a.p.locator('#listaProd [data-recolher]').count(), 0);
+  assert.strictEqual(await a.p.locator('#listaProd [data-recolher]').count(), 1, 'operador pode recolher registro criado por outra pessoa na mesma loja');
   assert.strictEqual(await a.p.isVisible('#retencaoRecProd'), false, 'operador não pode consultar/reativar o arquivo de recolhidos');
+  assert.deepStrictEqual(a.erros, []);
+  await a.fechar();
+  a = await abrirLogado(p => rotasPerm(p, 'operador', [{ papel: 'operador', permissao: 'registros_recolher', permitido: false }]), dados, { uid: 'u1', usuario: 'operador1', nome: 'Operador 1', papel: 'operador' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="prod"]');
+  assert.strictEqual(await a.p.locator('#listaProd [data-recolher]').count(), 0, 'desativar no painel admin oculta o botão para esse perfil');
   assert.deepStrictEqual(a.erros, []);
   await a.fechar();
 });

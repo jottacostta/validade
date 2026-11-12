@@ -5,7 +5,7 @@
 > (seção "Diário") e a issue #25 com o que foi feito e o que falta.
 > Leia também `AGENTS.md` (regras obrigatórias) e a issue #25 (canal de coordenação).
 
-Última atualização: 10/11/2026 — por Claude.
+Última atualização: 12/11/2026 — por Manus (localização dos registros e permissão de recolhimento por perfil).
 
 ---
 
@@ -294,3 +294,15 @@ Diário:
   - **Alerta personalizado:** os envios funcionaram (2 envios, 8 destinatários cada), mas (a) a tela de Notificações filtrava por `loja_id` da loja atual e escondia avisos gravados em outra loja do usuário; (b) o remetente não recebia cópia. Correção: consulta `or=(loja_id.eq.<loja>,tipo.eq.sistema_personalizado)`, PATCH de lida/removida sem filtro de loja (RLS já restringe ao dono) e migration `20261111150000_alerta_personalizado_inclui_remetente.sql`.
   - **Google Calendar:** não é defeito de código. A função responde 503 em `connect` porque faltam os secrets `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALENDAR_REDIRECT_URI`, `GOOGLE_CALENDAR_TOKEN_KEY` (12 respostas 503 hoje; 0 conexões). Só o proprietário pode criar o cliente OAuth no Google Cloud e salvar os secrets. O app agora trata 503 com a mensagem de "ainda não está configurada".
 - 11/11 19:40 — Claude — PR #53 mesclada (`bb20d90`) e migration `alerta_personalizado_inclui_remetente` aplicada. **Google Calendar retirado do frontend por decisão do Jonatas** ("muito trabalho só para ativar um calendário"): removidos o cartão `#calendarCard`, as funções `calendar*` e todas as chamadas a `/functions/v1/google-calendar` em `src/app.html`. O backend ficou intacto e sem uso (Edge Function `google-calendar`, tabelas `google_calendar_*`, `projetar_google_calendar`); remover do servidor exigiria migration e autorização à parte. `docs/CONFIGURAR-ALERTAS.md` ainda descreve a integração.
+
+
+## 9. Localização dos registros e permissão configurável de recolhimento (12/11/2026)
+
+- Branch de trabalho: `feat/location-sales-or-depot-20261112`, baseada no `main` atual (`0e3f2ee`).
+- `lotes.em_area_vendas` e `pere_regs.em_area_vendas` identificam Área de Vendas (`true`, padrão) ou Depósito (`false`); o campo segue no cadastro/edição, fila e sincronização offline, cartões e relatórios XLSX, e é compartilhado no Supabase dentro do escopo da loja.
+- `registros_recolher` passou a ser configurável por perfil em Ajustes → Usuários e Permissões → Perfis de acesso; padrão habilitado para Operador, Assistente, Analista e Gerente. O Administrador conserva autoridade total; a RPC valida permissão e escopo no servidor. Reativação continua restrita a Assistente e acima.
+- Migrations locais desta entrega: `20261112070000_localizacao_lotes_area_vendas.sql` e `20261112080000_recolhimento_configuravel_por_perfil.sql`. A consulta somente leitura ao Supabase confirmou que ambas ainda estão pendentes; não aplicar em produção antes de autorização separada e explícita, conforme `AGENTS.md`.
+- `node build.js`, `git diff --check` e `npm test` passaram; suíte: 220/220, sem falhas ou testes ignorados. Revisão independente de segurança sem bloqueadores. PR, CI remoto, aplicação das migrations e deploy ainda pendentes nesta anotação.
+
+- 12/11 07:37 — Manus — PR #61 aberta: https://github.com/jottacostta/validade/pull/61, branch `feat/location-sales-or-depot-20261112`, commit inicial `e2ab28a`. Os checks `testes` de push e pull request estão em execução. O histórico Supabase confirma pendentes as duas migrations; nenhuma alteração de banco foi aplicada. A solicitação de merge/deploy foi recebida, mas o `AGENTS.md` exige autorização separada para migrations de produção; não mesclar/publicar antes de concluir CI e o rollout autorizado do schema.
+- 12/11 07:50 — Manus — Jonatas autorizou aplicar exatamente as duas migrations acima após CI verde e, em seguida, concluir merge/deploy. Na hora da autorização, os dois checks do commit `e2ab28a` estavam verdes; nenhuma migration foi aplicada. A atualização deste diário será enviada na PR e exigirá nova validação de CI no head final.
