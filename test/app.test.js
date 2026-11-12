@@ -2311,6 +2311,7 @@ tflaky('auditoria de recolhimento aparece nos gráficos e indicadores somente pa
     await rotasPerm(p, 'admin', []);
     await p.route(/\/rest\/v1\/auditoria\?/, async r => {
       const url = new URL(r.request().url());
+      if (url.searchParams.get('acao') === 'eq.registro_reativado') return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
       if (url.searchParams.has('acao')) {
         consultas.push({ loja: url.searchParams.get('loja_id'), acao: url.searchParams.get('acao'), criado: url.searchParams.getAll('criado'), limite: url.searchParams.get('limit'), offset: url.searchParams.get('offset') });
         return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
@@ -2352,6 +2353,63 @@ tflaky('auditoria de recolhimento aparece nos gráficos e indicadores somente pa
   assert.ok(Date.parse(limites[0].slice(4)) < Date.parse(limites[1].slice(4)));
   assert.deepStrictEqual(a.erros, []);
   await a.fechar();
+});
+
+
+tflaky('auditoria: gráfico ranqueia produtos reativados nos últimos 30 dias no mobile e desktop', { skip: pular }, async () => {
+  const consultasTop = [];
+  const quando = dias => new Date(Date.now() - dias * 86400000).toISOString();
+  const eventos = [
+    { loja_id: 'L1', acao: 'registro_reativado', criado: quando(0), detalhe: { tipo: 'lote', produto: 'Azeite Extra Virgem' } },
+    { loja_id: 'L1', acao: 'registro_reativado', criado: quando(2), detalhe: { tipo: 'lote', produto: 'Azeite Extra Virgem' } },
+    { loja_id: 'L1', acao: 'registro_reativado', criado: quando(4), detalhe: { tipo: 'perecivel', produto: 'Queijo Minas' } },
+    { loja_id: 'L1', acao: 'registro_reativado', criado: quando(45), detalhe: { tipo: 'lote', produto: 'Azeite Extra Virgem' } }
+  ];
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'admin', []);
+    await p.route(/\/rest\/v1\/auditoria\?/, async r => {
+      const url = new URL(r.request().url());
+      const acao = url.searchParams.get('acao');
+      if (acao === 'eq.registro_reativado') {
+        const criado = url.searchParams.getAll('criado');
+        consultasTop.push({ loja: url.searchParams.get('loja_id'), acao, criado, limite: url.searchParams.get('limit'), offset: url.searchParams.get('offset') });
+        const desde = Date.parse(criado.find(x => x.startsWith('gte.')).slice(4));
+        const ate = Date.parse(criado.find(x => x.startsWith('lte.')).slice(4));
+        const dados = eventos.filter(e => Date.parse(e.criado) >= desde && Date.parse(e.criado) <= ate);
+        return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(dados) });
+      }
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    });
+  }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin' });
+  try {
+    await permsCarregadas(a.p);
+    await a.p.click('nav button[data-v="aj"]');
+    await a.p.click('#sysMenu [data-sys-open="relatorios"]');
+    await a.p.waitForFunction(() => document.querySelector('#sysRecallAuditTopProducts')?.textContent.includes('Azeite Extra Virgem'));
+    const mobileRows = a.p.locator('#sysRecallAuditTopProducts .recall-audit-product-row');
+    assert.strictEqual(await mobileRows.count(), 2);
+    assert.match(await mobileRows.nth(0).textContent(), /Azeite Extra Virgem[\s\S]*2/);
+    assert.match(await mobileRows.nth(1).textContent(), /Queijo Minas[\s\S]*1/);
+    assert.ok((await mobileRows.nth(0).textContent()).includes('Industrializado'));
+    assert.strictEqual(consultasTop.length, 1);
+    assert.strictEqual(consultasTop[0].loja, 'eq.L1');
+    assert.strictEqual(consultasTop[0].acao, 'eq.registro_reativado');
+    assert.strictEqual(consultasTop[0].criado.length, 2, 'a consulta fixa envia início e fim da janela de 30 dias');
+    assert.strictEqual(consultasTop[0].limite, '500');
+    assert.strictEqual(consultasTop[0].offset, '0');
+    const inicio = Date.parse(consultasTop[0].criado.find(x => x.startsWith('gte.')).slice(4));
+    const fim = Date.parse(consultasTop[0].criado.find(x => x.startsWith('lte.')).slice(4));
+    assert.ok(fim - inicio > 29 * 86400000 && fim - inicio < 31 * 86400000, 'a faixa enviada deve cobrir 30 dias locais');
+
+    await a.p.setViewportSize({ width: 1440, height: 960 });
+    await a.p.waitForFunction(() => document.documentElement.classList.contains('desktop-admin'));
+    await a.p.click('#adminDesktopNav [data-admin-view="reports"]');
+    await a.p.waitForFunction(() => document.querySelector('#adminRecallAuditTopProducts')?.textContent.includes('Azeite Extra Virgem'));
+    assert.strictEqual(await a.p.locator('#adminRecallAuditTopProducts .recall-audit-product-row').count(), 2);
+    assert.match(await a.p.locator('#adminRecallAuditTopProducts .recall-audit-product-row').first().textContent(), /Azeite Extra Virgem[\s\S]*2/);
+    assert.strictEqual(consultasTop.length, 1, 'o mesmo escopo usa o cache recente, sem segunda consulta redundante');
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
 });
 
 
