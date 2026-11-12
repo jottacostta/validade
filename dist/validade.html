@@ -1346,6 +1346,24 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 #adminDesktop [data-admin-panel="overview"] .admin-desktop-table{min-width:0;width:100%;table-layout:fixed}
 #adminDesktop [data-admin-panel="overview"] .admin-desktop-table th:first-child{width:43%}
 #adminDesktop [data-admin-panel="overview"] .admin-desktop-table td{overflow-wrap:anywhere}
+
+/* ───── Acessibilidade (auditoria de 12/11/2026, WCAG 2.2 AA) ─────
+   Foco visível para quem navega pelo teclado e piso de 12 px para textos.
+   Contadores numéricos dentro de selos (#alertBadge, abas de notificação, pendências do desktop) ficam de fora. */
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{outline:3px solid #ffd60a!important;outline-offset:2px}
+:where(input,select,textarea):focus-visible{outline-offset:0}
+#homeRegister .home-cta-copy small,.home-shortcut small,.home-recent-row .home-status,
+#operatorRolePill span,.operator-record-main small,
+.operator-record-val span,.operator-record-val b,.operator-record .chip,.about-feats span,
+.notification-tabs button,.notification-copy small,.notification-state,
+th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
+.operator-profile-data small,#v-pere .sub button,.perm-row small,
+#adminDesktop .adminInsight-eyebrow,#adminDesktop .adminInsight-metric small,#adminDesktop .adminInsight-note,
+#adminDesktop .adminInsight-priority-meta,#adminDesktop .adminInsight-priority-qty,
+#adminDesktop .admin-nav-label,#adminDesktop .admin-desktop-sidebar-foot .admin-scope-source{font-size:12px!important}
+/* Exceções para não quebrar o layout aprovado: os indicadores do resumo (Total, Válidos, Próx. Venc., Vencidos)
+   e, abaixo de 360 px, os rótulos da barra inferior mantêm o tamanho original porque não cabem a 12 px. */
+@media (min-width:360px){nav.abas button{font-size:12px!important}}
 </style>
 </head>
 <body>
