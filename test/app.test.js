@@ -2018,6 +2018,9 @@ tflaky('Central desktop: admin aguarda confirmação do perfil, usa indicadores 
 
     await a.p.click('#adminDesktopNav [data-admin-view="reports"]');
     assert.strictEqual(await a.p.isVisible('#adminDesktopReports'), true);
+    assert.strictEqual((await a.p.textContent('#adminUserRecordsLeader')).trim(), 'Empate · 4 usuários');
+    assert.strictEqual((await a.p.textContent('#adminUserRecordsLeaderCount')).trim(), '1 registro cada');
+    assert.strictEqual(await a.p.locator('#adminUserRecordsChart .user-record-row').count(), 4);
     const [download] = await Promise.all([a.p.waitForEvent('download'), a.p.click('#adminExportXlsx')]);
     assert.match(download.suggestedFilename(), /^validade_relatorio_.*\.xlsx$/);
     const file = await download.path();
@@ -2038,10 +2041,12 @@ tflaky('Central desktop: admin aguarda confirmação do perfil, usa indicadores 
     assert.match(entries['xl/workbook.xml'], /name="Validades"/);
     assert.match(entries['xl/workbook.xml'], /name="Perecíveis"/);
     assert.match(entries['xl/workbook.xml'], /name="Alertas"/);
+    assert.match(entries['xl/workbook.xml'], /name="Por usuário"/);
     assert.match(entries['xl/worksheets/sheet1.xml'], /Loja Teste/);
     assert.match(entries['xl/worksheets/sheet2.xml'], /Produto Vencido e Próximo/);
     assert.match(entries['xl/worksheets/sheet3.xml'], /Queijo Fresco/);
     assert.match(entries['xl/worksheets/sheet4.xml'], /Produto Vencido e Próximo/);
+    assert.match(entries['xl/worksheets/sheet5.xml'], /Operador A/);
 
     await a.p.setViewportSize({ width: 390, height: 844 });
     await a.p.waitForFunction(() => !document.documentElement.classList.contains('desktop-admin'));
@@ -2140,4 +2145,37 @@ tflaky('Google Calendar não aparece mais no aplicativo nem é chamado', { skip:
   await a.p.waitForTimeout(400);
   assert.deepStrictEqual(chamadas, []);
   assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+
+tflaky('Relatórios: gráfico mobile identifica quem fez mais registros e separa autoria desconhecida', { skip: pular }, async () => {
+  const dados = {
+    prod: { '7890000000017': { lotes: [
+      { id: 'ana-1', lote: 'A1', qtd: 100, val: '2099-12-31', created_by: 'uid-ana', created_by_nome: 'Ana', rpcConfirmado: true },
+      { id: 'ana-2', lote: 'A2', qtd: 50, val: '2099-12-31', created_by: 'uid-ana', created_by_nome: 'Ana', rpcConfirmado: true },
+      { id: 'ana-3', lote: 'A3', qtd: 25, val: '2099-12-31', created_by: 'uid-ana', created_by_nome: 'Ana', rpcConfirmado: true },
+      { id: 'bea-1', lote: 'B1', qtd: 80, val: '2099-12-31', created_by: 'uid-beatriz', created_by_nome: 'Beatriz', rpcConfirmado: true },
+      { id: 'sem-autor', lote: 'X1', qtd: 1000, val: '2099-12-31', created_by: null, created_by_nome: '', rpcConfirmado: true }
+    ] } },
+    cat: { '7890000000017': { nome: 'Produto de teste' } },
+    pere: { itens: { '2000001': { desc: 'Queijo teste' } }, regs: [
+      { id: 'bea-2', cod: '2000001', sif: 'SIF-2', peso: 40, val: '2099-12-31', created_by: 'uid-beatriz', created_by_nome: 'Beatriz', rpcConfirmado: true }
+    ] }
+  };
+  const a = await abrirLogado(p => rotasPerm(p, 'admin', []), dados, { papel: 'admin', nome: 'Admin' });
+  try {
+    await permsCarregadas(a.p);
+    await a.p.click('nav button[data-v="aj"]');
+    await a.p.click('#sysMenu [data-sys-open="relatorios"]');
+    await a.p.waitForFunction(() => document.querySelectorAll('#sysUserRecordsChart .user-record-row').length === 3);
+    assert.strictEqual((await a.p.textContent('#sysUserRecordsTotal')).trim(), '6', 'conta lançamentos, não unidades ou peso');
+    assert.strictEqual((await a.p.textContent('#sysUserRecordsLeader')).trim(), 'Ana');
+    assert.strictEqual((await a.p.textContent('#sysUserRecordsLeaderCount')).trim(), '3 registros');
+    assert.strictEqual((await a.p.textContent('#sysUserRecordsUnknown')).trim(), '1');
+    const nomes = await a.p.locator('#sysUserRecordsChart .user-record-name').evaluateAll(es => es.map(e => e.textContent.trim()));
+    assert.deepStrictEqual(nomes, ['Ana', 'Beatriz', 'Autoria não identificada']);
+    const beatriz = a.p.locator('#sysUserRecordsChart .user-record-row').nth(1);
+    assert.match(await beatriz.textContent(), /1 lote · 1 perecível/);
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
 });
