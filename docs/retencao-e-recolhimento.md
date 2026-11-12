@@ -4,8 +4,8 @@
 
 - Lotes industrializados e registros perecíveis continuam disponíveis nas telas operacionais até cinco dias após o vencimento, inclusive no dia `D+5`.
 - A partir de `D+6`, o registro deixa de aparecer nas listas operacionais, na busca operacional, nos últimos registros da tela inicial e nos alertas ativos. O registro **não é excluído** do banco nem do histórico.
-- Para produto que vence hoje ou nos próximos cinco dias, um usuário com permissão pode marcar o registro como **Recolhido**. O botão só aparece para registros próprios quando o usuário tem `editar_proprios`, ou para outro registro quando tem `registros_editar_outros` (administrador conserva acesso total). Recolher não é excluir: o mesmo registro continua no banco e fica oculto nas listas operacionais de todos os usuários daquela loja.
-- O recolhimento só é confirmado online pelo RPC `marcar_registro_recolhido`, que valida sessão, vínculo à loja, papel/permissão, data de validade e concorrência. Uma falha do servidor não altera o estado local.
+- Para produto que vence hoje ou nos próximos cinco dias, usuários dos perfis de loja podem marcar o registro como **Recolhido** quando o perfil tem a permissão `registros_recolher`. O padrão concede essa permissão a Operador, Assistente, Analista e Gerente; o Administrador pode configurá-la por perfil em Ajustes → Usuários e Permissões → Perfis de acesso. Recolher não é excluir: o mesmo registro continua no banco e fica oculto nas listas operacionais de todos os usuários daquela loja.
+- O recolhimento só é confirmado online pelo RPC `marcar_registro_recolhido`, que valida sessão, escopo da loja, permissão efetiva, data de validade e concorrência. Uma falha do servidor não altera o estado local.
 - O registro recolhido some imediatamente das telas operacionais e dos alertas locais; sua linha é mantida com `recolhido_em` e `recolhido_por` enquanto estiver recolhida. Assistente, analista, gerente ou administrador podem abrir a lista de recolhidos e reativar um recolhimento equivocado enquanto o registro ainda estiver dentro da janela de retenção. A reativação também usa RPC autorizada no servidor e volta a disponibilizar o mesmo registro para a loja, sem criar cópia.
 
 ## Alertas e relatórios
@@ -16,7 +16,7 @@
 
 ## Persistência e rollout
 
-A migration `supabase/migrations/20261111223000_recolhimento_retencao_registros.sql` adiciona as colunas, as RPCs de recolhimento/reativação e a proteção contra alteração via upsert genérico, e atualiza a geração de alertas/Push. Aplicar a migration no Supabase antes de publicar o frontend correspondente. Não há remoção física de registros nem backfill destrutivo.
+As migrations versionadas em `supabase/migrations/` são a fonte do schema. Aplicar as migrations necessárias em ordem no Supabase antes de publicar o frontend correspondente: `20261112070000_localizacao_lotes_area_vendas.sql` (campo compartilhado Área de Vendas/Depósito nos lotes e perecíveis) e `20261112080000_recolhimento_configuravel_por_perfil.sql` (permissão por perfil e validação da RPC de recolhimento). As migrations anteriores de retenção e auditoria permanecem pré-requisitos para as telas operacionais e relatórios descritos acima. Não há remoção física de registros nem backfill destrutivo nesta alteração.
 
 ## Auditoria e indicadores
 

@@ -4,7 +4,7 @@
 > qualquer assistente). Descreve o objetivo, a arquitetura, o backend, a segurança,
 > a hierarquia de usuários e **o que está em construção agora**. Mantido em português.
 >
-> Última atualização: separação do catálogo global único e das associações produto–loja.
+> Última atualização: localização por lote (Área de Vendas/Depósito) e permissão de recolhimento configurável por perfil.
 
 ---
 
@@ -100,9 +100,9 @@ CONTEXTO.md                          # este arquivo
 | `loja_membros` (loja_id, user_id) | quais lojas cada usuário acessa |
 | `catalogo` (ean, nome, marca, img, updated_at) | cadastro global único: uma linha por EAN |
 | `produtos` (loja_id, ean, updated_at, deleted_at) | associação: EAN encontrado em cada loja, sem nome/marca/imagem |
-| `lotes` (id, loja_id, ean, lote, qtd, val, …) | lotes/validades por loja |
+| `lotes` (id, loja_id, ean, lote, qtd, val, em_area_vendas, …) | lotes/validades por loja, com localização do lote |
 | `pere_itens` (loja_id, cod, descricao, sif) | itens de perecíveis (código de balança) |
-| `pere_regs` (id, loja_id, cod, peso/preco, val, …) | registros de perecíveis |
+| `pere_regs` (id, loja_id, cod, peso/preco, val, em_area_vendas, …) | registros de perecíveis, com localização do registro |
 | `ajustes` (loja_id, …) | ajustes por loja |
 | `perfis` (id→auth.users, nome, papel) | papel do usuário (RBAC) |
 | `preferencias` (user_id→auth.users, cosmos_token) | **token do Cosmos por usuário** |
@@ -161,6 +161,8 @@ Chaves no localStorage: `validade_dados` (D, dados do app), `validade_sessao` (S
   **push** (envia). (Pendência: puxar/mesclar de outros aparelhos e propagar exclusões.)
 - **Token do Cosmos por usuário**: cada pessoa cadastra o seu em Ajustes; fica em
   `preferencias` (RLS: só a própria linha) e vale em qualquer aparelho.
+- **Localização por registro**: `lotes.em_area_vendas` e `pere_regs.em_area_vendas` informam se cada lote/registro está na Área de Vendas (`true`, padrão) ou no Depósito (`false`). A localização fica no Supabase e é compartilhada dentro da loja, sincroniza pela fila offline e aparece nos cartões, edição e relatórios XLSX.
+- **Recolhimento configurável**: `registros_recolher` é uma permissão por perfil definida pelo Administrador em Ajustes → Usuários e Permissões → Perfis de acesso. O padrão permite Operador, Assistente, Analista e Gerente; o servidor valida permissão e escopo da loja. Reativar registros recolhidos continua restrito a Assistente e perfis superiores.
 
 ---
 
@@ -195,6 +197,8 @@ Papéis: `operador`, `assistente`, `analista`, `gerente`, `admin` (superuser).
 | **Atribuir/trocar lojas do usuário** | ❌ | ❌ | ❌ | ✅ |
 | **Excluir usuário** | ❌ | ❌ | ❌ | ✅ |
 | Ver log de auditoria | ❌ | ❌ | ❌ | ✅ |
+
+Além da matriz acima, `registros_recolher` é configurável pelo Administrador por perfil e, por padrão, fica habilitada para Operador, Assistente, Analista e Gerente. A RPC valida a permissão e o escopo no servidor; a reativação continua restrita a Assistente ou superior.
 
 Regras finas:
 - Assistente cria usuários **sempre como `operador`** e só pode atribuir **as lojas das
