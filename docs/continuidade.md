@@ -306,3 +306,17 @@ Diário:
 
 - 12/11 07:37 — Manus — PR #61 aberta: https://github.com/jottacostta/validade/pull/61, branch `feat/location-sales-or-depot-20261112`, commit inicial `e2ab28a`. Os checks `testes` de push e pull request estão em execução. O histórico Supabase confirma pendentes as duas migrations; nenhuma alteração de banco foi aplicada. A solicitação de merge/deploy foi recebida, mas o `AGENTS.md` exige autorização separada para migrations de produção; não mesclar/publicar antes de concluir CI e o rollout autorizado do schema.
 - 12/11 07:50 — Manus — Jonatas autorizou aplicar exatamente as duas migrations acima após CI verde e, em seguida, concluir merge/deploy. Na hora da autorização, os dois checks do commit `e2ab28a` estavam verdes; nenhuma migration foi aplicada. A atualização deste diário será enviada na PR e exigirá nova validação de CI no head final.
+
+## 10. Central desktop consolidada e escopo individual do Gerente (12/11/2026)
+
+— Manus. Branch `fix/admin-desktop-settings-access-20261112`, baseada na `main` `bec1ca3` (squash da PR #61). Jonatas solicitou consolidar as correções em uma única PR e autorizou o merge; as três novas migrations precisam de autorização específica antes da aplicação.
+
+A central agora atende Administrador e Gerente, mantém o scanner oculto e expõe Ajustes, Perfis de acesso (somente Admin), registros, solicitações, aprovações, relatórios e atalhos de gestão conforme permissões. Novos gráficos/indicadores usam dados consultados no Supabase. O filtro por filial ou todas as lojas permitidas vale para o painel inteiro; prazos de alerta seguem os ajustes de cada filial. Consultas antigas são descartadas ao trocar filial/sessão e edições são fechadas ao perder o contexto.
+
+O erro `invalid input syntax for type uuid` ao recolher foi confirmado: IDs de `lotes`/`pere_regs` são textuais, mas as RPCs exigiam UUID. A nova migration troca as assinaturas para `text`, mantém permissão/loja/retenção e oferece exclusão administrativa com tombstone e auditoria na mesma transação. Edição de nome/papel/vínculos de usuários também é transacional; senha é uma operação de Auth posterior, com aviso de sucesso parcial se falhar.
+
+O Gerente depende das lojas atribuídas individualmente pelo Administrador, nunca do papel/permissão para alcançar a rede inteira. RLS, gestão de usuários, alertas e filas de push repetem essa defesa. Vínculos externos preservados em uma edição não são expostos na resposta ao gestor limitado. As permissões configuráveis anteriores dos demais papéis foram preservadas.
+
+Validação local final: `npm test` — **307/307 passaram, 0 falhas, 0 ignorados**, incluindo Playwright e PostgreSQL embarcado com RLS/outboxes reais sobre dados fictícios. Build e sintaxe JS/TypeScript passaram; revisão independente final sem bloqueadores HIGH. A única falha inicial da suíte consolidada era um contrato que confundia `podeEditar` com alcance global; o contrato foi atualizado e fortalecido com o bloqueio de exclusão fora do escopo. Não houve alteração de dados de produção durante os testes.
+
+Rollout pendente: `20261112120000_edicao_usuarios_atomica.sql`, `20261112121000_acoes_registros_ids_texto_auditadas.sql`, `20261112123000_escopo_individual_gerente.sql`; reimplantar `gerir-usuarios` com `scope.ts` e `alertas`, preservando autenticação/secrets existentes. Aplicar backend antes de publicar frontend. Google Calendar permanece inativo, sem alterações. Detalhes em `docs/ajustes-desktop-gestao.md`.

@@ -4,6 +4,7 @@ Sistema de **controle de validade** para supermercado: escaneia o código de bar
 controla lotes, quantidades e validades, e tem uma área de **perecíveis** (código de balança, SIF e peso).
 Cada registro informa se o lote está na **Área de Vendas** ou no **Depósito**; veja [a documentação da localização dos registros](docs/localizacao-registros.md).
 O botão **Recolher** é configurável por perfil em Ajustes → Perfis de acesso do Administrador; veja [as regras de recolhimento](docs/permissao-recolhimento.md).
+A central desktop de **Administrador e Gerente** reúne gráficos, indicadores, registros, solicitações, aprovações, relatórios e Ajustes, com filtro por filial ou todas as lojas permitidas. **Perfis de acesso** é exclusivo do Administrador; o Gerente só acessa as lojas atribuídas individualmente. O scanner permanece oculto; veja [a documentação da central de gestão](docs/ajustes-desktop-gestao.md).
 Na área de perecíveis também lê as etiquetas 2D (QR/DataMatrix GS1) das balanças, que já trazem peso e validade.
 E, se o OCR estiver ligado, lê por foto a **descrição** do produto e o **lote** (que vai para o SIF) do texto da etiqueta.
 
@@ -35,7 +36,7 @@ Abra `dist/validade.html` no navegador para testar, ou carregue no ApkForja (eta
 ## Testes
 
 ```bash
-npm install                      # só o Playwright, para os testes no navegador
+npm ci                           # Playwright e PostgreSQL embarcado para os testes
 npx playwright install chromium
 npm test
 ```
