@@ -1170,6 +1170,46 @@ tflaky('Meus Registros: ordem por cadastro, localização, paginação e caixa a
   } finally { await a.fechar(); }
 });
 
+tflaky('Meus Registros: compartilha um lote e todos os vencimentos de hoje a D+5', { skip: pular }, async () => {
+  const data = offset => { const d = new Date(); d.setDate(d.getDate()+offset); return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'); };
+  const ean='7891000315507', outro='7891000315514';
+  const lotes=Array.from({length:9},(_,i)=>({...lote('share-'+i,data(2),i+1,'INCLUIR-'+i),setor:'Laticínios'}));
+  lotes.push(lote('cinco',data(5),3,'LIMITE-CINCO'),lote('seis',data(6),3,'FORA-SEIS'),lote('vencido',data(-1),3,'FORA-VENCIDO'),
+    {...lote('recolhido',data(2),3,'FORA-RECOLHIDO'),recolhido_em:new Date().toISOString()});
+  const a=await abrir({opcoes:{viewport:{width:320,height:780}},dados:{
+    prod:{[ean]:{lotes},[outro]:{lotes:[{...lote('hoje',data(0),4,'INCLUIR-HOJE'),em_area_vendas:false}]}},
+    cat:{[ean]:{nome:'Café da loja'},[outro]:{nome:'Produto do depósito'}}
+  },antes:p=>p.addInitScript(()=>{
+    window.textosCompartilhados=[];
+    Object.defineProperty(navigator,'share',{configurable:true,value:({text})=>{window.textosCompartilhados.push(text);return Promise.resolve();}});
+  })});
+  try{
+    await a.p.click('nav button[data-v="prod"]');
+    const cabe=a.p.locator('#v-prod .operator-filter-row');
+    assert.equal(await cabe.evaluate(el=>el.scrollWidth<=el.clientWidth),true);
+    await a.p.fill('#qProd','INCLUIR-0');
+    await a.p.click('#listaProd [data-share-lote="share-0"]');
+    let textos=await a.p.evaluate(()=>window.textosCompartilhados);
+    assert.equal(textos.length,1);
+    assert.match(textos[0],/CAFÉ DA LOJA\nCódigo: 7891000315507\nLote: INCLUIR-0\nQuantidade: 1 un\.\nValidade: \d{2}\/\d{2}\/\d{4}\nSetor: Laticínios\nLocal: Área de Vendas/);
+    assert.doesNotMatch(textos[0],/INCLUIR-HOJE|INCLUIR-1/);
+    assert.equal(await a.p.isVisible('#listaProd'),true);
+    await a.p.click('#bShareProdDue');
+    textos=await a.p.evaluate(()=>window.textosCompartilhados);
+    assert.equal(textos.length,2);
+    assert.match(textos[1],/INCLUIR-HOJE[\s\S]+Local: Depósito[\s\S]+INCLUIR-8[\s\S]+LIMITE-CINCO/);
+    assert.equal((textos[1].match(/^Lote: /gm)||[]).length,11);
+    assert.doesNotMatch(textos[1],/FORA-/);
+    await a.p.evaluate(()=>Object.defineProperty(navigator,'share',{configurable:true,value:undefined}));
+    await a.p.click('#bShareProdDue');
+    assert.equal(await a.p.isVisible('#shareProdDialog'),true);
+    assert.equal(await a.p.inputValue('#shareProdText'),textos[1]);
+    await a.p.click('#shareProdDialog button[type="submit"]');
+    assert.equal(await a.p.isVisible('#shareProdDialog'),false);
+    assert.deepEqual(a.erros,[]);
+  }finally{await a.fechar();}
+});
+
 for (const cenario of ['manual', 'automático', 'sem migration']) {
   tflaky('Foto de produto no detalhe: '+cenario, { skip: pular }, async () => {
     const ean='7891000315507', filial='FL05';
