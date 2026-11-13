@@ -2047,7 +2047,7 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 
 <!-- ═════════ AJUSTES ═════════ -->
 <section class="vista" id="v-aj">
-  <div class="operator-tabs" id="settingsTabs" role="tablist" aria-label="Configurações e perfil"><button class="on" type="button" data-settings-view="settings" aria-pressed="true">Configurações</button><button type="button" data-settings-view="profile" aria-pressed="false">Perfil do Operador</button></div>
+  <div class="operator-tabs" id="settingsTabs" role="tablist" aria-label="Configurações e perfil"><button class="on" type="button" data-settings-view="settings" aria-pressed="true">Configurações</button><button type="button" data-settings-view="profile" aria-pressed="false">Perfil e Conta</button></div>
   <div class="card" id="sysMenuCard" hidden>
     <div class="sys-menu-intro"><h2 id="sysMenuTitle">Ajustes do Sistema</h2><p id="sysMenuSubtitle">Configurações, acessos e manutenção</p></div>
     <div id="sysMenu" aria-label="Seções de ajustes"></div>
@@ -2500,8 +2500,8 @@ function renderHome(){
  var nome=(SESS&&(SESS.nome||SESS.usuario||SESS.email))||'Operador';nome=String(nome).split(/[\s@]/)[0]||'Operador';
  var loja=(SESS&&SESS.lojaNome)||'Loja não selecionada';
  if($('homeGreeting'))$('homeGreeting').textContent='Olá, '+nome+'!';
- var roleTxt=(SESS&&SESS.papel&&PAPEIS&&PAPEIS[SESS.papel])||'Operador',areaTxt=SESS&&SESS.papel?'Área do '+roleTxt:(CFG.slogan||'Área do Operador');if($('slogan'))$('slogan').textContent=areaTxt;if($('operatorRolePill'))$('operatorRolePill').lastElementChild.textContent='Área do '+roleTxt;
- if($('homeStore'))$('homeStore').textContent=((SESS&&SESS.papel&&PAPEIS&&PAPEIS[SESS.papel])||'Operador')+' · '+loja;
+ atualizarSubtituloCabecalho();
+ if($('homeStore'))$('homeStore').textContent=(logado()?rotuloPerfilAtual():'Operador')+' · '+loja;
  var nAlert=todosRegistros().filter(function(x){var n=dias(x.reg.val);return n!==null&&n<=D.aj.dias;}).length;
  ['homeBellBadge','homeAlertsBadge'].forEach(function(id){var b=$(id);if(b){b.textContent=nAlert>99?'99+':String(nAlert);b.style.display=nAlert?'':'none';}});
  var rows=todosRegistros().slice().sort(function(a,b){return new Date(b.reg.criado||b.reg.criado_em||b.reg.created_at||0)-new Date(a.reg.criado||a.reg.criado_em||a.reg.created_at||0);}).slice(0,2);
@@ -2597,8 +2597,20 @@ function renderCatalogo(){if(!$('listaCatalogo'))return;var q=$('qCatalogo').val
   $('listaCatalogo').innerHTML=itens.map(function(x){var acao=x.inativo?'<button type="button" data-catalogo-restaurar="'+esc(x.ean)+'" aria-label="Restaurar '+esc(x.nome)+'" title="Restaurar">↻</button>':'<button type="button" data-catalogo-inativar="'+esc(x.ean)+'" aria-label="Inativar '+esc(x.nome)+'" title="Inativar">×</button>';
     return '<article class="operator-record catalog-card"><span class="operator-record-thumb"'+atributoFoto(x.ean)+'>'+miniatura(x.img,'lote')+'</span><span class="operator-record-copy"><strong>'+esc(x.nome)+'</strong><small>EAN: '+esc(x.ean)+(x.marca?'<br>Marca: '+esc(x.marca):'')+'<br>'+(x.n?x.n+' registro'+(x.n>1?'s':'')+' nesta loja':'Sem registros nesta loja')+'</small></span><span class="chip '+(x.inativo?'da':x.n?'ok':'wa')+'">'+(x.inativo?'Inativo global':x.n?'Com registro':'Sem registro')+'</span><span class="operator-record-actions">'+(x.inativo?'':'<button type="button" data-register-ean="'+esc(x.ean)+'" aria-label="Registrar lote de '+esc(x.nome)+'">'+ic('plus')+'</button>')+acao+'</span></article>';}).join('')
     ||'<div class="operator-empty">'+(q||catFiltro!=='all'?'Nenhum produto encontrado com este filtro.':'O catálogo ainda está vazio.')+'</div>';}
-function subtituloPapelAtual(){return papelAtual()==='admin'?'Área do Administrador':'Área do Operador';}
-function atualizarSubtituloCabecalho(){var e=$('slogan');if(!e)return;var subtitulo=(vistaAtual!=='home'&&subtitulosTela[vistaAtual])||CFG.slogan||subtituloPapelAtual();if(subtitulo==='Área do Operador')subtitulo=subtituloPapelAtual();e.textContent=subtitulo;}
+function rotuloPerfilAtual(){
+  if(sbOn()&&logado()&&!SESS.papel)return papelCarregando?'Confirmando perfil':'Perfil não confirmado';
+  return PAPEIS[papelAtual()];
+}
+function subtituloPapelAtual(){
+  if(!logado())return 'Área do Operador';
+  if(!SESS.papel)return rotuloPerfilAtual();
+  return {operador:'Área do Operador',assistente:'Área de Assistente',analista:'Área de Analista',gerente:'Área de Gerência',admin:'Área do Administrador'}[papelAtual()];
+}
+function atualizarSubtituloCabecalho(){
+  var area=subtituloPapelAtual(),subtitulo=subtitulosTela[vistaAtual];
+  $('slogan').textContent=subtitulo&&subtitulo!=='Área do Operador'?subtitulo:(!logado()&&vistaAtual==='home'&&CFG.slogan)||area;
+  $('operatorRolePill').lastElementChild.textContent=area;
+}
 function ir(v){if(v==='catalogo'&&!podeVerCatalogo()){toast('O catálogo é exclusivo do administrador');return;}var destino=$('v-'+v);if(!destino)return;if(v!==vistaAtual){vistaAnterior=vistaAtual;vistaAtual=v;}if(v==='prod'||v==='pere')areaContextual=v;
   document.querySelectorAll('.vista').forEach(function(s){s.classList.toggle('on',s===destino);});
   var interna=v!=='home',cab=document.querySelector('header .hdr-in');cab.classList.toggle('interna',interna);
@@ -6259,14 +6271,14 @@ function fdataHora(ms){try{var d=new Date(ms);return d.toLocaleDateString('pt-BR
 function ehAdmin(){return papelAtual()==='admin';}
 function atualizarContextoLoja(){var e=$('lojaAtualLabel');if(e)e.textContent=logado()?((SESS.nome||SESS.usuario||'Usuário')+(SESS.lojaNome?' · '+SESS.lojaNome:'')):'';renderPerfilOperador();}
 function renderPerfilOperador(){
-  var nome=SESS&&(SESS.nome||SESS.usuario||SESS.email)||'Operador',papel=SESS&&SESS.papel||papelAtual(),loja=SESS&&SESS.lojaNome||'Não selecionada';
+  var nome=SESS&&(SESS.nome||SESS.usuario||SESS.email)||'Operador',papel=rotuloPerfilAtual(),loja=SESS&&SESS.lojaNome||'Não selecionada';
   if($('profileName'))$('profileName').textContent=nome;
   if($('profileLogin'))$('profileLogin').textContent=SESS&&(SESS.usuario||SESS.email)?'Usuário: '+(SESS.usuario||SESS.email):'Conta local';
   if($('profileStore'))$('profileStore').textContent=loja;
-  if($('profileRole'))$('profileRole').textContent=(PAPEIS&&PAPEIS[papel])||papel||'Operador';
+  if($('profileRole'))$('profileRole').textContent=papel;
   if($('profileSector'))$('profileSector').textContent=SESS&&(SESS.setor||SESS.setorNome)||'Não informado';
   if($('profileDevice'))$('profileDevice').textContent=plataforma();
-  if($('profileStatus'))$('profileStatus').textContent=logado()?((PAPEIS&&PAPEIS[papel])||'Operador')+' Ativo':'Modo local';
+  if($('profileStatus'))$('profileStatus').textContent=logado()?(SESS.papel?papel+' Ativo':papel):'Modo local';
 }
 /* som curto de confirmação (preferência "Notificações sonoras", guardada no aparelho) */
 var ctxSom=null;function bip(){if(D.aj.som===false)return;try{var C=window.AudioContext||window.webkitAudioContext;if(!C)return;ctxSom=ctxSom||new C();var o=ctxSom.createOscillator(),g=ctxSom.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(ctxSom.destination);o.start();o.stop(ctxSom.currentTime+.09);}catch(e){}}
