@@ -1006,6 +1006,44 @@ tflaky('Registrar: − / + ajustam a quantidade sem ficar abaixo de 1', { skip: 
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
 
+tflaky('Registrar: a caixa abre a câmera e salva a foto depois do lote', { skip: pular }, async () => {
+  const cap = {}, fotos = [], ean = '7891000315507';
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aG9sAAAAASUVORK5CYII=', 'base64');
+  const a = await abrirRegistro(async p => {
+    await rotasRegistro(p, cap);
+    await p.route('**/rest/v1/rpc/buscar_foto_catalogo', r => r.fulfill({status:200,body:'null',contentType:'application/json'}));
+    await p.route(/\/rest\/v1\/catalogo\?ean=eq\./, r => r.fulfill({status:200,json:[{ean,nome:'Café',img:''}]}));
+    await p.route('**/rest/v1/rpc/salvar_foto_catalogo', r => {
+      fotos.push({payload:r.request().postDataJSON(),lotes:cap.rpc_lote?.length||0});
+      return r.fulfill({status:200,json:'10000000-0000-4000-8000-000000000005'});
+    });
+  }, {prod:{},cat:{[ean]:{nome:'Café',img:'https://foto.invalid/quebrada.jpg'}},pere:{itens:{},regs:[]}}, p => p.addInitScript(() => {
+    window.cameraCadastro=0;
+    document.addEventListener('click', e => {if(e.target.id==='pFotoCamera'){e.preventDefault();window.cameraCadastro++;}});
+  }));
+  try {
+    await a.p.route('https://foto.invalid/**', r => r.fulfill({status:404}));
+    await a.p.fill('#tCodigo',ean); await a.p.click('#bBuscar');
+    await a.p.fill('#pLote','f-1'); await a.p.fill('#pQtd','3'); await a.p.fill('#pVal','2099-02-01'); await a.p.selectOption('#pSetor','Mercearia');
+    assert.equal(await a.p.getAttribute('#pFotoCamera','capture'),'environment');
+    await a.p.click('#bFotoCadastro');
+    assert.equal(await a.p.evaluate(()=>window.cameraCadastro),1);
+    await a.p.setInputFiles('#pFotoCamera',{name:'embalagem.png',mimeType:'image/png',buffer:png});
+    await a.p.waitForFunction(()=>document.querySelector('#pFotoStatus').textContent.includes('Foto pronta'));
+    assert.equal(await a.p.inputValue('#pLote'),'f-1');
+    assert.equal(await a.p.inputValue('#pVal'),'2099-02-01');
+    assert.equal(fotos.length,0);
+    await a.p.click('#bSalvarLote');
+    await a.p.waitForSelector('#regSucesso',{state:'visible'});
+    assert.equal(fotos.length,1);
+    assert.equal(fotos[0].lotes,1);
+    assert.equal(fotos[0].payload.p_ean,ean);
+    assert.match(fotos[0].payload.p_img,/^data:image\/jpeg;base64,/);
+    assert.match(await a.p.textContent('#regSucessoResumo'),/Foto salva no catálogo/);
+    assert.deepEqual(a.erros,[]);
+  }finally{await a.fechar();}
+});
+
 tflaky('Registrar: confirmação só aparece depois da resposta do Supabase e oferece as duas saídas', { skip: pular }, async () => {
   let liberar; const espera = new Promise(r => { liberar = r; });
   const a = await abrirRegistro(async p => {
