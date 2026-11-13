@@ -2993,7 +2993,7 @@ tflaky('retenção operacional: conserva o vencido até o quinto dia e oculta de
 tflaky('recolhimento: operador autorizado confirma pela RPC e o registro some sem ser apagado', { skip: pular }, async () => {
   const chamadas = [];
   const dados = dadoRetencao();
-  dados.prod['7891000315507'].lotes = [lote('lote-recolher', offsetValidade(3), 4, 'L-RECOLHER')];
+  dados.prod['7891000315507'].lotes = [lote('lote-recolher', offsetValidade(30), 4, 'L-RECOLHER')];
   Object.assign(dados.prod['7891000315507'].lotes[0], { setor: 'Mercearia', created_by: 'u1', created_by_nome: 'Operador 1' });
   const a = await abrirLogado(async p => {
     await rotasPerm(p, 'operador', []);
@@ -3032,7 +3032,7 @@ tflaky('recolhimento: operador autorizado confirma pela RPC e o registro some se
 
 tflaky('recolhimento: mantém o registro visível se o servidor recusar a ação', { skip: pular }, async () => {
   const dados = dadoRetencao();
-  dados.prod['7891000315507'].lotes = [lote('lote-negado', offsetValidade(2), 1, 'L-NEGADO')];
+  dados.prod['7891000315507'].lotes = [lote('lote-negado', offsetValidade(-2), 1, 'L-NEGADO')];
   Object.assign(dados.prod['7891000315507'].lotes[0], { setor: 'Mercearia', created_by: 'u1', created_by_nome: 'Operador 1' });
   const a = await abrirLogado(async p => {
     await rotasPerm(p, 'operador', []);
