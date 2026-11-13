@@ -77,3 +77,12 @@ modo de segmentação psm 4). `parseEtiquetaOCR(texto)` (em `src/leitor-ean.js`)
 O Tesseract é baixado da web (CDN jsdelivr) sob demanda, na primeira vez, e fica em cache do navegador — depois
 funciona offline. Se não carregar (sem internet na 1ª vez) ou falhar, o OCR é ignorado em silêncio e o preenchimento
 segue manual. Precisa do leitor nativo só para o QR; o OCR roda no próprio celular, sem enviar a foto para fora.
+
+
+## Foto da embalagem
+
+Em **Meus Registros → Detalhe do registro**, o app procura uma foto pelo EAN nas fontes existentes quando a imagem está ausente ou falha. O detalhe oferece câmera, galeria e prévia para produtos com lote já sincronizado. A primeira foto pode ser incluída por um perfil autorizado na filial do lote. Quando já há foto ou link no catálogo, somente gerente ou administrador pode substituir a imagem compartilhada. Se uma fonte oferecer imagem alternativa para um link quebrado, outros perfis podem vê-la no detalhe.
+
+Fotos enviadas são convertidas em JPEG de até 640 px no lado maior e 100 KiB. O Supabase guarda uma foto por EAN em tabela própria, separada da sincronização de lotes e do catálogo legado. As listas consultam as miniaturas quando entram na área visível. A prévia e o cache ficam em memória. A gravação requer conexão e confere a revisão atual para evitar sobrescrever alterações concorrentes.
+
+A migration de fotos precisa estar aplicada para liberar o recurso. Enquanto a API de fotos estiver indisponível, o app continua usando as imagens e o fluxo de registro anteriores.
