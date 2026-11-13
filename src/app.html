@@ -644,8 +644,6 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 #adminDesktop .admin-desktop-nav button{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:0 13px;border:1px solid transparent;border-radius:12px;background:transparent;color:#c1d0df;text-align:left;font:700 14px system-ui;cursor:pointer}
 #adminDesktop .admin-desktop-nav button:hover,#adminDesktop .admin-desktop-nav button.on{background:#0b3d79;border-color:#2761a0;color:#fff}
 #adminDesktop .admin-desktop-nav .admin-nav-icon{display:grid;place-items:center;width:24px;height:24px;color:#ffdf00;font-size:19px}
-#adminDesktop .admin-desktop-sidebar-foot{margin-top:auto;display:grid;gap:10px}
-#adminDesktop .admin-desktop-sidebar-foot p{margin:0;padding:12px;border:1px solid #24415c;border-radius:12px;color:#b8c9d8;font-size:12px;overflow-wrap:anywhere}
 #adminDesktop .admin-desktop-main{min-width:0;min-height:0;display:flex;flex-direction:column;background:radial-gradient(70% 100% at 100% 0%,#0a2d4b 0%,#031321 60%)}
 #adminDesktop .admin-desktop-top{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 34px;border-bottom:1px solid #24415c;background:#071d31}
 #adminDesktop .admin-desktop-top h1{margin:0;font-size:25px;line-height:1.15;color:#fff}
@@ -655,7 +653,6 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 #adminDesktop .admin-desktop-user b{font-size:13px;color:#fff}
 #adminDesktop .admin-desktop-user small{font-size:11px;color:#b8c9d8}
 #adminDesktop .admin-desktop-content{min-width:0;flex:1;overflow:auto;padding:28px 34px 40px}
-#adminDesktop .admin-desktop-scope{margin:0 0 18px;color:#bfd0df;font-size:12px}
 #adminDesktop .admin-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:18px}
 #adminDesktop .admin-kpi{min-width:0;padding:18px;border:1px solid #294967;border-radius:16px;background:linear-gradient(145deg,#10283e,#0b2034);box-shadow:0 8px 22px #0002}
 #adminDesktop .admin-kpi small{display:block;color:#b8c9d8;font-size:12px;font-weight:700}
@@ -692,9 +689,8 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
  html.desktop-admin,html.desktop-admin body{width:100%;height:100%;min-height:100%;overflow:hidden}
  html.desktop-admin body{padding:0!important}
  html.desktop-admin body>header,html.desktop-admin body>#systemAlertBanner,html.desktop-admin body>main,html.desktop-admin body>nav.abas{display:none!important}
- html.desktop-admin #adminDesktop{position:fixed;inset:0;z-index:30;display:grid;grid-template-columns:250px minmax(0,1fr);min-width:0;min-height:0;background:#031321}
+ html.desktop-admin #adminDesktop{position:fixed;inset:0;z-index:30;display:grid;grid-template-columns:202px minmax(0,1fr);min-width:0;min-height:0;background:#031321}
  html.desktop-admin #scanner{display:none!important}
- html.desktop-admin #adminDesktop .admin-desktop-top{padding:22px 30px}
  html.desktop-admin .toast{bottom:24px}
  html.desktop-admin-pending body>header,html.desktop-admin-pending body>#systemAlertBanner,html.desktop-admin-pending body>main,html.desktop-admin-pending body>nav.abas{display:none!important}
  html.desktop-admin-pending #adminDesktopLoading{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:#031321;color:#fff;font:700 16px system-ui}
@@ -791,9 +787,6 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 
 /* Fragmento inline para o <style> já escuro do app. */
 .admin-scope-controls{margin:0 0 16px;padding:16px 18px;border:1px solid #294967;border-radius:16px;background:linear-gradient(145deg,#142f49,#0c2238);color:#f5f8fc}
-.admin-scope-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:18px}
-.admin-scope-heading h2{margin:0;font-size:17px;font-weight:850}
-.admin-scope-heading p{margin:4px 0 0;color:#c1d0df;font-size:12px;line-height:1.35}
 .admin-scope-field{display:grid;gap:5px;flex:0 1 330px;min-width:220px;color:#c7d8e7;font-size:12px;font-weight:750}
 .admin-scope-field select{width:100%;min-height:42px;padding:8px 11px;border:1px solid #39749a;border-radius:10px;background:#091d2e;color:#f5f8fc;font:700 14px system-ui}
 .admin-scope-field select:focus{outline:2px solid #25a7ff;outline-offset:1px}
@@ -802,7 +795,6 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 .admin-scope-status{min-height:1.35em;margin:0;color:#e4eef8;font-size:13px;font-weight:700;overflow-wrap:anywhere}
 .admin-scope-retry{flex:none;min-height:38px;padding:7px 12px}
 .admin-scope-source{min-height:1.25em;margin:4px 0 0;color:#9eb8ce;font-size:11px;overflow-wrap:anywhere}
-@media(max-width:680px){.admin-scope-heading{align-items:stretch;flex-direction:column;gap:11px}.admin-scope-field{min-width:0;flex-basis:auto}.admin-scope-status-row{align-items:stretch;flex-direction:column}.admin-scope-retry{align-self:flex-start}}
 
 /* Fragmento visual para ser carregado junto à central #adminDesktop. */
 #adminDesktopRequests {
@@ -1152,9 +1144,6 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
   gap: 18px;
   margin-bottom: 14px;
 }
-.admin-records-head h2 { margin: 0; font-size: clamp(22px, 3vw, 30px); line-height: 1.1; }
-.admin-records-intro { max-width: 760px; margin: 7px 0 0; color: var(--records-muted); font-size: 13px; }
-.admin-records-eyebrow { margin: 0 0 5px; color: var(--records-yellow); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .admin-records-scope { margin: 8px 0 0; color: #e0ebf5; font-size: 12px; font-weight: 700; }
 .admin-records-head > .btn { flex: none; min-height: 42px; }
 
@@ -1328,13 +1317,100 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 }
 
 #adminDesktop .admin-desktop-sidebar{max-height:100dvh;overflow-y:auto}
-#adminDesktop .admin-desktop-sidebar-foot .admin-scope-controls{padding:10px;margin-top:10px}
-#adminDesktop .admin-desktop-sidebar-foot .admin-scope-heading{display:grid;gap:8px}
-#adminDesktop .admin-desktop-sidebar-foot .admin-scope-heading h2{font-size:13px}
-#adminDesktop .admin-desktop-sidebar-foot .admin-scope-heading p{display:none}
-#adminDesktop .admin-desktop-sidebar-foot .admin-scope-field{width:100%;min-width:0}
-#adminDesktop .admin-desktop-sidebar-foot .admin-scope-status-row{display:block}
-#adminDesktop .admin-desktop-sidebar-foot .admin-scope-source{font-size:10px}
+#adminDesktop .admin-desktop-sidebar{gap:14px;padding:18px 12px}
+#adminDesktop .admin-desktop-brand{padding:0 3px 12px}
+#adminDesktop .admin-desktop-nav{gap:3px}
+#adminDesktop .admin-desktop-nav button{min-height:38px;padding:0 8px;gap:7px;font-size:13px}
+#adminDesktop .admin-desktop-top{padding:12px 20px;gap:12px}
+#adminDesktop .admin-desktop-top h1{font-size:22px}
+#adminDesktop .admin-desktop-top-actions .btn{min-height:36px;flex:none;padding:6px 12px}
+#adminDesktop .admin-desktop-content{padding:14px 20px 24px}
+#adminDesktop .admin-scope-controls{display:flex;align-items:center;gap:16px;margin:0 0 12px;padding:8px 12px;border-radius:10px}
+#adminDesktop .admin-scope-field{flex:0 1 290px;min-width:0}
+#adminDesktop .admin-scope-field select{min-height:34px;padding:4px 8px}
+#adminDesktop .admin-scope-status-row{flex:1;min-width:0;margin:0}
+#adminDesktop .admin-scope-status{font-size:12px;font-weight:500}
+#adminDesktop .admin-scope-source{margin:0;font-size:12px}
+#adminDesktop .admin-kpis{gap:8px;margin-bottom:10px}
+#adminDesktop .admin-kpi{padding:11px 12px;border-radius:10px}
+#adminDesktop .admin-kpi b{margin-top:5px;font-size:25px}
+#adminDesktop .admin-location-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:10px}
+#adminDesktop .admin-location{padding:10px 12px;border:1px solid #294967;border-radius:10px;background:#10283e;color:#edf5fc}
+#adminDesktop .admin-location h2{margin:0;color:#9bd7ff;font-size:13px}
+#adminDesktop .admin-location p{margin:3px 0 6px;color:#c1d0df;font-size:12px}
+#adminDesktop .admin-location strong{margin-right:3px;color:#fff;font-size:21px;font-variant-numeric:tabular-nums}
+#adminDesktop .admin-location dl{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0;font-size:12px}
+#adminDesktop .admin-location dl div{display:flex;gap:4px}
+#adminDesktop .admin-location dd{margin:0;font-weight:750}
+#adminDesktop .admin-desktop-grid{grid-template-columns:minmax(235px,1fr) minmax(0,2.1fr);gap:10px}
+#adminDesktop .admin-desktop-card{padding:12px;border-radius:10px}
+#adminDesktop .admin-desktop-card>p{margin-bottom:8px}
+#adminDesktop .admin-status-row{margin:9px 0}
+#adminDesktop .admin-report-summary{margin:10px 0 0;gap:6px}
+#adminDesktop .admin-report-summary div{padding:7px}
+#adminDesktop .admin-report-summary b{font-size:17px}
+#adminDesktop .admin-desktop-table{width:100%;min-width:0}
+#adminDesktop .admin-desktop-table th,#adminDesktop .admin-desktop-table td{padding:6px;text-align:left;overflow-wrap:anywhere;vertical-align:top}
+#adminDesktop .admin-desktop-table small{display:block;color:#b8c9d8;font-size:12px}
+#adminDesktopRecords{padding:12px;border-radius:10px}
+#adminDesktop .admin-records-head{margin-bottom:4px;align-items:center}
+#adminDesktop .admin-records-scope{margin:0}
+#adminDesktop .admin-records-status:empty{display:none}
+#adminDesktop .admin-records-filters{grid-template-columns:minmax(145px,1.5fr) repeat(5,minmax(100px,1fr));gap:8px;margin:8px 0;padding:8px}
+#adminDesktop .admin-records-filters :is(input,select){min-height:35px;padding:5px 6px}
+#adminDesktop .admin-records-table{min-width:770px}
+#adminDesktop .admin-records-table :is(th,td){padding:6px}
+#adminDesktop .admin-records-table th{white-space:normal}
+#adminDesktop .admin-records-table td:first-child{min-width:65px}
+#adminDesktop .admin-records-table td:nth-child(3){min-width:115px}
+#adminDesktop .admin-records-table td:nth-child(8){min-width:0}
+#adminDesktop .admin-records-table tbody tr:hover{background:#10283e}
+#adminDesktop .admin-records-id{display:block}
+#adminDesktop .admin-records-actions{min-width:0}
+#adminDesktop .admin-mobile-only{display:none}
+@media(max-width:1023px){
+  html.mobile-admin-panel,html.mobile-admin-panel body{overflow:hidden}
+  html.mobile-admin-panel #adminDesktop{position:fixed;inset:0;z-index:30;display:block}
+  html.mobile-admin-panel #adminDesktop .admin-desktop-main{height:100%}
+  html.mobile-admin-panel :is(body>header,body>main,body>nav.abas,#adminDesktop .admin-desktop-sidebar){display:none!important}
+  #adminDesktop .admin-mobile-only{display:flex}
+  #adminDesktop .admin-desktop-top{padding:calc(8px + env(safe-area-inset-top)) 10px 8px}
+  #adminDesktop .admin-desktop-top h1{font-size:18px}
+  #adminDesktop :is(#adminDesktopSubtitle,.admin-request-overview){display:none}
+  #adminDesktop .admin-desktop-top-actions > :not(#adminDesktopRefresh){display:none}
+  #adminDesktop .admin-desktop-top h1{line-height:1.25}
+  #adminDesktop .admin-mobile-tabs{gap:8px;padding:8px 10px 0}
+  #adminDesktop .admin-mobile-tabs button[aria-pressed=true]{background:#0b4b86;border-color:#79c6ff}
+  #adminDesktop .admin-desktop-content{padding:10px 10px calc(20px + env(safe-area-inset-bottom))}
+  #adminDesktop .admin-scope-controls{display:grid;gap:5px}
+  #adminDesktop .admin-scope-status-row{flex-direction:row;align-items:center}
+  #adminDesktop .admin-scope-status-row b{display:none}
+  #adminDesktop .admin-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+  #adminDesktop .admin-location-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #adminDesktop .admin-desktop-grid{grid-template-columns:1fr}
+  #adminDesktop .adminInsight-grid{grid-template-columns:1fr}
+  #adminDesktop .adminInsight-card--wide{grid-column:auto}
+  #adminDesktop .adminInsight-head{align-items:flex-start;flex-direction:column;gap:6px}
+  #adminDesktop .admin-records-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #adminDesktop .admin-records-filters label:first-child{grid-column:1/-1}
+  #adminDesktop .admin-records-head{display:none}
+  #adminDesktop .admin-records-table-wrap{border:0;background:transparent;overflow:visible}
+  #adminDesktop .admin-records-table{display:block;min-width:0}
+  #adminDesktop .admin-records-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+  #adminDesktop .admin-records-table tbody{display:grid;gap:8px}
+  #adminDesktop .admin-records-table tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:5px;border:1px solid #294967;border-radius:10px;background:#0b2034}
+  #adminDesktop .admin-records-table td{min-width:0;border:0;overflow-wrap:anywhere}
+  #adminDesktop .admin-records-table td:is(:nth-child(3),:last-child){grid-column:1/-1;min-width:0}
+  #adminDesktop .admin-records-table td:nth-child(3){grid-row:1}
+  #adminDesktop .admin-records-table td[colspan]{grid-column:1/-1}
+  #adminDesktop .admin-records-table td[data-label]::before{content:attr(data-label);display:block;color:#b8c9d8;font-size:12px}
+  #adminDesktop .admin-records-actions button{min-height:36px}
+}
+@media(max-width:480px){
+  #adminDesktop .admin-desktop-table th,#adminDesktop .admin-desktop-table td{padding:5px 3px}
+  #adminDesktop .admin-desktop-table th{white-space:normal}
+  #adminDesktop .admin-desktop-table td:nth-child(4){min-width:64px}
+}
 #adminDesktop .admin-nav-label{padding:8px 10px 2px;color:#90aac0;font-size:10px;text-transform:uppercase;letter-spacing:.08em}
 #adminDesktop .admin-request-nav-badge{margin-left:auto;background:#ffd84a;color:#071d31;border-radius:20px;padding:2px 7px;font-size:10px;font-weight:800}
 #adminDesktop .admin-request-overview{display:flex;align-items:center;gap:15px;padding:16px 20px;margin:18px 0;border:1px solid #315875;border-radius:14px;background:linear-gradient(120deg,#133953,#0b2034)}
@@ -1360,7 +1436,7 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 .operator-profile-data small,#v-pere .sub button,.perm-row small,
 #adminDesktop .adminInsight-eyebrow,#adminDesktop .adminInsight-metric small,#adminDesktop .adminInsight-note,
 #adminDesktop .adminInsight-priority-meta,#adminDesktop .adminInsight-priority-qty,
-#adminDesktop .admin-nav-label,#adminDesktop .admin-desktop-sidebar-foot .admin-scope-source{font-size:12px!important}
+#adminDesktop .admin-nav-label,#adminDesktop .admin-scope-source{font-size:12px!important}
 /* Exceções para não quebrar o layout aprovado: os indicadores do resumo (Total, Válidos, Próx. Venc., Vencidos)
    e, abaixo de 360 px, os rótulos da barra inferior mantêm o tamanho original porque não cabem a 12 px. */
 @media (min-width:360px){nav.abas button{font-size:12px!important}}
@@ -1391,35 +1467,31 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 <button type="button" data-admin-settings="auditoria"><span class="admin-nav-icon" aria-hidden="true">▤</span><span>Auditoria</span></button>
 <button type="button" data-admin-settings="dados"><span class="admin-nav-icon" aria-hidden="true">◇</span><span>Dados e manutenção</span></button>
     </nav>
-    <div class="admin-desktop-sidebar-foot"><p>Escopo dos dados<br><b id="adminDesktopStore">Loja selecionada</b></p><!-- Substituir o parágrafo #adminDesktopScope dentro de #adminDesktopDashboard por este bloco. -->
-<section id="adminDesktopScopeControls" class="admin-scope-controls" aria-label="Escopo dos dados administrativos">
-  <div class="admin-scope-heading">
-    <div>
-      <h2>Escopo do painel</h2>
-      <p>Escolha quais lojas autorizadas aparecem nos indicadores e na gestão de usuários.</p>
-    </div>
-    <label class="admin-scope-field" for="adminDesktopScopeSelect">
-      <span>Filtrar por loja</span>
-      <select id="adminDesktopScopeSelect" aria-describedby="adminDesktopScopeStatus adminDesktopScopeSource">
-        <option value="all">Todas as lojas autorizadas</option>
-      </select>
-    </label>
-  </div>
-  <div class="admin-scope-status-row">
-    <p id="adminDesktopScopeStatus" class="admin-scope-status" role="status" aria-live="polite">Aguardando consulta remota.</p>
-    <button id="adminDesktopScopeRetry" class="btn sec admin-scope-retry" type="button" hidden>Tentar novamente</button>
-  </div>
-  <p id="adminDesktopScopeSource" class="admin-scope-source">Fonte: Supabase · nenhum dado confirmado ainda.</p>
-</section>
-</div>
-  </aside>
+      </aside>
   <div class="admin-desktop-main">
-    <header class="admin-desktop-top"><div><h1 id="adminDesktopTitle">Painel administrativo</h1><p id="adminDesktopSubtitle">Indicadores de validade e registros da loja selecionada.</p></div>
+    <header class="admin-desktop-top">
+      <button class="btn sec admin-mobile-only" id="adminDesktopMobileBack" type="button">Voltar</button>
+      <div><h1 id="adminDesktopTitle">Painel de gestão</h1><p id="adminDesktopSubtitle">Indicadores de validade e registros da loja selecionada.</p></div>
       <div class="admin-desktop-top-actions"><span class="admin-desktop-user"><b id="adminDesktopUser">Usuário</b><small id="adminDesktopRole">Perfil</small></span><button class="btn sec" id="adminDesktopChangeStore" type="button">Trocar loja</button><button class="btn sec" id="adminDesktopRefresh" type="button">Atualizar</button><button class="btn" id="adminDesktopLogout" type="button">Sair</button></div>
     </header>
-    <div class="admin-desktop-content">
+    <div class="admin-mobile-tabs admin-mobile-only" aria-label="Navegação do painel">
+      <button class="btn sec" type="button" data-admin-view="dashboard" aria-pressed="true">Visão geral</button>
+      <button class="btn sec" type="button" data-admin-view="records" aria-pressed="false">Registros</button>
+    </div>
+    <div id="adminDesktopContent" class="admin-desktop-content">
+<section id="adminDesktopScopeControls" class="admin-scope-controls" aria-label="Escopo dos dados administrativos">
+  <label class="admin-scope-field" for="adminDesktopScopeSelect">
+    <span>Filial</span>
+    <select id="adminDesktopScopeSelect" aria-describedby="adminDesktopScopeStatus adminDesktopScopeSource">
+      <option value="all">Todas as lojas autorizadas</option>
+    </select>
+  </label>
+  <div class="admin-scope-status-row">
+    <div><b id="adminDesktopStore">Loja selecionada</b><p id="adminDesktopScopeStatus" class="admin-scope-status" role="status" aria-live="polite">Aguardando consulta remota.</p><p id="adminDesktopScopeSource" class="admin-scope-source"></p></div>
+    <button id="adminDesktopScopeRetry" class="btn sec admin-scope-retry" type="button" hidden>Tentar novamente</button>
+  </div>
+</section>
       <section id="adminDesktopDashboard" aria-label="Indicadores administrativos">
-        <p class="admin-desktop-scope" id="adminDesktopScope">Dados locais/sincronizados da loja ativa.</p>
         <div class="admin-kpis">
           <article class="admin-kpi"><small>Registros monitorados</small><b id="adminKpiRecords">0</b></article>
           <article class="admin-kpi"><small>Produtos únicos ativos</small><b id="adminKpiProducts">0</b></article>
@@ -1427,15 +1499,16 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
           <article class="admin-kpi wa"><small>A vencer</small><b id="adminKpiSoon">0</b></article>
           <article class="admin-kpi ok"><small>Dentro da validade</small><b id="adminKpiValid">0</b></article>
         </div>
+        <div id="adminInsightLocations" class="admin-location-grid" aria-label="Registros ativos por localização"></div>
         <div class="admin-desktop-grid">
-          <section class="admin-desktop-card"><h2>Situação das validades</h2><p>Distribuição dos registros da loja atual; o período de alerta segue a configuração do aplicativo.</p>
+          <section class="admin-desktop-card"><h2>Situação das validades</h2><p>Registros ativos no escopo selecionado.</p>
             <div class="admin-status-row"><span>Vencidos</span><span class="admin-status-track"><span class="admin-status-fill da" id="adminBarExpired"></span></span><b id="adminBarExpiredCount">0</b></div>
             <div class="admin-status-row"><span>A vencer</span><span class="admin-status-track"><span class="admin-status-fill wa" id="adminBarSoon"></span></span><b id="adminBarSoonCount">0</b></div>
             <div class="admin-status-row"><span>Válidos</span><span class="admin-status-track"><span class="admin-status-fill" id="adminBarValid"></span></span><b id="adminBarValidCount">0</b></div>
             <div class="admin-report-summary"><div><small>Unidades nos lotes</small><b id="adminKpiUnits">0</b></div><div><small>Peso perecíveis (kg)</small><b id="adminKpiWeight">0,000</b></div><div><small>Pendentes de sync</small><b id="adminKpiPending">0</b></div></div>
           </section>
-          <section class="admin-desktop-card"><h2>Registros recentes</h2><p>Últimos registros disponíveis no escopo selecionado, consultados no Supabase.</p>
-            <div class="admin-desktop-table-wrap"><table class="admin-desktop-table"><thead><tr><th>Produto</th><th>Tipo</th><th>Validade</th><th>Situação</th></tr></thead><tbody id="adminRecentRows"><tr><td colspan="4" class="admin-desktop-empty">Nenhum registro encontrado.</td></tr></tbody></table></div>
+          <section class="admin-desktop-card"><h2>Registros recentes</h2><p>Lançamentos ativos do mais recente ao mais antigo.</p>
+            <div class="admin-desktop-table-wrap"><table class="admin-desktop-table"><thead><tr><th>Produto / filial</th><th>Local</th><th>Usuário</th><th>Cadastro</th><th>Validade</th></tr></thead><tbody id="adminRecentRows"><tr><td colspan="5" class="admin-desktop-empty">Nenhum registro encontrado.</td></tr></tbody></table></div>
           </section>
         </div>
 <section class="admin-request-overview" aria-label="Pendências da equipe"><b id="adminRequestOverviewCount">0</b><p><strong>Solicitações pendentes no escopo</strong><br>Correções de nomes e exclusões aguardando revisão.</p><button class="btn sec" type="button" data-admin-view="requests">Ver solicitações</button></section>
@@ -1476,11 +1549,6 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
     <section class="adminInsight-card" aria-labelledby="adminInsightSectorTitle">
       <div class="adminInsight-section-title"><div><h3 id="adminInsightSectorTitle">Setores em destaque</h3><p>Top 6 por contagem de registros ativos.</p></div></div>
       <div id="adminInsightSectors" class="adminInsight-bars" role="list" aria-label="Top seis setores"></div>
-    </section>
-
-    <section class="adminInsight-card" aria-labelledby="adminInsightLocationTitle">
-      <div class="adminInsight-section-title"><div><h3 id="adminInsightLocationTitle">Localização</h3><p>Área de Vendas versus Depósito por registro.</p></div></div>
-      <div id="adminInsightLocations" class="adminInsight-bars" role="list" aria-label="Registros por localização"></div>
     </section>
 
     <section class="adminInsight-card adminInsight-card--wide" aria-labelledby="adminInsightDailyTitle">
@@ -1558,9 +1626,6 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 <section id="adminDesktopRecords" aria-label="Registros administrativos" hidden>
   <div class="admin-records-head">
     <div>
-      <p class="admin-records-eyebrow">Central administrativa</p>
-      <h2>Registros</h2>
-      <p class="admin-records-intro">Histórico editável de lotes e perecíveis no escopo selecionado. Cada ação usa a filial do próprio registro; não há operações em massa.</p>
       <p id="adminRecordsScope" class="admin-records-scope" aria-live="polite">Escopo: aguardando dados.</p>
     </div>
     <button class="btn sec" id="adminRecordsRefresh" type="button">Atualizar</button>
@@ -1571,7 +1636,7 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
   <div class="admin-records-filters" aria-label="Filtros de registros">
     <label>
       Buscar
-      <input id="adminRecordsSearch" type="search" autocomplete="off" placeholder="Nome, código, lote, filial ou autor">
+      <input id="adminRecordsSearch" type="search" autocomplete="off" placeholder="Produto, código, lote ou usuário">
     </label>
     <label>
       Tipo
@@ -1590,6 +1655,24 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
         <option value="oculto">Oculto após vencimento</option>
       </select>
     </label>
+    <label>Localização
+      <select id="adminRecordsLocationFilter">
+        <option value="all">Todos os locais</option>
+        <option value="Área de Vendas">Área de Vendas</option>
+        <option value="Depósito">Depósito</option>
+      </select>
+    </label>
+    <label>Usuário que cadastrou
+      <select id="adminRecordsAuthorFilter"><option value="all">Todos os usuários</option></select>
+    </label>
+    <label>Ordenar por
+      <select id="adminRecordsOrder">
+        <option value="recent">Mais recentes</option>
+        <option value="oldest">Mais antigos</option>
+        <option value="az">Produto A–Z</option>
+        <option value="za">Produto Z–A</option>
+      </select>
+    </label>
   </div>
 
   <div class="admin-records-summary">
@@ -1598,7 +1681,7 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
   </div>
 
   <div class="admin-records-table-wrap">
-    <table id="adminRecordsTable" class="admin-records-table">
+    <table id="adminRecordsTable" class="admin-records-table" role="table">
       <thead>
         <tr>
           <th scope="col">Filial</th>
@@ -1607,17 +1690,16 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
           <th scope="col">Lote / SIF</th>
           <th scope="col">Qtd. / peso</th>
           <th scope="col">Validade</th>
+          <th scope="col">Usuário / cadastro</th>
           <th scope="col">Status</th>
           <th scope="col">Ações</th>
         </tr>
       </thead>
-      <tbody id="adminRecordsRows">
-        <tr><td colspan="8" class="admin-records-empty">Nenhum registro carregado.</td></tr>
+      <tbody id="adminRecordsRows" role="rowgroup">
+        <tr><td colspan="9" class="admin-records-empty">Nenhum registro carregado.</td></tr>
       </tbody>
     </table>
   </div>
-
-  <div id="adminRecordsEmpty" class="admin-records-empty-block" hidden>Nenhum registro corresponde aos filtros.</div>
 
   <div class="admin-records-pager" aria-label="Paginação dos registros">
     <button class="btn sec" id="adminRecordsPrev" type="button" data-page="-1">Anterior</button>
@@ -2226,6 +2308,7 @@ function mostrarVisaoAlertas(v){var notif=v==='notifications';$('v-alertas').cla
   if($('screenTitle'))$('screenTitle').textContent=notif?'Notificações':'Alertas';}
 var ajVista='settings',sysSecAtual='',AJ_TITULOS={settings:'Configurações',profile:'Perfil e Conta',password:'Alterar Senha',about:'Sobre o Sistema',system:'Ajustes do Sistema',syssection:'Ajustes do Sistema'};
 var SYS_SECOES=[
+ {id:'painel',titulo:'Painel de gestão',sub:'Indicadores por filial e consulta de registros',roles:['gerente','admin'],icon:'<path d="M3 4h18v16H3zM7 16v-3m5 3V8m5 8v-5"/>'},
  {id:'perfil',titulo:'Perfil e Conta',sub:'Meus dados, senha e segurança',roles:['analista','gerente','admin'],icon:'<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/>'},
  {id:'usuarios',titulo:'Usuários e Permissões',sub:'Cadastro, perfis e acessos',roles:['analista','gerente','admin'],icon:'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c.5-4 2.7-6 6.5-6s6 2 6.5 6M15 15c3.8-.5 5.8 1.2 6.5 4"/>'},
  {id:'lojas',titulo:'Lojas (Filiais)',sub:'Cadastro, equipes e vínculos',roles:['admin'],icon:'<path d="M3 10 5 4h14l2 6M4 10v10h16V10M2.5 10h19M9 20v-6h6v6"/>'},
@@ -2249,7 +2332,7 @@ function podeVerMenuOperador(){return papelAtual()==='operador';}
 function podeVerMenuAjustes(){return podeVerMenuSistema()||podeVerMenuOperador();}
 /* Seções ligadas a uma permissão aparecem para qualquer perfil que a tenha; as demais seguem `roles`. */
 var SECAO_PERMISSAO={usuarios:'usuarios_gerenciar',lojas:'lojas_gerenciar',catalogo:'catalogo_gerenciar',relatorios:'relatorios',auditoria:'auditoria_ver',dados:'dados_manutencao'};
-function secaoPermitida(item){if(!item)return false;var perm=SECAO_PERMISSAO[item.id];return perm?temPermissao(perm):item.roles.includes(papelAtual());}
+function secaoPermitida(item){if(!item)return false;if(item.id==='painel')return !adminDesktopAtivo()&&podeAbrirPainelMobile();var perm=SECAO_PERMISSAO[item.id];return perm?temPermissao(perm):item.roles.includes(papelAtual());}
 function secoesMenuAjustes(){if(!podeVerMenuOperador())return SYS_SECOES;
   var extras=SYS_SECOES.filter(function(x){return SECAO_PERMISSAO[x.id];}),i=OPERADOR_SECOES.length-2;
   return OPERADOR_SECOES.slice(0,i).concat(extras,OPERADOR_SECOES.slice(i));}
@@ -2281,6 +2364,7 @@ function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var men
   if($('cardBackup'))$('cardBackup').style.display=temPermissao('dados_manutencao')?'':'none';
   if(v==='password')limparTrocaSenha();renderConfiguracoes();window.scrollTo(0,0);}
 function abrirSecaoSistema(key){if(key==='dados'&&adminDesktopAtivo()&&String(adminScopeLoja()||'')!==String(SESS&&SESS.lojaId||'')){toast('Para manutenção local, selecione esta filial em Trocar loja. Todas as lojas não permite manutenção em massa.');return;}var item=SYS_SECOES.concat(OPERADOR_SECOES).find(function(s){return s.id===key;});if(!secaoPermitida(item)){toast('Acesso não autorizado a esta seção.');return;}
+  if(key==='painel'){alternarPainelMobile(true);return;}
   if(key==='perfil'){mostrarVistaAjustes('profile');return;}if(key==='sobre'){mostrarVistaAjustes('about');return;}if(key==='catalogo'){ir('catalogo');return;}
   sysSecAtual=key;mostrarVistaAjustes('syssection');}
 $('sysMenu').onclick=function(e){var b=e.target.closest('[data-sys-open]');if(b)abrirSecaoSistema(b.dataset.sysOpen);};
@@ -3087,10 +3171,7 @@ function adminScopeAtualizarStatus() {
   var status = adminScopeEl('adminDesktopScopeStatus');
   var fonte = adminScopeEl('adminDesktopScopeSource');
   var retry = adminScopeEl('adminDesktopScopeRetry');
-  var legado = adminScopeEl('adminDesktopScope');
   if(status&&status.setAttribute){status.setAttribute('data-state',ADMIN_SCOPE.loading?'loading':ADMIN_SCOPE.erro?'error':ADMIN_SCOPE.atualizado?'ready':'idle');status.setAttribute('data-updated-at',String(ADMIN_SCOPE.atualizado||''));}
-  var rotulo = adminScopeRotulo();
-  if (legado) legado.textContent = 'Escopo: ' + rotulo + '.';
   if (retry) {
     retry.hidden = !ADMIN_SCOPE.erro;
     retry.disabled = false;
@@ -4041,7 +4122,7 @@ var adminRequestsCarregar=window.adminRequestsCarregar,adminRequestsLimpar=windo
   'use strict';
 
   var deps = {};
-  var PAGE_SIZE = 100;
+  var PAGE_SIZE = 25;
   var DEFAULT_SETORES = ['Açougue', 'Laticínios', 'Padaria', 'Salgados', 'FLV', 'Mercearia'];
   var state = {
     rows: [],
@@ -4050,6 +4131,9 @@ var adminRequestsCarregar=window.adminRequestsCarregar,adminRequestsLimpar=windo
     search: '',
     type: 'all',
     status: 'all',
+    author: 'all',
+    location: 'all',
+    order: 'recent',
     scopeKey: null,
     bound: false,
     editing: null,
@@ -4146,7 +4230,7 @@ var adminRequestsCarregar=window.adminRequestsCarregar,adminRequestsLimpar=windo
       recolhido: recolhido,
       recolhidoEm: recolhidoEm == null ? '' : String(recolhidoEm),
       ocultoPorVencimento: row.ocultoPorVencimento === true || row.oculto_por_vencimento === true,
-      criado: row.criado != null ? row.criado : (row.created_at != null ? row.created_at : row.atualizado)
+      criado: row.criado != null ? row.criado : row.created_at
     };
   }
 
@@ -4536,15 +4620,71 @@ var adminRequestsCarregar=window.adminRequestsCarregar,adminRequestsLimpar=windo
     if (typeof fn === 'function') { try { fn(message); } catch (e) {} }
   }
 
+  var productOrder = new Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true });
+
+  function createdTime(row) {
+    var date = lookup('adminInsightDate')(row.criado);
+    return date ? date.getTime() : 0;
+  }
+
+  function formatCreated(row) {
+    var time = createdTime(row);
+    return time ? lookup('fdataHora')(time) : '—';
+  }
+
+  function orderRows(rows, order) {
+    var alphabetical = order === 'az' || order === 'za';
+    return rows.map(function (row) { return { row: row, time: createdTime(row) }; }).sort(function (a, b) {
+      if (alphabetical) {
+        var names = productOrder.compare(a.row.nome || a.row.codigo || '', b.row.nome || b.row.codigo || '');
+        if (names) return order === 'za' ? -names : names;
+      }
+      if (!a.time || !b.time) return Number(!a.time) - Number(!b.time);
+      return order === 'oldest' ? a.time - b.time : b.time - a.time;
+    }).map(function (item) { return item.row; });
+  }
+
+  function authorOf(row) {
+    var author = lookup('adminInsightInformantKey')(row);
+    if (author.key !== 'unknown' || !row.informanteId) return author;
+    return { key: 'id:' + row.informanteId, label: 'Usuário ' + row.informanteId.slice(0, 8) };
+  }
+
+  function renderAuthors() {
+    var select = el('adminRecordsAuthorFilter');
+    if (!select) return;
+    var authors = new Map();
+    state.rows.forEach(function (row) {
+      var author = authorOf(row), previous = authors.get(author.key);
+      if (!previous || (previous.fallback && row.informante.trim())) {
+        authors.set(author.key, { key: author.key, label: author.label, fallback: !row.informante.trim() });
+      }
+    });
+    if (!authors.has(state.author) && !lookup('adminScopeLoading')()) state.author = 'all';
+    var options = Array.from(authors.values()).sort(function (a, b) { return productOrder.compare(a.label, b.label); });
+    var counts = new Map();
+    options.forEach(function (author) { counts.set(author.label, (counts.get(author.label) || 0) + 1); });
+    var markup = '<option value="all">Todos os usuários</option>' + options.map(function (author) {
+      var label = author.label;
+      if (counts.get(label) > 1 && author.key.startsWith('id:')) label += ' · ' + author.key.slice(3, 11);
+      return '<option value="' + escapeHtml(author.key) + '">' + escapeHtml(label) + '</option>';
+    }).join('');
+    if (select.innerHTML !== markup) select.innerHTML = markup;
+    select.value = state.author;
+  }
+
   function currentFilterRows() {
     var search = String(state.search || '').trim().toLocaleLowerCase('pt-BR');
-    return state.rows.filter(function (row) {
+    var filtered = state.rows.filter(function (row) {
+      if (state.author !== 'all' && authorOf(row).key !== state.author) return false;
+      if (state.location !== 'all' && row.localizacao !== state.location) return false;
       if (state.type !== 'all' && row.tipo !== state.type) return false;
       if (state.status !== 'all' && statusOf(row) !== state.status) return false;
       if (!search) return true;
       var haystack = [row.lojaNome, row.lojaId, row.tipo, row.id, row.codigo, row.nome, row.marca, row.lote, row.sif, row.setor, row.localizacao, row.informante].join(' ').toLocaleLowerCase('pt-BR');
       return haystack.indexOf(search) >= 0;
     });
+    return orderRows(filtered, state.order);
   }
 
   function actionButton(action, label, row, extraClass) {
@@ -4562,28 +4702,27 @@ var adminRequestsCarregar=window.adminRequestsCarregar,adminRequestsLimpar=windo
     var quantity = row.tipo === 'Lote' ? formatNumber(row.quantidade, 0) + ' un.' : (row.peso == null ? '—' : formatNumber(row.peso, 3) + ' kg');
     var ref = row.tipo === 'Lote' ? (row.lote || '—') : ('SIF: ' + (row.sif || row.lote || '—'));
     var days = row.dias == null ? '' : ' · ' + (row.dias < 0 ? Math.abs(row.dias) + ' dia(s) vencido' : row.dias === 0 ? 'vence hoje' : row.dias + ' dia(s)');
-    return '<tr data-record-row="' + escapeHtml(row.id) + '" data-record-store="' + escapeHtml(row.lojaId) + '">' +
-      '<td><span class="admin-records-primary">' + escapeHtml(row.lojaNome || 'Filial não informada') + '</span><span class="admin-records-secondary">' + escapeHtml(row.lojaId || 'ID não informado') + '</span></td>' +
-      '<td><span class="admin-records-primary">' + escapeHtml(row.tipo || 'Tipo não informado') + '</span><span class="admin-records-id">' + escapeHtml(row.id || 'ID não informado') + '</span></td>' +
-      '<td><span class="admin-records-primary">' + escapeHtml(row.nome || row.codigo || 'Produto não informado') + '</span><span class="admin-records-secondary">' + escapeHtml(row.codigo ? 'Código: ' + row.codigo : '') + (row.marca ? ' · ' + escapeHtml(row.marca) : '') + '</span></td>' +
-      '<td>' + escapeHtml(ref) + '<span class="admin-records-secondary">' + escapeHtml(row.setor || 'Setor não informado') + '</span></td>' +
-      '<td>' + escapeHtml(quantity) + '<span class="admin-records-secondary">' + escapeHtml(row.localizacao || 'Localização não informada') + '</span></td>' +
-      '<td>' + escapeHtml(formatDate(row.validade)) + '<span class="admin-records-secondary">' + escapeHtml(days) + '</span></td>' +
-      '<td><span class="admin-records-status-pill ' + (status === 'recolhido' ? 'withdrawn' : status === 'oculto' ? 'hidden-expired' : 'active') + '">' + escapeHtml(statusLabel) + '</span><span class="admin-records-secondary">' + escapeHtml(row.informante ? 'Por ' + row.informante : 'Autor não informado') + '</span></td>' +
-      '<td><div class="admin-records-actions">' + (actions.join('') || '<span class="admin-records-secondary">Sem ação disponível</span>') + '</div></td>' +
+    return '<tr role="row" data-record-row="' + escapeHtml(row.id) + '" data-record-store="' + escapeHtml(row.lojaId) + '">' +
+      '<td role="cell" data-label="Filial">' + escapeHtml(row.lojaNome || row.lojaId || '—') + '</td>' +
+      '<td role="cell" data-label="Tipo">' + escapeHtml(row.tipo || '—') + '<span class="admin-records-id">' + escapeHtml(row.id || '—') + '</span></td>' +
+      '<td role="cell" data-label="Produto"><span class="admin-records-primary">' + escapeHtml(row.nome || row.codigo || 'Produto não informado') + '</span><span class="admin-records-secondary">' + escapeHtml(row.codigo ? 'Código: ' + row.codigo : '') + (row.marca ? ' · ' + escapeHtml(row.marca) : '') + '</span></td>' +
+      '<td role="cell" data-label="Lote / setor">' + escapeHtml(ref) + '<span class="admin-records-secondary">' + escapeHtml(row.setor || 'Setor não informado') + '</span></td>' +
+      '<td role="cell" data-label="Qtd. / local">' + escapeHtml(quantity) + '<span class="admin-records-secondary">' + escapeHtml(row.localizacao || 'Localização não informada') + '</span></td>' +
+      '<td role="cell" data-label="Validade">' + escapeHtml(formatDate(row.validade)) + '<span class="admin-records-secondary">' + escapeHtml(days) + '</span></td>' +
+      '<td role="cell" data-label="Usuário / cadastro">' + escapeHtml(row.informante || '—') + '<span class="admin-records-secondary">' + escapeHtml(formatCreated(row)) + '</span></td>' +
+      '<td role="cell" data-label="Status"><span class="admin-records-status-pill ' + (status === 'recolhido' ? 'withdrawn' : status === 'oculto' ? 'hidden-expired' : 'active') + '">' + escapeHtml(statusLabel) + '</span></td>' +
+      '<td role="cell" data-label="Ações"><div class="admin-records-actions">' + (actions.join('') || '<span class="admin-records-secondary">Sem ação disponível</span>') + '</div></td>' +
       '</tr>';
   }
 
   function renderRows() {
     var tbody = el('adminRecordsRows');
-    var empty = el('adminRecordsEmpty');
     if (!tbody) return;
     state.filtered = currentFilterRows();
     var totalPages = Math.max(1, Math.ceil(state.filtered.length / PAGE_SIZE));
     state.page = Math.min(Math.max(1, state.page), totalPages);
     var pageRows = state.filtered.slice((state.page - 1) * PAGE_SIZE, state.page * PAGE_SIZE);
-    tbody.innerHTML = pageRows.length ? pageRows.map(rowHtml).join('') : '<tr><td colspan="8" class="admin-records-empty">Nenhum registro corresponde aos filtros.</td></tr>';
-    if (empty) empty.hidden = !!pageRows.length || !state.filtered.length;
+    tbody.innerHTML = pageRows.length ? pageRows.map(rowHtml).join('') : '<tr><td colspan="9" class="admin-records-empty">Nenhum registro corresponde aos filtros.</td></tr>';
     setText('adminRecordsCount', state.filtered.length.toLocaleString('pt-BR'));
     setText('adminRecordsPage', 'Página ' + state.page + ' de ' + totalPages);
     var prev = el('adminRecordsPrev'), next = el('adminRecordsNext');
@@ -4736,8 +4875,8 @@ var adminRequestsCarregar=window.adminRequestsCarregar,adminRequestsLimpar=windo
     });
     host.addEventListener('change', function (event) {
       if (!event.target) return;
-      if (event.target.id === 'adminRecordsTypeFilter') { state.type = event.target.value; state.page = 1; renderRows(); }
-      if (event.target.id === 'adminRecordsStatusFilter') { state.status = event.target.value; state.page = 1; renderRows(); }
+      var field = {adminRecordsTypeFilter:'type', adminRecordsStatusFilter:'status', adminRecordsAuthorFilter:'author', adminRecordsLocationFilter:'location', adminRecordsOrder:'order'}[event.target.id];
+      if (field) { state[field] = event.target.value; state.page = 1; renderRows(); }
     });
     host.addEventListener('click', function (event) {
       var button = event.target && event.target.closest ? event.target.closest('button') : null;
@@ -4765,6 +4904,9 @@ var adminRequestsCarregar=window.adminRequestsCarregar,adminRequestsLimpar=windo
     var search = el('adminRecordsSearch'); if (search && search.value !== state.search) search.value = state.search;
     var type = el('adminRecordsTypeFilter'); if (type) type.value = state.type;
     var status = el('adminRecordsStatusFilter'); if (status) status.value = state.status;
+    var location = el('adminRecordsLocationFilter'); if (location) location.value = state.location;
+    var order = el('adminRecordsOrder'); if (order) order.value = state.order;
+    renderAuthors();
     setText('adminRecordsScope', scopeLabel(data));
     renderRows();
     return true;
@@ -4796,9 +4938,13 @@ var adminRequestsCarregar=window.adminRequestsCarregar,adminRequestsLimpar=windo
     state.filtered = [];
     state.page = 1;
     state.scopeKey = null;
+    state.search = '';
+    state.type = state.status = state.author = state.location = 'all';
+    state.order = 'recent';
+    renderAuthors();
     closeDialog();
     var tbody = el('adminRecordsRows');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="admin-records-empty">Nenhum registro carregado.</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="admin-records-empty">Nenhum registro carregado.</td></tr>';
     setText('adminRecordsCount', '0');
     setText('adminRecordsPage', 'Página 1 de 1');
     setStatus('');
@@ -4828,6 +4974,8 @@ var adminRequestsCarregar=window.adminRequestsCarregar,adminRequestsLimpar=windo
 
   var api = {
     PAGE_SIZE: PAGE_SIZE,
+    orderRows: orderRows,
+    formatCreated: formatCreated,
     configure: configure,
     adminRecordsRender: adminRecordsRender,
     adminRecordsCarregar: adminRecordsCarregar,
@@ -4860,7 +5008,7 @@ var adminRequestsCarregar=window.adminRequestsCarregar,adminRequestsLimpar=windo
 
 /* END ADMIN_RECORDS */
 var AdminRecords=window.AdminRecords,adminRecordsRender=AdminRecords.adminRecordsRender,adminRecordsLimpar=AdminRecords.adminRecordsLimpar,adminRecordsSetVisible=AdminRecords.adminRecordsSetVisible;
-AdminRecords.configure({document:document,navigator:navigator,getSession:function(){return SESS;},adminScopeRegistros:adminScopeRegistros,adminScopeCarregar:adminScopeCarregar,adminScopeAtual:adminScopeAtual,adminScopeRotulo:adminScopeRotulo,adminDesktopAtivo:adminDesktopAtivo,temPermissao:temPermissao,ehAdmin:ehAdmin,logado:logado,papelAtual:papelAtual,sbReq:sbReq,toast:toast,SETORES:SETORES,confirm:function(t){return confirm(t);},atualizarRecolhimentoRegistro:null,podeRecolherRegistro:null,podeRestaurarRegistro:null});
+AdminRecords.configure({adminInsightDate:adminInsightDate,fdataHora:fdataHora,adminInsightInformantKey:adminInsightInformantKey,adminScopeLoading:function(){return ADMIN_SCOPE.loading;},document:document,navigator:navigator,getSession:function(){return SESS;},adminScopeRegistros:adminScopeRegistros,adminScopeCarregar:adminScopeCarregar,adminScopeAtual:adminScopeAtual,adminScopeRotulo:adminScopeRotulo,adminDesktopAtivo:painelGestaoAtivo,temPermissao:temPermissao,ehAdmin:ehAdmin,logado:logado,papelAtual:papelAtual,sbReq:sbReq,toast:toast,SETORES:SETORES,confirm:function(t){return confirm(t);},atualizarRecolhimentoRegistro:null,podeRecolherRegistro:null,podeRestaurarRegistro:null});
 
 /* BEGIN ADMIN_DASHBOARD_INSIGHTS */
 'use strict';
@@ -5025,17 +5173,18 @@ function adminInsightTopGroups(rows, keyOf, limit) {
 
 function adminInsightLocations(rows) {
   var ordered = [
-    { key: 'area', label: 'Área de Vendas', count: 0 },
-    { key: 'deposito', label: 'Depósito', count: 0 },
-    { key: 'unknown', label: 'Sem localização', count: 0 }
+    { key: 'area', label: 'Área de Vendas', count: 0, units: 0, weight: 0 },
+    { key: 'deposito', label: 'Depósito', count: 0, units: 0, weight: 0 },
+    { key: 'unknown', label: 'Sem localização', count: 0, units: 0, weight: 0 }
   ];
   rows.forEach(function (row) {
     var value = String(row.localizacao == null ? '' : row.localizacao).trim().toLocaleLowerCase('pt-BR');
-    if (value === 'depósito' || value === 'deposito') ordered[1].count++;
-    else if (value === 'área de vendas' || value === 'area de vendas') ordered[0].count++;
-    else ordered[2].count++;
+    var item = /^(depósito|deposito)$/.test(value) ? ordered[1] : /^(área|area) de vendas$/.test(value) ? ordered[0] : ordered[2];
+    item.count++;
+    item.units += Number(row.quantidade) || 0;
+    item.weight += Number(row.peso) || 0;
   });
-  return ordered.filter(function (item) { return item.count > 0; });
+  return ordered.filter(function (item) { return item.key !== 'unknown' || item.count > 0; });
 }
 
 function adminInsightInformantKey(row) {
@@ -5166,7 +5315,12 @@ function adminDashboardInsightsRender(d) {
   var priority = document.getElementById('adminInsightPriority');
   if (expiry) expiry.innerHTML = adminInsightBarMarkup(metrics.expiration, 'Nenhum registro ativo com data de validade disponível.');
   if (sectors) sectors.innerHTML = adminInsightBarMarkup(metrics.sectors, 'Nenhum setor informado nos registros ativos.');
-  if (locations) locations.innerHTML = adminInsightBarMarkup(metrics.locations, 'Nenhuma localização disponível nos registros ativos.');
+  if (locations) locations.innerHTML = metrics.locations.map(function (item) {
+    return '<article class="admin-location"><h2>' + adminInsightEsc(item.label) + '</h2><p><strong>' +
+      adminInsightFormatNumber(item.count) + '</strong> ' + (item.count === 1 ? 'registro ativo' : 'registros ativos') + '</p><dl><div><dt>Industrializados</dt><dd>' +
+      adminInsightFormatNumber(item.units) + ' un.</dd></div><div><dt>Perecíveis</dt><dd>' +
+      adminInsightFormatWeight(item.weight) + ' kg</dd></div></dl></article>';
+  }).join('');
   if (daily) daily.innerHTML = adminInsightDailyMarkup(metrics.daily, 'Nenhum registro ativo ou histórico possui criado válido nos últimos 14 dias.');
   if (informants) {
     if (!metrics.informants.length) informants.innerHTML = adminInsightEmpty('Nenhum autor identificado nos registros ativos.');
@@ -5205,12 +5359,12 @@ function adminDashboardInsightsRender(d) {
 
 /* END ADMIN_DASHBOARD_INSIGHTS */
 /* Indicadores desktop: escopo escolhido pelo gestor; cache operacional permanece separado. */
-function adminDesktopRegistros(){if(adminDesktopAtivo())return adminScopeRegistros();var out=[];Object.keys(D.prod||{}).forEach(function(ean){var p=D.prod[ean]||{},c=detalheProduto(ean);(p.lotes||[]).forEach(function(r){out.push({tipo:'Lote',codigo:ean,nome:c.nome||ean,marca:c.marca||'',lote:r.lote||'',quantidade:Number(r.qtd)||0,peso:0,setor:r.setor||'',localizacao:r.em_area_vendas===false?'Depósito':'Área de Vendas',validade:r.val||'',dias:dias(r.val),informante:r.created_by_nome||'',informanteId:r.created_by||null,recolhido:!!r.recolhido_em,ocultoPorVencimento:(dias(r.val)!==null&&dias(r.val)< -5),recolhidoEm:r.recolhido_em||'',pendente:!r.rpcConfirmado&&filaTemRegistro('lote',r.id),criado:r.criado||r.created_at||r.atualizado||0});});});
+function adminDesktopRegistros(){if(painelGestaoAtivo())return adminScopeRegistros();var out=[];Object.keys(D.prod||{}).forEach(function(ean){var p=D.prod[ean]||{},c=detalheProduto(ean);(p.lotes||[]).forEach(function(r){out.push({tipo:'Lote',codigo:ean,nome:c.nome||ean,marca:c.marca||'',lote:r.lote||'',quantidade:Number(r.qtd)||0,peso:0,setor:r.setor||'',localizacao:r.em_area_vendas===false?'Depósito':'Área de Vendas',validade:r.val||'',dias:dias(r.val),informante:r.created_by_nome||'',informanteId:r.created_by||null,recolhido:!!r.recolhido_em,ocultoPorVencimento:(dias(r.val)!==null&&dias(r.val)< -5),recolhidoEm:r.recolhido_em||'',pendente:!r.rpcConfirmado&&filaTemRegistro('lote',r.id),criado:r.criado||r.created_at||r.atualizado||0});});});
   (D.pere&&D.pere.regs||[]).forEach(function(r){var it=D.pere.itens[r.cod]||{};out.push({tipo:'Perecível',codigo:r.cod,nome:it.desc||('Código '+r.cod),marca:'',lote:r.sif||'',quantidade:0,peso:Number(r.peso)||0,setor:r.setor||'',localizacao:r.em_area_vendas===false?'Depósito':'Área de Vendas',validade:r.val||'',dias:dias(r.val),informante:r.created_by_nome||'',informanteId:r.created_by||null,recolhido:!!r.recolhido_em,ocultoPorVencimento:(dias(r.val)!==null&&dias(r.val)< -5),recolhidoEm:r.recolhido_em||'',pendente:!r.rpcConfirmado&&filaTemRegistro('perecivel',r.id),criado:r.criado||r.created_at||0});});return out;}
 function adminStatusValidade(d,prazo){return d===null?'Sem data':d<0?'Vencido':d===0?'Vence hoje':d<=(prazo==null?D.aj.dias:prazo)?'A vencer':'Válido';}
 function adminStatusOperacional(r){return r.recolhido?'Recolhido':r.ocultoPorVencimento?'Oculto após 5 dias vencido':'Ativo';}
 function adminDesktopData(){var rows=adminDesktopRegistros(),activeRows=rows.filter(function(r){return !r.recolhido&&!r.ocultoPorVencimento;}),exp=activeRows.filter(function(r){return r.dias!==null&&r.dias<0;}).length,soon=activeRows.filter(function(r){return r.dias!==null&&r.dias>=0&&r.dias<=(r.alertaDias==null?D.aj.dias:r.alertaDias);}).length,valid=activeRows.filter(function(r){return r.dias!==null&&r.dias>(r.alertaDias==null?D.aj.dias:r.alertaDias);}).length,unidades=activeRows.reduce(function(n,r){return n+r.quantidade;},0),peso=activeRows.reduce(function(n,r){return n+r.peso;},0),pend=activeRows.filter(function(r){return r.pendente;}).length;
-  return {rows:rows,activeRows:activeRows,withdrawn:rows.filter(function(r){return r.recolhido;}).length,hiddenExpired:rows.filter(function(r){return r.ocultoPorVencimento;}).length,expired:exp,soon:soon,valid:valid,units:unidades,weight:peso,pending:pend,products:activeRows.filter(function(r,i,a){return a.findIndex(function(x){return x.codigo===r.codigo&&x.tipo===r.tipo;})===i;}).length};}
+  return {rows:rows,activeRows:activeRows,withdrawn:rows.filter(function(r){return r.recolhido;}).length,hiddenExpired:rows.filter(function(r){return r.ocultoPorVencimento;}).length,expired:exp,soon:soon,valid:valid,units:unidades,weight:peso,pending:pend,products:new Set(activeRows.map(function(r){return r.tipo+'|'+r.codigo;})).size};}
 function adminAgruparRegistrosPorUsuario(rows){var mapa=Object.create(null);(rows||[]).forEach(function(r){var nome=String(r.informante||'').trim(),id=String(r.informanteId||'').trim(),semNome=!nome||/^(usu[aá]rio não identificado|usu[aá]rio local|usu[aá]rio)$/i.test(nome),key=semNome?'sem-autoria':id?'id:'+id:'nome:'+nome.toLocaleLowerCase('pt-BR'),g=mapa[key];if(!g)g=mapa[key]={nome:semNome?'Autoria não identificada':nome,total:0,lotes:0,pereciveis:0,semNome:semNome};g.total++;if(r.tipo==='Lote')g.lotes++;else if(r.tipo==='Perecível')g.pereciveis++;});var grupos=Object.keys(mapa).map(function(k){return mapa[k];}).sort(function(a,b){return b.total-a.total||(a.semNome?1:0)-(b.semNome?1:0)||a.nome.localeCompare(b.nome,'pt-BR');});var identificados=grupos.filter(function(g){return !g.semNome;}),lideres=identificados.length?identificados.filter(function(g){return g.total===identificados[0].total;}):[];return {grupos:grupos,total:grupos.reduce(function(n,g){return n+g.total;},0),semAutoria:mapa['sem-autoria']?mapa['sem-autoria'].total:0,lider:lideres[0]||null,lideres:lideres};}
 var auditoriaRecolhimentoCache={lojaId:null,chave:null,itens:null,carregadoEm:0,truncado:false},auditoriaRecolhimentoSeq=0,auditoriaRecolhimentoFiltro={periodo:'30',de:'',ate:''};
 var produtosMaisReativadosCache={chave:null,itens:null,carregadoEm:0,truncado:false,inicio:null,fim:null},produtosMaisReativadosSeq=0;
@@ -5240,21 +5394,24 @@ function selecionarVistaDesktop(v){var admin=papelAtual()==='admin',relatorios=t
   document.querySelectorAll('#adminDesktopNav [data-admin-settings]').forEach(function(b){var item=SYS_SECOES.find(function(x){return x.id===b.dataset.adminSettings;});b.hidden=!secaoPermitida(item);});
   if(v==='permissions'&&!admin)v='settings';if(v==='reports'&&!relatorios)v='dashboard';if(v==='requests'&&!revisao)v='dashboard';adminDesktopVista=['dashboard','records','requests','reports','settings','permissions'].includes(v)?v:'dashboard';var ajustes=adminDesktopVista==='settings'||adminDesktopVista==='permissions';
   $('adminDesktopDashboard').hidden=adminDesktopVista!=='dashboard';$('adminDesktopReports').hidden=adminDesktopVista!=='reports';$('adminDesktopSettings').hidden=!ajustes;$('adminDesktopRequests').hidden=adminDesktopVista!=='requests';adminRecordsSetVisible(adminDesktopVista==='records');
+  document.querySelectorAll('.admin-mobile-tabs [data-admin-view]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.adminView===adminDesktopVista));});
   $('adminDesktopTitle').textContent={dashboard:'Painel de gestão',records:'Registros e edições',requests:'Solicitações da equipe',reports:'Relatórios e exportações',settings:'Ajustes do Sistema',permissions:'Perfis de acesso'}[adminDesktopVista];
   $('adminDesktopSubtitle').textContent=ajustes?'Configurações e ações permitidas ao seu perfil. Os dados operacionais seguem o escopo selecionado.':adminDesktopVista==='requests'?'Correções e exclusões pendentes da filial ou das lojas autorizadas.':adminDesktopVista==='records'?'Edição e tratamento de registros com identificação explícita da filial.':'Indicadores e relatórios do escopo selecionado. Fonte: Supabase.';
   document.querySelectorAll('#adminDesktopNav [data-admin-view]').forEach(function(b){var on=b.dataset.adminView===adminDesktopVista;b.classList.toggle('on',on);if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});}
 
-function adminDesktopView(v){if(!adminDesktopAtivo())return;if(v==='permissions'&&!ehAdmin()){toast('Configurar perfis de acesso é exclusivo do Administrador.');return;}if(v==='reports'&&!temPermissao('relatorios')){toast('Seu perfil não pode acessar relatórios.');return;}if(v==='requests'&&!temPermissao('nome_editar')&&!temPermissao('exclusoes_aprovar')){toast('Seu perfil não pode revisar solicitações.');return;}selecionarVistaDesktop(v);
+function adminDesktopView(v){if(!painelGestaoAtivo()||(!adminDesktopAtivo()&&!['dashboard','records'].includes(v)))return;if(v==='permissions'&&!ehAdmin()){toast('Configurar perfis de acesso é exclusivo do Administrador.');return;}if(v==='reports'&&!temPermissao('relatorios')){toast('Seu perfil não pode acessar relatórios.');return;}if(v==='requests'&&!temPermissao('nome_editar')&&!temPermissao('exclusoes_aprovar')){toast('Seu perfil não pode revisar solicitações.');return;}selecionarVistaDesktop(v);
   if(adminDesktopVista==='settings'||adminDesktopVista==='permissions'){ir('aj');if(adminDesktopVista==='permissions'){abrirSecaoSistema('usuarios');$('cardPerfisAcesso').scrollIntoView({block:'start'});}}
-  if(adminDesktopVista==='requests')adminRequestsCarregar(false);adminDesktopRender();}
-function adminDesktopRender(){atualizarGraficoUsuariosRelatorios();if(!$('adminDesktop')||!document.documentElement.classList.contains('desktop-admin'))return;var d=adminDesktopData(),den=Math.max(1,d.activeRows.length),nome=SESS&&(SESS.nome||SESS.usuario||SESS.email)||'Administrador',loja=adminScopeRotulo();
-  adminDashboardInsightsRender(d);adminRecordsRender(d);if(ADMIN_SCOPE.lojasCarregadas&&!ADMIN_SCOPE.loading)adminRequestsCarregar(false);adminScopeAtualizarStatus();adminDesktopSet('adminDesktopUser',nome);adminDesktopSet('adminDesktopRole',PAPEIS[SESS.papel]||'Usuário');adminDesktopSet('adminDesktopStore',loja);adminDesktopSet('adminKpiRecords',d.activeRows.length);adminDesktopSet('adminKpiProducts',d.products);adminDesktopSet('adminKpiExpired',d.expired);adminDesktopSet('adminKpiSoon',d.soon);adminDesktopSet('adminKpiValid',d.valid);adminDesktopSet('adminKpiUnits',d.units.toLocaleString('pt-BR'));adminDesktopSet('adminKpiWeight',kg(d.weight));adminDesktopSet('adminKpiPending',d.pending);
-  var recebido=ADMIN_SCOPE.atualizado?new Date(ADMIN_SCOPE.atualizado).toLocaleString('pt-BR'):'ainda não confirmada';adminDesktopSet('adminDesktopScope','Escopo: '+loja+' · fonte: Supabase · última consulta: '+recebido+'.');
+  if(adminDesktopVista==='requests')adminRequestsCarregar(false);$('adminDesktopContent').scrollTop=0;adminDesktopRender();}
+function adminDesktopRender(){atualizarGraficoUsuariosRelatorios();if(!$('adminDesktop')||!painelGestaoAtivo())return;var d=adminDesktopData(),den=Math.max(1,d.activeRows.length),nome=SESS&&(SESS.nome||SESS.usuario||SESS.email)||'Administrador',loja=adminScopeRotulo();
+  adminDashboardInsightsRender(d);if(adminDesktopVista==='records')adminRecordsRender(d);if(adminDesktopAtivo()&&ADMIN_SCOPE.lojasCarregadas&&!ADMIN_SCOPE.loading)adminRequestsCarregar(false);adminScopeAtualizarStatus();adminDesktopSet('adminDesktopUser',nome);adminDesktopSet('adminDesktopRole',PAPEIS[SESS.papel]||'Usuário');adminDesktopSet('adminDesktopStore',loja);adminDesktopSet('adminKpiRecords',d.activeRows.length);adminDesktopSet('adminKpiProducts',d.products);adminDesktopSet('adminKpiExpired',d.expired);adminDesktopSet('adminKpiSoon',d.soon);adminDesktopSet('adminKpiValid',d.valid);adminDesktopSet('adminKpiUnits',d.units.toLocaleString('pt-BR'));adminDesktopSet('adminKpiWeight',kg(d.weight));adminDesktopSet('adminKpiPending',d.pending);
   [['adminBarExpired',d.expired,'adminBarExpiredCount'],['adminBarSoon',d.soon,'adminBarSoonCount'],['adminBarValid',d.valid,'adminBarValidCount']].forEach(function(x){var bar=$(x[0]);if(bar)bar.style.width=(100*({adminBarExpired:d.expired,adminBarSoon:d.soon,adminBarValid:d.valid}[x[0]])/den)+'%';adminDesktopSet(x[2],x[0]==='adminBarExpired'?d.expired:x[0]==='adminBarSoon'?d.soon:d.valid);});
-  var recent=d.activeRows.slice().sort(function(a,b){var da=typeof a.criado==='number'?a.criado:Date.parse(a.criado)||0,db=typeof b.criado==='number'?b.criado:Date.parse(b.criado)||0;return db-da;}).slice(0,8);$('adminRecentRows').innerHTML=recent.map(function(r){return '<tr><td>'+esc(r.nome)+'</td><td>'+esc(r.tipo)+'</td><td>'+esc(fdata(r.validade))+'</td><td>'+esc(adminStatusValidade(r.dias,r.alertaDias))+(r.pendente?' · Pendente sync':'')+'</td></tr>';}).join('')||'<tr><td colspan="4" class="admin-desktop-empty">Nenhum registro encontrado.</td></tr>';
+  var recent=AdminRecords.orderRows(d.activeRows,'recent').slice(0,6);
+  $('adminRecentRows').innerHTML=recent.map(function(r){
+    return '<tr><td><strong>'+esc(r.nome)+'</strong><small>'+esc(r.lojaNome||'—')+'</small></td><td>'+esc(r.localizacao||'—')+'</td><td>'+esc(r.informante||'—')+'</td><td>'+esc(AdminRecords.formatCreated(r))+'</td><td>'+esc(fdata(r.validade))+'<small>'+esc(adminStatusValidade(r.dias,r.alertaDias))+'</small></td></tr>';
+  }).join('')||'<tr><td colspan="5" class="admin-desktop-empty">Nenhum registro encontrado.</td></tr>';
   adminDesktopSet('adminReportLots',d.rows.filter(function(r){return r.tipo==='Lote';}).length);adminDesktopSet('adminReportPereciveis',d.rows.filter(function(r){return r.tipo==='Perecível';}).length);adminDesktopSet('adminReportAlerts',d.activeRows.filter(function(r){return r.dias!==null&&r.dias<=(r.alertaDias==null?D.aj.dias:r.alertaDias)||r.pendente;}).length);}
 $('adminDesktopNav').onclick=function(e){var link=e.target.closest('[data-admin-settings]');if(link){adminDesktopView('settings');abrirSecaoSistema(link.dataset.adminSettings);return;}var b=e.target.closest('[data-admin-view]');if(b)adminDesktopView(b.dataset.adminView);};
-document.querySelectorAll('#adminDesktopDashboard [data-admin-view]').forEach(function(b){b.onclick=function(){adminDesktopView(this.dataset.adminView);};});
+document.querySelectorAll('#adminDesktopDashboard [data-admin-view],.admin-mobile-tabs [data-admin-view]').forEach(function(b){b.onclick=function(){adminDesktopView(this.dataset.adminView);};});
 $('adminDesktopSettingsBack').onclick=function(){adminDesktopView('settings');};
 $('adminDesktopChangeStore').onclick=function(){abrirConta();};$('adminDesktopLogout').onclick=function(){$('bLogoutHdr').click();};
 $('adminDesktopRefresh').onclick=function(){var b=this;b.disabled=true;b.textContent='Atualizando…';adminScopeCarregar(true).then(function(){adminDesktopRender();}).finally(function(){b.disabled=false;b.textContent='Atualizar';});};
@@ -5487,8 +5644,11 @@ function permissaoDoPapel(id,papel){var def=permissaoDef(id);if(!def)return fals
   var mapa=(SYNC&&SYNC.permissoes)||{},v=mapa[papel+'|'+id];
   if(typeof v==='boolean'&&permissaoEditavel(def,papel))return v;return def.padrao.includes(papel);}
 function temPermissao(id){return permissaoDoPapel(id,papelAtual());}
+var sessaoPermissoesConfirmadas=null;
 function carregarPermissoes(){if(!sbOn()||!logado())return Promise.resolve();
-  return sbReq('/rest/v1/papel_permissoes?select=papel,permissao,permitido').then(function(r){if(!r.ok||!Array.isArray(r.dados))return;
+  var sessao=SESS,token=sessao.access_token;
+  return sbReq('/rest/v1/papel_permissoes?select=papel,permissao,permitido').then(function(r){if(SESS!==sessao||SESS.access_token!==token||!r.ok||!Array.isArray(r.dados))return;
+    sessaoPermissoesConfirmadas={sessao:sessao,token:token};
     var m={};r.dados.forEach(function(x){m[x.papel+'|'+x.permissao]=!!x.permitido;});SYNC.permissoes=m;salvarSync();atualizarInterfacePapel();},function(){});}
 /* As caixas ficam pendentes até o Administrador tocar em "Salvar permissões do perfil". */
 var permPapelAtual='operador',permPendentes={},permSalvando=false;
@@ -5500,7 +5660,8 @@ function renderPerfisAcesso(manter){var card=$('cardPerfisAcesso');if(!card)retu
   var papel=$('permPapel').value||'operador';if(manter!==true||papel!==permPapelAtual)permPendentes={};permPapelAtual=papel;
   function marcado(id){return Object.prototype.hasOwnProperty.call(permPendentes,id)?permPendentes[id]:permissaoDoPapel(id,papel);}
   function linhas(grupo){return PERMISSOES.filter(function(d){return d.grupo===grupo;}).map(function(d){
-    return '<label class="perm-row"><input type="checkbox" data-perm="'+d.id+'"'+(marcado(d.id)?' checked':'')+'><span>'+esc(d.titulo)+'</span></label>';}).join('');}
+    var titulo=papel==='gerente'&&d.id==='relatorios'?'Ver e exportar relatórios e acessar o painel de gestão no celular':d.titulo;
+    return '<label class="perm-row"><input type="checkbox" data-perm="'+d.id+'"'+(marcado(d.id)?' checked':'')+'><span>'+esc(titulo)+'</span></label>';}).join('');}
   $('permBasicas').innerHTML=linhas('basica');$('permEspeciais').innerHTML=linhas('especial');
   card.querySelectorAll('[data-perm]').forEach(function(c){c.onchange=function(){var id=c.dataset.perm;
     if(c.checked===permissaoDoPapel(id,papel))delete permPendentes[id];else permPendentes[id]=c.checked;atualizarBarraPermissoes();};});
@@ -5527,11 +5688,27 @@ function papelAtual(){if(!sbOn())return 'admin';if(!SESS||!SESS.access_token)ret
 var papelConfirmado=false,papelConfirmadoUid=null,papelConfirmadoToken=null,papelCarregando=false,adminDesktopVista='dashboard',papelConsultaSeq=0,papelCachePorUid={};
 try{papelCachePorUid=JSON.parse(localStorage.getItem('perfil_papel_cache')||'{}')||{};if(!papelCachePorUid||typeof papelCachePorUid!=='object'||Array.isArray(papelCachePorUid))papelCachePorUid={};}catch(e){papelCachePorUid={};}
 function adminDesktopAtivo(){return !!(window.matchMedia&&window.matchMedia('(min-width: 1024px)').matches&&sbOn()&&logado()&&SESS&&!SESS.forcePasswordChange&&SESS.lojaId&&papelConfirmado&&['admin','gerente'].includes(papelAtual()));}
+var painelMobileAberto=false;
+function podeAbrirPainelMobile(){return sbOn()&&logado()&&SESS&&SESS.lojaId&&!SESS.forcePasswordChange&&papelConfirmado&&(papelAtual()==='admin'||(papelAtual()==='gerente'&&sessaoPermissoesConfirmadas&&sessaoPermissoesConfirmadas.sessao===SESS&&sessaoPermissoesConfirmadas.token===SESS.access_token&&temPermissao('relatorios')));}
+function painelGestaoAtivo(){return adminDesktopAtivo()||(painelMobileAberto&&podeAbrirPainelMobile());}
+function alternarPainelMobile(abrir){
+  if(abrir&&(adminDesktopAtivo()||!podeAbrirPainelMobile()))return;
+  painelMobileAberto=abrir;
+  if(abrir){selecionarVistaDesktop('dashboard');$('adminDesktopContent').scrollTop=0;}
+  atualizarModoDesktopAdmin();
+  if(abrir)$('adminDesktopMobileBack').focus();
+  else {var atalho=$('sysMenu').querySelector('[data-sys-open="painel"]');if(atalho)atalho.focus();}
+}
 function atualizarModoDesktopAdmin(){var eraAtivo=document.documentElement.classList.contains('desktop-admin'),ativo=adminDesktopAtivo(),pendente=!!(window.matchMedia&&window.matchMedia('(min-width: 1024px)').matches&&sbOn()&&logado()&&SESS&&!SESS.forcePasswordChange&&SESS.lojaId&&papelCarregando);
-  document.documentElement.classList.toggle('desktop-admin',ativo);document.documentElement.classList.toggle('desktop-admin-pending',pendente);atualizarHostAjustesDesktop(ativo);if(ativo)adminScopeIniciar();else{adminScopeLimpar();if(typeof adminRequestsLimpar==='function')adminRequestsLimpar();if(typeof adminRecordsLimpar==='function')adminRecordsLimpar();}
+  if(ativo||!podeAbrirPainelMobile())painelMobileAberto=false;
+  document.documentElement.classList.toggle('mobile-admin-panel',painelMobileAberto);
+  document.documentElement.classList.toggle('desktop-admin',ativo);document.documentElement.classList.toggle('desktop-admin-pending',pendente);atualizarHostAjustesDesktop(ativo);if(painelGestaoAtivo())adminScopeIniciar();else{adminScopeLimpar();if(typeof adminRequestsLimpar==='function')adminRequestsLimpar();if(typeof adminRecordsLimpar==='function')adminRecordsLimpar();}
   if(ativo&&$('scanner')&&$('scanner').classList.contains('on'))fecharScanner();if(!logado())selecionarVistaDesktop('dashboard');
   if(ativo){selecionarVistaDesktop(adminDesktopVista);if(!eraAtivo&&['settings','permissions'].includes(adminDesktopVista)&&!['aj','catalogo'].includes(vistaAtual))adminDesktopView(adminDesktopVista);else adminDesktopRender();}
+  else if(painelMobileAberto)adminDesktopRender();
   else renderPerfisAcesso(true);}
+$('adminDesktopMobileBack').onclick=function(){alternarPainelMobile(false);};
+window.addEventListener('keydown',function(e){if(e.key==='Escape'&&painelMobileAberto&&!$('adminRecordEdit').open&&!$('conta').classList.contains('on'))alternarPainelMobile(false);});
 window.addEventListener('resize',atualizarModoDesktopAdmin);
 function pode(acao){var p=papelAtual();if(p==='admin')return true;
   if(acao==='registrar')return ['operador','assistente','analista','gerente'].includes(p)&&temPermissao('registrar');
@@ -5878,7 +6055,7 @@ function iniciarGestaoUsuarios(){
   function excluir(id){var u=cache.users.find(function(x){return x.id===id;});if(!u||!confirm('Excluir definitivamente o usuário '+u.usuario+'? Esta ação não pode ser desfeita.'))return;callGestao({acao:'excluir',id:id}).then(function(){toast('Usuário excluído.');carregar();}).catch(function(e){toast(e.message);});}
   $('bUsuarioCriar').onclick=criar;$('bUsuarioRefresh').onclick=carregar;carregar();
 }
-document.addEventListener('admin-scope-change',function(){adminRequestsLimpar();adminRecordsLimpar();if(ADMIN_SCOPE.lojasCarregadas)adminRequestsCarregar(true);usuariosEscopoSeq++;auditoriaDetalhadaSeq++;var audKey=escopoConsultaAuditoria()+'|';if(!auditoriaRecolhimentoCache.chave||auditoriaRecolhimentoCache.chave.indexOf(audKey)!==0){auditoriaRecolhimentoSeq++;auditoriaRecolhimentoCache={itens:[],carregadoEm:0};}if(!produtosMaisReativadosCache.chave||produtosMaisReativadosCache.chave.indexOf(audKey)!==0){produtosMaisReativadosSeq++;produtosMaisReativadosCache={itens:[],carregadoEm:0};}renderAuditoriaRecolhimento();renderProdutosMaisReativados();$('modalEditarUsuario').classList.remove('on');iniciarGestaoUsuarios();carregarAjustesAlertasLoja();carregarLojasAdmin();if(temPermissao('auditoria_ver')){auditoriaCard();carregarAuditoriaRecolhimento(false);carregarProdutosMaisReativados(false);}});
+document.addEventListener('admin-scope-change',function(){adminRequestsLimpar();adminRecordsLimpar();if(adminDesktopAtivo()&&ADMIN_SCOPE.lojasCarregadas)adminRequestsCarregar(true);usuariosEscopoSeq++;auditoriaDetalhadaSeq++;var audKey=escopoConsultaAuditoria()+'|';if(!auditoriaRecolhimentoCache.chave||auditoriaRecolhimentoCache.chave.indexOf(audKey)!==0){auditoriaRecolhimentoSeq++;auditoriaRecolhimentoCache={itens:[],carregadoEm:0};}if(!produtosMaisReativadosCache.chave||produtosMaisReativadosCache.chave.indexOf(audKey)!==0){produtosMaisReativadosSeq++;produtosMaisReativadosCache={itens:[],carregadoEm:0};}renderAuditoriaRecolhimento();renderProdutosMaisReativados();$('modalEditarUsuario').classList.remove('on');iniciarGestaoUsuarios();carregarAjustesAlertasLoja();carregarLojasAdmin();if(temPermissao('auditoria_ver')){auditoriaCard();carregarAuditoriaRecolhimento(false);carregarProdutosMaisReativados(false);}});
 window.__initGestaoUsuarios=iniciarGestaoUsuarios;
 iniciarGestaoUsuarios();
 

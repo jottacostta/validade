@@ -156,14 +156,15 @@ test('Push e regras pessoais: cartão dedicado aparece em Configurações e não
   assert.match(html, /\$\('pushCard'\)\.style\.display=mostrarAlertas\?'':'none'/);
 });
 
-test('Ajustes administrativos: menu de onze seções respeita a hierarquia dos perfis', () => {
+test('Ajustes administrativos: menu de doze seções respeita a hierarquia dos perfis', () => {
   for (const id of ['sysMenuCard', 'sysMenu', 'sysSectionHead', 'sysBackToMenu', 'sysSectionTitle', 'sysSectionView', 'sysReportsPanel']) {
     assert.match(html, new RegExp('id="' + id + '"'), id + ' existe');
   }
   const entries = [...html.matchAll(/\{id:'([^']+)',titulo:'([^']+)',sub:'[^']+',roles:\[([^\]]+)\]/g)].filter(x => !x[1].startsWith('op-'));
-  assert.equal(entries.length, 11, 'onze seções administrativas definidas');
-  assert.deepEqual(entries.map(x => x[1]), ['perfil','usuarios','lojas','catalogo','pereciveis','relatorios','auditoria','config','dados','alertas','sobre']);
+  assert.equal(entries.length, 12, 'doze seções administrativas definidas');
+  assert.deepEqual(entries.map(x => x[1]), ['painel','perfil','usuarios','lojas','catalogo','pereciveis','relatorios','auditoria','config','dados','alertas','sobre']);
   const access = Object.fromEntries(entries.map(x => [x[1], x[3].replace(/'/g, '').split(',')]));
+  assert.deepEqual(access.painel, ['gerente','admin']);
   assert.deepEqual(access.perfil, ['analista','gerente','admin']);
   assert.deepEqual(access.usuarios, ['analista','gerente','admin']);
   assert.deepEqual(access.lojas, ['admin']);

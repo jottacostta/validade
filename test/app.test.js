@@ -2142,7 +2142,7 @@ tflaky('Central desktop: admin aguarda confirmação do perfil, usa indicadores 
     assert.strictEqual((await a.p.textContent('#adminKpiExpired')).trim(), '1');
     assert.strictEqual((await a.p.textContent('#adminKpiSoon')).trim(), '1');
     assert.strictEqual((await a.p.textContent('#adminKpiValid')).trim(), '2');
-    assert.match(await a.p.textContent('#adminDesktopScope'), /Loja Teste/);
+    assert.match(await a.p.textContent('#adminDesktopStore'), /Loja Teste/);
     await a.p.evaluate(() => document.getElementById('bEscanear').click());
     await a.p.waitForTimeout(100);
     assert.strictEqual(await a.p.locator('#scanner').evaluate(e => e.classList.contains('on')), false, 'clique programático também não inicia scanner no desktop');
@@ -3109,6 +3109,82 @@ tflaky('Central desktop: edição no consolidado usa ID e filial do registro, pr
     assert.deepStrictEqual(a.erros, []);
   } finally { await a.fechar(); }
 });
+
+tflaky('Painel de gestão: ordena por cadastro ou produto e combina usuário e localização', { skip: pular }, async () => {
+  const fixture = adminDesktopScopeFixture();
+  fixture.lotes[0].criado = Date.now() - 2000;
+  fixture.lotes[1].criado = null;
+  fixture.lotes[1].updated_at = new Date().toISOString();
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'admin', []);
+    await rotasAdminDesktopRemoto(p, fixture);
+  }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', lojaId: 'FL15', lojaNome: 'Filial 15' });
+  try {
+    await a.p.setViewportSize({ width: 1280, height: 800 });
+    await esperarAdminScope(a.p, 'FL15');
+    const locations = a.p.locator('#adminInsightLocations article');
+    assert.match(await locations.nth(0).innerText(), /Área de Vendas[\s\S]*1 registro ativo[\s\S]*4 un\./);
+    assert.match(await locations.nth(1).innerText(), /Depósito[\s\S]*2 registros ativos[\s\S]*2 un\.[\s\S]*1,25/);
+    await a.p.click('#adminDesktopNav [data-admin-view="records"]');
+    const ids = () => a.p.locator('#adminRecordsRows [data-record-row]').evaluateAll(rows => rows.map(row => row.dataset.recordRow));
+    assert.deepEqual(await ids(), ['pere-fl15', 'lote-fl15-col', 'lote-fl15-same', 'lote-fl15-only']);
+    await a.p.selectOption('#adminRecordsOrder', 'oldest');
+    assert.deepEqual(await ids(), ['lote-fl15-same', 'lote-fl15-col', 'pere-fl15', 'lote-fl15-only']);
+    await a.p.selectOption('#adminRecordsOrder', 'az');
+    assert.deepEqual(await ids(), ['lote-fl15-same', 'lote-fl15-only', 'lote-fl15-col', 'pere-fl15']);
+    await a.p.selectOption('#adminRecordsAuthorFilter', { label: 'Multi Loja' });
+    assert.deepEqual(await ids(), ['lote-fl15-same', 'pere-fl15']);
+    await a.p.selectOption('#adminRecordsLocationFilter', { label: 'Depósito' });
+    assert.deepEqual(await ids(), ['pere-fl15']);
+    await a.p.selectOption('#adminDesktopScopeSelect', 'FL05');
+    await esperarAdminScope(a.p, 'FL05');
+    assert.equal(await a.p.inputValue('#adminRecordsAuthorFilter'), 'all');
+    assert.equal(await a.p.inputValue('#adminRecordsOrder'), 'recent');
+    assert.ok(!(await a.p.locator('#adminRecordsAuthorFilter').innerText()).includes('Ana'));
+    assert.deepEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
+for (const [papel, permitido] of [['admin', true], ['gerente', true], ['gerente', false], ['operador', true]]) {
+  tflaky('Painel mobile: acesso pelo menu para ' + papel + ' com relatórios=' + permitido, { skip: pular }, async () => {
+    const a = await abrirLogado(async p => {
+      await rotasPerm(p, papel, papel === 'admin' ? [] : [{ papel, permissao: 'relatorios', permitido }]);
+      await rotasAdminDesktopRemoto(p, adminDesktopScopeFixture());
+    }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel, lojaId: 'FL15', lojaNome: 'Filial 15' });
+    try {
+      await a.p.setViewportSize({ width: 390, height: 844 });
+      await permsCarregadas(a.p);
+      await a.p.click('#abas [data-v="aj"]');
+      const atalho = a.p.locator('#sysMenu [data-sys-open="painel"]');
+      if (!permitido || papel === 'operador') {
+        assert.equal(await atalho.count(), 0);
+        await a.p.evaluate(() => {
+          const menu = document.getElementById('sysMenu');
+          const fake = document.createElement('button');
+          fake.dataset.sysOpen = 'painel';
+          menu.appendChild(fake);
+          fake.click();
+          fake.remove();
+        });
+        assert.equal(await a.p.isVisible('#adminDesktop'), false);
+        return;
+      }
+      await atalho.click();
+      await esperarAdminScope(a.p, 'FL15');
+      assert.equal(await a.p.isVisible('#adminDesktopDashboard'), true);
+      assert.equal(await a.p.textContent('#adminKpiRecords'), '3');
+      assert.equal(await a.p.isVisible('#adminDesktopNav'), false);
+      await a.p.click('.admin-mobile-tabs [data-admin-view="records"]');
+      assert.equal(await a.p.locator('#adminRecordsRows [data-record-row]').count(), 4);
+      await a.p.selectOption('#adminRecordsAuthorFilter', { label: 'Ana' });
+      assert.equal(await a.p.locator('#adminRecordsRows [data-record-row]').count(), 1);
+      await a.p.click('#adminDesktopMobileBack');
+      assert.equal(await a.p.isVisible('#adminDesktop'), false);
+      assert.equal(await atalho.isVisible(), true);
+      assert.deepEqual(a.erros, []);
+    } finally { await a.fechar(); }
+  });
+}
 
 tflaky('Central desktop: Gerente sem edição de terceiros ou recolhimento não recebe essas ações nem exclusão administrativa', { skip: pular }, async () => {
   const a = await abrirLogado(async p => {
