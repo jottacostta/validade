@@ -1126,6 +1126,41 @@ tflaky('Meus Registros: cartão não repete o setor, mostra validade e selo, e p
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
 
+tflaky('Meus Registros: ordem por cadastro, paginação e descrição em caixa alta', { skip: pular }, async () => {
+  const catalogo = { nome: 'Café do sítio', marca: 'Marca Mista' };
+  const base = Date.now() - 3600000;
+  const lotes = Array.from({ length: 10 }, (_, i) => ({
+    ...lote('ord-' + i, '2099-12-' + String(20 - i).padStart(2, '0'), 1, 'LOTE-' + i),
+    criado: i === 9 ? null : i === 8 ? String(base + i * 1000) : base + i * 1000,
+    updated_at: new Date().toISOString(),
+    created_by_nome: 'William Silva',
+    setor: i === 0 ? 'Padaria' : 'Mercearia'
+  }));
+  const a = await abrir({ dados: { prod: { '7891000315507': { lotes } }, cat: { '7891000315507': catalogo }, pere: { itens: {}, regs: [] } } });
+  try {
+    await a.p.click('nav button[data-v="prod"]');
+    const ids = () => a.p.locator('#listaProd [data-detail-lote].operator-record-main').evaluateAll(rows => rows.map(row => row.dataset.detailLote));
+    assert.deepEqual(await ids(), ['ord-8', 'ord-7', 'ord-6', 'ord-5', 'ord-4', 'ord-3', 'ord-2', 'ord-1']);
+    const title = a.p.locator('#listaProd .operator-record-main strong').first();
+    assert.equal(await title.innerText(), 'CAFÉ DO SÍTIO');
+    assert.match(await a.p.locator('#listaProd .operator-record-main small').first().innerText(), /William Silva/);
+    await a.p.click('#pagerProd [data-page="1"]');
+    assert.deepEqual(await ids(), ['ord-0', 'ord-9']);
+    await a.p.selectOption('#fOrdemProd', 'oldest');
+    assert.deepEqual(await ids(), ['ord-0', 'ord-1', 'ord-2', 'ord-3', 'ord-4', 'ord-5', 'ord-6', 'ord-7']);
+    await a.p.selectOption('#fSetorProd', 'Mercearia');
+    assert.deepEqual(await ids(), ['ord-1', 'ord-2', 'ord-3', 'ord-4', 'ord-5', 'ord-6', 'ord-7', 'ord-8']);
+    await a.p.click('#pagerProd [data-page="1"]');
+    assert.deepEqual(await ids(), ['ord-9']);
+    await a.p.selectOption('#fOrdemProd', 'recent');
+    await a.p.click('#listaProd [data-detail-lote="ord-8"].operator-record-main');
+    assert.equal(await a.p.locator('#detailProductName').innerText(), 'CAFÉ DO SÍTIO');
+    assert.match(await a.p.locator('#detailProductMeta').innerText(), /Marca Mista/);
+    assert.equal((await a.salvo()).cat['7891000315507'].nome, catalogo.nome);
+    assert.deepEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
 tflaky('Cabeçalho: subtítulo próprio em cada tela interna; contador de alertas fica sobre o sino', { skip: pular }, async () => {
   const a = await abrir({ dados: { prod: { '7891000315507': { lotes: [lote('v', new Date(Date.now() - 86400000).toISOString().slice(0, 10), 1, 'L1')] } }, cat: {}, pere: { itens: {}, regs: [] } } });
   await a.p.click('nav button[data-v="prod"]');

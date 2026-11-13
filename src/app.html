@@ -351,6 +351,8 @@ header .hdr-in.interna .operator-role-pill{display:inline-flex}
 .operator-toolbar input{min-width:0;min-height:48px;border:1px solid #39749a;border-radius:14px;background:#0b263d;color:#f5f8fc}
 .operator-toolbar .btn{min-width:48px;min-height:48px;padding:8px 12px}.operator-toolbar .btn svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .operator-filter-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:0 0 12px}
+.operator-record-order{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 12px;color:#d2e1ef;font-size:12px}
+.operator-record-order select{max-width:55%;min-height:43px;padding:6px 9px;border:1px solid #39749a;border-radius:12px;background:#0b263d;color:#f5f8fc;font-size:13px}
 .operator-filter-row select{min-width:0;min-height:43px;padding:8px 9px;border:1px solid #39749a;border-radius:12px;background:#0b263d;color:#f5f8fc;font-size:13px}
 .operator-list{display:grid;gap:9px}
 .operator-record{display:grid;grid-template-columns:clamp(52px,13vw,72px) minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border:1px solid #2e6285;border-radius:17px;background:linear-gradient(120deg,#102f49,#0a2034);color:#f5f8fc;text-align:left;box-shadow:0 4px 12px #0002}
@@ -1440,6 +1442,20 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 /* Exceções para não quebrar o layout aprovado: os indicadores do resumo (Total, Válidos, Próx. Venc., Vencidos)
    e, abaixo de 360 px, os rótulos da barra inferior mantêm o tamanho original porque não cabem a 12 px. */
 @media (min-width:360px){nav.abas button{font-size:12px!important}}
+/* Exibição padronizada: descrições de produtos em caixa alta, sem alterar dados persistidos. */
+#pNome, #peDesc, #edNome, #cDesc, #adminRecordName,
+#detailProductName, #editProductName, #regSucessoResumo > b,
+.operator-record-copy > strong,
+.home-recent-copy > strong,
+.alert-copy > b,
+#listaCod .item-pe b,
+#adminRecentRows td:first-child > strong,
+#adminRecordsRows [data-label="Produto"] > .admin-records-primary,
+.adminInsight-priority-name,
+.recall-audit-product-row .recall-audit-name > b,
+.product-description {
+  text-transform: uppercase;
+}
 </style>
 </head>
 <body>
@@ -1885,6 +1901,10 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
   <div class="operator-filter-row"><select id="fPeriodoProd" aria-label="Filtrar por período"><option value="">Período</option><option value="7">Últimos 7 dias</option><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select>
     <select id="fSetorProd" aria-label="Filtrar por setor"><option value="">Setor</option><option>Açougue</option><option>Laticínios</option><option>Padaria</option><option>Salgados</option><option>FLV</option><option>Mercearia</option></select>
     <select id="fSituacaoProd" aria-label="Filtrar por situação"><option value="">Situação</option><option value="validos">Válidos</option><option value="alerta">Próximos do vencimento</option><option value="vencidos">Vencidos</option></select><button class="btn-filtrar" id="bFiltrarProd" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6.2 7.5V19l-3.6-2v-4.5z"/></svg><span>Filtrar</span></button></div>
+  <div class="operator-record-order">
+    <label for="fOrdemProd">Ordenar por cadastro</label>
+    <select id="fOrdemProd"><option value="recent">Mais recentes</option><option value="oldest">Mais antigos</option></select>
+  </div>
   <div class="operator-summary"><div class="tile in"><span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4 4v13H7zM14 3.5v4h4M9.5 12h6M9.5 15.5h6"/></svg></span><span><small>Total</small><b id="tLotes">0</b></span></div><div class="tile ok"><span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span><span><small>Válidos</small><b id="tProd">0</b></span></div><div class="tile wa"><span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span><span><small>Próx. Venc.</small><b id="tAlerta">0</b></span></div><div class="tile da"><span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4zM12 10v4.5M12 17.3v.2"/></svg></span><span><small>Vencidos</small><b id="tVenc">0</b></span></div></div>
   <div class="recolhidos-toolbar" id="retencaoRecProd" hidden><button type="button" id="bVerRecolhidosProd" aria-pressed="false">Ver recolhidos</button><small>Somente assistente e perfis superiores podem reativar.</small></div><div id="listaProd" class="operator-list"></div>
   <div class="pager" id="pagerProd" hidden><button type="button" data-page="-1"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg><span>Anterior</span></button><span class="pager-info"></span><button type="button" data-page="1"><span>Próxima</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
@@ -2654,7 +2674,7 @@ function carregarSolicitacoesNome(){var card=$('cardCorrecoesNome');if(!card)ret
     $('listaSolicitacoesNome').innerHTML=r.dados.map(function(x){
       var status=x.status==='pendente'?'⏳ Pendente':x.status==='aprovada'?'✅ Aprovada':'❌ Rejeitada';
       var botoes=x.status==='pendente'?'<div class="row" style="margin-top:8px"><button class="btn" data-nome-review="yes" data-id="'+esc(x.id)+'">Aprovar</button><button class="btn perigo" data-nome-review="no" data-id="'+esc(x.id)+'">Rejeitar</button></div>':'';
-      return '<div class="card" style="margin:8px 0;padding:10px"><b>'+esc(x.nome_sugerido)+'</b><div class="ean">EAN '+esc(x.ean)+' · nome atual: '+esc(x.nome_atual||'sem nome')+'</div><div class="ean">'+esc(status)+' · '+fdataHora(Date.parse(x.criado_em))+' · por '+esc(x.solicitante_nome||'usuário removido')+'</div>'+(x.resposta?'<div class="ean">Resposta: '+esc(x.resposta)+'</div>':'')+botoes+'</div>';
+      return '<div class="card" style="margin:8px 0;padding:10px"><b class="product-description">'+esc(x.nome_sugerido)+'</b><div class="ean">EAN '+esc(x.ean)+' · nome atual: <span class="product-description">'+esc(x.nome_atual||'sem nome')+'</span></div><div class="ean">'+esc(status)+' · '+fdataHora(Date.parse(x.criado_em))+' · por '+esc(x.solicitante_nome||'usuário removido')+'</div>'+(x.resposta?'<div class="ean">Resposta: '+esc(x.resposta)+'</div>':'')+botoes+'</div>';
     }).join('')||'<div class="vazio">Nenhuma correção solicitada.</div>';
     document.querySelectorAll('[data-nome-review]').forEach(function(b){b.onclick=function(){revisarCorrecaoNome(b.dataset.id,b.dataset.nomeReview==='yes');};});
   }).catch(function(e){$('listaSolicitacoesNome').innerHTML='<div class="vazio">'+esc(e.message||'Erro ao carregar')+'</div>';});}
@@ -2703,6 +2723,7 @@ $('bEditDelete').onclick=function(){if(!registroContexto)return;var ctx=registro
 $('qProd').oninput=function(){listaProdutos();};
 $('bVerRecolhidosProd').onclick=function(){mostrarRecolhidosProd=!mostrarRecolhidosProd;paginas.prod.n=1;listaProdutos();};
 if($('fSetorProd'))$('fSetorProd').onchange=listaProdutos;if($('fPeriodoProd'))$('fPeriodoProd').onchange=listaProdutos;if($('fSituacaoProd'))$('fSituacaoProd').onchange=listaProdutos;
+$('fOrdemProd').onchange=listaProdutos;
 if($('bBuscaProduto'))$('bBuscaProduto').onclick=function(){if(!pode('registrar')){toast('Seu perfil não permite registrar produtos');return;}mostrarEscolhaRegistro();ir('reg');$('bTipoIndustrial').click();$('bEscanear').click();};
 /* cartão de registro e paginação compartilhados por Meus Registros e Perecíveis */
 var POR_PAGINA=8,paginas={prod:{n:1,f:''},pe:{n:1,f:''},cat:{n:1,f:''}},mostrarRecolhidosProd=false,mostrarRecolhidosPe=false;
@@ -2715,17 +2736,20 @@ function cartaoRegistro(o){var x=seloValidade(o.val);return '<article class="ope
 function paginar(chave,itens,filtro,pager){var st=paginas[chave];if(st.f!==filtro){st.f=filtro;st.n=1;}var total=Math.max(1,Math.ceil(itens.length/POR_PAGINA));st.n=Math.min(Math.max(1,st.n),total);
   var el=$(pager);el.hidden=total<2;el.querySelector('.pager-info').textContent='Página '+st.n+' de '+total;el.querySelector('[data-page="-1"]').disabled=st.n<=1;el.querySelector('[data-page="1"]').disabled=st.n>=total;
   return itens.slice((st.n-1)*POR_PAGINA,st.n*POR_PAGINA);}
-function listaProdutos(){var q=$('qProd').value.toLowerCase(),setorFiltro=$('fSetorProd').value,periodo=+$('fPeriodoProd').value||0,situacao=$('fSituacaoProd').value,nP=0,nL=0,nV=0,nA=0,nOk=0,cards=[];
+function listaProdutos(){var q=$('qProd').value.toLowerCase(),setorFiltro=$('fSetorProd').value,periodo=+$('fPeriodoProd').value||0,situacao=$('fSituacaoProd').value,ordem=$('fOrdemProd').value,nP=0,nL=0,nV=0,nA=0,nOk=0,cards=[];
   var desde=periodo?Date.now()-periodo*864e5:0,modoRecolhidos=configurarToolbarRecolhidos('lote');
   Object.keys(D.prod).forEach(function(ean){var p=D.prod[ean],c=detalheProduto(ean),lotesAtivos=(p.lotes||[]).filter(function(l){if(modoRecolhidos)return !!l.recolhido_em&&dias(l.val)!==null&&dias(l.val)>=-5;return registroAtivoOperacional(l);});if(lotesAtivos.length)nP++;lotesAtivos.forEach(function(l){nL++;var n=dias(l.val);if(n!==null&&n<0)nV++;else if(n!==null&&n<=D.aj.dias)nA++;else if(n!==null)nOk++;});
     /* produtos sem lote ativo não aparecem aqui: ficam no Catálogo, tela exclusiva do administrador */
-    ordenar(lotesAtivos).forEach(function(l){var n=dias(l.val),stamp=+new Date(l.criado||l.criado_em||0);if(setorFiltro&&l.setor!==setorFiltro||periodo&&(!stamp||stamp<desde))return;
+    lotesAtivos.forEach(function(l){var n=dias(l.val),data=adminInsightDate(l.criado||l.criado_em||l.created_at),stamp=data?data.getTime():null;if(setorFiltro&&l.setor!==setorFiltro||periodo&&(!stamp||stamp<desde))return;
       if(!modoRecolhidos&&(situacao==='validos'&&(n===null||n<=D.aj.dias)||situacao==='alerta'&&(n===null||n<0||n>D.aj.dias)||situacao==='vencidos'&&(n===null||n>=0)))return;
       if(q&&((c.nome||'')+' '+ean+' '+l.lote+' '+l.setor+' '+l.created_by_nome).toLowerCase().indexOf(q)<0)return;
       var h=cartaoRegistro({tipo:'lote',img:c.img,nome:c.nome||ean,l1:'Lote: '+(l.lote||'—')+' · '+l.qtd+' un. · '+(l.em_area_vendas===false?'Depósito':'Área de Vendas'),prov:proveniencia(l),val:l.val,detalhe:'data-detail-lote="'+esc(l.id)+'" data-ean="'+esc(ean)+'"',editar:'data-edit-lote="'+esc(l.id)+'" data-ean="'+esc(ean)+'"',recolher:botaoRecolher('lote',l.id,c.nome||ean,l)});
-      cards.push({ord:l.val||'9',h:h});});});
-  cards.sort(function(a,b){return a.ord.localeCompare(b.ord);});
-  cards=paginar('prod',cards,[q,setorFiltro,periodo,situacao,modoRecolhidos].join('|'),'pagerProd');
+      cards.push({criado:stamp,validade:l.val||'9',h:h});});});
+  cards.sort(function(a,b){
+    if((a.criado===null)!==(b.criado===null))return a.criado===null?1:-1;
+    return (ordem==='oldest'?a.criado-b.criado:b.criado-a.criado)||a.validade.localeCompare(b.validade);
+  });
+  cards=paginar('prod',cards,[q,setorFiltro,periodo,situacao,modoRecolhidos,ordem].join('|'),'pagerProd');
   $('listaProd').innerHTML=cards.map(function(c){return c.h;}).join('')||'<div class="operator-empty">'+(modoRecolhidos?'Nenhum produto recolhido disponível para reativação.':nP?'Nenhum registro corresponde aos filtros.':Object.keys(D.prod||{}).length?'Nenhum registro ativo. Recolhidos e vencidos há mais de 5 dias ficam fora desta tela.':'Nenhum produto ainda. Use “Registrar produto” no início.')+'</div>';
   $('tProd').textContent=nOk;$('tLotes').textContent=nL;$('tVenc').textContent=nV;$('tAlerta').textContent=nA;}
 
@@ -3879,8 +3903,8 @@ function lojaConfiguracaoPainel(){return adminDesktopAtivo()?adminScopeLoja():SE
     return value == null || String(value) === '' ? fallback : String(value);
   }
 
-  function detail(label, value, wide, mono) {
-    return '<div' + (wide ? ' class="admin-request-detail-wide"' : '') + '><dt>' + requestEsc(label) + '</dt><dd' + (mono ? ' class="admin-request-mono"' : '') + '>' + requestEsc(value) + '</dd></div>';
+  function detail(label, value, wide, mono, product) {
+    return '<div' + (wide ? ' class="admin-request-detail-wide"' : '') + '><dt>' + requestEsc(label) + '</dt><dd' + (mono ? ' class="admin-request-mono"' : product ? ' class="product-description"' : '') + '>' + requestEsc(value) + '</dd></div>';
   }
 
   function actionButtons(type, id) {
@@ -3897,9 +3921,9 @@ function lojaConfiguracaoPainel(){return adminDesktopAtivo()?adminScopeLoja():SE
     var suggested = valueOr(item.nome_sugerido, 'Sugestão não informada');
     return '<article class="admin-request-card admin-request-card-nome" role="listitem">' +
       '<div class="admin-request-card-head"><div class="admin-request-card-title"><span>Correção de nome</span><small>EAN ' + requestEsc(valueOr(item.ean, 'não informado')) + '</small></div><span class="admin-request-state">Pendente</span></div>' +
-      '<h4>' + requestEsc(suggested) + '</h4>' +
+      '<h4 class="product-description">' + requestEsc(suggested) + '</h4>' +
       '<dl class="admin-request-details">' +
-      detail('Nome atual', current, true, false) +
+      detail('Nome atual', current, true, false, true) +
       detail('Solicitante', valueOr(item.solicitante_nome, 'Usuário removido'), false, false) +
       detail('Loja', lojaLabel(item.loja_id, actual), false, false) +
       detail('Criado em', dateLabel(item.criado_em), false, false) +
@@ -4767,7 +4791,7 @@ var adminRequestsCarregar=window.adminRequestsCarregar,adminRequestsLimpar=windo
     state.editing = row;
     state.saving = false;
     setEditError('');
-    setText('adminRecordEditTitle', row.tipo + ' · ' + (row.nome || row.codigo || row.id));
+    setText('adminRecordEditTitle', row.tipo + ' · ' + (row.nome || row.codigo || row.id).toLocaleUpperCase('pt-BR'));
     setText('adminRecordEditMeta', (row.lojaNome || 'Filial não informada') + ' · ID ' + row.id + (row.informante ? ' · informado por ' + row.informante : ''));
     var name = el('adminRecordName'); if (name) name.value = row.nome || row.codigo || '';
     var loteFields = el('adminRecordLoteFields'), pereFields = el('adminRecordPereFields');
