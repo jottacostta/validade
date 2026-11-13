@@ -1126,7 +1126,7 @@ tflaky('Meus Registros: cartão não repete o setor, mostra validade e selo, e p
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
 
-tflaky('Meus Registros: ordem por cadastro, paginação e descrição em caixa alta', { skip: pular }, async () => {
+tflaky('Meus Registros: ordem por cadastro, localização, paginação e caixa alta', { skip: pular }, async () => {
   const catalogo = { nome: 'Café do sítio', marca: 'Marca Mista' };
   const base = Date.now() - 3600000;
   const lotes = Array.from({ length: 10 }, (_, i) => ({
@@ -1134,7 +1134,8 @@ tflaky('Meus Registros: ordem por cadastro, paginação e descrição em caixa a
     criado: i === 9 ? null : i === 8 ? String(base + i * 1000) : base + i * 1000,
     updated_at: new Date().toISOString(),
     created_by_nome: 'William Silva',
-    setor: i === 0 ? 'Padaria' : 'Mercearia'
+    setor: i === 0 ? 'Padaria' : 'Mercearia',
+    em_area_vendas: i === 9 ? undefined : i % 2 === 0
   }));
   const a = await abrir({ dados: { prod: { '7891000315507': { lotes } }, cat: { '7891000315507': catalogo }, pere: { itens: {}, regs: [] } } });
   try {
@@ -1152,7 +1153,15 @@ tflaky('Meus Registros: ordem por cadastro, paginação e descrição em caixa a
     assert.deepEqual(await ids(), ['ord-1', 'ord-2', 'ord-3', 'ord-4', 'ord-5', 'ord-6', 'ord-7', 'ord-8']);
     await a.p.click('#pagerProd [data-page="1"]');
     assert.deepEqual(await ids(), ['ord-9']);
+    await a.p.selectOption('#fLocalProd', 'deposito');
+    assert.deepEqual(await ids(), ['ord-1', 'ord-3', 'ord-5', 'ord-7']);
+    assert.equal(await a.p.isVisible('#pagerProd'), false);
+    await a.p.selectOption('#fLocalProd', 'vendas');
+    assert.deepEqual(await ids(), ['ord-2', 'ord-4', 'ord-6', 'ord-8', 'ord-9']);
     await a.p.selectOption('#fOrdemProd', 'recent');
+    assert.deepEqual(await ids(), ['ord-8', 'ord-6', 'ord-4', 'ord-2', 'ord-9']);
+    await a.p.selectOption('#fLocalProd', '');
+    assert.equal((await ids()).length, 8);
     await a.p.click('#listaProd [data-detail-lote="ord-8"].operator-record-main');
     assert.equal(await a.p.locator('#detailProductName').innerText(), 'CAFÉ DO SÍTIO');
     assert.match(await a.p.locator('#detailProductMeta').innerText(), /Marca Mista/);
