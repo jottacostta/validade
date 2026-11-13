@@ -1464,10 +1464,8 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 .product-description {
   text-transform: uppercase;
 }
-#bFotoCadastro{padding:4px;cursor:pointer;color:#dceefa}
+#bFotoCadastro{padding:0;cursor:pointer}
 #bFotoCadastro:disabled{cursor:default}
-#pFotoAcao{display:grid;justify-items:center;gap:3px;font-size:12px;font-weight:750;line-height:1.15}
-#pFotoAcao .ico{width:22px;height:22px}
 #pFotoStatus{margin:4px 0 0;color:#dceefa;font-size:12px}
 #photoPreviewImage{display:block;width:min(100%,220px);height:160px;object-fit:contain;margin:10px auto;background:#fff;border-radius:8px}
 #detailPhotoStatus{margin:6px 0;color:#c1d0df;font-size:13px}
@@ -1861,7 +1859,7 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
     </div>
     <div class="card reg-data" id="cardProd" style="display:none">
       <h2>Dados do produto</h2>
-      <div class="reg-prod"><button class="reg-thumb" type="button" id="bFotoCadastro" aria-label="Abrir câmera para tirar foto do produto" aria-describedby="pFotoStatus"><img id="pImg" alt="" hidden><span id="pFotoAcao"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h4l2-3h4l2 3h4v13H4z"/><circle cx="12" cy="13" r="3"/></svg>Tirar foto</span></button><input id="pFotoCamera" type="file" accept="image/*" capture="environment" hidden><div class="reg-prod-copy"><textarea id="pNome" rows="1" placeholder="Nome do produto" aria-label="Nome do produto"></textarea><div class="reg-prod-code">Código: <span class="ean" id="pEan"></span></div><div id="pStatus" class="reg-prod-status"></div><p id="pFotoStatus" role="status" hidden></p></div></div>
+      <div class="reg-prod"><button class="reg-thumb" type="button" id="bFotoCadastro" aria-label="Abrir câmera para tirar foto do produto" aria-describedby="pFotoStatus"><img id="pImg" alt="" hidden><svg class="ico" id="pFotoAcao" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg></button><input id="pFotoCamera" type="file" accept="image/*" capture="environment" hidden><div class="reg-prod-copy"><textarea id="pNome" rows="1" placeholder="Nome do produto" aria-label="Nome do produto"></textarea><div class="reg-prod-code">Código: <span class="ean" id="pEan"></span></div><div id="pStatus" class="reg-prod-status"></div><p id="pFotoStatus" role="status" hidden></p></div></div>
       <div class="reg-grid">
         <div><label class="f" for="pLote">Lote *</label><input id="pLote" autocapitalize="characters" placeholder="L2345"></div>
         <div><label class="f" for="pVal">Validade *</label><input id="pVal" type="date"></div>

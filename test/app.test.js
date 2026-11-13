@@ -1006,7 +1006,7 @@ tflaky('Registrar: − / + ajustam a quantidade sem ficar abaixo de 1', { skip: 
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
 
-tflaky('Registrar: a caixa abre a câmera e salva a foto depois do lote', { skip: pular }, async () => {
+tflaky('Registrar: o cubo abre a câmera e salva a foto depois do lote', { skip: pular }, async () => {
   const cap = {}, fotos = [], ean = '7891000315507';
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aG9sAAAAASUVORK5CYII=', 'base64');
   const a = await abrirRegistro(async p => {
@@ -1026,7 +1026,8 @@ tflaky('Registrar: a caixa abre a câmera e salva a foto depois do lote', { skip
     await a.p.fill('#tCodigo',ean); await a.p.click('#bBuscar');
     await a.p.fill('#pLote','f-1'); await a.p.fill('#pQtd','3'); await a.p.fill('#pVal','2099-02-01'); await a.p.selectOption('#pSetor','Mercearia');
     assert.equal(await a.p.getAttribute('#pFotoCamera','capture'),'environment');
-    await a.p.click('#bFotoCadastro');
+    assert.equal(await a.p.locator('#bFotoCadastro').getAttribute('aria-label'),'Abrir câmera para tirar foto do produto');
+    await a.p.locator('#bFotoCadastro #pFotoAcao').click();
     assert.equal(await a.p.evaluate(()=>window.cameraCadastro),1);
     await a.p.setInputFiles('#pFotoCamera',{name:'embalagem.png',mimeType:'image/png',buffer:png});
     await a.p.waitForFunction(()=>document.querySelector('#pFotoStatus').textContent.includes('Foto pronta'));
