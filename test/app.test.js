@@ -1619,6 +1619,22 @@ tflaky('Área do Operador: abas, alertas/notificações e detalhe/edição de lo
   await a.fechar();
 });
 
+tflaky('Perfil de Assistente: cabeçalho, selo e aba de conta correspondem à função confirmada', { skip: pular }, async () => {
+  const a = await abrirLogado(p => rotasPerm(p, 'assistente', []), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador' });
+  try {
+    await a.p.waitForFunction(() => document.querySelector('#profileRole').textContent === 'Assistente');
+    await a.p.click('nav button[data-v="aj"]');
+    await a.p.click('#settingsTabs [data-settings-view="profile"]');
+    assert.equal(await a.p.textContent('#screenTitle'), 'Perfil e Conta');
+    assert.equal(await a.p.textContent('#settingsTabs [data-settings-view="profile"]'), 'Perfil e Conta');
+    assert.equal(await a.p.textContent('#slogan'), 'Área de Assistente');
+    assert.equal(await a.p.textContent('#operatorRolePill span'), 'Área de Assistente');
+    assert.equal(await a.p.textContent('#profileStatus'), 'Assistente Ativo');
+    assert.equal(await a.p.textContent('#profileRole'), 'Assistente');
+    assert.deepEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
 /* Armazenamento do navegador cheio: o app guarda os dados no IndexedDB em vez de só avisar. */
 const semEspaco = p => p.addInitScript(() => {
   const original = Storage.prototype.setItem;
