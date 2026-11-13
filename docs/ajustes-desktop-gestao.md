@@ -42,7 +42,7 @@ A gestão de registros oferece edição dos campos operacionais, recolhimento, r
 
 O aplicativo usa identificadores textuais de registro, inclusive IDs curtos criados offline. As funções antigas exigiam `p_id uuid`, causando `invalid input syntax for type uuid` antes de efetuar o recolhimento. A migration de ações de registros substitui essas assinaturas por `text`, compara o registro com sua loja e preserva o mesmo histórico.
 
-Recolher não apaga o registro. Permanecem a janela de cinco dias, a permissão `registros_recolher` configurável por perfil e a reativação por Assistente e acima. A exclusão administrativa do painel usa uma RPC transacional: tombstone e auditoria são confirmados juntos; falha na auditoria desfaz a exclusão.
+Recolher não apaga o registro. O recolhimento está disponível para registros ativos. Permanecem a permissão `registros_recolher` configurável por perfil e a reativação por Assistente e acima. A exclusão administrativa do painel usa uma RPC transacional: tombstone e auditoria são confirmados juntos; falha na auditoria desfaz a exclusão.
 
 ## Edição de usuários e senha
 

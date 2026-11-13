@@ -37,6 +37,7 @@ before(async () => {
     grant usage on schema public,private,auth to anon,authenticated,service_role;
   `);
   await db.exec(SQL);
+  await db.exec(fs.readFileSync(path.join(__dirname,'../supabase/migrations/20261113121825_recolhimento_sem_janela.sql'),'utf8'));
   await db.exec(fs.readFileSync(path.join(__dirname,'../supabase/migrations/20261112120000_edicao_usuarios_atomica.sql'),'utf8'));
   await db.exec("insert into auth.users values ('00000000-0000-4000-8000-000000000003','gerente@example.invalid'),('00000000-0000-4000-8000-000000000004','alvo@example.invalid');insert into public.perfis values ('00000000-0000-4000-8000-000000000003','Gerente Banco','gerente'),('00000000-0000-4000-8000-000000000004','Nome Anterior','operador');insert into public.loja_membros values ('"+S05+"','00000000-0000-4000-8000-000000000003'),('"+S05+"','00000000-0000-4000-8000-000000000004'),('"+S15+"','00000000-0000-4000-8000-000000000004');");
 });
@@ -84,11 +85,17 @@ test('PostgreSQL: permissão desligada e loja não atribuída são recusadas ant
   assert.equal((await db.query("select count(*)::integer n from public.lotes where id in ('perm-negada','outra-filial') and recolhido_em is not null")).rows[0].n,0);
 });
 
-test('PostgreSQL: janela 0–5 dias recusa vencido e validade acima de cinco dias', async () => {
-  await actor(OP);await lot('vencido',-1);await lot('longe',6);await lot('vence-hoje',0);
-  await assert.rejects(recall('vencido'),/próximos 5 dias/);
-  await assert.rejects(recall('longe'),/próximos 5 dias/);
-  assert.equal((await recall('vence-hoje')).ja_recolhido,false);
+test('PostgreSQL: recolhe registros ativos independentemente da validade e preserva a retenção', async () => {
+  await actor(OP);
+  for (const [id, dias] of [['vencido', -5], ['longe', 30], ['vence-hoje', 0], ['fora-da-retencao', -6]]) await lot(id, dias);
+  await assert.rejects(recall('fora-da-retencao'), /retenção operacional/);
+  for (const id of ['vencido', 'longe', 'vence-hoje']) assert.equal((await recall(id)).ja_recolhido, false);
+  await lot('sem-data');
+  await db.exec("update public.lotes set val=null where id='sem-data'");
+  assert.equal((await recall('sem-data')).ja_recolhido, false);
+  await actor(ADMIN);
+  const resultado = await db.query('select public.restaurar_registro_recolhido($1,$2,$3) as data', ['lote', 'sem-data', S05]);
+  assert.equal(resultado.rows[0].data.reativado, true);
 });
 
 test('PostgreSQL: exclusão é exclusiva do Administrador e audita nome do banco na filial real', async () => {

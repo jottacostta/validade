@@ -570,8 +570,8 @@ test('auditoria de recolhimento/reativação identifica ator no servidor e alime
 });
 
 test('retencao: telas operacionais ocultam recolhidos e vencidos há mais de 5 dias; histórico XLSX mantém status', () => {
-  assert.match(app, /function registroOcultoOperacional\(r\).*n< -5/);
-  assert.match(app, /function registroNaJanelaRecolhimento\(r\).*n>=0&&n<=5/);
+  assert.match(app, /function foraRetencaoOperacional\(r\).*n< -5/);
+  assert.match(app, /function registroVenceEmAteCincoDias\(r\).*n>=0&&n<=5/);
   assert.match(app, /function adminStatusOperacional\(r\).*Recolhido.*Oculto após 5 dias vencido.*Ativo/);
   assert.match(app, /adminStatusOperacional\(r\)/);
   assert.match(retentionMigration, /f\.val between v_hoje-5 and v_hoje\+/);
