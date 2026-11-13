@@ -52,7 +52,7 @@ test('conta qualidade, setores, localizações e informantes por registro ativo'
     row({ codigo: 'a', setor: '', informante: '', informanteId: null, localizacao: 'Depósito', dias: 4 }),
     row({ codigo: 'b', setor: 'Padaria', informante: 'Bruno', informanteId: 'b', localizacao: 'Área de Vendas', dias: 10 }),
     row({ codigo: 'c', setor: 'Padaria', informante: 'Bruno', informanteId: 'b', localizacao: 'Área de Vendas', dias: 20 }),
-    row({ codigo: 'd', setor: 'FLV', informante: 'Ana', informanteId: 'a', localizacao: 'Depósito', dias: 40 }),
+    row({ codigo: 'd', setor: 'FLV', informante: 'Ana', informanteId: 'a', localizacao: 'Depósito', dias: 40, tipo: 'Perecível', quantidade: 0, peso: 1.25 }),
     row({ codigo: 'e', setor: 'Açougue', informante: 'Ana', informanteId: 'a', localizacao: 'Outro', dias: 50 }),
     row({ codigo: 'f', setor: 'Salgados', informante: 'Usuário local', informanteId: null, localizacao: 'Área de Vendas', dias: 8, recolhido: true })
   ];
@@ -65,9 +65,9 @@ test('conta qualidade, setores, localizações e informantes por registro ativo'
     { label: 'FLV', count: 1 }
   ]);
   assert.deepEqual(JSON.parse(JSON.stringify(m.locations)), [
-    { key: 'area', label: 'Área de Vendas', count: 2 },
-    { key: 'deposito', label: 'Depósito', count: 2 },
-    { key: 'unknown', label: 'Sem localização', count: 1 }
+    { key: 'area', label: 'Área de Vendas', count: 2, units: 20, weight: 0 },
+    { key: 'deposito', label: 'Depósito', count: 2, units: 10, weight: 1.25 },
+    { key: 'unknown', label: 'Sem localização', count: 1, units: 10, weight: 0 }
   ]);
   assert.deepEqual(JSON.parse(JSON.stringify(m.informants.slice(0, 3))), [
     { label: 'Ana', count: 2 },

@@ -1,10 +1,18 @@
-# Central desktop de gestão — Administrador e Gerente
+# Painel de gestão — Administrador e Gerente
 
 ## O que muda
 
 A central anterior ocultava a navegação mobile, mas oferecia apenas Visão geral e Relatórios. A nova barra lateral reúne visão geral, registros, solicitações, relatórios, ajustes e atalhos para as áreas administrativas já existentes. **Perfis de acesso continua exclusivo do Administrador**; o Gerente recebe as entradas compatíveis com suas permissões. O scanner continua oculto e bloqueado no desktop.
 
 As telas de Ajustes são reutilizadas, não clonadas. A mudança entre desktop e celular, o retorno após navegar no mobile e o encerramento da sessão restauram o elemento original e invalidam o estado sensível. Respostas de perfil de uma sessão anterior não podem conceder acesso à sessão atual; falha na confirmação de perfil limpa a autorização anterior.
+
+## Uso no computador e no celular
+
+No computador, a barra lateral concentra a navegação e o seletor de filial fica acima do conteúdo. A visão geral destaca Área de Vendas e Depósito, com registros ativos, unidades de industrializados e peso dos perecíveis em kg. Recolhidos e registros ocultos por vencimento ficam no histórico.
+
+Em Registros, a ordem padrão usa a data de cadastro, do mais recente ao mais antigo. Também é possível inverter as datas ou ordenar pelo nome do produto de A–Z e Z–A. Lançamentos sem data ficam ao fim das ordenações por data. Os filtros por usuário que cadastrou, localização, tipo e status podem ser combinados com a busca. Ao trocar de filial, a tabela restaura a ordenação padrão e limpa os filtros anteriores.
+
+No celular, Administrador e Gerente autorizado abrem o painel em **Ajustes → Painel de gestão**. A visão geral usa os mesmos indicadores e a listagem é exibida em cartões. Em **Usuários → Perfis de acesso → Gerente**, o Administrador usa a permissão existente **Ver e exportar relatórios e acessar o painel de gestão no celular**. Ela é habilitada no perfil Gerente por padrão e pode ser revogada. A seleção de filiais e as ações de cada perfil continuam sujeitas às regras existentes do Supabase.
 
 ## Um escopo de dados para todo o painel
 

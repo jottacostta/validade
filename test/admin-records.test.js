@@ -200,8 +200,8 @@ test('stale de loja durante a resposta não é aplicado como sucesso para o novo
   assert.equal(deps.calls.length, 1);
 });
 
-test('paginação administrativa mantém limite de 100 por página', () => {
-  assert.equal(records.PAGE_SIZE, 100);
+test('paginação administrativa mantém limite de 25 por página', () => {
+  assert.equal(records.PAGE_SIZE, 25);
   assert.equal(records.normalizeType('perecivel'), 'Perecível');
   assert.equal(records.statusOf({ ...lote, recolhidoEm: '2026-11-12T00:00:00Z' }), 'recolhido');
   assert.equal(records.statusOf({ ...lote, ocultoPorVencimento: true }), 'oculto');
