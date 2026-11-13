@@ -1170,6 +1170,63 @@ tflaky('Meus Registros: ordem por cadastro, localização, paginação e caixa a
   } finally { await a.fechar(); }
 });
 
+for (const cenario of ['manual', 'automático', 'sem migration']) {
+  tflaky('Foto de produto no detalhe: '+cenario, { skip: pular }, async () => {
+    const ean='7891000315507', filial='FL05';
+    const revisao='10000000-0000-4000-8000-000000000005';
+    const fotoRemota='https://images.openfoodfacts.org/validade-teste.jpg';
+    const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aG9sAAAAASUVORK5CYII=', 'base64');
+    let foto=null;
+    const gravacoes=[];
+    const a=await abrirLogado(async p => {
+      await rotasPerm(p,'operador',[]);
+      await p.route('**/rest/v1/rpc/buscar_foto_catalogo',r=>r.fulfill({status:cenario==='sem migration'?404:200,json:foto}));
+      await p.route('**/rest/v1/rpc/salvar_foto_catalogo',r=>{
+        const payload=r.request().postDataJSON();
+        gravacoes.push(payload);
+        foto={img:payload.p_img,revisao};
+        return r.fulfill({status:200,json:revisao});
+      });
+      await p.route(/\/rest\/v1\/catalogo\?/,r=>r.fulfill({status:200,json:[{ean,nome:'Nome do catálogo',marca:'Marca original',img:''}]}));
+      await p.route(/https:\/\/world\.open(food|beauty|products)facts\.org\//,r=>r.fulfill({status:200,json:cenario==='automático'?{status:1,product:{image_front_small_url:fotoRemota}}:{status:0}}));
+      await p.route(fotoRemota,r=>r.fulfill({status:200,contentType:'image/png',body:png}));
+    }, {prod:{[ean]:{lotes:[lote('foto-lote','2099-01-01',1,'F01'),lote('outro-lote','2099-01-02',1,'F02')]}},cat:{[ean]:{nome:'Nome do catálogo'}}}, {papel:'operador',lojaId:filial});
+    try {
+      await a.p.click('nav button[data-v="prod"]');
+      await a.p.click('#listaProd .operator-record-main[data-detail-lote="foto-lote"]');
+      if(cenario==='sem migration'){
+        assert.equal(await a.p.isVisible('#detailPhoto'),false);
+        assert.equal(await a.p.isVisible('#detailContent'),true);
+        assert.equal(gravacoes.length,0);
+      }else{
+        if(cenario==='manual'){
+          await a.p.waitForSelector('#bFotoCamera',{state:'visible'});
+          assert.equal(await a.p.getAttribute('#produtoFotoCamera','capture'),'environment');
+          await a.p.setInputFiles('#produtoFotoGaleria',{name:'produto.png',mimeType:'image/png',buffer:png});
+          await a.p.waitForSelector('#photoPreview',{state:'visible'});
+          const src=await a.p.getAttribute('#photoPreviewImage','src');
+          assert.match(src,/^data:image\/jpeg;base64,/);
+          assert.ok(Buffer.from(src.split(',')[1],'base64').length<=102400);
+          await a.p.click('#bFotoSalvar');
+          await a.p.waitForFunction(()=>document.querySelector('#detailPhotoStatus').textContent==='Foto salva no catálogo.');
+        }
+        await a.p.waitForFunction(()=>document.querySelector('#detailThumb img')?.complete);
+        assert.equal(gravacoes.length,1);
+        assert.equal(gravacoes[0].p_ean,ean);
+        assert.equal(gravacoes[0].p_loja_id,filial);
+        assert.equal(gravacoes[0].p_revisao,null);
+        if(cenario==='automático')assert.equal(gravacoes[0].p_img,fotoRemota);
+        assert.equal(await a.p.isVisible('#bFotoCamera'),false);
+        assert.equal(await a.p.innerText('#detailProductName'),'NOME DO CATÁLOGO');
+        await a.p.click('#headerBack');
+        await a.p.waitForFunction(()=>document.querySelectorAll('#listaProd [data-foto-ean] img').length===2);
+        assert.ok(!(await a.p.evaluate(()=>localStorage.getItem('validade_dados')||'')).includes('data:image/jpeg'));
+      }
+      assert.deepEqual(a.erros,[]);
+    } finally {await a.fechar();}
+  });
+}
+
 tflaky('Cabeçalho: subtítulo próprio em cada tela interna; contador de alertas fica sobre o sino', { skip: pular }, async () => {
   const a = await abrir({ dados: { prod: { '7891000315507': { lotes: [lote('v', new Date(Date.now() - 86400000).toISOString().slice(0, 10), 1, 'L1')] } }, cat: {}, pere: { itens: {}, regs: [] } } });
   await a.p.click('nav button[data-v="prod"]');
