@@ -2166,7 +2166,7 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
     <h2>Perfis de acesso</h2>
     <p style="font-size:13px;color:var(--mu)">Defina o que cada perfil pode fazer. Vale para todos os usuários do perfil. O Administrador tem sempre acesso total.</p>
     <label class="f" for="permPapel">Perfil</label>
-    <select id="permPapel"><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option></select>
+    <select id="permPapel"><option value="operador">Operador</option><option value="promotor">Promotor</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option></select>
     <h3 class="perm-title">Permissões básicas</h3><div id="permBasicas"></div>
     <h3 class="perm-title">Permissões especiais</h3><p style="font-size:12px;color:var(--mu);margin:0 0 6px">Concedidas pelo Administrador quando necessário.</p><div id="permEspeciais"></div>
     <p id="permStatus" class="perm-status" aria-live="polite">Nenhuma alteração pendente.</p>
@@ -6228,7 +6228,7 @@ function carregarPermissoes(){if(!sbOn()||!logado())return Promise.resolve();
     var m={};r.dados.forEach(function(x){m[x.papel+'|'+x.permissao]=!!x.permitido;});SYNC.permissoes=m;salvarSync();atualizarInterfacePapel();},function(){});}
 /* As caixas ficam pendentes até o Administrador tocar em "Salvar permissões do perfil". */
 var permPapelAtual='operador',permPendentes={},permSalvando=false;
-var PAPEL_ROTULO={operador:'Operador',assistente:'Assistente',analista:'Analista',gerente:'Gerente'};
+var PAPEL_ROTULO={operador:'Operador',assistente:'Assistente',analista:'Analista',promotor:'Promotor',gerente:'Gerente'};
 function atualizarBarraPermissoes(msg){var n=Object.keys(permPendentes).length,b=$('bPermSalvar');if(!b)return;b.disabled=!n||permSalvando;
   $('permStatus').textContent=msg||(n?(n+(n===1?' alteração não salva':' alterações não salvas')):'Nenhuma alteração pendente.');
   $('permStatus').classList.toggle('pend',!!n);}
@@ -6256,7 +6256,7 @@ function salvarPermissoesPerfil(){var papel=permPapelAtual,ids=Object.keys(permP
 /* Hierarquia de promoção (mesma regra de supabase/functions/gerir-usuarios/hierarquia.ts):
    Administrador tudo; Gerente até Analista; Analista até Assistente; Assistente só cria Operador e Promotor; ambos são perfis operacionais. */
 var ORDEM_PAPEIS=Object.keys(PAPEIS),NIVEL_PAPEL={operador:1,promotor:1,assistente:2,analista:3,gerente:4,admin:5};
-var TETO_PAPEL={admin:5,gerente:3,analista:2,assistente:1,operador:0};
+var TETO_PAPEL={admin:5,gerente:3,analista:2,assistente:1,operador:0,promotor:0};
 function tetoPapelApp(){var p=papelAtual();if(p==='admin')return 5;if(p!=='assistente'&&!temPermissao('usuarios_gerenciar'))return 0;return TETO_PAPEL[p]||0;}
 function papeisAtribuiveisApp(){var t=tetoPapelApp();return ORDEM_PAPEIS.filter(function(x){return NIVEL_PAPEL[x]<=t;});}
 function podeAdministrarPapelApp(papelAlvo){return !!NIVEL_PAPEL[papelAlvo]&&NIVEL_PAPEL[papelAlvo]<=tetoPapelApp();}

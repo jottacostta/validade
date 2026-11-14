@@ -1954,7 +1954,7 @@ tflaky('Perfis de acesso: administrador configura Recolher por perfil e concede 
   await permsCarregadas(a.p);
   await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="usuarios"]');
   assert.strictEqual(await a.p.isVisible('#cardPerfisAcesso'), true);
-  assert.deepStrictEqual(await a.p.locator('#permPapel option').evaluateAll(o => o.map(x => x.value)), ['operador', 'assistente', 'analista', 'gerente']);
+  assert.deepStrictEqual(await a.p.locator('#permPapel option').evaluateAll(o => o.map(x => x.value)), ['operador', 'promotor', 'assistente', 'analista', 'gerente']);
   await a.p.selectOption('#permPapel', 'gerente');
   assert.ok(await a.p.locator('#permBasicas [data-perm]').count() >= 4);
   assert.ok(await a.p.locator('#permEspeciais [data-perm]').count() >= 6);
@@ -3636,5 +3636,23 @@ tflaky('Compartilhar da lista Produtos: sem filtro compartilha todos os produtos
   await a.p.click('#bShareProdDue');
   const texto = await a.p.inputValue('#shareProdText');
   assert.ok(texto.includes('PRODUTO A') && texto.includes('PRODUTO B'), 'sem filtro: inclui todos ativos ' + texto);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+
+/* Perfis de acesso: Promotor é um perfil próprio, configurável separadamente do Operador. */
+tflaky('Perfis de acesso: Promotor aparece como opção e grava com p_papel="promotor"', { skip: pular }, async () => {
+  const cap = [];
+  const a = await abrirLogado(p => rotasPerm(p, 'admin', [], cap), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin' });
+  await permsCarregadas(a.p);
+  await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="usuarios"]');
+  assert.ok((await a.p.locator('#permPapel option').evaluateAll(o => o.map(x => x.value))).includes('promotor'));
+  await a.p.selectOption('#permPapel', 'promotor');
+  assert.strictEqual(await a.p.isChecked('#permBasicas [data-perm="registrar"]'), true, 'Promotor herda os padrões do Operador');
+  assert.strictEqual(await a.p.isChecked('#permEspeciais [data-perm="nome_editar"]'), false);
+  await a.p.check('#permEspeciais [data-perm="nome_editar"]');
+  await a.p.click('#bPermSalvar');
+  await a.p.waitForFunction(() => /Permissões de Promotor salvas/.test(document.getElementById('permStatus').textContent));
+  assert.deepStrictEqual(cap, [{ p_papel: 'promotor', p_permissao: 'nome_editar', p_permitido: true }]);
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
