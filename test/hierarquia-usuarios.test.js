@@ -59,5 +59,5 @@ test('Edge Function e migration aplicam o mesmo teto da hierarquia', () => {
   assert.equal([...m.matchAll(/não encontrad[oa]s?'; end if;/g)].length, 2, 'falha inteira se a função mudou');
   const app = fs.readFileSync(path.join(__dirname, '../src/app.html'), 'utf8');
   assert.match(app, /function papeisAtribuiveisApp\(/);
-  assert.match(app, /var TETO_PAPEL=\{admin:5,gerente:3,analista:2,assistente:1,operador:0\}/);
+  assert.match(app, /var TETO_PAPEL=\{admin:5,gerente:3,analista:2,assistente:1,operador:0,promotor:0\}/);
 });
