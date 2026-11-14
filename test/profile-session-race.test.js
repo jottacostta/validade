@@ -112,6 +112,7 @@ function makeHarness(initial, { supabase = true, online = true } = {}) {
       setSession: function(s) { SESS = s; },
       logout: function() { SESS = null; papelConfirmado = false; papelConfirmadoUid = null; papelConfirmadoToken = null; },
       setOnline: function(v) { navigator.onLine = v; },
+      path: function(i) { return pending[i].path; },
       pendingCount: function() { return pending.length; },
       resolve: function(i, value) { pending[i].resolve(value); },
       reject: function(i, error) { pending[i].reject(error || new Error('network')); },
@@ -135,7 +136,7 @@ function makeHarness(initial, { supabase = true, online = true } = {}) {
 }
 
 function session(uid, token, papel = null, nome = undefined) {
-  return { uid, access_token: token, papel, nome, empresa: null, lojaId: 'loja-1', forcePasswordChange: false };
+  return { uid, access_token: token, papel, nome, empresa: null, setor: null, lojaId: 'loja-1', forcePasswordChange: false };
 }
 
 test('ignora resposta antiga ao trocar do usuário A para B enquanto o GET está pendente', async () => {
@@ -261,4 +262,30 @@ test('mantém o papel manual do modo sem Supabase', () => {
   assert.equal(h.api.role(), 'admin');
   assert.equal(h.api.can('admin'), true);
   assert.equal(h.api.desktop(), false, 'desktop administrativo continua dependente do backend');
+});
+
+test('confirma o próprio papel quando uma coluna nova ainda não existe', async () => {
+  const h = makeHarness(session('u-a', 'tok-a'));
+  const request = h.begin();
+  await h.flush();
+  h.api.resolve(0, { ok: false, status: 400, dados: { code: '42703' } });
+  await h.flush();
+  assert.equal(h.api.path(1), '/rest/v1/perfis?select=papel,nome&id=eq.u-a&limit=1');
+  h.api.resolve(1, { ok: true, dados: [{ papel: 'admin', nome: 'Admin' }] });
+  await request;
+  assert.equal(h.api.role(), 'admin');
+  assert.equal(h.api.getSession().setor, null);
+});
+
+test('setor acompanha apenas o perfil confirmado da conta atual', async () => {
+  const h = makeHarness(session('u-a', 'tok-a'));
+  const first = h.begin();
+  h.api.resolve(0, { ok: true, dados: [{ papel: 'admin', setor: 'Mercearia' }] });
+  await first;
+  assert.equal(h.api.getSession().setor, 'Mercearia');
+  h.api.setSession(session('u-b', 'tok-b'));
+  const second = h.begin();
+  h.api.resolve(1, { ok: true, dados: [{ papel: 'operador' }] });
+  await second;
+  assert.equal(h.api.getSession().setor, null);
 });

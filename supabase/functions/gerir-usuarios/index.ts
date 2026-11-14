@@ -25,11 +25,12 @@ const COMUNS = ["123456","1234567","12345678","123456789","senha","password","qw
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const temCampo = (obj, campo) => Object.prototype.hasOwnProperty.call(obj, campo);
 
+const setorInvalido = "Informe um setor válido com até 120 caracteres.";
 const empresaInvalida = "Informe o nome da empresa do promotor (até 120 caracteres).";
-function normalizarEmpresa(valor: unknown): string | null {
+function normalizarTextoPerfil(valor: unknown): string | null {
   if (typeof valor !== "string") return null;
-  const empresa = valor.trim();
-  return empresa && empresa.length <= 120 && !/[\u0000-\u001f\u007f]/.test(empresa) ? empresa : null;
+  const texto = valor.trim();
+  return texto.length <= 120 && !/[\u0000-\u001f\u007f]/.test(texto) ? texto : null;
 }
 
 const validarUsuario = (u: string) => /^[a-z0-9._-]{3,30}$/.test(u);
@@ -50,8 +51,10 @@ export function validarEdicaoBase(body) {
   if (nome !== null && (typeof nome !== "string" || !nome.trim() || nome.trim().length > 120 || /[\u0000-\u001f\u007f]/.test(nome))) {
     return { ok: false, error: "O nome deve ter entre 1 e 120 caracteres válidos." };
   }
-  const empresa = temCampo(body, "empresa") ? normalizarEmpresa(body.empresa) : null;
+  const empresa = temCampo(body, "empresa") ? normalizarTextoPerfil(body.empresa) || null : null;
   if (temCampo(body, "empresa") && empresa === null) return { ok: false, error: empresaInvalida };
+  const setor = temCampo(body, "setor") ? normalizarTextoPerfil(body.setor) : null;
+  if (temCampo(body, "setor") && setor === null) return { ok: false, error: setorInvalido };
   const papel = temCampo(body, "papel") ? body.papel : null;
   if (papel !== null && (typeof papel !== "string" || !PAPEIS.includes(papel))) {
     return { ok: false, error: "Papel inválido." };
@@ -77,7 +80,7 @@ export function validarEdicaoBase(body) {
   const exigirTroca = temCampo(body, "exigir_troca_senha") ? body.exigir_troca_senha : false;
   if (typeof exigirTroca !== "boolean") return { ok: false, error: "O indicador de troca de senha é inválido." };
   if (exigirTroca && senha === null) return { ok: false, error: "Exigir troca de senha requer uma nova senha." };
-  if (nome === null && papel === null && lojas === null && senha === null && empresa === null) {
+  if (nome === null && papel === null && lojas === null && senha === null && empresa === null && setor === null) {
     return { ok: false, error: "Informe ao menos uma alteração." };
   }
   return {
@@ -87,6 +90,7 @@ export function validarEdicaoBase(body) {
     papel,
     lojas,
     empresa,
+    setor,
     senha,
     exigirTroca,
   };
@@ -170,7 +174,7 @@ Deno.serve(async (req) => {
       if (!podeCriar) return json({ error: "Sem permissão" }, 403);
       const scopeResult = resolveListScope(body);
       if (!scopeResult.ok) return json({ error: scopeResult.error }, 400);
-      const { data: perfis, error: perfisErr } = await admin.from("perfis").select("id, nome, papel, empresa");
+      const { data: perfis, error: perfisErr } = await admin.from("perfis").select("id, nome, papel, empresa, setor");
       if (perfisErr) return json({ error: "Não foi possível consultar perfis." }, 500);
       const { data: lista, error: listaErr } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
       if (listaErr) return json({ error: "Não foi possível consultar usuários." }, 500);
@@ -206,8 +210,10 @@ Deno.serve(async (req) => {
       const e1 = validarSenha(senha, usuario); if (e1) return json({ error: e1 }, 400);
       if (!PAPEIS.includes(papel)) return json({ error: "Papel inválido." }, 400);
       if (!podeAtribuirPapel(papelCaller, gerenciaUsuarios, papel)) return json({ error: "Seu perfil não pode criar usuários com esse papel (Gerente até Analista; Analista até Assistente)." }, 403);
-      const empresa = papel === "promotor" ? normalizarEmpresa(body.empresa) : null;
+      const empresa = papel === "promotor" ? normalizarTextoPerfil(body.empresa) || null : null;
       if (papel === "promotor" && empresa === null) return json({ error: empresaInvalida }, 400);
+      const setor = temCampo(body, "setor") ? normalizarTextoPerfil(body.setor) : null;
+      if (temCampo(body, "setor") && setor === null) return json({ error: setorInvalido }, 400);
       const permit = await lojasPermitidas();
       lojas = [...new Set(lojas)];
       if (papelCaller === "assistente" && (permit.size !== 1 || lojas.length !== 1 || !permit.has(lojas[0]))) return json({ error: "Assistente só pode cadastrar usuários na sua única loja vinculada." }, 403);
@@ -220,7 +226,7 @@ Deno.serve(async (req) => {
         return json({ error: dup ? "Já existe um usuário com esse nome." : ("Não foi possível criar o usuário. " + (cerr?.message || "")) }, 400);
       }
       const uid = novo.user.id;
-      const { error: perfilErr } = await admin.from("perfis").upsert({ id: uid, nome, papel, ...(empresa !== null ? { empresa } : {}) }, { onConflict: "id" });
+      const { error: perfilErr } = await admin.from("perfis").upsert({ id: uid, nome, papel, ...(empresa !== null ? { empresa } : {}), setor: setor || null }, { onConflict: "id" });
       if (perfilErr) { await admin.auth.admin.deleteUser(uid); return json({ error: "Falha ao criar perfil." }, 500); }
       const { error: membroErr } = await admin.from("loja_membros").insert(lojas.map((lid) => ({ user_id: uid, loja_id: lid })));
       if (membroErr) { await admin.auth.admin.deleteUser(uid); return json({ error: "Falha ao vincular usuário às lojas." }, 500); }
@@ -328,6 +334,7 @@ Deno.serve(async (req) => {
         p_lojas: lojas,
         p_senha_solicitada: senha != null,
         p_empresa: empresa,
+        p_setor: edit.setor,
       });
       if (cadastroErr || !cadastro || cadastro.ok !== true) {
         return json({

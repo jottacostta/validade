@@ -25,7 +25,7 @@ before(async () => {
     create function private.meu_papel() returns text language sql stable security definer set search_path='' as $$select papel from public.perfis where id=auth.uid()$$;
     create function private.membro_da(loja uuid) returns boolean language sql stable security definer set search_path='' as $$select exists(select 1 from public.loja_membros where user_id=auth.uid() and loja_id=loja)$$;
     create function private.tem_escopo_global() returns boolean language sql stable security definer set search_path='' as $$select coalesce(private.meu_papel() in ('admin','gerente','analista'),false)$$;
-    create function private.tem_permissao(perm text) returns boolean language sql stable security definer set search_path='' as $$select private.meu_papel()='admin' or coalesce(nullif(current_setting('test.recolher',true),''),'true')::boolean$$;
+    create function private.tem_permissao(p_permissao text) returns boolean language sql stable security definer set search_path='' as $$select private.meu_papel()='admin' or coalesce(nullif(current_setting('test.recolher',true),''),'true')::boolean$$;
     create function public.marcar_registro_recolhido(text,uuid,uuid) returns jsonb language sql as $$select '{}'::jsonb$$;
     create function public.restaurar_registro_recolhido(text,uuid,uuid) returns jsonb language sql as $$select '{}'::jsonb$$;
     create function private.audit_failure_test() returns trigger language plpgsql as $$begin if current_setting('test.fail_audit',true)='true' then raise exception 'falha de auditoria simulada'; end if;return new;end$$;
@@ -170,4 +170,37 @@ test('PostgreSQL: authenticated não pode chamar RPC de edição de usuário pas
   await serviceRole();await db.exec('set role authenticated');
   try { await assert.rejects(editUser(ADMIN,'Nome Forjado',[S05]),/permission denied/); }
   finally { await db.exec('reset role'); }
+});
+
+test('PostgreSQL: setor é salvo, preservado em edições legadas e pode ser removido', async () => {
+  await serviceRole();
+  await db.exec(`
+    alter table public.perfis add constraint perfis_papel_check check (papel in ('operador','assistente','analista','gerente','admin'));
+    create policy perfis_upd on public.perfis for update to authenticated using (false);
+    create table public.papel_permissoes(papel text, permissao text, permitido boolean);
+    create function private.permissao_padrao(text,text) returns boolean language sql as $$select false$$;
+    create function private.usuario_no_escopo(uuid) returns boolean language sql as $$select false$$;
+    create function public.enviar_alerta_personalizado(text,text,uuid,text) returns boolean language sql as
+      $$select $4 in ('operador','assistente','analista','gerente','admin')$$;
+    create function public.salvar_foto_catalogo(text,uuid,text,uuid,text) returns boolean language sql as
+      $$select $5 in ('operador','assistente','analista','gerente','admin')$$;
+  `);
+  for (const migration of [
+    '20261112150000_hierarquia_promocao_usuarios',
+    '20261112160000_hierarquia_assistente_operador',
+    '20261114093337_perfil_promotor',
+    '20261114103700_setor_perfil',
+  ]) {
+    await db.exec(fs.readFileSync(path.join(__dirname, '../supabase/migrations', migration + '.sql'), 'utf8'));
+  }
+  const editarSetor = (setor) => db.query('select public.editar_usuario_atomico($1,$2,null,null,null,false,null,$3)', [ADMIN, TARGET, setor]);
+  const setorAtual = async () => (await db.query('select setor from public.perfis where id=$1', [TARGET])).rows[0].setor;
+  await editarSetor('  Mercearia  ');
+  assert.equal(await setorAtual(), 'Mercearia');
+  await editUser(ADMIN, 'Nome Atualizado', null);
+  assert.equal(await setorAtual(), 'Mercearia');
+  await assert.rejects(editarSetor('a'.repeat(121)), /perfis_setor_check/);
+  assert.equal(await setorAtual(), 'Mercearia');
+  await editarSetor('');
+  assert.equal(await setorAtual(), null);
 });

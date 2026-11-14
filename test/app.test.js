@@ -863,7 +863,7 @@ tflaky('Promotor vê a empresa em Meu Perfil e Conta e usa a área operacional',
   const a = await abrirLogado(async p => {
     await rotasBase(p, 'promotor');
     await p.route(R_PERFIL, r => r.fulfill({ status: 200, contentType: 'application/json',
-      body: JSON.stringify([{ papel: 'promotor', nome: 'Promotor Teste', empresa: 'Empresa Exemplo' }]) }));
+      body: JSON.stringify([{ papel: 'promotor', nome: 'Promotor Teste', empresa: 'Empresa Exemplo', setor: 'Mercearia' }]) }));
   });
   try {
     await a.p.waitForFunction(() => document.querySelector('#profileRole').textContent === 'Promotor');
@@ -872,6 +872,7 @@ tflaky('Promotor vê a empresa em Meu Perfil e Conta e usa a área operacional',
     await a.p.click('#sysMenu [data-sys-open="op-perfil"]');
     assert.equal(await a.p.isVisible('#profileCompanyRow'), true);
     assert.equal(await a.p.textContent('#profileCompany'), 'Empresa Exemplo');
+    assert.equal(await a.p.textContent('#profileSector'), 'Mercearia');
     assert.deepEqual(a.erros, []);
   } finally { await a.fechar(); }
 });
@@ -952,10 +953,12 @@ tflaky('gestão de usuários: assistente cadastra Operador e Promotor com valida
   assert.strictEqual(payloadCriar,null,'cadastro sem empresa não é enviado');
   assert.strictEqual(await a.p.locator('#uEmpresa').evaluate(el => el === document.activeElement),true);
   await a.p.fill('#uEmpresa','  Empresa Exemplo  ');
+  await a.p.fill('#uSetor','  Mercearia  ');
   await a.p.click('#bUsuarioCriar');
   await a.p.waitForFunction(()=>document.getElementById('uUsuario').value==='');
   assert.strictEqual(payloadCriar.papel,'promotor');
   assert.strictEqual(payloadCriar.empresa,'Empresa Exemplo');
+  assert.strictEqual(payloadCriar.setor,'Mercearia');
   assert.deepStrictEqual(payloadCriar.lojas,['L1']);
   assert.deepStrictEqual(a.erros,[]);
   await a.fechar();
@@ -979,12 +982,14 @@ tflaky('gestão de usuários: admin redefine a senha e pode exigir troca no pró
   await a.p.click('.uEdit');
   await a.p.waitForSelector('#modalEditarUsuario.on');
   await a.p.fill('#editarSenha','NovaSenha2026!');
+  await a.p.fill('#editarSetor','  Frente de Loja  ');
   await a.p.check('#editarExigirTroca');
   await a.p.click('#salvarEditarUsuario');
   await a.p.waitForFunction(()=>!document.getElementById('modalEditarUsuario').classList.contains('on'));
   assert.ok(payloadEditar,'enviou editar ao endpoint');
   assert.strictEqual(payloadEditar.id,'u2');
   assert.strictEqual(payloadEditar.senha,'NovaSenha2026!');
+  assert.strictEqual(payloadEditar.setor,'Frente de Loja');
   assert.strictEqual(payloadEditar.exigir_troca_senha,true);
   assert.deepStrictEqual(a.erros,[]);
   await a.fechar();

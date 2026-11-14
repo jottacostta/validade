@@ -73,6 +73,7 @@ export function buildScopedUserList(input) {
       id: perfil.id,
       nome: perfil.nome || "",
       papel: perfil.papel,
+      ...(perfil.setor ? { setor: perfil.setor } : {}),
       ...(perfil.papel === "promotor" ? { empresa: perfil.empresa } : {}),
       usuario: (emailPorId[perfil.id] || "").split("@")[0],
       // Keep every permitted membership so editing this user cannot erase
