@@ -165,17 +165,17 @@ test('Ajustes administrativos: menu de doze seções respeita a hierarquia dos p
   assert.deepEqual(entries.map(x => x[1]), ['painel','perfil','usuarios','lojas','catalogo','pereciveis','relatorios','auditoria','config','dados','alertas','sobre']);
   const access = Object.fromEntries(entries.map(x => [x[1], x[3].replace(/'/g, '').split(',')]));
   assert.deepEqual(access.painel, ['gerente','admin']);
-  assert.deepEqual(access.perfil, ['analista','gerente','admin']);
-  assert.deepEqual(access.usuarios, ['analista','gerente','admin']);
+  assert.deepEqual(access.perfil, ['assistente','analista','gerente','admin']);
+  assert.deepEqual(access.usuarios, ['assistente','analista','gerente','admin']);
   assert.deepEqual(access.lojas, ['admin']);
   assert.deepEqual(access.catalogo, ['admin']);
-  assert.deepEqual(access.pereciveis, ['analista','gerente','admin']);
+  assert.deepEqual(access.pereciveis, ['assistente','analista','gerente','admin']);
   assert.deepEqual(access.relatorios, ['analista','gerente','admin']);
   assert.deepEqual(access.auditoria, ['admin']);
-  assert.deepEqual(access.config, ['gerente','admin']);
+  assert.deepEqual(access.config, ['assistente','gerente','admin']);
   assert.deepEqual(access.dados, ['admin']);
-  assert.deepEqual(access.sobre, ['analista','gerente','admin']);
-  assert.match(html, /function podeVerMenuSistema\(\)\{return \['analista','gerente','admin'\]\.includes\(papelAtual\(\)\);\}/);
+  assert.deepEqual(access.sobre, ['assistente','analista','gerente','admin']);
+  assert.match(html, /function podeVerMenuSistema\(\)\{return \['assistente','analista','gerente','admin'\]\.includes\(papelAtual\(\)\);\}/);
   assert.match(html, /function abrirSecaoSistema\(key\)/);
 });
 
