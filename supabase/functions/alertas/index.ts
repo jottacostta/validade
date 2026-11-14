@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
+import { montarPushValidade } from "./validade-push.mjs";
 
 const cors = {
   "access-control-allow-origin": "*",
@@ -126,7 +127,7 @@ Deno.serve(async (req) => {
         await admin.rpc(rpc, { p_id: notification.id, p_ok: false, p_erro: "falha ao consultar subscriptions" });
         continue;
       }
-      const payload = JSON.stringify({ title: notification.titulo, body: notification.mensagem, data: notification.payload });
+      const payload = JSON.stringify(montarPushValidade(notification));
       let eventFailed = false;
       for (const sub of subscriptions ?? []) {
         try {

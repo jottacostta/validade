@@ -230,6 +230,8 @@ em `src/app.html`, dentro de `#preferencesArea`):
 
 ## 6. Diário (acrescente uma linha a cada mudança)
 
+- 14/11 — Codex — Push de validade próxima passa a exibir o nome resumido no título e a data em formato brasileiro. A publicação depende do deploy da Edge Function `alertas`.
+
 - 13/11 — Codex — Botão Recolher nos cartões de Alertas para lotes e perecíveis sincronizados. Reutiliza a autorização por perfil e a RPC existente. Validação em celular real pendente.
 
 - 10/11 — Claude — Catálogo do administrador implementado na branch `feat/catalogo-admin` (`3ac395c`); este documento criado.
