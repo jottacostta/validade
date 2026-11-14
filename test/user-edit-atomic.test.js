@@ -15,8 +15,9 @@ function loadPureValidator() {
     edge.match(/^const COMUNS = .*$/m)?.[0],
     edge.match(/^const UUID = .*$/m)?.[0],
     edge.match(/^const temCampo = .*$/m)?.[0],
+    edge.match(/^const setorInvalido = .*$/m)?.[0],
     edge.match(/^const empresaInvalida = .*$/m)?.[0],
-    edge.match(/^function normalizarEmpresa[\s\S]*?^}/m)?.[0].replace('valor: unknown): string | null', 'valor)'),
+    edge.match(/^function normalizarTextoPerfil[\s\S]*?^}/m)?.[0].replace('valor: unknown): string | null', 'valor)'),
   ];
   assert.ok(constants.every(Boolean), 'constantes do validador existem');
   const start = edge.indexOf('export function validarEdicaoBase');
@@ -45,6 +46,7 @@ test('validador puro aceita edição completa e preserva tipos fechados', () => 
     papel: 'assistente',
     lojas: [uuid(2), uuid(3)],
     empresa: null,
+    setor: null,
     senha: 'NovaSenha2026!',
     exigirTroca: true,
   });
@@ -53,6 +55,8 @@ test('validador puro aceita edição completa e preserva tipos fechados', () => 
 test('validador puro rejeita alvo, nome, papel, senha e lojas inválidos antes do RPC', () => {
   const validar = loadPureValidator();
   const cases = [
+    [{ id: uuid(1), setor: false }, /setor/i],
+    [{ id: uuid(1), setor: 'x'.repeat(121) }, /setor/i],
     [{ id: uuid(1), papel: 'promotor', empresa: '  ' }, /empresa/i],
     [{ id: uuid(1), papel: 'promotor', empresa: 'x'.repeat(121) }, /empresa/i],
     [{ id: 'u2', nome: 'Maria' }, /usuário.*inválido/i],
@@ -70,6 +74,14 @@ test('validador puro rejeita alvo, nome, papel, senha e lojas inválidos antes d
     assert.equal(result.ok, false, JSON.stringify(body));
     assert.match(result.error, expected, JSON.stringify(body));
   }
+});
+
+test('edição de setor diferencia omissão, preenchimento e remoção', () => {
+  const validar = loadPureValidator();
+  const id = uuid(1);
+  assert.equal(validar({ id, nome: 'Nome' }).setor, null);
+  assert.equal(validar({ id, setor: '  Mercearia  ' }).setor, 'Mercearia');
+  assert.equal(validar({ id, setor: '' }).setor, '');
 });
 
 test('Edge valida ator/alvo/escopo antes da RPC e nunca faz DELETE/INSERT de vínculos no ramo editar', () => {

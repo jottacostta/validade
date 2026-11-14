@@ -2180,6 +2180,7 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
       <label class="f" for="uNome">Nome completo</label><input id="uNome" autocomplete="name">
       <label class="f" for="uSenha">Senha inicial</label><input id="uSenha" type="password" autocomplete="new-password"><label style="display:flex;align-items:center;gap:9px;margin:8px 0 12px"><input id="uTrocaSenha" type="checkbox" style="width:18px;height:18px"> <span>Exigir troca de senha no primeiro acesso</span></label>
       <label class="f" for="uPapel">Papel</label><select id="uPapel"><option value="operador">Operador</option><option value="promotor">Promotor</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option><option value="admin">Administrador</option></select>
+      <label class="f" for="uSetor">Setor de Atuação (opcional)</label><input id="uSetor" maxlength="120">
       <div id="uEmpresaWrap" hidden><label class="f" for="uEmpresa">Empresa</label><input id="uEmpresa" autocomplete="organization" maxlength="120"></div>
       <div class="f">Lojas vinculadas</div><div id="uLojas" class="row" style="flex-wrap:wrap"></div>
       <button class="btn big" id="bUsuarioCriar" style="margin-top:12px">Criar usuário</button>
@@ -2222,6 +2223,7 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
     <label class="f" for="editarSenha">Redefinir senha (deixe em branco para manter)</label><input id="editarSenha" type="password" autocomplete="new-password">
     <label style="display:flex;align-items:center;gap:9px;margin:8px 0 12px"><input id="editarExigirTroca" type="checkbox" style="width:18px;height:18px"> <span>Exigir que o usuário troque a senha no próximo acesso</span></label>
     <div id="editarPapelWrap"><label class="f" for="editarPapel">Papel</label><select id="editarPapel"><option value="operador">Operador</option><option value="promotor">Promotor</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option><option value="admin">Administrador</option></select></div>
+    <label class="f" for="editarSetor">Setor de Atuação (opcional)</label><input id="editarSetor" maxlength="120">
     <div id="editarEmpresaWrap" hidden><label class="f" for="editarEmpresa">Empresa</label><input id="editarEmpresa" autocomplete="organization" maxlength="120"></div>
     <div id="editarLojasWrap"><div class="f">Lojas vinculadas</div><input id="editarLojasBusca" type="search" placeholder="Buscar loja"><div id="editarLojasAcoes"><button type="button" class="btn sec" id="editarMarcarVisiveis">Marcar lojas visíveis</button><button type="button" class="btn sec" id="editarDesmarcarVisiveis">Desmarcar visíveis</button></div><div id="editarLojasResumo"></div><div id="editarLojas"></div></div>
     <div class="row" style="margin-top:14px"><button class="btn sec" id="cancelarEditarUsuario">Cancelar</button><button class="btn" id="salvarEditarUsuario">Salvar alterações</button></div>
@@ -6113,19 +6115,23 @@ function carregarPapel(){if(!sbOn()||!logado())return Promise.resolve();
   var sessao=SESS,uid=String(sessao.uid||''),token=sessao.access_token,seq=++papelConsultaSeq;
   var atual=function(){return seq===papelConsultaSeq&&SESS===sessao&&String(SESS.uid||'')===uid&&SESS.access_token===token;};
   carregarPrefs();carregarRegrasAlertas();carregarPermissoes();
-  SESS.papel=null;SESS.empresa=null;papelConfirmado=false;papelConfirmadoUid=null;papelConfirmadoToken=null;papelCarregando=true;salvarSess();atualizarModoDesktopAdmin();
+  SESS.papel=null;SESS.empresa=null;SESS.setor=null;papelConfirmado=false;papelConfirmadoUid=null;papelConfirmadoToken=null;papelCarregando=true;salvarSess();atualizarModoDesktopAdmin();
   /* Filtra pelo próprio id: admin/analista/gerente enxergam vários perfis (RLS),
      então sem o filtro o limit=1 traria o papel de OUTRO usuário. */
-  var alvo='/rest/v1/perfis?select=papel,nome,empresa'+(uid?'&id=eq.'+encodeURIComponent(uid):'')+'&limit=1';
-  function concluir(papel,nome,confirmado,empresa){if(!atual())return false;SESS.papel=confirmado?papel:null;SESS.empresa=confirmado&&papel==='promotor'?empresa||null:null;if(confirmado&&nome!=null)SESS.nome=nome;
+  var alvo='/rest/v1/perfis?select=',filtro=(uid?'&id=eq.'+encodeURIComponent(uid):'')+'&limit=1';
+  function buscar(campos){return sbReq(alvo+campos+filtro);}
+  function concluir(papel,nome,confirmado,empresa,setor){if(!atual())return false;SESS.papel=confirmado?papel:null;SESS.empresa=confirmado&&papel==='promotor'?empresa||null:null;SESS.setor=confirmado?setor||null:null;if(confirmado&&nome!=null)SESS.nome=nome;
     papelCarregando=false;papelConfirmado=!!confirmado;papelConfirmadoUid=confirmado?uid:null;papelConfirmadoToken=confirmado?token:null;salvarSess();atualizarInterfacePapel();return true;}
   function falhar(){if(!atual())return null;var c=papelCachePorUid[uid],offline=typeof navigator!=='undefined'&&navigator.onLine===false;
-    if(offline&&uid&&c&&ORDEM_PAPEIS.includes(c.papel)){concluir(c.papel,c.nome,true,c.empresa);return c;}concluir(null,null,false);return null;}
-  var requisicao;try{requisicao=sbReq(alvo);}catch(e){return Promise.reject(e).catch(function(){return falhar();});}
-  return Promise.resolve(requisicao).then(function(r){if(!atual())return null;var d=r&&r.ok&&Array.isArray(r.dados)&&r.dados[0],valido=!!(uid&&d&&ORDEM_PAPEIS.includes(d.papel));
+    if(offline&&uid&&c&&ORDEM_PAPEIS.includes(c.papel)){concluir(c.papel,c.nome,true,c.empresa,c.setor);return c;}concluir(null,null,false);return null;}
+  var requisicao;try{requisicao=buscar('papel,nome,empresa,setor');}catch(e){return Promise.reject(e).catch(function(){return falhar();});}
+  return Promise.resolve(requisicao).then(function(r){
+    if(atual()&&r&&!r.ok&&r.dados&&r.dados.code==='42703')return buscar('papel,nome');
+    return r;
+  }).then(function(r){if(!atual())return null;var d=r&&r.ok&&Array.isArray(r.dados)&&r.dados[0],valido=!!(uid&&d&&ORDEM_PAPEIS.includes(d.papel));
     if(!valido){concluir(null,null,false);return null;}
-    papelCachePorUid[uid]={papel:d.papel,nome:d.nome==null?'':d.nome,empresa:d.papel==='promotor'?d.empresa||null:null};try{localStorage.setItem('perfil_papel_cache',JSON.stringify(papelCachePorUid));}catch(e){}
-    concluir(d.papel,d.nome,true,d.empresa);return d;},function(){return falhar();});}
+    papelCachePorUid[uid]={papel:d.papel,nome:d.nome==null?'':d.nome,empresa:d.papel==='promotor'?d.empresa||null:null,setor:d.setor||null};try{localStorage.setItem('perfil_papel_cache',JSON.stringify(papelCachePorUid));}catch(e){}
+    concluir(d.papel,d.nome,true,d.empresa,d.setor);return d;},function(){return falhar();});}
 function atualizarInterfacePapel(){
   atualizarModoDesktopAdmin();aplicarPapel();atualizarSubtituloCabecalho();atualizarBotaoLogout();atualizarContextoLoja();
   if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();
@@ -6197,7 +6203,7 @@ function renderPerfilOperador(){
   var promotor=logado()&&papelAtual()==='promotor';
   $('profileCompanyRow').style.display=promotor?'':'none';
   $('profileCompany').textContent=promotor&&SESS.empresa||'—';
-  if($('profileSector'))$('profileSector').textContent=SESS&&(SESS.setor||SESS.setorNome)||'Não informado';
+  if($('profileSector'))$('profileSector').textContent=SESS&&SESS.setor||'Não informado';
   if($('profileDevice'))$('profileDevice').textContent=plataforma();
   if($('profileStatus'))$('profileStatus').textContent=logado()?(SESS.papel?papel+' Ativo':papel):'Modo local';
 }
@@ -6428,8 +6434,9 @@ function iniciarGestaoUsuarios(){
     if(!/^[a-z0-9._-]{3,30}$/.test(usuario)){toast('Login: 3–30 caracteres minúsculos, números, . _ -');return;}
     if(!nome){toast('Informe o nome completo.');return;}var err=strongPass(senha,usuario);if(err){toast(err);return;}if(!lojas.length){toast('Selecione ao menos uma loja.');return;}
     var payload={acao:'criar',usuario:usuario,nome:nome,senha:senha,papel:papel,lojas:lojas,exigir_troca_senha:$('uTrocaSenha').checked};
+    var setor=$('uSetor').value.trim();if(setor)payload.setor=setor;
     if(papel==='promotor'){payload.empresa=lerEmpresa('uEmpresa');if(!payload.empresa)return;}
-    $('bUsuarioCriar').disabled=true;callGestao(payload).then(function(){toast('Usuário criado.');$('uEmpresa').value='';$('uUsuario').value='';$('uNome').value='';$('uSenha').value='';$('uTrocaSenha').checked=false;carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('bUsuarioCriar').disabled=false;});}
+    $('bUsuarioCriar').disabled=true;callGestao(payload).then(function(){toast('Usuário criado.');$('uEmpresa').value='';$('uSetor').value='';$('uUsuario').value='';$('uNome').value='';$('uSenha').value='';$('uTrocaSenha').checked=false;carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('bUsuarioCriar').disabled=false;});}
   var usuarioEditando=null,lojasSelecionadasEdicao=[],usuarioEdicaoEscopo=null;
   function atualizarResumoLojas(){var marcadas=lojasSelecionadasEdicao.length,total=cache.lojas.length;$('editarLojasResumo').textContent=marcadas+' loja(s) selecionada(s) de '+total+' disponíveis';}
   function renderLojasEdicao(){var busca=$('editarLojasBusca').value.trim().toLowerCase(),visiveis=cache.lojas.filter(function(l){return String(l.nome||'').toLowerCase().includes(busca);});
@@ -6438,7 +6445,7 @@ function iniciarGestaoUsuarios(){
   function editar(id){var u=cache.users.find(function(x){return x.id===id;});if(!u)return;usuarioEditando=u;usuarioEdicaoEscopo=adminScopeAtual();
     var admin=p==='admin';
     $('editarNome').value=u.nome||'';$('editarSenha').value='';$('editarExigirTroca').checked=false;$('editarPapel').value=u.papel||'operador';$('editarLojasBusca').value='';
-    $('editarEmpresa').value=u.empresa||'';mostrarEmpresa('editarEmpresa',u.papel);
+    $('editarSetor').value=u.setor||'';$('editarEmpresa').value=u.empresa||'';mostrarEmpresa('editarEmpresa',u.papel);
     lojasSelecionadasEdicao=(u.lojas||[]).map(function(l){return l.id;});
     var podeAlterarPapelLoja=['admin','analista','gerente'].includes(p);
     $('editarPapelWrap').style.display=podeAlterarPapelLoja?'':'none';$('editarLojasWrap').style.display=podeAlterarPapelLoja?'':'none';
@@ -6450,11 +6457,12 @@ function iniciarGestaoUsuarios(){
   $('editarDesmarcarVisiveis').onclick=function(){var q=$('editarLojasBusca').value.trim().toLowerCase();lojasSelecionadasEdicao=lojasSelecionadasEdicao.filter(function(id){var l=cache.lojas.find(function(x){return x.id===id;});return l&&!String(l.nome||'').toLowerCase().includes(q);});renderLojasEdicao();};
   function fecharEdicao(){usuarioEditando=null;$('modalEditarUsuario').classList.remove('on');}
   function salvarEdicao(){if(!usuarioEditando)return;if(usuarioEdicaoEscopo!==adminScopeAtual()){fecharEdicao();toast('O escopo mudou. Abra o cadastro novamente.');return;}var nome=$('editarNome').value.trim(),senha=$('editarSenha').value,payload={acao:'editar',id:usuarioEditando.id,nome:nome};
+    var setor=$('editarSetor').value.trim();if(setor!==(usuarioEditando.setor||''))payload.setor=setor;
     if(!nome){toast('Informe o nome completo.');$('editarNome').focus();return;}
     if(senha){var er=strongPass(senha,usuarioEditando.usuario);if(er){toast(er);return;}payload.senha=senha;payload.exigir_troca_senha=$('editarExigirTroca').checked;}
     if(['admin','analista','gerente'].includes(p)){var papel=$('editarPapel').value;if(!ORDEM_PAPEIS.includes(papel)){toast('Papel inválido.');return;}payload.papel=papel;payload.lojas=lojasSelecionadasEdicao.slice();if(!payload.lojas.length){toast('Selecione pelo menos uma loja.');return;}}
     if((payload.papel||usuarioEditando.papel)==='promotor'){payload.empresa=lerEmpresa('editarEmpresa');if(!payload.empresa)return;}
-    $('salvarEditarUsuario').disabled=true;callGestao(payload).then(function(r){toast(r&&r.aviso?r.aviso:'Cadastro atualizado.');fecharEdicao();carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('salvarEditarUsuario').disabled=false;});}
+    $('salvarEditarUsuario').disabled=true;callGestao(payload).then(function(r){toast(r&&r.aviso?r.aviso:'Cadastro atualizado.');var proprio=usuarioEditando&&SESS&&usuarioEditando.id===SESS.uid;fecharEdicao();if(proprio)carregarPapel();else carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('salvarEditarUsuario').disabled=false;});}
   $('cancelarEditarUsuario').onclick=fecharEdicao;$('salvarEditarUsuario').onclick=salvarEdicao;
   $('modalEditarUsuario').addEventListener('click',function(e){if(e.target===this)fecharEdicao();});
   function excluir(id){var u=cache.users.find(function(x){return x.id===id;});if(!u||!confirm('Excluir definitivamente o usuário '+u.usuario+'? Esta ação não pode ser desfeita.'))return;callGestao({acao:'excluir',id:id}).then(function(){toast('Usuário excluído.');carregar();}).catch(function(e){toast(e.message);});}
