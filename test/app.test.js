@@ -859,6 +859,23 @@ tflaky('papel operador: Registrar visível; códigos (cadastro) escondido', { sk
   await a.fechar();
 });
 
+tflaky('Promotor vê a empresa em Meu Perfil e Conta e usa a área operacional', { skip: pular }, async () => {
+  const a = await abrirLogado(async p => {
+    await rotasBase(p, 'promotor');
+    await p.route(R_PERFIL, r => r.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify([{ papel: 'promotor', nome: 'Promotor Teste', empresa: 'Empresa Exemplo' }]) }));
+  });
+  try {
+    await a.p.waitForFunction(() => document.querySelector('#profileRole').textContent === 'Promotor');
+    assert.equal(await a.p.isVisible('#homeRegister'), true);
+    await a.p.click('nav button[data-v="aj"]');
+    await a.p.click('#sysMenu [data-sys-open="op-perfil"]');
+    assert.equal(await a.p.isVisible('#profileCompanyRow'), true);
+    assert.equal(await a.p.textContent('#profileCompany'), 'Empresa Exemplo');
+    assert.deepEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
 tflaky('papel: carregarPapel busca o PRÓPRIO perfil (filtra por id), não o de outro usuário', { skip: pular }, async () => {
   // admin/analista/gerente enxergam vários perfis via RLS; sem filtro por id o
   // limit=1 pegaria o papel de outra pessoa. A rota devolve o papel conforme o id pedido.
@@ -898,7 +915,7 @@ tflaky('papel admin remoto substitui sessão antiga de Operador e restaura a cen
   await a.fechar();
 });
 
-tflaky('gestão de usuários: assistente visualiza card, cria operador e envia payload ao endpoint', { skip: pular }, async () => {
+tflaky('gestão de usuários: assistente cadastra Operador e Promotor com validação de empresa', { skip: pular }, async () => {
   let payloadCriar=null;
   const a=await abrirLogado(async p=>{
     await rotasBase(p,'assistente');
@@ -912,7 +929,8 @@ tflaky('gestão de usuários: assistente visualiza card, cria operador e envia p
   await a.p.waitForFunction(()=>document.getElementById('cardUsuarios').style.display!=='none');
   await a.p.click('nav button[data-v="aj"]');
   assert.strictEqual(await a.p.isVisible('#cardUsuarios'),true);
-  assert.strictEqual(await a.p.isDisabled('#uPapel'),true);
+  assert.strictEqual(await a.p.isDisabled('#uPapel'),false);
+  assert.strictEqual(await a.p.isVisible('#uEmpresa'),false);
   await a.p.fill('#uUsuario','operador.novo');
   await a.p.fill('#uNome','Operador Novo');
   await a.p.fill('#uSenha','Guanabara2026!');
@@ -921,6 +939,23 @@ tflaky('gestão de usuários: assistente visualiza card, cria operador e envia p
   await a.p.waitForFunction(()=>document.getElementById('uUsuario').value==='');
   assert.strictEqual(payloadCriar.usuario,'operador.novo');
   assert.strictEqual(payloadCriar.papel,'operador');
+  assert.strictEqual(Object.hasOwn(payloadCriar,'empresa'),false);
+  payloadCriar=null;
+  await a.p.selectOption('#uPapel','promotor');
+  assert.strictEqual(await a.p.isVisible('#uEmpresa'),true);
+  assert.strictEqual(await a.p.getAttribute('#uEmpresa','required'),'');
+  await a.p.fill('#uUsuario','promotor.novo');
+  await a.p.fill('#uNome','Promotor Novo');
+  await a.p.fill('#uSenha','Guanabara2026!');
+  await a.p.check('#uLojas input[value="L1"]');
+  await a.p.click('#bUsuarioCriar');
+  assert.strictEqual(payloadCriar,null,'cadastro sem empresa não é enviado');
+  assert.strictEqual(await a.p.locator('#uEmpresa').evaluate(el => el === document.activeElement),true);
+  await a.p.fill('#uEmpresa','  Empresa Exemplo  ');
+  await a.p.click('#bUsuarioCriar');
+  await a.p.waitForFunction(()=>document.getElementById('uUsuario').value==='');
+  assert.strictEqual(payloadCriar.papel,'promotor');
+  assert.strictEqual(payloadCriar.empresa,'Empresa Exemplo');
   assert.deepStrictEqual(payloadCriar.lojas,['L1']);
   assert.deepStrictEqual(a.erros,[]);
   await a.fechar();
@@ -3465,7 +3500,7 @@ tflaky('Central desktop: troca de filial invalida e fecha a edição antes de qu
 });
 
 /* Hierarquia de promoção: Gerente até Analista; Analista até Assistente. */
-for (const [papel, liberados, editaveis] of [['gerente', ['operador', 'assistente', 'analista'], ['u-op', 'u-an']], ['analista', ['operador', 'assistente'], ['u-op']]])
+for (const [papel, liberados, editaveis] of [['gerente', ['operador', 'promotor', 'assistente', 'analista'], ['u-op', 'u-an']], ['analista', ['operador', 'promotor', 'assistente'], ['u-op']]])
 tflaky('Editar usuário: ' + papel + ' promove até ' + liberados[liberados.length - 1] + ' e não edita quem está acima', { skip: pular }, async () => {
   const a = await abrirLogado(async p => { await rotasPerm(p, papel, []);
     await p.route(/\/functions\/v1\/gerir-usuarios/, r => { let b = {}; try { b = r.request().postDataJSON(); } catch (e) {}

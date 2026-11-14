@@ -14,12 +14,13 @@ function carregar() {
 
 test('hierarquia de promoção: gerente até analista, analista até assistente, admin tudo', () => {
   const h = carregar();
-  assert.deepEqual(h.papeisAtribuiveis('admin', true), ['operador', 'assistente', 'analista', 'gerente', 'admin']);
-  assert.deepEqual(h.papeisAtribuiveis('gerente', true), ['operador', 'assistente', 'analista']);
-  assert.deepEqual(h.papeisAtribuiveis('analista', true), ['operador', 'assistente']);
-  assert.deepEqual(h.papeisAtribuiveis('assistente', true), ['operador'], 'assistente não promove: só cria operador');
-  assert.deepEqual(h.papeisAtribuiveis('assistente', false), ['operador']);
+  assert.deepEqual(h.papeisAtribuiveis('admin', true), ['operador', 'promotor', 'assistente', 'analista', 'gerente', 'admin']);
+  assert.deepEqual(h.papeisAtribuiveis('gerente', true), ['operador', 'promotor', 'assistente', 'analista']);
+  assert.deepEqual(h.papeisAtribuiveis('analista', true), ['operador', 'promotor', 'assistente']);
+  assert.deepEqual(h.papeisAtribuiveis('assistente', true), ['operador', 'promotor'], 'assistente só cadastra perfis operacionais');
+  assert.deepEqual(h.papeisAtribuiveis('assistente', false), ['operador', 'promotor']);
   assert.deepEqual(h.papeisAtribuiveis('operador', true), [], 'operador só executa o operacional, mesmo com a permissão marcada');
+  assert.deepEqual(h.papeisAtribuiveis('promotor', true), []);
   assert.deepEqual(h.papeisAtribuiveis('gerente', false), [], 'sem a permissão de gerenciar usuários não atribui papel');
   assert.equal(h.podeAtribuirPapel('gerente', true, 'analista'), true);
   assert.equal(h.podeAtribuirPapel('gerente', true, 'gerente'), false);

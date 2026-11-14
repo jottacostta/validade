@@ -91,7 +91,8 @@ function makeHarness(initial, { supabase = true, online = true } = {}) {
   };
   const source = `
     var SESS = ${JSON.stringify(initial)};
-    var PAPEIS = { operador: 'Operador', assistente: 'Assistente', analista: 'Analista', gerente: 'Gerente', admin: 'Administrador' };
+    var PAPEIS = { operador: 'Operador', promotor: 'Promotor', assistente: 'Assistente', analista: 'Analista', gerente: 'Gerente', admin: 'Administrador' };
+    var ORDEM_PAPEIS = Object.keys(PAPEIS);
     var uiUpdates = 0, modeUpdates = 0, saved = null;
     function sbOn() { return ${supabase ? 'true' : 'false'}; }
     function logado() { return !!(SESS && SESS.access_token); }
@@ -134,7 +135,7 @@ function makeHarness(initial, { supabase = true, online = true } = {}) {
 }
 
 function session(uid, token, papel = null, nome = undefined) {
-  return { uid, access_token: token, papel, nome, lojaId: 'loja-1', forcePasswordChange: false };
+  return { uid, access_token: token, papel, nome, empresa: null, lojaId: 'loja-1', forcePasswordChange: false };
 }
 
 test('ignora resposta antiga ao trocar do usuário A para B enquanto o GET está pendente', async () => {

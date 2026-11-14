@@ -2066,7 +2066,7 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
     <label class="f" for="apTitulo">Título</label><input id="apTitulo" maxlength="80" autocomplete="off" placeholder="Ex.: Inventário amanhã">
     <label class="f" for="apMensagem">Mensagem</label><textarea id="apMensagem" maxlength="500" rows="3" placeholder="Escreva o aviso para a equipe"></textarea>
     <div class="row"><div><label class="f" for="apLoja">Loja</label><select id="apLoja"><option value="">Todas as lojas</option></select></div>
-      <div><label class="f" for="apPapel">Perfil</label><select id="apPapel"><option value="">Todos os perfis</option><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option><option value="admin">Administrador</option></select></div></div>
+      <div><label class="f" for="apPapel">Perfil</label><select id="apPapel"><option value="">Todos os perfis</option><option value="operador">Operador</option><option value="promotor">Promotor</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option><option value="admin">Administrador</option></select></div></div>
     <p id="apStatus" class="perm-status" aria-live="polite"></p>
     <button class="btn" id="bApEnviar" type="button">Enviar alerta</button>
   </div>
@@ -2128,7 +2128,7 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
   </div>
   <div id="profileArea" style="display:none">
     <div class="card profile-head" id="operatorProfileCard"><span class="profile-avatar" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/></svg></span><div class="profile-id"><strong id="profileName">Operador</strong><span id="profileLogin">—</span><span class="chip ok" id="profileStatus">Sessão ativa</span></div></div>
-    <div class="card sys-card"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5V20h16v-9.5M3 6.5 4.5 4h15L21 6.5V8a2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0A2.2 2.2 0 0 1 3 8zM9.5 20v-5h5v5"/></svg>Dados Operacionais</h3><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5V20h16v-9.5M3 6.5 4.5 4h15L21 6.5V8a2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0A2.2 2.2 0 0 1 3 8zM9.5 20v-5h5v5"/></svg><span>Loja / Filial</span><b id="profileStore">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/></svg><span>Função</span><b id="profileRole">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4 8.5 4.2L12 12.4 3.5 8.2zM3.5 12.2 12 16.4l8.5-4.2M3.5 16.2 12 20.4l8.5-4.2"/></svg><span>Setor de Atuação</span><b id="profileSector">—</b></div></div>
+    <div class="card sys-card"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5V20h16v-9.5M3 6.5 4.5 4h15L21 6.5V8a2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0A2.2 2.2 0 0 1 3 8zM9.5 20v-5h5v5"/></svg>Dados Operacionais</h3><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5V20h16v-9.5M3 6.5 4.5 4h15L21 6.5V8a2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0 2.2 2.2 0 0 1-4.5 0A2.2 2.2 0 0 1 3 8zM9.5 20v-5h5v5"/></svg><span>Loja / Filial</span><b id="profileStore">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/></svg><span>Função</span><b id="profileRole">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4 8.5 4.2L12 12.4 3.5 8.2zM3.5 12.2 12 16.4l8.5-4.2M3.5 16.2 12 20.4l8.5-4.2"/></svg><span>Setor de Atuação</span><b id="profileSector">—</b></div><div class="sys-row" id="profileCompanyRow" style="display:none"><span>Empresa</span><b id="profileCompany">—</b></div></div>
     <div class="card sys-card" id="profileSecurity"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 5.8v5.7c0 4.3 2.9 7.6 7 9 4.1-1.4 7-4.7 7-9V5.8zM9 12l2.2 2.2L15.2 10"/></svg>Conta e Segurança</h3><button class="opt-row" id="profilePassword" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2"/></svg><span><b>Alterar Senha</b><small>Troque sua senha de acesso</small></span><svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button><button class="opt-row" id="profileSessions" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m11 12 8.5-8.5M16 6.5l2.5 2.5M13.5 9l2 2"/></svg><span><b>Gerenciar Sessões</b><small>Sair de todos os aparelhos</small></span><svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
     <div class="card sys-card"><h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Atividade da Conta</h3><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9"/></svg><span>Último Acesso</span><b id="profileLastAccess">—</b></div><div class="sys-row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></svg><span>Dispositivo</span><b id="profileDevice">—</b></div></div>
     <button class="btn perigo profile-logout" id="profileLogout" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9"/></svg><span>Sair da Conta</span></button>
@@ -2179,7 +2179,8 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
       <label class="f" for="uUsuario">Usuário (login)</label><input id="uUsuario" autocomplete="off" autocapitalize="none" placeholder="ex.: joao.silva">
       <label class="f" for="uNome">Nome completo</label><input id="uNome" autocomplete="name">
       <label class="f" for="uSenha">Senha inicial</label><input id="uSenha" type="password" autocomplete="new-password"><label style="display:flex;align-items:center;gap:9px;margin:8px 0 12px"><input id="uTrocaSenha" type="checkbox" style="width:18px;height:18px"> <span>Exigir troca de senha no primeiro acesso</span></label>
-      <label class="f" for="uPapel">Papel</label><select id="uPapel"><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option><option value="admin">Administrador</option></select>
+      <label class="f" for="uPapel">Papel</label><select id="uPapel"><option value="operador">Operador</option><option value="promotor">Promotor</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option><option value="admin">Administrador</option></select>
+      <div id="uEmpresaWrap" hidden><label class="f" for="uEmpresa">Empresa</label><input id="uEmpresa" autocomplete="organization" maxlength="120"></div>
       <div class="f">Lojas vinculadas</div><div id="uLojas" class="row" style="flex-wrap:wrap"></div>
       <button class="btn big" id="bUsuarioCriar" style="margin-top:12px">Criar usuário</button>
     </div>
@@ -2220,7 +2221,8 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
     <label class="f" for="editarNome">Nome completo</label><input id="editarNome" autocomplete="name">
     <label class="f" for="editarSenha">Redefinir senha (deixe em branco para manter)</label><input id="editarSenha" type="password" autocomplete="new-password">
     <label style="display:flex;align-items:center;gap:9px;margin:8px 0 12px"><input id="editarExigirTroca" type="checkbox" style="width:18px;height:18px"> <span>Exigir que o usuário troque a senha no próximo acesso</span></label>
-    <div id="editarPapelWrap"><label class="f" for="editarPapel">Papel</label><select id="editarPapel"><option value="operador">Operador</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option><option value="admin">Administrador</option></select></div>
+    <div id="editarPapelWrap"><label class="f" for="editarPapel">Papel</label><select id="editarPapel"><option value="operador">Operador</option><option value="promotor">Promotor</option><option value="assistente">Assistente</option><option value="analista">Analista</option><option value="gerente">Gerente</option><option value="admin">Administrador</option></select></div>
+    <div id="editarEmpresaWrap" hidden><label class="f" for="editarEmpresa">Empresa</label><input id="editarEmpresa" autocomplete="organization" maxlength="120"></div>
     <div id="editarLojasWrap"><div class="f">Lojas vinculadas</div><input id="editarLojasBusca" type="search" placeholder="Buscar loja"><div id="editarLojasAcoes"><button type="button" class="btn sec" id="editarMarcarVisiveis">Marcar lojas visíveis</button><button type="button" class="btn sec" id="editarDesmarcarVisiveis">Desmarcar visíveis</button></div><div id="editarLojasResumo"></div><div id="editarLojas"></div></div>
     <div class="row" style="margin-top:14px"><button class="btn sec" id="cancelarEditarUsuario">Cancelar</button><button class="btn" id="salvarEditarUsuario">Salvar alterações</button></div>
   </div>
@@ -2543,21 +2545,23 @@ var SYS_SECOES=[
  {id:'sobre',titulo:'Sobre o Sistema',sub:'Versão, ambiente, documentação e suporte',roles:['analista','gerente','admin'],icon:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v.2"/>'}
 ];
 var OPERADOR_SECOES=[
- {id:'op-perfil',titulo:'Meu Perfil e Conta',sub:'Dados da loja, segurança e acesso',roles:['operador'],icon:'<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/>'},
- {id:'op-preferencias',titulo:'Preferências',sub:'Som, etiqueta e busca de produtos',roles:['operador'],icon:'<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="18" r="2"/>'},
- {id:'op-alertas',titulo:'Alertas e Notificações',sub:'Avisos de validade, push e agenda',roles:['operador'],icon:'<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20h4"/>'},
- {id:'op-sobre',titulo:'Ajuda e Sobre',sub:'Versão e informações do aplicativo',roles:['operador'],icon:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v.2"/>'}
+ {id:'op-perfil',titulo:'Meu Perfil e Conta',sub:'Dados da loja, segurança e acesso',roles:['operador','promotor'],icon:'<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/>'},
+ {id:'op-preferencias',titulo:'Preferências',sub:'Som, etiqueta e busca de produtos',roles:['operador','promotor'],icon:'<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="18" r="2"/>'},
+ {id:'op-alertas',titulo:'Alertas e Notificações',sub:'Avisos de validade, push e agenda',roles:['operador','promotor'],icon:'<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20h4"/>'},
+ {id:'op-sobre',titulo:'Ajuda e Sobre',sub:'Versão e informações do aplicativo',roles:['operador','promotor'],icon:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v.2"/>'}
 ];
 function podeVerMenuSistema(){return ['analista','gerente','admin'].includes(papelAtual());}
-function podeVerMenuOperador(){return papelAtual()==='operador';}
+function papelOperacional(papel){return papel==='operador'||papel==='promotor';}
+function podeVerMenuOperador(){return papelOperacional(papelAtual());}
+function tituloAjustesOperacional(){return papelAtual()==='promotor'?'Ajustes do Promotor':'Ajustes do Operador';}
 function podeVerMenuAjustes(){return podeVerMenuSistema()||podeVerMenuOperador();}
 /* Seções ligadas a uma permissão aparecem para qualquer perfil que a tenha; as demais seguem `roles`. */
 var SECAO_PERMISSAO={usuarios:'usuarios_gerenciar',lojas:'lojas_gerenciar',catalogo:'catalogo_gerenciar',relatorios:'relatorios',auditoria:'auditoria_ver',dados:'dados_manutencao'};
-function secaoPermitida(item){if(!item)return false;if(item.id==='painel')return !adminDesktopAtivo()&&podeAbrirPainelMobile();var perm=SECAO_PERMISSAO[item.id];return perm?temPermissao(perm):item.roles.includes(papelAtual());}
+function secaoPermitida(item){if(!item)return false;if(item.id==='painel')return !adminDesktopAtivo()&&podeAbrirPainelMobile();if(item.id==='usuarios'&&papelOperacional(papelAtual()))return false;var perm=SECAO_PERMISSAO[item.id];return perm?temPermissao(perm):item.roles.includes(papelAtual());}
 function secoesMenuAjustes(){if(!podeVerMenuOperador())return SYS_SECOES;
   var extras=SYS_SECOES.filter(function(x){return SECAO_PERMISSAO[x.id];}),i=OPERADOR_SECOES.length-2;
   return OPERADOR_SECOES.slice(0,i).concat(extras,OPERADOR_SECOES.slice(i));}
-function renderMenuAjustes(){var menu=$('sysMenu');if(!menu)return;var p=papelAtual(),operador=podeVerMenuOperador();$('sysMenuTitle').textContent=operador?'Ajustes do Operador':'Ajustes do Sistema';$('sysMenuSubtitle').textContent=operador?'Preferências pessoais, conta e informações do aplicativo':'Configurações, acessos e manutenção';menu.innerHTML=secoesMenuAjustes().filter(secaoPermitida).map(function(s){return '<button class="sys-menu-item" type="button" data-sys-open="'+s.id+'"><span class="sys-menu-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">'+s.icon+'</svg></span><span class="sys-menu-copy"><b>'+s.titulo+'</b><small>'+s.sub+'</small></span><svg class="ico sys-menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>';}).join('');}
+function renderMenuAjustes(){var menu=$('sysMenu');if(!menu)return;var p=papelAtual(),operador=podeVerMenuOperador();$('sysMenuTitle').textContent=operador?tituloAjustesOperacional():'Ajustes do Sistema';$('sysMenuSubtitle').textContent=operador?'Preferências pessoais, conta e informações do aplicativo':'Configurações, acessos e manutenção';menu.innerHTML=secoesMenuAjustes().filter(secaoPermitida).map(function(s){return '<button class="sys-menu-item" type="button" data-sys-open="'+s.id+'"><span class="sys-menu-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">'+s.icon+'</svg></span><span class="sys-menu-copy"><b>'+s.titulo+'</b><small>'+s.sub+'</small></span><svg class="ico sys-menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>';}).join('');}
 function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var menu=podeVerMenuAjustes(),op=podeVerMenuOperador(),ids=['profileArea','settingsRefArea','preferencesArea','passwordArea','aboutArea','sysMenuCard','sysSectionHead','sysSectionView','pushCard'];ids.forEach(function(id){if($(id))$(id).style.display='none';});
   $('preferencesArea').removeAttribute('data-sec-ativa');$('sysReportsPanel').style.display='none';
   if(v==='system'||(v==='settings'&&menu)){$('sysMenuCard').hidden=false;$('sysMenuCard').style.display=menu?'':'none';renderMenuAjustes();}
@@ -2581,7 +2585,7 @@ function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var men
   var podeEnviarAlerta=mostrarAlertas&&sbOn()&&logado()&&temPermissao('alertas_enviar');$('cardAlertaPersonalizado').style.display=podeEnviarAlerta?'':'none';if(podeEnviarAlerta)carregarLojasAlerta();
   $('settingsTabs').style.display=(v==='settings'||v==='profile')&&!menu?'':'none';
   document.querySelectorAll('#settingsTabs [data-settings-view]').forEach(function(b){var on=b.dataset.settingsView===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
-  if($('screenTitle'))$('screenTitle').textContent=(v==='system'||(v==='settings'&&menu))?(op?'Ajustes do Operador':'Ajustes do Sistema'):v==='syssection'?$('sysSectionTitle').textContent:AJ_TITULOS[v];
+  if($('screenTitle'))$('screenTitle').textContent=(v==='system'||(v==='settings'&&menu))?(op?tituloAjustesOperacional():'Ajustes do Sistema'):v==='syssection'?$('sysSectionTitle').textContent:AJ_TITULOS[v];
   if($('cardBackup'))$('cardBackup').style.display=temPermissao('dados_manutencao')?'':'none';
   if(v==='password')limparTrocaSenha();renderConfiguracoes();window.scrollTo(0,0);}
 function abrirSecaoSistema(key){if(key==='dados'&&adminDesktopAtivo()&&String(adminScopeLoja()||'')!==String(SESS&&SESS.lojaId||'')){toast('Para manutenção local, selecione esta filial em Trocar loja. Todas as lojas não permite manutenção em massa.');return;}var item=SYS_SECOES.concat(OPERADOR_SECOES).find(function(s){return s.id===key;});if(!secaoPermitida(item)){toast('Acesso não autorizado a esta seção.');return;}
@@ -2613,7 +2617,7 @@ function rotuloPerfilAtual(){
 function subtituloPapelAtual(){
   if(!logado())return 'Área do Operador';
   if(!SESS.papel)return rotuloPerfilAtual();
-  return {operador:'Área do Operador',assistente:'Área de Assistente',analista:'Área de Analista',gerente:'Área de Gerência',admin:'Área do Administrador'}[papelAtual()];
+  return {operador:'Área do Operador',promotor:'Área do Promotor',assistente:'Área de Assistente',analista:'Área de Analista',gerente:'Área de Gerência',admin:'Área do Administrador'}[papelAtual()];
 }
 function atualizarSubtituloCabecalho(){
   var area=subtituloPapelAtual(),subtitulo=subtitulosTela[vistaAtual];
@@ -6154,7 +6158,7 @@ $('cEye').onclick=function(){var p=$('cPass'),vis=p.type==='text';p.type=vis?'pa
 $('bVoltarLoja').onclick=fecharConta;
 $('bSairConta').onclick=sairParaLogin;
 $('bLogoutHdr').onclick=function(){if(!logado())return;if(confirm('Sair da conta?'))sairParaLogin();};
-var PAPEIS={operador:'Operador',assistente:'Assistente',analista:'Analista',gerente:'Gerente',admin:'Administrador'};
+var PAPEIS={operador:'Operador',promotor:'Promotor',assistente:'Assistente',analista:'Analista',gerente:'Gerente',admin:'Administrador'};
 /* ───── Perfis de acesso ─────
    Mesma lista de private.permissao_padrao (migration perfis_de_acesso). `padrao` = perfis que já têm a permissão;
    `teto` = perfis que o servidor aceita hoje. Com `servidor:true` o banco já lê a tabela e qualquer perfil pode receber;
@@ -6183,6 +6187,7 @@ var PERMISSOES=[
 function permissaoDef(id){return PERMISSOES.filter(function(x){return x.id===id;})[0];}
 function permissaoEditavel(def,papel){return !!def.servidor||def.teto.includes(papel);}
 function permissaoDoPapel(id,papel){var def=permissaoDef(id);if(!def)return false;if(papel==='admin')return true;
+  if(papel==='promotor')papel='operador';
   var mapa=(SYNC&&SYNC.permissoes)||{},v=mapa[papel+'|'+id];
   if(typeof v==='boolean'&&permissaoEditavel(def,papel))return v;return def.padrao.includes(papel);}
 function temPermissao(id){return permissaoDoPapel(id,papelAtual());}
@@ -6220,13 +6225,13 @@ function salvarPermissoesPerfil(){var papel=permPapelAtual,ids=Object.keys(permP
     if(falha){atualizarBarraPermissoes('Parte das alterações não foi salva: '+falha);toast('Não foi possível salvar todas as permissões');}
     else{atualizarBarraPermissoes('Permissões de '+PAPEL_ROTULO[papel]+' salvas.');toast('Permissões salvas');}});}
 /* Hierarquia de promoção (mesma regra de supabase/functions/gerir-usuarios/hierarquia.ts):
-   Administrador tudo; Gerente até Analista; Analista até Assistente; Assistente só cria Operador; Operador não gerencia usuários. */
-var ORDEM_PAPEIS=['operador','assistente','analista','gerente','admin'],NIVEL_PAPEL={operador:1,assistente:2,analista:3,gerente:4,admin:5};
+   Administrador tudo; Gerente até Analista; Analista até Assistente; Assistente só cria Operador e Promotor; ambos são perfis operacionais. */
+var ORDEM_PAPEIS=Object.keys(PAPEIS),NIVEL_PAPEL={operador:1,promotor:1,assistente:2,analista:3,gerente:4,admin:5};
 var TETO_PAPEL={admin:5,gerente:3,analista:2,assistente:1,operador:0};
 function tetoPapelApp(){var p=papelAtual();if(p==='admin')return 5;if(p!=='assistente'&&!temPermissao('usuarios_gerenciar'))return 0;return TETO_PAPEL[p]||0;}
 function papeisAtribuiveisApp(){var t=tetoPapelApp();return ORDEM_PAPEIS.filter(function(x){return NIVEL_PAPEL[x]<=t;});}
 function podeAdministrarPapelApp(papelAlvo){return !!NIVEL_PAPEL[papelAlvo]&&NIVEL_PAPEL[papelAlvo]<=tetoPapelApp();}
-function papelAtual(){if(!sbOn())return 'admin';if(!SESS||!SESS.access_token)return 'operador';var uid=String(SESS.uid||'');return papelConfirmado&&papelConfirmadoUid===uid&&papelConfirmadoToken===SESS.access_token&&['operador','assistente','analista','gerente','admin'].includes(SESS.papel)?SESS.papel:'operador';}
+function papelAtual(){if(!sbOn())return 'admin';if(!SESS||!SESS.access_token)return 'operador';var uid=String(SESS.uid||'');return papelConfirmado&&papelConfirmadoUid===uid&&papelConfirmadoToken===SESS.access_token&&ORDEM_PAPEIS.includes(SESS.papel)?SESS.papel:'operador';}
 var papelConfirmado=false,papelConfirmadoUid=null,papelConfirmadoToken=null,papelCarregando=false,adminDesktopVista='dashboard',papelConsultaSeq=0,papelCachePorUid={};
 try{papelCachePorUid=JSON.parse(localStorage.getItem('perfil_papel_cache')||'{}')||{};if(!papelCachePorUid||typeof papelCachePorUid!=='object'||Array.isArray(papelCachePorUid))papelCachePorUid={};}catch(e){papelCachePorUid={};}
 function adminDesktopAtivo(){return !!(window.matchMedia&&window.matchMedia('(min-width: 1024px)').matches&&sbOn()&&logado()&&SESS&&!SESS.forcePasswordChange&&SESS.lojaId&&papelConfirmado&&['admin','gerente'].includes(papelAtual()));}
@@ -6253,7 +6258,7 @@ $('adminDesktopMobileBack').onclick=function(){alternarPainelMobile(false);};
 window.addEventListener('keydown',function(e){if(e.key==='Escape'&&painelMobileAberto&&!$('adminRecordEdit').open&&!$('conta').classList.contains('on'))alternarPainelMobile(false);});
 window.addEventListener('resize',atualizarModoDesktopAdmin);
 function pode(acao){var p=papelAtual();if(p==='admin')return true;
-  if(acao==='registrar')return ['operador','assistente','analista','gerente'].includes(p)&&temPermissao('registrar');
+  if(acao==='registrar')return ORDEM_PAPEIS.includes(p)&&temPermissao('registrar');
   if(acao==='editar'||acao==='ajustes'||acao==='codigos')return p==='assistente'||p==='analista'||p==='gerente';
   if(acao==='admin')return false;return true;}
 function aplicarPapel(){var reg=pode('registrar'),ed=pode('editar'),aj=pode('ajustes');
@@ -6267,19 +6272,19 @@ function carregarPapel(){if(!sbOn()||!logado())return Promise.resolve();
   var sessao=SESS,uid=String(sessao.uid||''),token=sessao.access_token,seq=++papelConsultaSeq;
   var atual=function(){return seq===papelConsultaSeq&&SESS===sessao&&String(SESS.uid||'')===uid&&SESS.access_token===token;};
   carregarPrefs();carregarRegrasAlertas();carregarPermissoes();
-  SESS.papel=null;papelConfirmado=false;papelConfirmadoUid=null;papelConfirmadoToken=null;papelCarregando=true;salvarSess();atualizarModoDesktopAdmin();
+  SESS.papel=null;SESS.empresa=null;papelConfirmado=false;papelConfirmadoUid=null;papelConfirmadoToken=null;papelCarregando=true;salvarSess();atualizarModoDesktopAdmin();
   /* Filtra pelo próprio id: admin/analista/gerente enxergam vários perfis (RLS),
      então sem o filtro o limit=1 traria o papel de OUTRO usuário. */
-  var alvo='/rest/v1/perfis?select=papel,nome'+(uid?'&id=eq.'+encodeURIComponent(uid):'')+'&limit=1';
-  function concluir(papel,nome,confirmado){if(!atual())return false;SESS.papel=confirmado?papel:null;if(confirmado&&nome!=null)SESS.nome=nome;
+  var alvo='/rest/v1/perfis?select=papel,nome,empresa'+(uid?'&id=eq.'+encodeURIComponent(uid):'')+'&limit=1';
+  function concluir(papel,nome,confirmado,empresa){if(!atual())return false;SESS.papel=confirmado?papel:null;SESS.empresa=confirmado&&papel==='promotor'?empresa||null:null;if(confirmado&&nome!=null)SESS.nome=nome;
     papelCarregando=false;papelConfirmado=!!confirmado;papelConfirmadoUid=confirmado?uid:null;papelConfirmadoToken=confirmado?token:null;salvarSess();atualizarInterfacePapel();return true;}
   function falhar(){if(!atual())return null;var c=papelCachePorUid[uid],offline=typeof navigator!=='undefined'&&navigator.onLine===false;
-    if(offline&&uid&&c&&['operador','assistente','analista','gerente','admin'].includes(c.papel)){concluir(c.papel,c.nome,true);return c;}concluir(null,null,false);return null;}
+    if(offline&&uid&&c&&ORDEM_PAPEIS.includes(c.papel)){concluir(c.papel,c.nome,true,c.empresa);return c;}concluir(null,null,false);return null;}
   var requisicao;try{requisicao=sbReq(alvo);}catch(e){return Promise.reject(e).catch(function(){return falhar();});}
-  return Promise.resolve(requisicao).then(function(r){if(!atual())return null;var d=r&&r.ok&&Array.isArray(r.dados)&&r.dados[0],valido=!!(uid&&d&&['operador','assistente','analista','gerente','admin'].includes(d.papel));
+  return Promise.resolve(requisicao).then(function(r){if(!atual())return null;var d=r&&r.ok&&Array.isArray(r.dados)&&r.dados[0],valido=!!(uid&&d&&ORDEM_PAPEIS.includes(d.papel));
     if(!valido){concluir(null,null,false);return null;}
-    papelCachePorUid[uid]={papel:d.papel,nome:d.nome==null?'':d.nome};try{localStorage.setItem('perfil_papel_cache',JSON.stringify(papelCachePorUid));}catch(e){}
-    concluir(d.papel,d.nome,true);return d;},function(){return falhar();});}
+    papelCachePorUid[uid]={papel:d.papel,nome:d.nome==null?'':d.nome,empresa:d.papel==='promotor'?d.empresa||null:null};try{localStorage.setItem('perfil_papel_cache',JSON.stringify(papelCachePorUid));}catch(e){}
+    concluir(d.papel,d.nome,true,d.empresa);return d;},function(){return falhar();});}
 function atualizarInterfacePapel(){
   atualizarModoDesktopAdmin();aplicarPapel();atualizarSubtituloCabecalho();atualizarBotaoLogout();atualizarContextoLoja();
   if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();
@@ -6348,6 +6353,9 @@ function renderPerfilOperador(){
   if($('profileLogin'))$('profileLogin').textContent=SESS&&(SESS.usuario||SESS.email)?'Usuário: '+(SESS.usuario||SESS.email):'Conta local';
   if($('profileStore'))$('profileStore').textContent=loja;
   if($('profileRole'))$('profileRole').textContent=papel;
+  var promotor=logado()&&papelAtual()==='promotor';
+  $('profileCompanyRow').style.display=promotor?'':'none';
+  $('profileCompany').textContent=promotor&&SESS.empresa||'—';
   if($('profileSector'))$('profileSector').textContent=SESS&&(SESS.setor||SESS.setorNome)||'Não informado';
   if($('profileDevice'))$('profileDevice').textContent=plataforma();
   if($('profileStatus'))$('profileStatus').textContent=logado()?(SESS.papel?papel+' Ativo':papel):'Modo local';
@@ -6547,7 +6555,7 @@ $('bLojasAdminRefresh').onclick=carregarLojasAdmin;
 var usuariosEscopoSeq=0;
 function iniciarGestaoUsuarios(){
   var card=$('cardUsuarios');if(!card)return;
-  var p=papelAtual(),vis=sbOn()&&logado()&&(temPermissao('usuarios_gerenciar')||p==='assistente');
+  var p=papelAtual(),vis=sbOn()&&logado()&&!papelOperacional(p)&&(temPermissao('usuarios_gerenciar')||p==='assistente');
   card.style.display=vis?'':'none';if(!vis)return;
   var endpoint='/functions/v1/gerir-usuarios';
   function callGestao(body){return sbReq(endpoint,{method:'POST',body:body}).then(function(r){if(!r.ok)throw new Error(r.dados&&r.dados.error||'Falha na gestão de usuários (HTTP '+r.status+').');return r.dados||{};});}
@@ -6555,21 +6563,32 @@ function iniciarGestaoUsuarios(){
   function selectedStores(){return Array.from(document.querySelectorAll('#uLojas .uLoja:checked')).map(function(e){return e.value;});}
   function strongPass(s,u){var common=['123456','1234567','12345678','123456789','senha','password','qwerty','111111','000000','abc123','admin123','guanabara'];if(!s||s.length<6)return 'A senha precisa de pelo menos 6 caracteres.';if(common.includes(s.toLowerCase()))return 'Essa senha é muito comum.';if(s.toLowerCase()===u.toLowerCase())return 'A senha não pode ser igual ao usuário.';return '';}
   var cache={users:[],lojas:[]};
+  function mostrarEmpresa(campo,papel){var visivel=papel==='promotor';$(campo+'Wrap').hidden=!visivel;$(campo).required=visivel;}
+  function lerEmpresa(campo){var input=$(campo),empresa=input.value.trim();
+    if(empresa&&empresa.length<=120)return empresa;
+    toast('Informe o nome da empresa do promotor.');input.focus();return null;}
+  $('uPapel').onchange=function(){mostrarEmpresa('uEmpresa',this.value);};
+  $('editarPapel').onchange=function(){mostrarEmpresa('editarEmpresa',this.value);};
   function render(){var admin=p==='admin',gerente=p==='gerente',analista=p==='analista'||gerente||admin;
-    $('uPapel').disabled=!(admin||analista||gerente);if(!admin){var atribuiveis=papeisAtribuiveisApp();if(!atribuiveis.length)atribuiveis=['operador'];$('uPapel').querySelectorAll('option').forEach(function(o){o.disabled=!atribuiveis.includes(o.value);});if(!atribuiveis.includes($('uPapel').value))$('uPapel').value='operador';}
+    var atribuiveis=papeisAtribuiveisApp();
+    $('uPapel').querySelectorAll('option').forEach(function(o){o.disabled=!atribuiveis.includes(o.value);});
+    if(!atribuiveis.includes($('uPapel').value))$('uPapel').value='operador';
+    mostrarEmpresa('uEmpresa',$('uPapel').value);
     $('usuariosForm').style.display='';
     $('listaUsuarios').innerHTML=adminScopeFiltrarUsuarios(cache.users).map(function(u){var lojasVisiveis=adminDesktopAtivo()?(u.lojas||[]).filter(function(l){return adminScopeLoja()?String(l.id)===String(adminScopeLoja()):ADMIN_SCOPE.lojas.some(function(x){return String(x.id)===String(l.id);});}):u.lojas;var stores=(lojasVisiveis||[]).map(function(l){return esc(l.nome);}).join(', ')||'—';
-      return '<div class="card" style="padding:12px;margin:8px 0"><div style="font-weight:700">'+esc(u.nome||u.usuario)+'</div><div class="ean">@'+esc(u.usuario)+' · '+esc(PAPEIS[u.papel]||u.papel)+'</div><div style="font-size:12px;margin:5px 0">'+stores+'</div>'+(analista&&(admin||podeAdministrarPapelApp(u.papel))?'<div class="row"><button class="btn sec uEdit" data-id="'+esc(u.id)+'">Editar</button>'+(admin||gerente?'<button class="btn perigo uDelete" data-id="'+esc(u.id)+'">Excluir</button>':'')+'</div>':'')+'</div>';
+      return '<div class="card" style="padding:12px;margin:8px 0"><div style="font-weight:700">'+esc(u.nome||u.usuario)+'</div><div class="ean">@'+esc(u.usuario)+' · '+esc(PAPEIS[u.papel]||u.papel)+(u.papel==='promotor'&&u.empresa?' · '+esc(u.empresa):'')+'</div><div style="font-size:12px;margin:5px 0">'+stores+'</div>'+(analista&&(admin||podeAdministrarPapelApp(u.papel))?'<div class="row"><button class="btn sec uEdit" data-id="'+esc(u.id)+'">Editar</button>'+(admin||gerente?'<button class="btn perigo uDelete" data-id="'+esc(u.id)+'">Excluir</button>':'')+'</div>':'')+'</div>';
     }).join('')||'<div class="vazio">Nenhum usuário encontrado.</div>';
     document.querySelectorAll('.uEdit').forEach(function(b){b.onclick=function(){editar(b.dataset.id);};});
     document.querySelectorAll('.uDelete').forEach(function(b){b.onclick=function(){excluir(b.dataset.id);};});
   }
   function carregar(){var seq=++usuariosEscopoSeq,key=adminScopeAtual(),uid=SESS&&SESS.uid; $('listaUsuarios').innerHTML='<div class="vazio"><span class="gira"></span> carregando usuários…</div>';
     callGestao(adminScopeUsuariosPayload()).then(function(r){if(seq!==usuariosEscopoSeq||uid!==(SESS&&SESS.uid)||key!==adminScopeAtual())return;cache.users=r.usuarios||[];cache.lojas=r.lojas||[];$('uLojas').innerHTML=lojaChecks(cache.lojas);render();}).catch(function(e){if(seq!==usuariosEscopoSeq||uid!==(SESS&&SESS.uid)||key!==adminScopeAtual())return;$('listaUsuarios').innerHTML='<div class="aviso wa">'+esc(e.message)+'</div>';});}
-  function criar(){var usuario=$('uUsuario').value.trim().toLowerCase(),nome=$('uNome').value.trim(),senha=$('uSenha').value,papel=['admin','analista','gerente'].includes(p)?$('uPapel').value:'operador',lojas=selectedStores();
+  function criar(){var usuario=$('uUsuario').value.trim().toLowerCase(),nome=$('uNome').value.trim(),senha=$('uSenha').value,papel=$('uPapel').value,lojas=selectedStores();
     if(!/^[a-z0-9._-]{3,30}$/.test(usuario)){toast('Login: 3–30 caracteres minúsculos, números, . _ -');return;}
     if(!nome){toast('Informe o nome completo.');return;}var err=strongPass(senha,usuario);if(err){toast(err);return;}if(!lojas.length){toast('Selecione ao menos uma loja.');return;}
-    $('bUsuarioCriar').disabled=true;callGestao({acao:'criar',usuario:usuario,nome: nome,senha:senha,papel:papel,lojas:lojas,exigir_troca_senha:$('uTrocaSenha').checked}).then(function(){toast('Usuário criado.');$('uUsuario').value='';$('uNome').value='';$('uSenha').value='';$('uTrocaSenha').checked=false;carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('bUsuarioCriar').disabled=false;});}
+    var payload={acao:'criar',usuario:usuario,nome:nome,senha:senha,papel:papel,lojas:lojas,exigir_troca_senha:$('uTrocaSenha').checked};
+    if(papel==='promotor'){payload.empresa=lerEmpresa('uEmpresa');if(!payload.empresa)return;}
+    $('bUsuarioCriar').disabled=true;callGestao(payload).then(function(){toast('Usuário criado.');$('uEmpresa').value='';$('uUsuario').value='';$('uNome').value='';$('uSenha').value='';$('uTrocaSenha').checked=false;carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('bUsuarioCriar').disabled=false;});}
   var usuarioEditando=null,lojasSelecionadasEdicao=[],usuarioEdicaoEscopo=null;
   function atualizarResumoLojas(){var marcadas=lojasSelecionadasEdicao.length,total=cache.lojas.length;$('editarLojasResumo').textContent=marcadas+' loja(s) selecionada(s) de '+total+' disponíveis';}
   function renderLojasEdicao(){var busca=$('editarLojasBusca').value.trim().toLowerCase(),visiveis=cache.lojas.filter(function(l){return String(l.nome||'').toLowerCase().includes(busca);});
@@ -6578,6 +6597,7 @@ function iniciarGestaoUsuarios(){
   function editar(id){var u=cache.users.find(function(x){return x.id===id;});if(!u)return;usuarioEditando=u;usuarioEdicaoEscopo=adminScopeAtual();
     var admin=p==='admin';
     $('editarNome').value=u.nome||'';$('editarSenha').value='';$('editarExigirTroca').checked=false;$('editarPapel').value=u.papel||'operador';$('editarLojasBusca').value='';
+    $('editarEmpresa').value=u.empresa||'';mostrarEmpresa('editarEmpresa',u.papel);
     lojasSelecionadasEdicao=(u.lojas||[]).map(function(l){return l.id;});
     var podeAlterarPapelLoja=['admin','analista','gerente'].includes(p);
     $('editarPapelWrap').style.display=podeAlterarPapelLoja?'':'none';$('editarLojasWrap').style.display=podeAlterarPapelLoja?'':'none';
@@ -6591,7 +6611,8 @@ function iniciarGestaoUsuarios(){
   function salvarEdicao(){if(!usuarioEditando)return;if(usuarioEdicaoEscopo!==adminScopeAtual()){fecharEdicao();toast('O escopo mudou. Abra o cadastro novamente.');return;}var nome=$('editarNome').value.trim(),senha=$('editarSenha').value,payload={acao:'editar',id:usuarioEditando.id,nome:nome};
     if(!nome){toast('Informe o nome completo.');$('editarNome').focus();return;}
     if(senha){var er=strongPass(senha,usuarioEditando.usuario);if(er){toast(er);return;}payload.senha=senha;payload.exigir_troca_senha=$('editarExigirTroca').checked;}
-    if(['admin','analista','gerente'].includes(p)){var papel=$('editarPapel').value;if(!['operador','assistente','analista','gerente','admin'].includes(papel)){toast('Papel inválido.');return;}payload.papel=papel;payload.lojas=lojasSelecionadasEdicao.slice();if(!payload.lojas.length){toast('Selecione pelo menos uma loja.');return;}}
+    if(['admin','analista','gerente'].includes(p)){var papel=$('editarPapel').value;if(!ORDEM_PAPEIS.includes(papel)){toast('Papel inválido.');return;}payload.papel=papel;payload.lojas=lojasSelecionadasEdicao.slice();if(!payload.lojas.length){toast('Selecione pelo menos uma loja.');return;}}
+    if((payload.papel||usuarioEditando.papel)==='promotor'){payload.empresa=lerEmpresa('editarEmpresa');if(!payload.empresa)return;}
     $('salvarEditarUsuario').disabled=true;callGestao(payload).then(function(r){toast(r&&r.aviso?r.aviso:'Cadastro atualizado.');fecharEdicao();carregar();}).catch(function(e){toast(e.message);}).finally(function(){$('salvarEditarUsuario').disabled=false;});}
   $('cancelarEditarUsuario').onclick=fecharEdicao;$('salvarEditarUsuario').onclick=salvarEdicao;
   $('modalEditarUsuario').addEventListener('click',function(e){if(e.target===this)fecharEdicao();});
