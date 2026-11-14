@@ -199,8 +199,8 @@ test('Ajustes administrativos: telas existentes são agrupadas sem duplicar IDs 
 test('Ajustes do Operador: menu próprio reutiliza recursos pessoais sem expor administração', () => {
   const items = [...html.matchAll(/\{id:'(op-[^']+)',titulo:'([^']+)',sub:'[^']+',roles:\[([^\]]+)\]/g)];
   assert.deepEqual(items.map(x => x[1]), ['op-perfil', 'op-preferencias', 'op-alertas', 'op-sobre']);
-  for (const item of items) assert.deepEqual(item[3].replace(/'/g, '').split(','), ['operador']);
-  assert.match(html, /function podeVerMenuOperador\(\)\{return papelAtual\(\)==='operador';\}/);
+  for (const item of items) assert.deepEqual(item[3].replace(/'/g, '').split(','), ['operador', 'promotor']);
+  assert.match(html, /function podeVerMenuOperador\(\)\{return papelOperacional\(papelAtual\(\)\);\}/);
   assert.match(html, /data-sec-ativa="operador"/);
   assert.match(html, /#preferencesArea\[data-sec-ativa="operador"\]>.card\[data-sec\]:not\(\[data-sec="operador"\]\):not\(\[data-sec="pereciveis"\]\):not\(\[data-sec="config"\]\)/);
   assert.match(html, /if\(item\.id==='op-preferencias'\)\{\$\('settingsRefArea'\)\.style\.display='';\$\('preferencesArea'\)\.style\.display='';\$\('preferencesArea'\)\.dataset\.secAtiva='operador';\}/);

@@ -1,7 +1,7 @@
 // Edge Function: gestão de usuários (criar/editar/excluir/listar)
 // Roda no servidor com a service_role (NUNCA vai para o app). Identifica quem chama
 // pelo JWT e aplica as regras de papel:
-//   - assistente: cria usuários (sempre como operador)
+//   - assistente: cria usuários (Operador ou Promotor da sua loja)
 //   - analista/gerente: ações autorizadas por permissão; não administram papéis superiores
 //   - gerente: lojas restritas aos vínculos individuais atribuídos pelo Administrador
 //   - admin:      faz tudo (papel, lojas, excluir)
@@ -20,10 +20,17 @@ const json = (body: unknown, status = 200) =>
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const PAPEIS = ["operador", "assistente", "analista", "gerente", "admin"];
+const PAPEIS = ["operador", "promotor", "assistente", "analista", "gerente", "admin"];
 const COMUNS = ["123456","1234567","12345678","123456789","senha","password","qwerty","111111","000000","abc123","admin123","guanabara"];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const temCampo = (obj, campo) => Object.prototype.hasOwnProperty.call(obj, campo);
+
+const empresaInvalida = "Informe o nome da empresa do promotor (até 120 caracteres).";
+function normalizarEmpresa(valor: unknown): string | null {
+  if (typeof valor !== "string") return null;
+  const empresa = valor.trim();
+  return empresa && empresa.length <= 120 && !/[\u0000-\u001f\u007f]/.test(empresa) ? empresa : null;
+}
 
 const validarUsuario = (u: string) => /^[a-z0-9._-]{3,30}$/.test(u);
 function validarSenha(s: string, usuario: string): string | null {
@@ -43,6 +50,8 @@ export function validarEdicaoBase(body) {
   if (nome !== null && (typeof nome !== "string" || !nome.trim() || nome.trim().length > 120 || /[\u0000-\u001f\u007f]/.test(nome))) {
     return { ok: false, error: "O nome deve ter entre 1 e 120 caracteres válidos." };
   }
+  const empresa = temCampo(body, "empresa") ? normalizarEmpresa(body.empresa) : null;
+  if (temCampo(body, "empresa") && empresa === null) return { ok: false, error: empresaInvalida };
   const papel = temCampo(body, "papel") ? body.papel : null;
   if (papel !== null && (typeof papel !== "string" || !PAPEIS.includes(papel))) {
     return { ok: false, error: "Papel inválido." };
@@ -68,7 +77,7 @@ export function validarEdicaoBase(body) {
   const exigirTroca = temCampo(body, "exigir_troca_senha") ? body.exigir_troca_senha : false;
   if (typeof exigirTroca !== "boolean") return { ok: false, error: "O indicador de troca de senha é inválido." };
   if (exigirTroca && senha === null) return { ok: false, error: "Exigir troca de senha requer uma nova senha." };
-  if (nome === null && papel === null && lojas === null && senha === null) {
+  if (nome === null && papel === null && lojas === null && senha === null && empresa === null) {
     return { ok: false, error: "Informe ao menos uma alteração." };
   }
   return {
@@ -77,6 +86,7 @@ export function validarEdicaoBase(body) {
     nome: nome === null ? null : nome.trim(),
     papel,
     lojas,
+    empresa,
     senha,
     exigirTroca,
   };
@@ -110,8 +120,8 @@ Deno.serve(async (req) => {
   // O papel legado de Analista e o Administrador são globais. A permissão de
   // gestão, inclusive para Gerente, não concede acesso a lojas não atribuídas.
   const escopoTotal = ehAdmin || ehAnalista;
-  // Operador só executa o operacional: nunca cria, edita ou lista usuários, mesmo com a permissão marcada.
-  const ehOperador = papelCaller === "operador";
+  // Operador e Promotor só executam o operacional: nunca cria, edita ou lista usuários, mesmo com a permissão marcada.
+  const ehOperador = papelCaller === "operador" || papelCaller === "promotor";
   const podeCriar = !ehOperador && (ehAdmin || gerenciaUsuarios || papelCaller === "assistente");
   const podeEditar = !ehOperador && (ehAdmin || gerenciaUsuarios);
 
@@ -160,7 +170,7 @@ Deno.serve(async (req) => {
       if (!podeCriar) return json({ error: "Sem permissão" }, 403);
       const scopeResult = resolveListScope(body);
       if (!scopeResult.ok) return json({ error: scopeResult.error }, 400);
-      const { data: perfis, error: perfisErr } = await admin.from("perfis").select("id, nome, papel");
+      const { data: perfis, error: perfisErr } = await admin.from("perfis").select("id, nome, papel, empresa");
       if (perfisErr) return json({ error: "Não foi possível consultar perfis." }, 500);
       const { data: lista, error: listaErr } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
       if (listaErr) return json({ error: "Não foi possível consultar usuários." }, 500);
@@ -195,11 +205,12 @@ Deno.serve(async (req) => {
       if (!nome) return json({ error: "Informe o nome do usuário." }, 400);
       const e1 = validarSenha(senha, usuario); if (e1) return json({ error: e1 }, 400);
       if (!PAPEIS.includes(papel)) return json({ error: "Papel inválido." }, 400);
-      if (papel !== "operador" && !(ehAdmin || gerenciaUsuarios)) return json({ error: "Seu perfil só pode criar operadores." }, 403);
-      if (papel !== "operador" && !podeAtribuirPapel(papelCaller, gerenciaUsuarios, papel)) return json({ error: "Seu perfil não pode criar usuários com esse papel (Gerente até Analista; Analista até Assistente)." }, 403);
+      if (!podeAtribuirPapel(papelCaller, gerenciaUsuarios, papel)) return json({ error: "Seu perfil não pode criar usuários com esse papel (Gerente até Analista; Analista até Assistente)." }, 403);
+      const empresa = papel === "promotor" ? normalizarEmpresa(body.empresa) : null;
+      if (papel === "promotor" && empresa === null) return json({ error: empresaInvalida }, 400);
       const permit = await lojasPermitidas();
       lojas = [...new Set(lojas)];
-      if (papelCaller === "assistente" && (permit.size !== 1 || lojas.length !== 1 || !permit.has(lojas[0]))) return json({ error: "Assistente só pode cadastrar operador na sua única loja vinculada." }, 403);
+      if (papelCaller === "assistente" && (permit.size !== 1 || lojas.length !== 1 || !permit.has(lojas[0]))) return json({ error: "Assistente só pode cadastrar usuários na sua única loja vinculada." }, 403);
       if (!lojas.length) return json({ error: "Escolha pelo menos uma loja." }, 400);
       if (lojas.some((id) => !permit.has(id))) return json({ error: "Você tentou atribuir loja sem permissão." }, 403);
       const email = usuario + "@" + dominio;
@@ -209,7 +220,7 @@ Deno.serve(async (req) => {
         return json({ error: dup ? "Já existe um usuário com esse nome." : ("Não foi possível criar o usuário. " + (cerr?.message || "")) }, 400);
       }
       const uid = novo.user.id;
-      const { error: perfilErr } = await admin.from("perfis").upsert({ id: uid, nome, papel }, { onConflict: "id" });
+      const { error: perfilErr } = await admin.from("perfis").upsert({ id: uid, nome, papel, ...(empresa !== null ? { empresa } : {}) }, { onConflict: "id" });
       if (perfilErr) { await admin.auth.admin.deleteUser(uid); return json({ error: "Falha ao criar perfil." }, 500); }
       const { error: membroErr } = await admin.from("loja_membros").insert(lojas.map((lid) => ({ user_id: uid, loja_id: lid })));
       if (membroErr) { await admin.auth.admin.deleteUser(uid); return json({ error: "Falha ao vincular usuário às lojas." }, 500); }
@@ -256,7 +267,7 @@ Deno.serve(async (req) => {
       const edit = validarEdicaoBase(body);
       if (!edit.ok) return json({ error: edit.error }, 400);
       const id = edit.id;
-      const { data: alvo, error: alvoErr } = await admin.from("perfis").select("papel, nome").eq("id", id).single();
+      const { data: alvo, error: alvoErr } = await admin.from("perfis").select("papel, nome, empresa").eq("id", id).single();
       if (alvoErr || !alvo) return json({ error: "Usuário não encontrado." }, 404);
       if (!PAPEIS.includes(alvo.papel)) return json({ error: "Papel atual do usuário é inválido." }, 500);
       const alvoAuth = await admin.auth.admin.getUserById(id);
@@ -270,6 +281,7 @@ Deno.serve(async (req) => {
       const exigirTroca = edit.exigirTroca;
       const papel = edit.papel;
       const lojas = edit.lojas;
+      const empresa = edit.empresa;
 
       if ((papel != null || lojas != null) && !gerenciaUsuarios) return json({ error: "Seu perfil não pode alterar papel ou lojas." }, 403);
       // Hierarquia: Gerente administra/promove até Analista; Analista até Assistente (hierarquia.ts).
@@ -280,6 +292,9 @@ Deno.serve(async (req) => {
         if (adminCountErr) return json({ error: "Não foi possível validar os administradores." }, 500);
         if ((count || 0) <= 1) return json({ error: "Não é possível rebaixar o último admin." }, 400);
       }
+      const papelFinal = papel ?? alvo.papel;
+      if (papelFinal === "promotor" && !empresa && !alvo.empresa) return json({ error: empresaInvalida }, 400);
+      if (papelFinal !== "promotor" && empresa !== null) return json({ error: "Empresa é um campo do perfil Promotor." }, 400);
       if (senha != null) {
         if (!validarUsuario(usuarioNome.toLowerCase())) return json({ error: "O usuário alvo não tem um login válido para redefinir a senha." }, 400);
         const e2 = validarSenha(senha, usuarioNome); if (e2) return json({ error: e2 }, 400);
@@ -312,6 +327,7 @@ Deno.serve(async (req) => {
         p_papel: papel,
         p_lojas: lojas,
         p_senha_solicitada: senha != null,
+        p_empresa: empresa,
       });
       if (cadastroErr || !cadastro || cadastro.ok !== true) {
         return json({
@@ -344,6 +360,7 @@ Deno.serve(async (req) => {
     }
 
     if (acao === "excluir") {
+      if (ehOperador) return json({ error: "Sem permissão para excluir usuários." }, 403);
       let podeExcluir = ehAdmin;
       if (!ehAdmin) {
         const { data: permExcluir, error: permExcluirErr } = await admin.rpc("papel_tem_permissao", { p_papel: papelCaller, p_permissao: "usuarios_excluir" });

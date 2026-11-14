@@ -14,7 +14,7 @@ A interface poderá evoluir por etapas, mas nenhuma funcionalidade será conside
 
 A autorização será calculada pela combinação de três dimensões independentes:
 
-1. **Perfil:** papel institucional do usuário (Operador, Assistente, Analista, Gerente ou Administrador).
+1. **Perfil:** papel institucional do usuário (Operador, Promotor, Assistente, Analista, Gerente ou Administrador).
 2. **Permissões:** ações permitidas ao perfil e eventuais exceções individuais.
 3. **Escopo territorial:** lojas às quais o usuário está vinculado, diretamente ou por grupos.
 
@@ -128,3 +128,9 @@ Cada etapa deve incluir testes automatizados, testes de autorização/RLS quando
 As decisões dos itens 3, 4, 5 e 6 foram confirmadas pelo proprietário em 10/11/2026 nesta conversa. A especificação não significa que essas funcionalidades já estejam implementadas. A PR #34 permanece limitada à primeira camada de navegação e não deve ser descrita como entrega do ecossistema administrativo completo.
 
 Questões técnicas ainda a detalhar antes da implementação incluem modelo de dados dos grupos, resolução de conflitos entre permissões padrão e exceções, políticas RLS correspondentes, estados/cancelamento de solicitações e critérios de retenção de auditoria.
+
+## Perfil Promotor
+
+O Promotor tem as mesmas permissões configuradas para Operador e acesso às filiais vinculadas. Quem pode cadastrar um Operador pode cadastrar um Promotor dentro do mesmo escopo. O cadastro e a conversão para esse perfil exigem o nome da empresa. A empresa aparece na gestão de usuários e em Meu Perfil e Conta.
+
+Publique a migration de Promotor antes da Edge Function `gerir-usuarios` e da nova interface.

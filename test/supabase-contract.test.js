@@ -35,7 +35,7 @@ test('frontend não lê nome do produto da tabela de associação', () => {
 });
 
 test('perfis autorizados a cadastrar e campos de setor validados no cliente', () => {
-  assert.match(app, /if\(acao==='registrar'\)return \['operador','assistente','analista','gerente'\]\.includes\(p\)&&temPermissao\('registrar'\);/);
+  assert.match(app, /if\(acao==='registrar'\)return ORDEM_PAPEIS\.includes\(p\)&&temPermissao\('registrar'\);/);
   assert.match(app, /SETORES\.includes\(setor\)/);
   assert.match(app, /p_setor:setor/);
 });

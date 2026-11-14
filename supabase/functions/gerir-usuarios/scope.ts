@@ -73,6 +73,7 @@ export function buildScopedUserList(input) {
       id: perfil.id,
       nome: perfil.nome || "",
       papel: perfil.papel,
+      ...(perfil.papel === "promotor" ? { empresa: perfil.empresa } : {}),
       usuario: (emailPorId[perfil.id] || "").split("@")[0],
       // Keep every permitted membership so editing this user cannot erase
       // another allowed store after a filtered listing round-trip.

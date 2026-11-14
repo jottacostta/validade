@@ -91,7 +91,8 @@ function makeHarness(initial, { supabase = true, online = true } = {}) {
   };
   const source = `
     var SESS = ${JSON.stringify(initial)};
-    var PAPEIS = { operador: 'Operador', assistente: 'Assistente', analista: 'Analista', gerente: 'Gerente', admin: 'Administrador' };
+    var PAPEIS = { operador: 'Operador', promotor: 'Promotor', assistente: 'Assistente', analista: 'Analista', gerente: 'Gerente', admin: 'Administrador' };
+    var ORDEM_PAPEIS = Object.keys(PAPEIS);
     var uiUpdates = 0, modeUpdates = 0, saved = null;
     function sbOn() { return ${supabase ? 'true' : 'false'}; }
     function logado() { return !!(SESS && SESS.access_token); }
@@ -134,7 +135,7 @@ function makeHarness(initial, { supabase = true, online = true } = {}) {
 }
 
 function session(uid, token, papel = null, nome = undefined) {
-  return { uid, access_token: token, papel, nome, lojaId: 'loja-1', forcePasswordChange: false };
+  return { uid, access_token: token, papel, nome, empresa: null, lojaId: 'loja-1', forcePasswordChange: false };
 }
 
 test('ignora resposta antiga ao trocar do usuário A para B enquanto o GET está pendente', async () => {
@@ -214,7 +215,7 @@ test('resposta antiga do mesmo UID fica obsoleta quando o token é renovado', as
 
 test('aceita cada papel somente quando o perfil atual responde com papel válido', async () => {
   const h = makeHarness(session('u-a', 'tok-a'));
-  for (const papel of ['operador', 'assistente', 'analista', 'gerente', 'admin']) {
+  for (const papel of ['operador', 'promotor', 'assistente', 'analista', 'gerente', 'admin']) {
     const request = h.begin();
     await h.flush();
     h.api.resolve(h.api.pendingCount() - 1, { ok: true, dados: [{ papel, nome: `Nome ${papel}` }] });

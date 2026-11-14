@@ -15,6 +15,8 @@ function loadPureValidator() {
     edge.match(/^const COMUNS = .*$/m)?.[0],
     edge.match(/^const UUID = .*$/m)?.[0],
     edge.match(/^const temCampo = .*$/m)?.[0],
+    edge.match(/^const empresaInvalida = .*$/m)?.[0],
+    edge.match(/^function normalizarEmpresa[\s\S]*?^}/m)?.[0].replace('valor: unknown): string | null', 'valor)'),
   ];
   assert.ok(constants.every(Boolean), 'constantes do validador existem');
   const start = edge.indexOf('export function validarEdicaoBase');
@@ -42,6 +44,7 @@ test('validador puro aceita edição completa e preserva tipos fechados', () => 
     nome: 'Maria Silva',
     papel: 'assistente',
     lojas: [uuid(2), uuid(3)],
+    empresa: null,
     senha: 'NovaSenha2026!',
     exigirTroca: true,
   });
@@ -50,6 +53,8 @@ test('validador puro aceita edição completa e preserva tipos fechados', () => 
 test('validador puro rejeita alvo, nome, papel, senha e lojas inválidos antes do RPC', () => {
   const validar = loadPureValidator();
   const cases = [
+    [{ id: uuid(1), papel: 'promotor', empresa: '  ' }, /empresa/i],
+    [{ id: uuid(1), papel: 'promotor', empresa: 'x'.repeat(121) }, /empresa/i],
     [{ id: 'u2', nome: 'Maria' }, /usuário.*inválido/i],
     [{ id: uuid(1), nome: { texto: 'Maria' } }, /nome/i],
     [{ id: uuid(1), nome: 'Maria', papel: 'superadmin' }, /papel/i],
@@ -135,17 +140,16 @@ test('resposta de edição preserva vínculos no servidor, mas não expõe IDs e
 
 test('criação segue a hierarquia: Administrador tudo, Gerente até Analista, demais gestores até Assistente', () => {
   const create = edge.slice(edge.indexOf('if (acao === "criar")'), edge.indexOf('if (acao === "trocar_senha_primeiro_acesso")'));
-  const first = create.match(/if \((.+)\) return json\(\{ error: "Seu perfil só pode criar operadores\."/);
   const second = create.match(/if \((.+)\) return json\(\{ error: "Seu perfil não pode criar usuários com esse papel/);
-  assert.ok(first && second, 'guardas reais da criação localizadas');
+  assert.ok(second, 'guarda real da criação localizada');
   const hier = fs.readFileSync(path.join(root, 'supabase/functions/gerir-usuarios/hierarquia.ts'), 'utf8')
     .replace(/\bexport\s+/g, '').replace(/:\s*(string|number|boolean|Record<string, number>)(\s*[,)=;])/g, '$2').replace(/\)\s*:\s*(string\[\]|number|boolean)\s*\{/g, ') {');
-  const bloqueado = Function('papelCaller', 'ehAdmin', 'gerenciaUsuarios', 'papel', `${hier}\nreturn (${first[1]}) || (${second[1]});`);
-  const teto = { admin: 5, gerente: 3, analista: 2, assistente: 1, operador: 0 }, nivel = { operador: 1, assistente: 2, analista: 3, gerente: 4, admin: 5 };
+  const bloqueado = Function('papelCaller', 'ehAdmin', 'gerenciaUsuarios', 'papel', `${hier}\nreturn (${second[1]});`);
+  const teto = { admin: 5, gerente: 3, analista: 2, assistente: 1, operador: 0 }, nivel = { operador: 1, promotor: 1, assistente: 2, analista: 3, gerente: 4, admin: 5 };
   assert.match(edge, /const podeCriar = !ehOperador && \(/, 'operador nunca cria usuários');
   assert.match(edge, /const podeEditar = !ehOperador && \(/, 'operador nunca edita usuários');
   for (const ator of Object.keys(teto).filter((x) => x !== 'operador')) for (const papel of Object.keys(nivel)) {
     assert.equal(bloqueado(ator, ator === 'admin', true, papel), nivel[papel] > teto[ator], `${ator} com gestão criando ${papel}`);
-    if (ator !== 'admin') assert.equal(bloqueado(ator, false, false, papel), papel !== 'operador', `${ator} sem gestão criando ${papel}`);
+    if (ator !== 'admin') assert.equal(bloqueado(ator, false, false, papel), ator !== 'assistente' || nivel[papel] !== 1, `${ator} sem gestão criando ${papel}`);
   }
 });

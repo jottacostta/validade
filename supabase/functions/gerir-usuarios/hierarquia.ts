@@ -2,11 +2,11 @@
 //   - Administrador: atribui e administra qualquer papel.
 //   - Gerente: promove e administra até Analista.
 //   - Analista: promove e administra até Assistente.
-//   - Assistente: não promove; só cria (e, com "Gerenciar usuários", administra) Operador.
-//   - Operador: só executa o operacional; nunca gerencia usuários, mesmo com a permissão marcada.
+//   - Assistente: não promove; só cria (e, com "Gerenciar usuários", administra) Operador e Promotor.
+//   - Operador e Promotor: só executa o operacional; nunca gerencia usuários, mesmo com a permissão marcada.
 // Gerente e Analista dependem da permissão "Gerenciar usuários". Arquivo sem dependências para teste em Node.
-const PAPEIS_ORDEM = ["operador", "assistente", "analista", "gerente", "admin"];
-const NIVEL_PAPEL: Record<string, number> = { operador: 1, assistente: 2, analista: 3, gerente: 4, admin: 5 };
+const PAPEIS_ORDEM = ["operador", "promotor", "assistente", "analista", "gerente", "admin"];
+const NIVEL_PAPEL: Record<string, number> = { operador: 1, promotor: 1, assistente: 2, analista: 3, gerente: 4, admin: 5 };
 
 export function tetoAtribuicao(papelAtor: string, gerenciaUsuarios: boolean): number {
   if (papelAtor === "admin") return 5;
