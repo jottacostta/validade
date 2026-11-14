@@ -14,7 +14,7 @@ A interface poderá evoluir por etapas, mas nenhuma funcionalidade será conside
 
 A autorização será calculada pela combinação de três dimensões independentes:
 
-1. **Perfil:** papel institucional do usuário (Operador, Assistente, Analista, Gerente ou Administrador).
+1. **Perfil:** papel institucional do usuário (Operador, Promotor, Assistente, Analista, Gerente ou Administrador).
 2. **Permissões:** ações permitidas ao perfil e eventuais exceções individuais.
 3. **Escopo territorial:** lojas às quais o usuário está vinculado, diretamente ou por grupos.
 
