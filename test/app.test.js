@@ -929,6 +929,7 @@ tflaky('gestão de usuários: assistente cadastra Operador e Promotor com valida
   });
   await a.p.waitForFunction(()=>document.getElementById('cardUsuarios').style.display!=='none');
   await a.p.click('nav button[data-v="aj"]');
+  await a.p.click('#sysMenu [data-sys-open="usuarios"]');
   assert.strictEqual(await a.p.isVisible('#cardUsuarios'),true);
   assert.strictEqual(await a.p.isDisabled('#uPapel'),false);
   assert.strictEqual(await a.p.isVisible('#uEmpresa'),false);
@@ -1698,14 +1699,17 @@ tflaky('Área do Operador: abas, alertas/notificações e detalhe/edição de lo
   await a.fechar();
 });
 
-tflaky('Perfil de Assistente: cabeçalho, selo e aba de conta correspondem à função confirmada', { skip: pular }, async () => {
+tflaky('Perfil de Assistente: menu de cartões e atalhos seguem o perfil confirmado', { skip: pular }, async () => {
   const a = await abrirLogado(p => rotasPerm(p, 'assistente', []), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador' });
   try {
     await a.p.waitForFunction(() => document.querySelector('#profileRole').textContent === 'Assistente');
     await a.p.click('nav button[data-v="aj"]');
-    await a.p.click('#settingsTabs [data-settings-view="profile"]');
+    assert.equal(await a.p.textContent('#sysMenuTitle'), 'Ajustes do Sistema');
+    assert.equal(await a.p.isVisible('#settingsTabs'), false);
+    const atalhos = await a.p.locator('#sysMenu .sys-menu-item').evaluateAll(botoes => botoes.map(b => b.dataset.sysOpen));
+    assert.deepEqual(atalhos, ['perfil', 'usuarios', 'pereciveis', 'config', 'alertas', 'sobre']);
+    await a.p.click('#sysMenu [data-sys-open="perfil"]');
     assert.equal(await a.p.textContent('#screenTitle'), 'Perfil e Conta');
-    assert.equal(await a.p.textContent('#settingsTabs [data-settings-view="profile"]'), 'Perfil e Conta');
     assert.equal(await a.p.textContent('#slogan'), 'Área de Assistente');
     assert.equal(await a.p.textContent('#operatorRolePill span'), 'Área de Assistente');
     assert.equal(await a.p.textContent('#profileStatus'), 'Assistente Ativo');
@@ -1910,7 +1914,7 @@ tflaky('Correções de nome: operador não recebe botões de aprovação', { ski
 });
 
 /* Alertas e Notificações: seção própria dentro do menu de Ajustes, não um cartão solto abaixo dele. */
-for (const [papel, chave, depois] of [['admin', 'alertas', 'sobre'], ['gerente', 'alertas', 'sobre'], ['analista', 'alertas', 'sobre'], ['operador', 'op-alertas', 'op-sobre']]) tflaky('Ajustes: ' + papel + ' abre Alertas e Notificações pelo menu, acima de Sobre', { skip: pular }, async () => {
+for (const [papel, chave, depois] of [['admin', 'alertas', 'sobre'], ['gerente', 'alertas', 'sobre'], ['analista', 'alertas', 'sobre'], ['assistente', 'alertas', 'sobre'], ['operador', 'op-alertas', 'op-sobre']]) tflaky('Ajustes: ' + papel + ' abre Alertas e Notificações pelo menu, acima de Sobre', { skip: pular }, async () => {
   const a = await abrirLogado(p => rotasBase(p, papel), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel, nome: 'Teste' });
   await a.p.click('nav button[data-v="aj"]');
   assert.strictEqual(await a.p.isVisible('#sysMenuCard'), true);

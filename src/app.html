@@ -2375,17 +2375,17 @@ function mostrarVisaoAlertas(v){var notif=v==='notifications';$('v-alertas').cla
 var ajVista='settings',sysSecAtual='',AJ_TITULOS={settings:'Configurações',profile:'Perfil e Conta',password:'Alterar Senha',about:'Sobre o Sistema',system:'Ajustes do Sistema',syssection:'Ajustes do Sistema'};
 var SYS_SECOES=[
  {id:'painel',titulo:'Painel de gestão',sub:'Indicadores por filial e consulta de registros',roles:['gerente','admin'],icon:'<path d="M3 4h18v16H3zM7 16v-3m5 3V8m5 8v-5"/>'},
- {id:'perfil',titulo:'Perfil e Conta',sub:'Meus dados, senha e segurança',roles:['analista','gerente','admin'],icon:'<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/>'},
- {id:'usuarios',titulo:'Usuários e Permissões',sub:'Cadastro, perfis e acessos',roles:['analista','gerente','admin'],icon:'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c.5-4 2.7-6 6.5-6s6 2 6.5 6M15 15c3.8-.5 5.8 1.2 6.5 4"/>'},
+ {id:'perfil',titulo:'Perfil e Conta',sub:'Meus dados, senha e segurança',roles:['assistente','analista','gerente','admin'],icon:'<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/>'},
+ {id:'usuarios',titulo:'Usuários e Permissões',sub:'Cadastro, perfis e acessos',roles:['assistente','analista','gerente','admin'],icon:'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c.5-4 2.7-6 6.5-6s6 2 6.5 6M15 15c3.8-.5 5.8 1.2 6.5 4"/>'},
  {id:'lojas',titulo:'Lojas (Filiais)',sub:'Cadastro, equipes e vínculos',roles:['admin'],icon:'<path d="M3 10 5 4h14l2 6M4 10v10h16V10M2.5 10h19M9 20v-6h6v6"/>'},
  {id:'catalogo',titulo:'Catálogo de Produtos',sub:'Cadastro, EAN e produtos conhecidos',roles:['admin'],icon:'<path d="M4 5h16v15H4zM8 5V3h8v2M8 10h8M8 14h5"/>'},
- {id:'pereciveis',titulo:'Perecíveis e Validade',sub:'Etiquetas, prazos e alertas',roles:['analista','gerente','admin'],icon:'<path d="M20.5 3.5c-8 0-15 3-15 10a6 6 0 0 0 6 6c7 0 10-7 9-16zM4 21c2-5 6-8 11-11"/>'},
+ {id:'pereciveis',titulo:'Perecíveis e Validade',sub:'Etiquetas, prazos e alertas',roles:['assistente','analista','gerente','admin'],icon:'<path d="M20.5 3.5c-8 0-15 3-15 10a6 6 0 0 0 6 6c7 0 10-7 9-16zM4 21c2-5 6-8 11-11"/>'},
  {id:'relatorios',titulo:'Relatórios e Indicadores',sub:'Validade, registros e exportações',roles:['analista','gerente','admin'],icon:'<path d="M4 20V11h4v9M10 20V5h4v15M16 20V2h4v18"/>'},
  {id:'auditoria',titulo:'Auditoria do Sistema',sub:'Histórico e rastreabilidade das ações',roles:['admin'],icon:'<path d="M12 3 5 5.8v5.7c0 4.3 2.9 7.6 7 9 4.1-1.4 7-4.7 7-9V5.8zM9 12l2.2 2.2L15.2 10"/>'},
- {id:'config',titulo:'Configuração Geral',sub:'Parâmetros e integrações',roles:['gerente','admin'],icon:'<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="18" r="2"/>'},
+ {id:'config',titulo:'Configuração Geral',sub:'Parâmetros e integrações',roles:['assistente','gerente','admin'],icon:'<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="18" r="2"/>'},
  {id:'dados',titulo:'Dados e Manutenção',sub:'Backup, restauração e sincronização',roles:['admin'],icon:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/>'},
- {id:'alertas',titulo:'Alertas e Notificações',sub:'Avisos de validade, push e agenda',roles:['analista','gerente','admin'],icon:'<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20h4"/>'},
- {id:'sobre',titulo:'Sobre o Sistema',sub:'Versão, ambiente, documentação e suporte',roles:['analista','gerente','admin'],icon:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v.2"/>'}
+ {id:'alertas',titulo:'Alertas e Notificações',sub:'Avisos de validade, push e agenda',roles:['assistente','analista','gerente','admin'],icon:'<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20h4"/>'},
+ {id:'sobre',titulo:'Sobre o Sistema',sub:'Versão, ambiente, documentação e suporte',roles:['assistente','analista','gerente','admin'],icon:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v.2"/>'}
 ];
 var OPERADOR_SECOES=[
  {id:'op-perfil',titulo:'Meu Perfil e Conta',sub:'Dados da loja, segurança e acesso',roles:['operador','promotor'],icon:'<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/>'},
@@ -2393,14 +2393,14 @@ var OPERADOR_SECOES=[
  {id:'op-alertas',titulo:'Alertas e Notificações',sub:'Avisos de validade, push e agenda',roles:['operador','promotor'],icon:'<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20h4"/>'},
  {id:'op-sobre',titulo:'Ajuda e Sobre',sub:'Versão e informações do aplicativo',roles:['operador','promotor'],icon:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v.2"/>'}
 ];
-function podeVerMenuSistema(){return ['analista','gerente','admin'].includes(papelAtual());}
+function podeVerMenuSistema(){return ['assistente','analista','gerente','admin'].includes(papelAtual());}
 function papelOperacional(papel){return papel==='operador'||papel==='promotor';}
 function podeVerMenuOperador(){return papelOperacional(papelAtual());}
 function tituloAjustesOperacional(){return papelAtual()==='promotor'?'Ajustes do Promotor':'Ajustes do Operador';}
 function podeVerMenuAjustes(){return podeVerMenuSistema()||podeVerMenuOperador();}
 /* Seções ligadas a uma permissão aparecem para qualquer perfil que a tenha; as demais seguem `roles`. */
-var SECAO_PERMISSAO={usuarios:'usuarios_gerenciar',lojas:'lojas_gerenciar',catalogo:'catalogo_gerenciar',relatorios:'relatorios',auditoria:'auditoria_ver',dados:'dados_manutencao'};
-function secaoPermitida(item){if(!item)return false;if(item.id==='painel')return !adminDesktopAtivo()&&podeAbrirPainelMobile();if(item.id==='usuarios'&&papelOperacional(papelAtual()))return false;var perm=SECAO_PERMISSAO[item.id];return perm?temPermissao(perm):item.roles.includes(papelAtual());}
+var SECAO_PERMISSAO={lojas:'lojas_gerenciar',catalogo:'catalogo_gerenciar',relatorios:'relatorios',auditoria:'auditoria_ver',dados:'dados_manutencao'};
+function secaoPermitida(item){if(!item)return false;if(item.id==='painel')return !adminDesktopAtivo()&&podeAbrirPainelMobile();if(item.id==='usuarios'){var papel=papelAtual();return papel==='assistente'||(!papelOperacional(papel)&&temPermissao('usuarios_gerenciar'));}var perm=SECAO_PERMISSAO[item.id];return perm?temPermissao(perm):item.roles.includes(papelAtual());}
 function secoesMenuAjustes(){if(!podeVerMenuOperador())return SYS_SECOES;
   var extras=SYS_SECOES.filter(function(x){return SECAO_PERMISSAO[x.id];}),i=OPERADOR_SECOES.length-2;
   return OPERADOR_SECOES.slice(0,i).concat(extras,OPERADOR_SECOES.slice(i));}
