@@ -1464,6 +1464,9 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 .product-description {
   text-transform: uppercase;
 }
+#bFotoCadastro{padding:0;cursor:pointer}
+#bFotoCadastro:disabled{cursor:default}
+#pFotoStatus{margin:4px 0 0;color:#dceefa;font-size:12px}
 #photoPreviewImage{display:block;width:min(100%,220px);height:160px;object-fit:contain;margin:10px auto;background:#fff;border-radius:8px}
 #detailPhotoStatus{margin:6px 0;color:#c1d0df;font-size:13px}
 </style>
@@ -1856,7 +1859,7 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
     </div>
     <div class="card reg-data" id="cardProd" style="display:none">
       <h2>Dados do produto</h2>
-      <div class="reg-prod"><span class="reg-thumb"><img id="pImg" alt="" style="display:none"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg></span><div class="reg-prod-copy"><textarea id="pNome" rows="1" placeholder="Nome do produto" aria-label="Nome do produto"></textarea><div class="reg-prod-code">Código: <span class="ean" id="pEan"></span></div><div id="pStatus" class="reg-prod-status"></div></div></div>
+      <div class="reg-prod"><button class="reg-thumb" type="button" id="bFotoCadastro" aria-label="Abrir câmera para tirar foto do produto" aria-describedby="pFotoStatus"><img id="pImg" alt="" hidden><svg class="ico" id="pFotoAcao" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg></button><input id="pFotoCamera" type="file" accept="image/*" capture="environment" hidden><div class="reg-prod-copy"><textarea id="pNome" rows="1" placeholder="Nome do produto" aria-label="Nome do produto"></textarea><div class="reg-prod-code">Código: <span class="ean" id="pEan"></span></div><div id="pStatus" class="reg-prod-status"></div><p id="pFotoStatus" role="status" hidden></p></div></div>
       <div class="reg-grid">
         <div><label class="f" for="pLote">Lote *</label><input id="pLote" autocapitalize="characters" placeholder="L2345"></div>
         <div><label class="f" for="pVal">Validade *</label><input id="pVal" type="date"></div>
@@ -2470,7 +2473,7 @@ var regTipoAtual='ind',etqPendente=null,ultimoRegistro='ind';
 function regTipo(t){regTipoAtual=t;var pe=t==='pere';$('regTipo').style.display='';$('regIndustrial').style.display=pe?'none':'';$('regPerecivel').style.display=pe?'':'none';$('regSucesso').style.display='none';
   [['bTipoIndustrial',!pe],['bTipoPerecivel',pe]].forEach(function(x){$(x[0]).classList.toggle('on',x[1]);$(x[0]).setAttribute('aria-pressed',x[1]?'true':'false');});}
 function limparEtiquetaLida(){etqPendente=null;$('etqConfirm').style.display='none';$('etqDados').innerHTML='';}
-function mostrarEscolhaRegistro(){atual=null;$('cardProd').style.display='none';$('cardRegScan').style.display='';$('pLote').value='';$('pQtd').value='';$('pVal').value='';$('pSetor').value='';$('tCodigo').value='';limparEtiquetaLida();regTipo('ind');}
+function mostrarEscolhaRegistro(){atual=null;fotoCadastro=null;$('cardProd').style.display='none';$('cardRegScan').style.display='';$('pLote').value='';$('pQtd').value='';$('pVal').value='';$('pSetor').value='';$('tCodigo').value='';limparEtiquetaLida();regTipo('ind');}
 function abrirRegistroPerecivel(){limparEtiquetaLida();regTipo('pere');ir('reg');}
 $('bTipoIndustrial').onclick=function(){regTipo('ind');};
 $('bTipoPerecivel').onclick=function(){limparEtiquetaLida();$('cardPe').style.display='none';peAtual=null;regTipo('pere');};
@@ -2604,14 +2607,19 @@ function pesquisarWeb(ean){var u='https://www.google.com/search?q='+encodeURICom
   if(window.Android&&Android.abrirLink)Android.abrirLink(u);else window.open(u,'_blank');}
 function abrirProduto(ean){
   if(!/^\d{6,14}$/.test(ean)){toast('Código inválido');return;}
-  atual=ean;$('cardProd').style.display='block',ajustarAltura($('pNome'));$('pEan').textContent=ean;
-  var conhecido=D.cat[ean];
+  atual=ean;var foto=fotoCadastro={ean:ean,sessao:SESS,loja:SESS&&SESS.lojaId};
+  $('pFotoStatus').hidden=true;$('pFotoStatus').textContent='';
+  $('cardProd').style.display='block',ajustarAltura($('pNome'));$('pEan').textContent=ean;
+  var conhecido=D.cat[ean];$('bFotoCadastro').setAttribute('aria-label','Abrir câmera para tirar foto do produto');
   $('pNome').value=conhecido?conhecido.nome:'';$('pLote').value='';$('pQtd').value='';$('pVal').value='';$('pEmAreaVendas').checked=true;
   mostrarImg(conhecido&&conhecido.img);
+  buscarFotoCompartilhada(ean).then(function(compartilhada){
+    if(fotoCadastro===foto&&!foto.previa&&compartilhada){foto.compartilhada=true;mostrarImg(compartilhada.img);}
+  });
   if(conhecido){$('pStatus').textContent=(conhecido.marca?conhecido.marca+' • ':'')+'já cadastrado';}
   else{$('pStatus').innerHTML='<span class="gira"></span> buscando o nome na internet…';
-    buscarNome(ean).then(function(r){if(atual!==ean)return;
-      if(r&&r.nome){catalogar(ean,{nome:r.nome,marca:r.marca,img:r.img});if(!$('pNome').value)$('pNome').value=r.nome;$('pStatus').textContent=(r.marca?r.marca+' • ':'')+'encontrado no '+r.fonte+' ✔';mostrarImg(r.img);}
+    buscarNome(ean).then(function(r){if(fotoCadastro!==foto)return;
+      if(r&&r.nome){catalogar(ean,{nome:r.nome,marca:r.marca,img:r.img});if(!$('pNome').value)$('pNome').value=r.nome;$('pStatus').textContent=(r.marca?r.marca+' • ':'')+'encontrado no '+r.fonte+' ✔';if(!foto.previa&&!foto.compartilhada)mostrarImg(r.img);}
       else{var motivo=navigator.onLine===false?'sem internet':'não encontrado nas bases';
         $('pStatus').innerHTML=motivo+' — digite o nome (fica salvo) <button class="btn sec" id="bWeb" style="padding:6px 10px;font-size:12px;margin-top:6px">🔎 Pesquisar na web</button>'
           +(r&&r.erros&&r.erros.length?'<div style="font-size:11px;margin-top:4px;opacity:.75">'+esc(r.erros.slice(0,3).join(' • '))+'</div>':'')
@@ -2619,7 +2627,53 @@ function abrirProduto(ean){
         $('bWeb').onclick=function(){pesquisarWeb(ean);};}});}
   lotesDoAtual();setTimeout(function(){($('pNome').value?$('pLote'):$('pNome')).focus();},200);
   $('cardProd').scrollIntoView({behavior:'smooth',block:'start'});}
-function mostrarImg(u){var i=$('pImg');if(u){i.src=u;i.style.display='block';i.onerror=function(){i.style.display='none';};}else i.style.display='none';}
+var fotoCadastro=null,fotoCadastroCamera=null;
+function mostrarImg(url){
+  var imagem=$('pImg'),botao=$('bFotoCadastro'),acao=$('pFotoAcao');
+  imagem.onerror=null;imagem.hidden=!url;acao.hidden=!!url;botao.disabled=!!url;
+  if(url){
+    imagem.onerror=function(){imagem.hidden=true;acao.hidden=false;botao.disabled=false;};
+    imagem.src=url;
+  }else imagem.removeAttribute('src');
+}
+$('bFotoCadastro').onclick=function(){
+  if(fotoCadastro&&atual===fotoCadastro.ean&&pode('registrar')&&!$('bSalvarLote').disabled){
+    fotoCadastroCamera=fotoCadastro;$('pFotoCamera').click();
+  }
+};
+$('pFotoCamera').onchange=async function(){
+  var arquivo=this.files[0],foto=fotoCadastroCamera;
+  this.value='';fotoCadastroCamera=null;
+  if(!arquivo||!foto||foto!==fotoCadastro||foto.sessao!==SESS||$('bSalvarLote').disabled)return;
+  var escolha=foto.escolha=(foto.escolha||0)+1;
+  var status=$('pFotoStatus');
+  status.hidden=false;status.textContent='Preparando foto…';foto.preparando=true;
+  try{
+    var imagem=await compactarFotoProduto(arquivo);
+    if(fotoCadastro!==foto||foto.escolha!==escolha)return;
+    foto.previa=imagem;mostrarImg(imagem);
+    $('bFotoCadastro').disabled=false;
+    $('bFotoCadastro').setAttribute('aria-label','Tirar outra foto do produto');
+    status.textContent='Foto pronta para salvar com o registro.';
+  }catch(e){
+    if(fotoCadastro===foto&&foto.escolha===escolha)status.textContent=e.message;
+  }finally{
+    if(foto.escolha===escolha)foto.preparando=false;
+  }
+};
+async function enviarFotoCadastro(foto){
+  if(!foto||!foto.previa)return '';
+  if(!SESS||SESS!==foto.sessao||SESS.lojaId!==foto.loja)return '';
+  try{
+    var existente=await buscarFotoCompartilhada(foto.ean,true);
+    if(existente===undefined)throw new Error('Foto indisponível');
+    var catalogo=await catalogoBuscar(foto.ean);
+    if(!catalogo||SESS!==foto.sessao||SESS.lojaId!==foto.loja)throw new Error('Catálogo indisponível');
+    if((existente||catalogo.img)&&!['gerente','admin'].includes(papelAtual()))return 'O catálogo já tem foto. A troca pode ser feita pela gerência no detalhe.';
+    await salvarFotoProduto({registro:{ean:foto.ean},sessao:foto.sessao,loja:foto.loja,revisao:existente?existente.revisao:null,imgAnterior:catalogo.img||''},foto.previa);
+    return 'Foto salva no catálogo.';
+  }catch(e){return 'Registro salvo. Envie a foto novamente pelo detalhe do produto.';}
+}
 $('bBuscar').onclick=function(){var c=$('tCodigo').value.replace(/\D/g,'');if(c){$('tCodigo').value='';tratarCodigo(c,'prod');}};
 $('tCodigo').onkeydown=function(e){if(e.key==='Enter')$('bBuscar').click();};
 function erroSQL(r,contexto){var d=r&&r.dados,msg=d&&(d.message||d.error_description||d.msg||d.error);var e=new Error((msg||('HTTP '+(r&&r.status||'sem resposta')))+(d&&d.details?' — '+d.details:'')+(d&&d.hint?' — '+d.hint:''));e.servidor=true;return e;}
@@ -2640,7 +2694,7 @@ function inserirLoteSQL(ean,nome,reg,lojaId){
     .then(function(r){if(!r.ok)throw erroSQL(r,'lote');return r.dados||{};});
 }
 function inserirPerecivelSQL(payload){return sbReq('/rest/v1/rpc/registrar_perecivel',{method:'POST',body:payload});}
-$('bSalvarLote').onclick=function(){if(!pode('registrar')){toast('Seu perfil não registra produtos');return;}if(!atual)return;var nome=$('pNome').value.trim(),lote=$('pLote').value.trim().toUpperCase(),qtd=num($('pQtd').value),val=$('pVal').value,setor=$('pSetor').value,emAreaVendas=$('pEmAreaVendas').checked;
+$('bSalvarLote').onclick=function(){if(!pode('registrar')){toast('Seu perfil não registra produtos');return;}if(!atual)return;if(fotoCadastro&&fotoCadastro.preparando){toast('Aguarde a foto ficar pronta.');return;}var nome=$('pNome').value.trim(),lote=$('pLote').value.trim().toUpperCase(),qtd=num($('pQtd').value),val=$('pVal').value,setor=$('pSetor').value,emAreaVendas=$('pEmAreaVendas').checked;
   if(!nome){toast('Digite o nome do produto');$('pNome').focus();return;}if(!lote){toast('Informe o lote');$('pLote').focus();return;}if(qtd<=0){toast('A quantidade deve ser maior que zero');$('pQtd').focus();return;}if(!val){toast('Informe a validade');$('pVal').focus();return;}if(!SETORES.includes(setor)){$('pSetor').focus();toast('Selecione um dos setores oficiais');return;}
   if(sbOn()&&(!logado()||!SESS.lojaId)){toast('Faça login e selecione uma loja para salvar no SQL.');return;}
   var p=D.prod[atual]||(D.prod[atual]={lotes:[]}),ex=null;p.lotes.forEach(function(l){if(l.lote===lote&&l.val===val)ex=l;});
@@ -2648,21 +2702,28 @@ $('bSalvarLote').onclick=function(){if(!pode('registrar')){toast('Seu perfil nã
   if(!sbOn()){
     if(ex){var novo=prompt('Este lote já existe. Informe a quantidade final (atual: '+ex.qtd+', digitada: '+qtd+'):',String(+ex.qtd+qtd));if(novo===null)return;var nf=num(novo);if(nf<=0){toast('Quantidade inválida');return;}ex.qtd=nf;ex.setor=setor;ex.em_area_vendas=emAreaVendas;ex.created_by_nome='Usuário local';}
     else{reg.created_by_nome='Usuário local';p.lotes.push(reg);}
-    D.cat[atual]=Object.assign({},D.cat[atual]||{},{nome:nome});salvar();lembrete(ex||reg,nome);toast('Salvo neste aparelho');listaProdutos();mostrarEscolhaRegistro();registroConcluido({tipo:'ind',local:true,nome:nome,linhas:resumoLote(ex||reg)});return;
+    D.cat[atual]=Object.assign({},D.cat[atual]||{},{nome:nome});if(fotoCadastro&&fotoCadastro.previa)D.cat[atual].img=fotoCadastro.previa;salvar();lembrete(ex||reg,nome);toast('Salvo neste aparelho');listaProdutos();mostrarEscolhaRegistro();registroConcluido({tipo:'ind',local:true,nome:nome,linhas:resumoLote(ex||reg)});return;
   }
   if(ex){toast('Este lote e validade já estão cadastrados nesta loja. Edite o registro existente.');return;}
   var b=$('bSalvarLote');rotuloBotao(b,'Salvando…',true);
-  var eanSalvo=atual,lojaSalva=SESS.lojaId;
+  var eanSalvo=atual,lojaSalva=SESS.lojaId,fotoSalva=fotoCadastro;
   inserirLoteSQL(eanSalvo,nome,reg,lojaSalva).then(function(serverRow){
     D.cat[eanSalvo]=Object.assign({},D.cat[eanSalvo]||{},{nome:nome});reg.created_by=serverRow.created_by||SESS.uid;reg.created_by_nome=serverRow.created_by_nome||SESS.nome||SESS.usuario;reg.em_area_vendas=serverRow.em_area_vendas==null?emAreaVendas:!!serverRow.em_area_vendas;reg.criado=serverRow.criado||reg.criado;reg.rpcConfirmado=true;p.lotes.push(reg);
     salvar();lembrete(reg,nome);toast('Lote confirmado no Supabase ✔');auditar('registrou_lote',{ean:eanSalvo,lote:lote,qtd:qtd,val:val,setor:setor,em_area_vendas:emAreaVendas});vib(40);
-    listaProdutos();mostrarEscolhaRegistro();registroConcluido({tipo:'ind',nome:nome,linhas:resumoLote(reg)});
+    var linhas=resumoLote(reg);
+    return enviarFotoCadastro(fotoSalva).then(function(aviso){
+      if(aviso)linhas.push(aviso);
+      listaProdutos();
+      if(fotoCadastro!==fotoSalva)return;
+      mostrarEscolhaRegistro();registroConcluido({tipo:'ind',nome:nome,linhas:linhas});
+    });
   }).catch(function(e){
     if(ehSemRede(e)){
       D.cat[eanSalvo]=Object.assign({},D.cat[eanSalvo]||{},{nome:nome});reg.created_by=SESS.uid;reg.created_by_nome=SESS.nome||SESS.usuario||'Usuário';p.lotes.push(reg);salvar();
       lembrete(reg,nome);marcarPendente(1,{tipo:'lote',uid:SESS.uid,payload:payloadLoteSQL(eanSalvo,nome,reg,lojaSalva)});vib(40);
       toast('Sem internet — lote salvo no aparelho. Sincroniza ao reconectar ✔');
-      listaProdutos();mostrarEscolhaRegistro();registroConcluido({tipo:'ind',pendente:true,nome:nome,linhas:resumoLote(reg)});
+      var linhas=resumoLote(reg);if(fotoSalva&&fotoSalva.previa)linhas.push('Envie a foto pelo detalhe depois que o lote sincronizar.');
+      listaProdutos();mostrarEscolhaRegistro();registroConcluido({tipo:'ind',pendente:true,nome:nome,linhas:linhas});
     }else{toast('Falha SQL: '+(e.message||'erro desconhecido'));console.error('Falha ao inserir lote no Supabase',e);}
   })
   .finally(function(){rotuloBotao(b,'Salvar registro',false);});};
