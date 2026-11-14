@@ -230,6 +230,8 @@ em `src/app.html`, dentro de `#preferencesArea`):
 
 ## 6. Diário (acrescente uma linha a cada mudança)
 
+- 13/11 — Codex — Botão Recolher nos cartões de Alertas para lotes e perecíveis sincronizados. Reutiliza a autorização por perfil e a RPC existente. Validação em celular real pendente.
+
 - 10/11 — Claude — Catálogo do administrador implementado na branch `feat/catalogo-admin` (`3ac395c`); este documento criado.
 - 10/11 — Claude — PR #32 aberta; subtítulo do cabeçalho do Catálogo encurtado (cortava a 360 px); conferência visual feita. Falta só a autorização de merge.
 - 10/11 — Claude — Push: segredo salvo pelo Jonatas; disparo testado (200, 6 avisos, 0 push por falta de aparelhos inscritos); migration `agendador_dispara_push` aplicada em produção e incluída na PR #32. Falta inscrever aparelhos e conferir a execução de 11/11.
