@@ -3521,17 +3521,44 @@ $('listaProd').addEventListener('click',function(e){
   var lote=produto&&(produto.lotes||[]).find(function(l){return String(l.id)===botao.dataset.shareLote;});
   if(lote)compartilhar(textoLoteCompartilhado(ean,lote),mostrarTextoCompartilhado);
 });
-$('bShareProdDue').onclick=function(){
-  var itens=[];
+/* Lotes efetivamente visíveis em "Meus Registros" (produtos), com os mesmos filtros
+   e ordenação da lista. Usada pelo botão de compartilhamento ao lado do Filtrar. */
+function lotesFiltradosProd(){
+  var q=$('qProd').value.toLowerCase(),setorFiltro=$('fSetorProd').value,
+      periodo=+$('fPeriodoProd').value||0,situacao=$('fSituacaoProd').value,
+      local=$('fLocalProd').value,desde=periodo?Date.now()-periodo*864e5:0,
+      recolhidos=mostrarRecolhidosProd,res=[];
   Object.keys(D.prod).forEach(function(ean){
-    (D.prod[ean].lotes||[]).forEach(function(lote){
-      if(registroVenceEmAteCincoDias(lote))itens.push({ean:ean,lote:lote});
+    var p=D.prod[ean]||{};(p.lotes||[]).forEach(function(l){
+      if(recolhidos){if(!(l.recolhido_em&&!foraRetencaoOperacional(l)))return;}
+      else if(!registroAtivoOperacional(l))return;
+      var n=dias(l.val),data=adminInsightDate(l.criado||l.criado_em||l.created_at),
+          stamp=data?data.getTime():null,deposito=l.em_area_vendas===false,c=detalheProduto(ean);
+      if(local&&local!==(deposito?'deposito':'vendas'))return;
+      if(setorFiltro&&l.setor!==setorFiltro||periodo&&(!stamp||stamp<desde))return;
+      if(!recolhidos&&(situacao==='validos'&&(n===null||n<=D.aj.dias)||situacao==='alerta'&&(n===null||n<0||n>D.aj.dias)||situacao==='vencidos'&&(n===null||n>=0)))return;
+      if(q&&((c.nome||'')+' '+ean+' '+l.lote+' '+l.setor+' '+l.created_by_nome).toLowerCase().indexOf(q)<0)return;
+      res.push({ean:ean,lote:l});
     });
   });
-  if(!itens.length){toast('Nenhum produto vence em até 5 dias.');return;}
-  itens.sort(function(a,b){return a.lote.val.localeCompare(b.lote.val);});
-  var filial=SESS&&SESS.lojaNome;
-  var titulo='Produtos com vencimento de hoje a 5 dias'+(filial?' · '+filial:'');
+  res.sort(function(a,b){return (a.lote.val||'9').localeCompare(b.lote.val||'9');});
+  return res;
+}
+function rotuloFiltrosProd(){var r=[];
+  var setor=$('fSetorProd').value;if(setor)r.push('Setor: '+setor);
+  var p=$('fPeriodoProd').value;if(p)r.push('Cadastro: últimos '+p+' dias');
+  var sit={validos:'Válidos',alerta:'Próximos do vencimento',vencidos:'Vencidos'}[$('fSituacaoProd').value];if(sit)r.push('Situação: '+sit);
+  var loc={vendas:'Área de Vendas',deposito:'Depósito'}[$('fLocalProd').value];if(loc)r.push('Local: '+loc);
+  var q=$('qProd').value.trim();if(q)r.push('Busca: '+q);
+  if(mostrarRecolhidosProd)r.push('Recolhidos');
+  return r;
+}
+$('bShareProdDue').onclick=function(){
+  var itens=lotesFiltradosProd();
+  if(!itens.length){toast('Nenhum produto na lista atual.');return;}
+  var filial=SESS&&SESS.lojaNome,filtros=rotuloFiltrosProd();
+  var titulo='Validades'+(filial?' · '+filial:'')+' ('+itens.length+')';
+  if(filtros.length)titulo+='\n'+filtros.join(' · ');
   compartilhar(titulo+'\n\n'+itens.map(function(item){
     return textoLoteCompartilhado(item.ean,item.lote);
   }).join('\n\n'),mostrarTextoCompartilhado);

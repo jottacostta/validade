@@ -1258,7 +1258,8 @@ tflaky('Meus Registros: compartilha um lote e todos os vencimentos de hoje a D+5
     {...lote('recolhido',data(2),3,'FORA-RECOLHIDO'),recolhido_em:new Date().toISOString()});
   const a=await abrir({opcoes:{viewport:{width:320,height:780}},dados:{
     prod:{[ean]:{lotes},[outro]:{lotes:[{...lote('hoje',data(0),4,'INCLUIR-HOJE'),em_area_vendas:false}]}},
-    cat:{[ean]:{nome:'Café da loja'},[outro]:{nome:'Produto do depósito'}}
+    cat:{[ean]:{nome:'Café da loja'},[outro]:{nome:'Produto do depósito'}},
+    aj:{dias:5}
   },antes:p=>p.addInitScript(()=>{
     window.textosCompartilhados=[];
     Object.defineProperty(navigator,'share',{configurable:true,value:({text})=>{window.textosCompartilhados.push(text);return Promise.resolve();}});
@@ -1274,6 +1275,9 @@ tflaky('Meus Registros: compartilha um lote e todos os vencimentos de hoje a D+5
     assert.match(textos[0],/CAFÉ DA LOJA\nCódigo: 7891000315507\nLote: INCLUIR-0\nQuantidade: 1 un\.\nValidade: \d{2}\/\d{2}\/\d{4}\nSetor: Laticínios\nLocal: Área de Vendas/);
     assert.doesNotMatch(textos[0],/INCLUIR-HOJE|INCLUIR-1/);
     assert.equal(await a.p.isVisible('#listaProd'),true);
+    // Botão agora respeita os filtros da tela: para compartilhar "hoje a D+5" limpa a busca e reduz a janela do alerta para 5 dias.
+    await a.p.fill('#qProd','');
+    await a.p.selectOption('#fSituacaoProd','alerta');
     await a.p.click('#bShareProdDue');
     textos=await a.p.evaluate(()=>window.textosCompartilhados);
     assert.equal(textos.length,2);
@@ -1281,6 +1285,8 @@ tflaky('Meus Registros: compartilha um lote e todos os vencimentos de hoje a D+5
     assert.equal((textos[1].match(/^Lote: /gm)||[]).length,11);
     assert.doesNotMatch(textos[1],/FORA-/);
     await a.p.evaluate(()=>Object.defineProperty(navigator,'share',{configurable:true,value:undefined}));
+    // modal fallback usa showModal nativo; mocka para isso ser inspecionável em jsdom/playwright
+    await a.p.evaluate(() => { HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); }; });
     await a.p.click('#bShareProdDue');
     assert.equal(await a.p.isVisible('#shareProdDialog'),true);
     assert.equal(await a.p.inputValue('#shareProdText'),textos[1]);
@@ -3576,5 +3582,59 @@ tflaky('Legibilidade em ' + largura + ' px: textos com pelo menos 12 px e sem ro
     pequenos.push(...r.achados.map(x => v + ': ' + x));
   }
   assert.deepStrictEqual(pequenos, []);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+/* Compartilhar da lista Produtos (botão ao lado do Filtrar) respeita os filtros ativos. */
+tflaky('Compartilhar da lista Produtos respeita setor, situação e busca', { skip: pular }, async () => {
+  const lotePadaria = Object.assign(lote('pad1', offsetValidade(3), 2, 'LOTE-PAD'), { setor: 'Padaria', em_area_vendas: true });
+  const loteFlv = Object.assign(lote('flv1', offsetValidade(5), 7, 'LOTE-FLV'), { setor: 'FLV', em_area_vendas: true });
+  const loteFlvDeposito = Object.assign(lote('flv2', offsetValidade(4), 12, 'LOTE-FLVD'), { setor: 'FLV', em_area_vendas: false });
+  const a = await abrir({ dados: {
+    prod: {
+      '7891000001': { lotes: [lotePadaria] },
+      '7891000002': { lotes: [loteFlv] },
+      '7891000003': { lotes: [loteFlvDeposito] }
+    },
+    cat: {
+      '7891000001': { nome: 'Pão de Forma' },
+      '7891000002': { nome: 'Ovos Caipira c/10' },
+      '7891000003': { nome: 'Banana Prata kg' }
+    },
+    pere: { itens: {}, regs: [] }
+  } });
+  await a.p.click('nav button[data-v="prod"]');
+  // Garante que o diálogo abre o modal e capturamos o texto enviado.
+  await a.p.evaluate(() => { HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); }; });
+  await a.p.selectOption('#fSetorProd', 'FLV');
+  await a.p.selectOption('#fSituacaoProd', 'alerta');
+  await a.p.click('#bShareProdDue');
+  const texto = await a.p.inputValue('#shareProdText');
+  assert.ok(texto.includes('OVOS CAIPIRA C/10'), 'inclui FLV Área de Vendas: ' + texto);
+  assert.ok(texto.includes('BANANA PRATA KG'), 'inclui FLV Depósito: ' + texto);
+  assert.ok(!texto.includes('PÃO DE FORMA'), 'não inclui Padaria: ' + texto);
+  assert.ok(/Setor:\s*FLV/.test(texto) && /Situação:\s*Próximos do vencimento/.test(texto), 'resumo dos filtros no cabeçalho: ' + texto);
+  // Fecha, aplica localização = Depósito e verifica que exclui o lote da Área de Vendas
+  await a.p.evaluate(() => { document.getElementById('shareProdDialog').removeAttribute('open'); document.getElementById('shareProdText').value = ''; });
+  await a.p.selectOption('#fLocalProd', 'deposito');
+  await a.p.click('#bShareProdDue');
+  const texto2 = await a.p.inputValue('#shareProdText');
+  assert.ok(texto2.includes('BANANA PRATA KG') && !texto2.includes('OVOS CAIPIRA'), 'só Depósito: ' + texto2);
+  assert.ok(/Local:\s*Depósito/.test(texto2), 'cabeçalho mostra local: ' + texto2);
+  assert.deepStrictEqual(a.erros, []); await a.fechar();
+});
+
+tflaky('Compartilhar da lista Produtos: sem filtro compartilha todos os produtos próximos do vencimento', { skip: pular }, async () => {
+  const dados = { prod: {}, cat: {}, pere: { itens: {}, regs: [] } };
+  dados.prod['7891000011'] = { lotes: [Object.assign(lote('a', offsetValidade(2), 3, 'LA'), { setor: 'Mercearia' })] };
+  dados.prod['7891000012'] = { lotes: [Object.assign(lote('b', offsetValidade(30), 1, 'LB'), { setor: 'Padaria' })] };
+  dados.cat['7891000011'] = { nome: 'Produto A' };
+  dados.cat['7891000012'] = { nome: 'Produto B' };
+  const a = await abrir({ dados });
+  await a.p.click('nav button[data-v="prod"]');
+  await a.p.evaluate(() => { HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); }; });
+  await a.p.click('#bShareProdDue');
+  const texto = await a.p.inputValue('#shareProdText');
+  assert.ok(texto.includes('PRODUTO A') && texto.includes('PRODUTO B'), 'sem filtro: inclui todos ativos ' + texto);
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
