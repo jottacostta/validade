@@ -3069,6 +3069,41 @@ tflaky('recolhimento: operador autorizado confirma pela RPC e o registro some se
   await a.fechar();
 });
 
+tflaky('Alertas: recolhe lote e perecível sem abrir o detalhe e atualiza os contadores', { skip: pular }, async () => {
+  const chamadas = [];
+  const a = await abrirLogado(async p => {
+    await rotasPerm(p, 'operador', []);
+    await p.route('**/rest/v1/rpc/marcar_registro_recolhido', r => {
+      const payload = r.request().postDataJSON();
+      chamadas.push(payload);
+      return r.fulfill({ status: 200, json: { recolhido_em: new Date().toISOString(), recolhido_por: 'u1' } });
+    });
+  }, dadoRetencao(), { uid: 'u1', papel: 'operador' });
+  try {
+    await permsCarregadas(a.p);
+    await a.p.setViewportSize({ width: 360, height: 800 });
+    await a.p.click('nav button[data-v="alertas"]');
+    const lista = a.p.locator('#listaAlertasValidade');
+    assert.strictEqual(await lista.locator('[data-recolher]').count(), 3);
+    assert.strictEqual(await lista.locator('[data-recolher-id="ja-recolhido"], [data-recolher-id="vencido-6"]').count(), 0);
+    await lista.locator('[data-detail-lote="vence-em-2"]').click();
+    assert.strictEqual(await a.p.isVisible('#v-detail'), true);
+    await a.p.click('nav button[data-v="alertas"]');
+    for (const id of ['vencido-5', 'pere-vence-1']) {
+      await lista.locator('[data-recolher-id="'+id+'"]').click();
+      await lista.locator('[data-recolher-id="'+id+'"]').waitFor({ state: 'detached' });
+      assert.strictEqual(await a.p.isVisible('#v-detail'), false);
+    }
+    assert.deepStrictEqual(chamadas, [
+      { p_tipo: 'lote', p_id: 'vencido-5', p_loja_id: 'L1' },
+      { p_tipo: 'perecivel', p_id: 'pere-vence-1', p_loja_id: 'L1' }
+    ]);
+    assert.strictEqual(await a.p.textContent('#alertCountVenc'), '0');
+    assert.strictEqual(await a.p.textContent('#alertCountProx'), '1');
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
 tflaky('recolhimento: mantém o registro visível se o servidor recusar a ação', { skip: pular }, async () => {
   const dados = dadoRetencao();
   dados.prod['7891000315507'].lotes = [lote('lote-negado', offsetValidade(-2), 1, 'L-NEGADO')];
@@ -3103,6 +3138,8 @@ tflaky('recolhimento: permissão padrão permite a todos os perfis recolher na l
   await permsCarregadas(a.p);
   await a.p.click('nav button[data-v="prod"]');
   assert.strictEqual(await a.p.locator('#listaProd [data-recolher]').count(), 0, 'desativar no painel admin oculta o botão para esse perfil');
+  await a.p.click('nav button[data-v="alertas"]');
+  assert.strictEqual(await a.p.locator('#listaAlertasValidade [data-recolher]').count(), 0);
   assert.deepStrictEqual(a.erros, []);
   await a.fechar();
 });
