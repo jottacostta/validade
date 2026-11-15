@@ -4,12 +4,18 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const html = fs.readFileSync(path.join(__dirname, '../src/app.html'), 'utf8');
+const checklist = fs.readFileSync(path.join(__dirname, '../src/checklist.js'), 'utf8');
 
 test('Área do Operador usa cinco abas principais e mantém o registro iniciado pela Home', () => {
   const nav = html.match(/<nav class="abas" id="abas">([\s\S]*?)<\/nav>/);
   assert.ok(nav, 'navegação principal encontrada');
-  const tabs = [...nav[1].matchAll(/data-v="([^"]+)"/g)].map(m => m[1]);
+  const tabs = [...nav[1].matchAll(/data-v="([^"]+)"/g)].map(m => m[1]).filter(id => id !== 'checklist');
   assert.deepEqual(tabs, ['home', 'prod', 'pere', 'alertas', 'aj']);
+  assert.match(nav[1], /id="navChecklist"[^>]*data-v="checklist"[^>]*hidden/,
+    'Rondas não é uma sexta aba geral: fica oculta até confirmar a designação');
+  assert.match(checklist, /if\(b\)b\.hidden=!ok/);
+  assert.match(checklist, /function checklistAtualizarAcesso\(\)[\s\S]*?checklist_acessos[\s\S]*?funcao[\s\S]*?CHECKLIST\.roles\.length>0/,
+    'a visibilidade depende da atribuição autenticada da loja atual');
   assert.match(html, /id="homeRegister"/);
   assert.match(html, /function mostrarEscolhaRegistro\(\)/);
 });
@@ -156,13 +162,13 @@ test('Push e regras pessoais: cartão dedicado aparece em Configurações e não
   assert.match(html, /\$\('pushCard'\)\.style\.display=mostrarAlertas\?'':'none'/);
 });
 
-test('Ajustes administrativos: menu de doze seções respeita a hierarquia dos perfis', () => {
+test('Ajustes administrativos: menu de treze seções respeita a hierarquia dos perfis', () => {
   for (const id of ['sysMenuCard', 'sysMenu', 'sysSectionHead', 'sysBackToMenu', 'sysSectionTitle', 'sysSectionView', 'sysReportsPanel']) {
     assert.match(html, new RegExp('id="' + id + '"'), id + ' existe');
   }
   const entries = [...html.matchAll(/\{id:'([^']+)',titulo:'([^']+)',sub:'[^']+',roles:\[([^\]]+)\]/g)].filter(x => !x[1].startsWith('op-'));
-  assert.equal(entries.length, 12, 'doze seções administrativas definidas');
-  assert.deepEqual(entries.map(x => x[1]), ['painel','perfil','usuarios','lojas','catalogo','pereciveis','relatorios','auditoria','config','dados','alertas','sobre']);
+  assert.equal(entries.length, 13, 'treze seções administrativas definidas');
+  assert.deepEqual(entries.map(x => x[1]), ['painel','perfil','usuarios','lojas','catalogo','pereciveis','relatorios','auditoria','config','dados','alertas','checklist','sobre']);
   const access = Object.fromEntries(entries.map(x => [x[1], x[3].replace(/'/g, '').split(',')]));
   assert.deepEqual(access.painel, ['gerente','admin']);
   assert.deepEqual(access.perfil, ['assistente','analista','gerente','admin']);
@@ -174,6 +180,7 @@ test('Ajustes administrativos: menu de doze seções respeita a hierarquia dos p
   assert.deepEqual(access.auditoria, ['admin']);
   assert.deepEqual(access.config, ['assistente','gerente','admin']);
   assert.deepEqual(access.dados, ['admin']);
+  assert.deepEqual(access.checklist, ['admin'], 'só Admin pode configurar designações e etapas');
   assert.deepEqual(access.sobre, ['assistente','analista','gerente','admin']);
   assert.match(html, /function podeVerMenuSistema\(\)\{return \['assistente','analista','gerente','admin'\]\.includes\(papelAtual\(\)\);\}/);
   assert.match(html, /function abrirSecaoSistema\(key\)/);

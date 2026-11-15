@@ -1474,6 +1474,8 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 #pFotoStatus{margin:4px 0 0;color:#dceefa;font-size:12px}
 #photoPreviewImage{display:block;width:min(100%,220px);height:160px;object-fit:contain;margin:10px auto;background:#fff;border-radius:8px}
 #detailPhotoStatus{margin:6px 0;color:#c1d0df;font-size:13px}
+
+/*CHECKLIST_CSS*/
 </style>
 </head>
 <body>
@@ -1498,6 +1500,7 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 <button type="button" data-admin-settings="lojas"><span class="admin-nav-icon" aria-hidden="true">◇</span><span>Lojas</span></button>
 <button type="button" data-admin-settings="catalogo"><span class="admin-nav-icon" aria-hidden="true">◇</span><span>Catálogo global</span></button>
 <button type="button" data-admin-settings="alertas"><span class="admin-nav-icon" aria-hidden="true">◇</span><span>Alertas e avisos</span></button>
+<button type="button" data-admin-settings="checklist"><span class="admin-nav-icon" aria-hidden="true">✓</span><span>Checklist do açougue</span></button>
 <button type="button" data-admin-settings="auditoria"><span class="admin-nav-icon" aria-hidden="true">▤</span><span>Auditoria</span></button>
 <button type="button" data-admin-settings="dados"><span class="admin-nav-icon" aria-hidden="true">◇</span><span>Dados e manutenção</span></button>
     </nav>
@@ -2054,6 +2057,25 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 </section>
 
 <!-- ═════════ AJUSTES ═════════ -->
+<section class="vista" id="v-checklist" aria-label="Rondas operacionais">
+  <div class="checklist-page-head"><div class="checklist-brand-mark" aria-hidden="true">✓</div><div><p class="checklist-eyebrow">ROTINA OPERACIONAL</p><h2>Rondas do açougue</h2><p>Checklist diário, desvios e validações da liderança.</p></div></div>
+  <div class="checklist-kpis" id="checklistKpis" aria-label="Resumo de rondas"></div>
+  <div id="checklistHomePanel">
+    <section class="card checklist-intro"><div><h3 id="checklistStoreTitle">Filial atual</h3><p id="checklistDateLabel">Ronda diária</p></div><button class="btn" id="checklistStart" type="button">Iniciar ronda de hoje</button></section>
+    <p id="checklistPageStatus" class="checklist-status" role="status" aria-live="polite">Carregando dados…</p>
+    <section class="checklist-round-section"><div class="checklist-section-heading"><div><h3>Histórico recente</h3><p>Rondas da filial disponíveis para os usuários designados.</p></div><button class="btn sec" id="checklistRefresh" type="button">Atualizar</button></div><div id="checklistRoundList" class="checklist-round-list"></div></section>
+  </div>
+  <div id="checklistFormPanel" hidden>
+    <div class="checklist-form-toolbar"><button class="btn sec" id="checklistBack" type="button">Voltar às rondas</button><span id="checklistRoundStatus" class="checklist-state"></span></div>
+    <section class="card checklist-round-meta"><div><small>Data da ronda</small><b id="checklistRoundDate">—</b></div><div><small>Responsável</small><b id="checklistRoundOwner">—</b></div><div><small>Progresso</small><b id="checklistProgressText">0 de 0 itens</b></div><div class="checklist-progress-track"><i id="checklistProgressBar"></i></div></section>
+    <div id="checklistReadOnlyNotice" class="checklist-notice" hidden></div>
+    <div id="checklistSections"></div>
+    <section class="card checklist-observations"><label class="f" for="checklistObservations">Observações e ocorrências do dia</label><p>Relate desvios, manutenções necessárias ou rupturas de fornecedores.</p><textarea id="checklistObservations" rows="4" maxlength="3000" placeholder="Descreva ocorrências relevantes da ronda…"></textarea></section>
+    <div class="checklist-actions" id="checklistEditorActions"><button class="btn sec" id="checklistSaveDraft" type="button">Salvar rascunho</button><button class="btn" id="checklistSubmit" type="button">Enviar para validação</button></div>
+    <section class="card checklist-signatures"><div class="checklist-section-heading"><div><h3>Validação da liderança</h3><p>São necessárias duas assinaturas individuais para concluir esta ronda.</p></div></div><div id="checklistApprovalTimeline" class="checklist-approval-timeline"></div><details class="checklist-event-history"><summary>Histórico de atividades</summary><div id="checklistEventTimeline"></div></details><div id="checklistSignPanel" hidden><label class="f" for="checklistSignComment">Comentário da validação ou motivo da devolução</label><textarea id="checklistSignComment" rows="3" maxlength="1000" placeholder="Obrigatório ao devolver para correção."></textarea><div class="checklist-sign-actions"><button class="btn sec" id="checklistReturn" type="button">Devolver para correção</button><button class="btn" id="checklistApprove" type="button">Assinar e aprovar</button></div><p class="checklist-hint">A assinatura é registrada no servidor com seu usuário autenticado e data/hora; não pode ser editada.</p></div></section>
+    <p id="checklistActionStatus" class="checklist-status" role="status" aria-live="polite"></p>
+  </div>
+</section>
 <section class="vista" id="v-aj">
   <div class="operator-tabs" id="settingsTabs" role="tablist" aria-label="Configurações e perfil"><button class="on" type="button" data-settings-view="settings" aria-pressed="true">Configurações</button><button type="button" data-settings-view="profile" aria-pressed="false">Perfil e Conta</button></div>
   <div class="card" id="sysMenuCard" hidden>
@@ -2099,6 +2121,19 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
     <div><h2 id="sysSectionTitle">Ajustes</h2><p id="sysSectionSubtitle">Configurações do sistema</p></div>
   </div>
   <div id="sysSectionView" style="display:none">
+    <div id="sysChecklistConfigPanel" style="display:none">
+      <section class="card checklist-config-card" aria-labelledby="checklistConfigTitle">
+        <div class="checklist-config-head"><div><h3 id="checklistConfigTitle">Acesso às rondas do açougue</h3><p>Defina, para a filial selecionada, quem pode preencher e quais pessoas assinam a validação.</p></div><span class="checklist-lock-badge">Somente designados</span></div>
+        <label class="f" for="checklistConfigStoreSelect">Filial</label><select id="checklistConfigStoreSelect"><option value="">Carregando filiais…</option></select><p class="checklist-config-store" id="checklistConfigStore">Selecione uma filial para configurar os acessos.</p>
+        <label class="checklist-toggle"><input id="checklistConfigActive" type="checkbox"><span><b>Checklist diário ativo</b><small>Quando desligado, a opção Rondas fica oculta para todos desta filial.</small></span></label>
+        <label class="f" for="checklistConfigExecutors">Usuários autorizados a preencher</label><select id="checklistConfigExecutors" multiple size="5" aria-describedby="checklistConfigHint"></select>
+        <p class="checklist-hint" id="checklistConfigHint">Selecione um ou mais usuários vinculados à filial. A pessoa que preenche uma ronda não pode assiná-la.</p>
+        <div class="checklist-approver-grid"><label class="f" for="checklistConfigEncarregado">Encarregado responsável pela validação</label><select id="checklistConfigEncarregado"><option value="">Selecione um usuário</option></select><label class="f" for="checklistConfigSubgerente">Subgerente de Perecíveis responsável pela validação</label><select id="checklistConfigSubgerente"><option value="">Selecione um usuário</option></select></div>
+        <div class="row"><button class="btn sec" id="checklistConfigRefresh" type="button">Atualizar</button><button class="btn" id="checklistConfigSave" type="button">Salvar acessos</button></div>
+        <p id="checklistConfigStatus" class="checklist-status" role="status" aria-live="polite"></p>
+        <div class="checklist-config-history"><h4>Histórico de alterações de acesso</h4><div id="checklistConfigAudit"></div></div>
+      </section>
+    </div>
     <div id="sysReportsPanel" style="display:none">
       <h3>Relatórios disponíveis</h3>
       <p>Exporte os dados operacionais e acompanhe os lançamentos por usuário na loja selecionada.</p>
@@ -2215,7 +2250,7 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 </section>
 </main>
 
-<nav class="abas" id="abas"><button class="on" data-v="home"><span><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span>Início</button><button data-v="prod"><span class="nav-box"><svg viewBox="0 0 24 24"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg></span>Produtos</button><button data-v="pere"><span class="nav-meat"><svg viewBox="0 0 24 24"><path d="M3.5 12.5c0-4.4 4.3-7.5 9.6-7.5 4.3 0 7.4 2.1 7.4 5.1 0 2.2-1.4 3.4-3.5 4.2-2 .8-3.1 1.8-4.8 3.5-1.3 1.3-3.5 1.5-5.5.5-2-1-3.2-3-3.2-5.8z"/><circle cx="14.6" cy="10" r="1.9"/></svg></span>Perecíveis</button><button data-v="alertas"><span class="nav-bell"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><b id="alertBadge" style="display:none"></b></span>Alertas</button><button data-v="aj"><span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1a2 2 0 1 1-2.8 2.8l-.1-.1a2 2 0 0 0-3.4 1.4v.3a2 2 0 1 1-4 0v-.2A2 2 0 0 0 5.8 17l-.1.1a2 2 0 1 1-2.8-2.8L3 14a2 2 0 0 0-1.4-3.4h-.2a2 2 0 1 1 0-4h.2A2 2 0 0 0 3 3.2l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a2 2 0 0 0 3.4-1.4v-.2a2 2 0 1 1 4 0v.2a2 2 0 0 0 3.4 1.4l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a2 2 0 0 0 1.4 3.4h.2a2 2 0 1 1 0 4h-.2A2 2 0 0 0 19.4 15Z" transform="translate(1 2) scale(.9)"/></svg></span>Ajustes</button></nav>
+<nav class="abas" id="abas"><button class="on" data-v="home"><span><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span>Início</button><button data-v="prod"><span class="nav-box"><svg viewBox="0 0 24 24"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg></span>Produtos</button><button data-v="pere"><span class="nav-meat"><svg viewBox="0 0 24 24"><path d="M3.5 12.5c0-4.4 4.3-7.5 9.6-7.5 4.3 0 7.4 2.1 7.4 5.1 0 2.2-1.4 3.4-3.5 4.2-2 .8-3.1 1.8-4.8 3.5-1.3 1.3-3.5 1.5-5.5.5-2-1-3.2-3-3.2-5.8z"/><circle cx="14.6" cy="10" r="1.9"/></svg></span>Perecíveis</button><button data-v="alertas"><span class="nav-bell"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><b id="alertBadge" style="display:none"></b></span>Alertas</button><button id="navChecklist" data-v="checklist" hidden><span class="nav-checklist" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3M8 4a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2 2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2ZM7 12l2 2 4-4M7 18h10"/></svg></span>Rondas</button><button data-v="aj"><span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1a2 2 0 1 1-2.8 2.8l-.1-.1a2 2 0 0 0-3.4 1.4v.3a2 2 0 1 1-4 0v-.2A2 2 0 0 0 5.8 17l-.1.1a2 2 0 1 1-2.8-2.8L3 14a2 2 0 0 0-1.4-3.4h-.2a2 2 0 1 1 0-4h.2A2 2 0 0 0 3 3.2l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a2 2 0 0 0 3.4-1.4v-.2a2 2 0 1 1 4 0v.2a2 2 0 0 0 3.4 1.4l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a2 2 0 0 0 1.4 3.4h.2a2 2 0 1 1 0 4h-.2A2 2 0 0 0 19.4 15Z" transform="translate(1 2) scale(.9)"/></svg></span>Ajustes</button></nav>
 
 <div id="modalEditarUsuario" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloEditarUsuario">
   <div class="box"><h2 id="tituloEditarUsuario">Editar usuário</h2>
@@ -2367,8 +2402,8 @@ $('homeAlerts').onclick=function(){ir('alertas');};$('homeBell').onclick=functio
 $('homeRecentList').onclick=function(e){if(e.target.closest('[data-home-record]'))ir('prod');};
 /* ───── navegação ───── */
 var vistaAtual='home',vistaAnterior='home',areaContextual='prod';
-var titulosTela={home:'Controle de Validade',reg:'Registrar Produto',prod:'Meus Registros',pere:'Perecíveis – Registros',alertas:'Alertas',aj:'Configurações',busca:'Buscar Produto',catalogo:'Catálogo de Produtos',detail:'Detalhe do registro',edit:'Editar registro'};
-var subtitulosTela={busca:'Área do Operador',catalogo:'Produtos e registros',reg:'Produtos e perecíveis',prod:'Produtos (Industrializados)',pere:'Produtos perecíveis da loja',alertas:'Validades e notificações',aj:'Área do Operador',detail:'Informações do lote',edit:'Dados do registro'};
+var titulosTela={home:'Controle de Validade',reg:'Registrar Produto',prod:'Meus Registros',pere:'Perecíveis – Registros',alertas:'Alertas',aj:'Configurações',busca:'Buscar Produto',catalogo:'Catálogo de Produtos',detail:'Detalhe do registro',edit:'Editar registro',checklist:'Rondas do açougue'};
+var subtitulosTela={busca:'Área do Operador',catalogo:'Produtos e registros',reg:'Produtos e perecíveis',prod:'Produtos (Industrializados)',pere:'Produtos perecíveis da loja',alertas:'Validades e notificações',aj:'Área do Operador',detail:'Informações do lote',edit:'Dados do registro',checklist:'Rondas do açougue'};
 function mostrarVisaoAlertas(v){var notif=v==='notifications';$('v-alertas').classList.toggle('alerts-view',!notif);$('alertasMain').style.display=notif?'none':'';$('cardNotificacoes').style.display=notif?'':'none';$('pushDica').style.display=notif?'':'none';
   document.querySelectorAll('#alertViewTabs [data-alert-view]').forEach(function(b){var on=b.dataset.alertView===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
   if($('screenTitle'))$('screenTitle').textContent=notif?'Notificações':'Alertas';}
@@ -2385,6 +2420,7 @@ var SYS_SECOES=[
  {id:'config',titulo:'Configuração Geral',sub:'Parâmetros e integrações',roles:['assistente','gerente','admin'],icon:'<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="18" r="2"/>'},
  {id:'dados',titulo:'Dados e Manutenção',sub:'Backup, restauração e sincronização',roles:['admin'],icon:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/>'},
  {id:'alertas',titulo:'Alertas e Notificações',sub:'Avisos de validade, push e agenda',roles:['assistente','analista','gerente','admin'],icon:'<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20h4"/>'},
+ {id:'checklist',titulo:'Checklist do Açougue',sub:'Filiais, executores e validação em duas etapas',roles:['admin'],icon:'<path d="M8 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3M8 4a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2 2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2ZM7 12l2 2 4-4M7 18h10"/>'},
  {id:'sobre',titulo:'Sobre o Sistema',sub:'Versão, ambiente, documentação e suporte',roles:['assistente','analista','gerente','admin'],icon:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v.2"/>'}
 ];
 var OPERADOR_SECOES=[
@@ -2406,7 +2442,7 @@ function secoesMenuAjustes(){if(!podeVerMenuOperador())return SYS_SECOES;
   return OPERADOR_SECOES.slice(0,i).concat(extras,OPERADOR_SECOES.slice(i));}
 function renderMenuAjustes(){var menu=$('sysMenu');if(!menu)return;var operador=podeVerMenuOperador();$('sysMenuTitle').textContent=operador?tituloAjustesOperacional():'Ajustes do Sistema';$('sysMenuSubtitle').textContent=operador?'Preferências pessoais, conta e informações do aplicativo':'Configurações, acessos e manutenção';menu.innerHTML=secoesMenuAjustes().filter(secaoPermitida).map(function(s){return '<button class="sys-menu-item" type="button" data-sys-open="'+s.id+'"><span class="sys-menu-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">'+s.icon+'</svg></span><span class="sys-menu-copy"><b>'+s.titulo+'</b><small>'+s.sub+'</small></span><svg class="ico sys-menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>';}).join('');}
 function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var menu=podeVerMenuAjustes(),op=podeVerMenuOperador(),ids=['profileArea','settingsRefArea','preferencesArea','passwordArea','aboutArea','sysMenuCard','sysSectionHead','sysSectionView','pushCard'];ids.forEach(function(id){if($(id))$(id).style.display='none';});
-  $('preferencesArea').removeAttribute('data-sec-ativa');$('sysReportsPanel').style.display='none';
+  $('preferencesArea').removeAttribute('data-sec-ativa');$('sysReportsPanel').style.display='none';$('sysChecklistConfigPanel').style.display='none';
   if(v==='system'||(v==='settings'&&menu)){$('sysMenuCard').hidden=false;$('sysMenuCard').style.display=menu?'':'none';renderMenuAjustes();}
   else if(v==='syssection'){var item=SYS_SECOES.concat(OPERADOR_SECOES).find(function(s){return s.id===sysSecAtual;});if(!secaoPermitida(item)){mostrarVistaAjustes('system');return;}
     $('sysSectionHead').style.display='';$('sysSectionTitle').textContent=item.titulo;$('sysSectionSubtitle').textContent=item.sub;
@@ -2417,6 +2453,7 @@ function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var men
     else if(item.id==='config'){$('settingsRefArea').style.display='';$('preferencesArea').style.display='';$('preferencesArea').dataset.secAtiva='config';}
     else if(['usuarios','lojas','pereciveis','auditoria','dados'].includes(item.id)){$('preferencesArea').style.display='';$('preferencesArea').dataset.secAtiva=item.id;}
     else if(item.id==='relatorios'){$('sysSectionView').style.display='';$('sysReportsPanel').style.display='';atualizarGraficoUsuariosRelatorios();}
+    else if(item.id==='checklist'){$('sysSectionView').style.display='';$('sysChecklistConfigPanel').style.display='';checklistConfigAbrir();}
   }else{
     var m={profileArea:'profile',settingsRefArea:'settings',preferencesArea:'settings',passwordArea:'password',aboutArea:'about'};
     Object.keys(m).forEach(function(id){$(id).style.display=m[id]===v?'':'none';});
@@ -2467,14 +2504,14 @@ function atualizarSubtituloCabecalho(){
   $('slogan').textContent=subtitulo&&subtitulo!=='Área do Operador'?subtitulo:(!logado()&&vistaAtual==='home'&&CFG.slogan)||area;
   $('operatorRolePill').lastElementChild.textContent=area;
 }
-function ir(v){if(v==='catalogo'&&!podeVerCatalogo()){toast('O catálogo é exclusivo do administrador');return;}var destino=$('v-'+v);if(!destino)return;if(v!==vistaAtual){vistaAnterior=vistaAtual;vistaAtual=v;}if(v==='prod'||v==='pere')areaContextual=v;
+function ir(v){if(v==='checklist'&&!checklistTemAcessoAtual()){toast('O checklist não está disponível para este usuário nesta filial.');return;}if(v==='catalogo'&&!podeVerCatalogo()){toast('O catálogo é exclusivo do administrador');return;}var destino=$('v-'+v);if(!destino)return;if(v!==vistaAtual){vistaAnterior=vistaAtual;vistaAtual=v;}if(v==='prod'||v==='pere')areaContextual=v;
   document.querySelectorAll('.vista').forEach(function(s){s.classList.toggle('on',s===destino);});
   var interna=v!=='home',cab=document.querySelector('header .hdr-in');cab.classList.toggle('interna',interna);
   if($('screenTitle'))$('screenTitle').textContent=titulosTela[v]||'Controle de Validade';
   atualizarSubtituloCabecalho();
   if($('operatorRolePill'))$('operatorRolePill').hidden=!interna;
   document.querySelectorAll('#abas button').forEach(function(b){b.classList.toggle('on',b.dataset.v===(v==='reg'?'home':v==='busca'?'prod':v==='catalogo'?'aj':v==='detail'||v==='edit'?areaContextual:v));});
-  if(v==='home')renderHome();if(v==='busca')renderBusca();if(v==='catalogo')renderCatalogo();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();mostrarVisaoAlertas('alerts');}if(v==='aj'){renderPerfilOperador();ajustes();carregarSolicitacoesExclusao();carregarSolicitacoesNome();renderPerfisAcesso(true);mostrarVistaAjustes(podeVerMenuAjustes()?'system':'settings');}window.scrollTo(0,0);}
+  if(v==='home')renderHome();if(v==='busca')renderBusca();if(v==='catalogo')renderCatalogo();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();mostrarVisaoAlertas('alerts');}if(v==='checklist')checklistCarregar();if(v==='aj'){renderPerfilOperador();ajustes();carregarSolicitacoesExclusao();carregarSolicitacoesNome();renderPerfisAcesso(true);mostrarVistaAjustes(podeVerMenuAjustes()?'system':'settings');}window.scrollTo(0,0);}
 $('headerBack').onclick=function(){if(vistaAtual==='aj'&&ajVista==='syssection'){mostrarVistaAjustes('system');return;}if(vistaAtual==='aj'&&podeVerMenuAjustes()&&['password','about','profile'].includes(ajVista)){mostrarVistaAjustes('system');return;}if(vistaAtual==='aj'&&(ajVista==='password'||ajVista==='about')){mostrarVistaAjustes('settings');return;}ir(vistaAnterior==='reg'?'home':vistaAnterior||'home');};
 $('abas').onclick=function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.v==='pere')subPere('lista');ir(b.dataset.v);};
 $('alertViewTabs').onclick=function(e){var b=e.target.closest('[data-alert-view]');if(b)mostrarVisaoAlertas(b.dataset.alertView);};
@@ -5916,7 +5953,7 @@ function sbLogin(user,pass){return sbReq('/auth/v1/token?grant_type=password',{m
   .then(function(r){if(!r.ok||!r.dados||!r.dados.access_token)throw new Error((r.dados&&(r.dados.error_description||r.dados.msg||r.dados.error))||'Usuário ou senha inválidos');
     var u=r.dados.user||{},meta=u.app_metadata||{};SESS={access_token:r.dados.access_token,refresh_token:r.dados.refresh_token,expira:Date.now()+((r.dados.expires_in||3600)*1000),usuario:user,email:u.email,uid:u.id,loginEm:Date.now(),lojaId:null,lojaNome:null,forcePasswordChange:meta.force_password_change===true};salvarSess();return SESS;});}
 function sbLogout(){var token=SESS&&SESS.access_token;SESS=null;sessaoFoto();abrirFotoDetalhe(null);papelConfirmado=false;atualizarModoDesktopAdmin();salvarSess();refreshSessaoEmAndamento=null;try{localStorage.removeItem('validade_ultima_loja');}catch(e){}if(token&&sbOn()){return fetch(CFG.supaUrl+'/auth/v1/logout',{method:'POST',headers:{apikey:CFG.supaKey,Authorization:'Bearer '+token}}).catch(function(e){console.warn('Falha ao invalidar sessão remota (sessão local já encerrada):',e);});}return Promise.resolve();}
-function sairParaLogin(){notificacoesCache=[];notificacoesConsultadasEm=0;notificacoesEscopoCache='';atualizarBannerAlertaSistema();sbLogout();try{history.replaceState({loggedOut:true},'',location.href.split('#')[0]);}catch(e){}var modal=$('conta');if(modal)modal.classList.add('on');mostrarLoginForm();contaCard();atualizarBotaoLogout();atualizarGate();toast('Você saiu');}
+function sairParaLogin(){if(typeof checklistLimparAcesso==='function')checklistLimparAcesso();notificacoesCache=[];notificacoesConsultadasEm=0;notificacoesEscopoCache='';atualizarBannerAlertaSistema();sbLogout();try{history.replaceState({loggedOut:true},'',location.href.split('#')[0]);}catch(e){}var modal=$('conta');if(modal)modal.classList.add('on');mostrarLoginForm();contaCard();atualizarBotaoLogout();atualizarGate();toast('Você saiu');}
 function sbLojas(){return sbReq('/rest/v1/lojas?select=id,nome&order=nome.asc').then(function(r){if(!r.ok)throw new Error('falha');return Array.isArray(r.dados)?r.dados:[];});}
 /* ───── catálogo compartilhado (EAN → nome), entre todas as lojas ───── */
 var SYNC={};try{SYNC=JSON.parse(localStorage.getItem('validade_sync')||'{}')||{};}catch(e){}
@@ -6160,7 +6197,7 @@ function carregarPapel(){if(!sbOn()||!logado())return Promise.resolve();
     papelCachePorUid[uid]={papel:d.papel,nome:d.nome==null?'':d.nome,empresa:d.papel==='promotor'?d.empresa||null:null,setor:d.setor||null};try{localStorage.setItem('perfil_papel_cache',JSON.stringify(papelCachePorUid));}catch(e){}
     concluir(d.papel,d.nome,true,d.empresa,d.setor);return d;},function(){return falhar();});}
 function atualizarInterfacePapel(){
-  atualizarModoDesktopAdmin();aplicarPapel();atualizarSubtituloCabecalho();atualizarBotaoLogout();atualizarContextoLoja();
+  atualizarModoDesktopAdmin();aplicarPapel();atualizarSubtituloCabecalho();atualizarBotaoLogout();atualizarContextoLoja();checklistAtualizarAcesso();
   if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();
   if(vistaAtual==='home')renderHome();
   if(vistaAtual==='alertas')renderAlertas();
@@ -6510,6 +6547,7 @@ listaProdutos();renderHome();
     if(v[0]){try{SYNC=JSON.parse(v[0])||{};salvarSync();}catch(e){}}
     if(v[1]){try{D=completar(JSON.parse(v[1]));}catch(e){return;}guardar(K,JSON.stringify(D));
       [mostrarDias,ajustes,renderAlertas,renderHome,listaProdutos].forEach(function(f){try{f();}catch(e){}});}});})();
+/*CHECKLIST*/
 })();
 </script>
 </body>

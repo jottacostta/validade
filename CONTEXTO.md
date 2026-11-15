@@ -4,7 +4,7 @@
 > qualquer assistente). Descreve o objetivo, a arquitetura, o backend, a segurança,
 > a hierarquia de usuários e **o que está em construção agora**. Mantido em português.
 >
-> Última atualização: central desktop de gestão, escopo individual do Gerente, solicitações e correção das RPCs de recolhimento para IDs textuais.
+> Última atualização: módulo de Rondas — Checklist Operacional Diário do Açougue, com acesso por designação de filial e validação em duas etapas; central desktop de gestão e escopo individual do Gerente.
 
 ---
 
@@ -31,15 +31,18 @@ O app NÃO é escrito direto no HTML final. Há um **template com marcadores** q
 `build.js` substitui por configurações da loja.
 
 ```
-src/app.html        → template do app (HTML+CSS+JS, tudo inline)
+src/app.html        → template e shell do PWA
+src/checklist.css   → estilos do módulo de rondas, embutidos no HTML final pelo build
+src/checklist.js    → lógica do módulo de rondas, embutida no mesmo contexto autenticado
 src/leitor-ean.js   → leitor de código de barras 1D + GS1 (DataMatrix/QR) + OCR de etiqueta
 build.js            → monta dist/ a partir de src/ + config.json
 config.json         → config da loja (cores, nome, Supabase URL/chave pública, domínio de login…)
 painel.js           → gera dist/painel.html (status do projeto)
 ```
 
-Marcadores substituídos pelo build (têm que sumir no final, senão o build falha):
-`/*COR*/ /*COR2*/ /*COR3*/ /*CORDARK*/ /*ACENTO*/ /*NOME_HTML*/ /*CFG*/ /*LEITOR*/`
+Marcadores de configuração substituídos pelo build (têm que sumir no final, senão o build falha):
+`/*COR*/ /*COR2*/ /*COR3*/ /*CORDARK*/ /*ACENTO*/ /*NOME_HTML*/ /*CFG*/ /*LEITOR*/`.
+Pontos de inclusão do Checklist: `/*CHECKLIST_CSS*/` e `/*CHECKLIST*/`, que incorporam seus módulos ao PWA.
 
 - `/*CFG*/` vira o objeto `CFG` (JSON) com: `cosmos, nome, slogan, zap, dias, dig,
   valor, supaUrl, supaKey, loginDom, logo`.
@@ -69,11 +72,12 @@ src/app.html, src/leitor-ean.js, src/logo.jpg
 dist/validade.html, dist/APP_VALIDADE.js, dist/painel.html
 supabase/
   schema.sql                         # script "do zero" (referência, idempotente)
+  migrations/20261115075000_checklist_diario_acougue.sql # Checklist, designações, rondas e assinaturas auditáveis
   migrations/20261106200000_init.sql
   migrations/20261107020000_cosmos_por_usuario_e_hardening.sql
   functions/gerir-usuarios/index.ts  # Edge Function de gestão de usuários (NOVA, ver §9)
   README.md
-test/*.test.js                       # testes (app, build, gs1, leitor, ocr, código de barras)
+test/*.test.js                       # inclui contrato e fluxo PostgreSQL do Checklist
 docs/TECNICO.md
 .github/workflows/testes.yml, pages.yml
 CONTEXTO.md                          # este arquivo
@@ -107,6 +111,8 @@ CONTEXTO.md                          # este arquivo
 | `perfis` (id→auth.users, nome, papel) | papel do usuário (RBAC) |
 | `preferencias` (user_id→auth.users, cosmos_token) | **token do Cosmos por usuário** |
 | `auditoria` (user_id, usuario, papel, loja_*, acao, detalhe jsonb, criado) | log oculto |
+| `checklist_modelos`, `checklist_configuracoes`, `checklist_acessos` | modelo versionado, ativação por loja e designações individuais |
+| `checklist_rondas`, `checklist_assinaturas`, `checklist_eventos`, `checklist_config_auditoria` | execução diária, dupla validação e trilhas append-only |
 
 ### Funções e RLS
 
@@ -164,6 +170,8 @@ Chaves no localStorage: `validade_dados` (D, dados do app), `validade_sessao` (S
 - **Localização por registro**: `lotes.em_area_vendas` e `pere_regs.em_area_vendas` informam se cada lote/registro está na Área de Vendas (`true`, padrão) ou no Depósito (`false`). A localização fica no Supabase e é compartilhada dentro da loja, sincroniza pela fila offline e aparece nos cartões, edição e relatórios XLSX.
 - **Recolhimento configurável**: `registros_recolher` é uma permissão por perfil definida pelo Administrador em Ajustes → Usuários e Permissões → Perfis de acesso. O padrão permite Operador, Assistente, Analista e Gerente; o servidor valida permissão e escopo da loja. Reativar registros recolhidos continua restrito a Assistente e perfis superiores.
 - **Central desktop de gestão**: Administrador e Gerente têm gráficos, indicadores, registros, solicitações, aprovações, relatórios e Ajustes conforme suas permissões. O recorte de filial/todas as lojas permitidas é único; Perfis de acesso continua exclusivo do Administrador. O scanner segue oculto e bloqueado. Gerente usa apenas seus vínculos individuais em `loja_membros`, sem alcance global por papel/permissão; registros e alertas também são protegidos por RLS/RPC/Edge. As RPCs de recolhimento/reativação aceitam IDs textuais; exclusão e edição de cadastro têm auditoria transacional. Detalhes em `docs/ajustes-desktop-gestao.md`.
+
+- **Rondas — Checklist Operacional Diário do Açougue**: o Administrador ativa o recurso e designa, por filial, executores e dois revisores distintos (Encarregado e Subgerente de Perecíveis). A aba é ocultada de usuários não designados e o servidor repete a autorização por membership ativo + assignment + filial ativa. O template contém seis seções e 23 itens; salva rascunhos, registra temperaturas em °C, congela a versão submetida e exige duas assinaturas autenticadas e auditadas para concluir a ronda. Devolução exige motivo e permite correção/reenvio. A migration `20261115075000_checklist_diario_acougue.sql` é necessária antes do uso em produção; não se habilita acesso offline às assinaturas. Detalhes e origem do modelo em `docs/checklist-operacional-acougue.md`.
 
 ---
 
