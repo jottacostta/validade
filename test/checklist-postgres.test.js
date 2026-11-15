@@ -217,3 +217,39 @@ test('PostgreSQL: editar o checklist padrão cria uma versão por filial e prese
   await setActor(ADMIN);
   await salvar(otherStore, 1);
 });
+
+test('PostgreSQL: dois executores têm rondas próprias e os validadores revisam ambas', async () => {
+  await db.exec(fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261115213249_ronda_individual_por_usuario.sql'), 'utf8'));
+  await setActor(ADMIN);
+  await db.query('select public.checklist_configurar_loja($1,true,array[$2::uuid,$3::uuid],$4::uuid,$5::uuid)', [STORE, EXECUTOR, MEMBER_UNASSIGNED, ENCARREGADO, SUBGERENTE]);
+  const dia = '2026-11-18';
+  const criar = () => db.query("select public.checklist_criar_ronda($1,$2::date,'acougue_diario') as id", [STORE, dia]);
+  const rondas = () => db.query('select id from public.checklist_rondas where loja_id=$1 and data_operacional=$2 order by id', [STORE, dia]);
+  const salvar = id => db.query("select public.checklist_salvar_rascunho($1,'{}',null)", [id]);
+  const enviar = id => db.query('select public.checklist_submeter_ronda($1)', [id]);
+  await db.exec('set role authenticated');
+  await setActor(EXECUTOR);
+  const primeira = (await criar()).rows[0].id;
+  assert.equal((await criar()).rows[0].id, primeira);
+  await salvar(primeira);
+  await setActor(MEMBER_UNASSIGNED);
+  const segunda = (await criar()).rows[0].id;
+  assert.notEqual(primeira, segunda);
+  assert.equal((await criar()).rows[0].id, segunda);
+  assert.deepEqual((await rondas()).rows, [{ id: segunda }]);
+  assert.deepEqual((await db.query('select id from public.checklist_eventos where ronda_id=$1', [primeira])).rows, []);
+  await expectReject(salvar(primeira), 'Ronda inexistente ou sem acesso');
+  await expectReject(enviar(primeira), 'Ronda inexistente ou sem acesso');
+  await salvar(segunda);
+  await setActor(EXECUTOR);
+  assert.deepEqual((await rondas()).rows, [{ id: primeira }]);
+  for (const actor of [ENCARREGADO, SUBGERENTE, ADMIN]) {
+    await setActor(actor);
+    assert.deepEqual(new Set((await rondas()).rows.map(r => r.id)), new Set([primeira, segunda]));
+  }
+  await setActor(ENCARREGADO);
+  assert.ok((await db.query('select id from public.checklist_eventos where ronda_id=$1', [primeira])).rows.length);
+  await expectReject(salvar(primeira), 'Ronda inexistente ou sem acesso');
+  await db.exec('reset role');
+  assert.equal((await db.query("select count(*)::int as n from public.checklist_assinaturas a join public.checklist_rondas r on r.id=a.ronda_id where r.estado='validada'")).rows[0].n, 2);
+});
