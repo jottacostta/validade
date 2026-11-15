@@ -225,9 +225,9 @@ main{max-width:540px;margin:0 auto;padding:clamp(12px,3.1vw,20px) clamp(13px,3.2
 #v-home .home-status.expired{background:#b52231;color:#fff}
 #v-home .home-recent-meta>b{color:#fff;font-size:clamp(26px,6.5vw,38px);font-weight:400;line-height:1}
 #v-home .vazio{padding:24px 12px;color:#c3d4e4}
-nav.abas{position:fixed;z-index:20;right:0;bottom:0;left:0;display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 8px) / 5);gap:2px;overflow-x:auto;overscroll-behavior-x:contain;scroll-padding-inline:5px;scrollbar-width:none;padding:7px 5px calc(7px + env(safe-area-inset-bottom));border-top:1px solid #294967;background:rgba(5,24,41,.98);box-shadow:0 -5px 18px #0003;backdrop-filter:blur(12px)}
+nav.abas{position:fixed;z-index:20;right:0;bottom:0;left:0;display:flex;flex-wrap:nowrap;gap:2px;overflow-x:auto;overscroll-behavior-x:contain;scroll-padding-inline:5px;scrollbar-width:none;padding:7px 5px calc(7px + env(safe-area-inset-bottom));border-top:1px solid #294967;background:rgba(5,24,41,.98);box-shadow:0 -5px 18px #0003;backdrop-filter:blur(12px)}
 nav.abas::-webkit-scrollbar{display:none}
-nav.abas button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;min-height:clamp(56px,14vw,78px);padding:4px 1px;border:0;border-radius:clamp(15px,3.5vw,22px);background:transparent;color:#f0f4fa;font-size:clamp(10px,3.2vw,16px);font-weight:650;line-height:1.1}
+nav.abas button{display:flex;flex:0 0 calc((100% - 8px) / 5);flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;min-height:clamp(56px,14vw,78px);padding:4px 1px;border:0;border-radius:clamp(15px,3.5vw,22px);background:transparent;color:#f0f4fa;font-size:clamp(10px,3.2vw,16px);font-weight:650;line-height:1.1}
 nav.abas button span{display:grid;place-items:center;height:clamp(26px,7vw,38px);font-size:0}
 nav.abas button span svg{display:block;width:clamp(25px,7vw,38px);height:clamp(25px,7vw,38px);fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 nav.abas button.on{border:2px solid #129bff;background:linear-gradient(145deg,#075fbd,#073b7c);color:#fff;box-shadow:inset 0 0 0 1px #ffffff16}
