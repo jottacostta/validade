@@ -183,6 +183,7 @@ test('PostgreSQL: editar o checklist padrão cria uma versão por filial e prese
   const otherStore = '20000000-0000-4000-8000-000000000002';
   const migrationPath = '../supabase/migrations/20261115132300_editar_checklist_padrao.sql';
   await db.exec(fs.readFileSync(path.join(__dirname, migrationPath), 'utf8'));
+  await db.exec(fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261115161854_texto_temperaturas_checklist.sql'), 'utf8'));
   for (const actor of [EXECUTOR, ENCARREGADO, SUBGERENTE]) {
     await db.query('insert into public.loja_membros(loja_id,user_id) values($1,$2)', [otherStore, actor]);
   }
@@ -191,6 +192,7 @@ test('PostgreSQL: editar o checklist padrão cria uma versão por filial e prese
   const modelo = (await db.query("select estrutura from public.checklist_modelos where codigo='acougue_diario' and loja_id is null")).rows[0];
   const secoes = modelo.estrutura.secoes;
   secoes[0].titulo = 'Seção da filial';
+  secoes[0].itens.find(i => i.temperaturas).texto_temperaturas = '  Registre antes de abrir o balcão.  ';
   const salvar = (loja, versao) => db.query("select public.checklist_salvar_modelo($1,'acougue_diario',$2,'Checklist da filial',$3::jsonb)", [loja, versao, JSON.stringify(secoes)]);
   await salvar(STORE, 1);
   await expectReject(salvar(STORE, 1), 'O modelo mudou');
@@ -206,6 +208,8 @@ test('PostgreSQL: editar o checklist padrão cria uma versão por filial e prese
   const item = locais[0].modelo_snapshot.secoes[0].itens.find(i => i.temperaturas);
   assert.deepEqual(item.temperaturas, ['ilhas_c', 'peixes_c']);
   assert.match(item.descricao, /geladeira de peixes/);
+  assert.equal(item.texto_temperaturas, 'Registre antes de abrir o balcão.');
+  assert.equal(outras[0].modelo_snapshot.secoes[0].itens.find(i => i.temperaturas).texto_temperaturas, undefined);
   assert.notEqual(outras[0].modelo_snapshot.secoes[0].titulo, 'Seção da filial');
   const assinada = (await db.query("select id,modelo_snapshot from public.checklist_rondas where modelo_codigo='acougue_diario' and estado='validada' and loja_id=$1", [STORE])).rows[0];
   assert.deepEqual(assinada.modelo_snapshot, outras[0].modelo_snapshot);

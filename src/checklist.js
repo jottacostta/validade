@@ -68,7 +68,7 @@ function checklistRenderSections(){var r=CHECKLIST.current,root=$('checklistSect
   $('checklistObservations').value=r.observacoes||'';$('checklistObservations').disabled=!edit;
   $('checklistReadOnlyNotice').hidden=edit;$('checklistReadOnlyNotice').textContent=!r.ativa?'Ronda inativa. As respostas e assinaturas estão disponíveis para consulta.':r.estado==='submetida'?'Ronda enviada. O conteúdo está bloqueado enquanto aguarda as duas validações da liderança.':r.estado==='validada'?'Ronda concluída. O registro e as assinaturas desta versão são somente leitura.':'Somente o usuário designado como executor pode preencher ou corrigir esta ronda.';
   $('checklistEditorActions').hidden=!edit;
-  root.innerHTML=(r.modelo_snapshot.secoes||[]).map(function(section){return '<section class="checklist-section card"><header><span class="checklist-section-number">'+checklistEsc(section.id.replace('secao_',''))+'</span><div><h3>'+checklistEsc(section.titulo)+'</h3><p>'+((section.itens||[]).length)+' itens de verificação</p></div></header><div class="checklist-items">'+(section.itens||[]).map(function(item){var id=checklistEsc(item.id),a=checklistResposta(r,item.id),temp=Array.isArray(item.temperaturas);return '<article class="checklist-item" data-checklist-item="'+id+'"><div class="checklist-item-copy"><b>'+checklistEsc(item.titulo)+'</b><p>'+checklistEsc(item.descricao||'')+'</p></div><fieldset class="checklist-answer" '+(!edit?'disabled':'')+'><legend>Conforme?</legend><label><input type="radio" name="check-'+id+'" value="SIM" '+(a.resposta==='SIM'?'checked':'')+'><span>Sim</span></label><label><input type="radio" name="check-'+id+'" value="NÃO" '+(a.resposta==='NÃO'?'checked':'')+'><span>Não</span></label></fieldset>'+(temp?'<div class="checklist-temperature"><label>Temperatura das ilhas (°C)<input type="number" step="0.1" inputmode="decimal" data-temperature="ilhas_c" value="'+checklistEsc(a.ilhas_c)+'" '+(!edit?'disabled':'')+'></label><label>Geladeira de peixes (°C)<input type="number" step="0.1" inputmode="decimal" data-temperature="peixes_c" value="'+checklistEsc(a.peixes_c)+'" '+(!edit?'disabled':'')+'></label></div>':'')+'</article>';}).join('')+'</div></section>';}).join('');
+  root.innerHTML=(r.modelo_snapshot.secoes||[]).map(function(section){return '<section class="checklist-section card"><header><span class="checklist-section-number">'+checklistEsc(section.id.replace('secao_',''))+'</span><div><h3>'+checklistEsc(section.titulo)+'</h3><p>'+((section.itens||[]).length)+' itens de verificação</p></div></header><div class="checklist-items">'+(section.itens||[]).map(function(item){var id=checklistEsc(item.id),a=checklistResposta(r,item.id),temp=Array.isArray(item.temperaturas);return '<article class="checklist-item" data-checklist-item="'+id+'"><div class="checklist-item-copy"><b>'+checklistEsc(item.titulo)+'</b><p>'+checklistEsc(item.descricao||'')+'</p></div><fieldset class="checklist-answer" '+(!edit?'disabled':'')+'><legend>Conforme?</legend><label><input type="radio" name="check-'+id+'" value="SIM" '+(a.resposta==='SIM'?'checked':'')+'><span>Sim</span></label><label><input type="radio" name="check-'+id+'" value="NÃO" '+(a.resposta==='NÃO'?'checked':'')+'><span>Não</span></label></fieldset>'+(temp?'<div class="checklist-temperature">'+(item.texto_temperaturas?'<p class="checklist-temperature-instruction">'+checklistEsc(item.texto_temperaturas)+'</p>':'')+'<label>Temperatura das ilhas (°C)<input type="number" step="0.1" inputmode="decimal" data-temperature="ilhas_c" value="'+checklistEsc(a.ilhas_c)+'" '+(!edit?'disabled':'')+'></label><label>Geladeira de peixes (°C)<input type="number" step="0.1" inputmode="decimal" data-temperature="peixes_c" value="'+checklistEsc(a.peixes_c)+'" '+(!edit?'disabled':'')+'></label></div>':'')+'</article>';}).join('')+'</div></section>';}).join('');
   root.onchange=function(e){if(e.target.matches('input[type=radio],input[data-temperature]'))checklistUpdateDraftView();};
   $('checklistObservations').oninput=function(){checklistUpdateDraftView();};
   checklistUpdateDraftView();}
@@ -160,10 +160,14 @@ function checklistAdminAddQuestion(root,item){
   if(root.children.length>=20){toast('A seção aceita até 20 perguntas.');return;}
   var box=document.createElement('div');
   box.className='checklist-model-question';
-  box.innerHTML='<label class="f">Pergunta<input data-item-titulo maxlength="250" required></label><label class="f">Orientação opcional<textarea data-item-descricao rows="2" maxlength="1000"></textarea></label><label class="checklist-model-temperature"><input data-item-temperaturas type="checkbox"> Exigir temperaturas das ilhas e da geladeira de peixes</label><button class="btn sec" type="button">Remover pergunta</button>';
+  box.innerHTML='<label class="f">Pergunta<input data-item-titulo maxlength="250" required></label><label class="f">Orientação opcional<textarea data-item-descricao rows="2" maxlength="1000"></textarea></label><label class="checklist-model-temperature"><input data-item-temperaturas type="checkbox"> Exigir medições de temperatura</label><label class="f" data-item-rotulo-temperaturas hidden>Texto sobre a medição<input data-item-texto-temperaturas maxlength="250" placeholder="Exigir temperaturas das ilhas e da geladeira de peixes"></label><button class="btn sec" type="button">Remover pergunta</button>';
   box.querySelector('[data-item-titulo]').value=item?item.titulo:'';
   box.querySelector('[data-item-descricao]').value=item&&item.descricao||'';
-  box.querySelector('[data-item-temperaturas]').checked=!!(item&&Array.isArray(item.temperaturas));
+  var exige=box.querySelector('[data-item-temperaturas]'),rotulo=box.querySelector('[data-item-rotulo-temperaturas]');
+  exige.checked=!!(item&&Array.isArray(item.temperaturas));rotulo.hidden=!exige.checked;
+  var texto=rotulo.querySelector('input');
+  texto.value=item&&typeof item.texto_temperaturas==='string'?item.texto_temperaturas:texto.placeholder;
+  exige.onchange=function(){rotulo.hidden=!exige.checked;};
   box.querySelector('button').onclick=function(){box.remove();};
   root.appendChild(box);
 }
@@ -198,7 +202,10 @@ function checklistAdminSaveModel(e){
   var secoes=Array.from($('checklistModelSections').children).map(function(s){
     var itens=Array.from(s.querySelector('[data-itens-secao]').children).map(function(box){
       var item={titulo:box.querySelector('[data-item-titulo]').value.trim(),descricao:box.querySelector('[data-item-descricao]').value.trim()};
-      if(box.querySelector('[data-item-temperaturas]').checked)item.temperaturas=['ilhas_c','peixes_c'];
+      if(box.querySelector('[data-item-temperaturas]').checked){
+        item.temperaturas=['ilhas_c','peixes_c'];
+        item.texto_temperaturas=box.querySelector('[data-item-texto-temperaturas]').value.trim();
+      }
       return item;
     });
     return {titulo:s.querySelector('[data-titulo-secao]').value.trim(),itens:itens};
