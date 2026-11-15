@@ -110,3 +110,71 @@ test('PostgreSQL: checklist protegido por membership, rascunho, submissão e dup
     'RLS esconde rondas após remoção do vínculo à loja');
   await db.exec('reset role');
 });
+
+test('PostgreSQL: modelos por filial, revisões e pausa individual preservam histórico e acesso', async () => {
+  const otherStore = '20000000-0000-4000-8000-000000000002';
+  const date = '2026-11-15';
+  const secoes = titulo => JSON.stringify([{ titulo: 'Balcão', itens: [titulo] }]);
+  const salvar = (loja, codigo, versao, titulo, perguntas) => db.query(
+    'select public.checklist_salvar_modelo($1,$2,$3,$4,$5::jsonb) as codigo', [loja, codigo, versao, titulo, perguntas]);
+  const criar = (loja, codigo, dia = date) => db.query(
+    'select public.checklist_criar_ronda($1,$2::date,$3) as id', [loja, dia, codigo]);
+  const ativar = (loja, id, ativa) => db.query('select public.checklist_definir_ronda_ativa($1,$2,$3)', [loja, id, ativa]);
+  await db.query('insert into public.loja_membros(loja_id,user_id) values($1,$2)', [STORE, EXECUTOR]);
+  await db.query('insert into public.lojas(id,nome) values($1,$2)', [otherStore, 'Outra filial']);
+  await db.query('update public.checklist_configuracoes set ativo=false where loja_id=$1', [STORE]);
+  await db.exec(fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261115125146_rondas_personalizadas.sql'), 'utf8'));
+
+  await setActor(ADMIN);
+  await expectReject(salvar(STORE, null, null, 'Inválido', secoes(' ')), '1 a 20 perguntas');
+  const abertura = (await salvar(STORE, null, null, 'Abertura', secoes('Balcão abastecido?'))).rows[0].codigo;
+  const fechamento = (await salvar(STORE, null, null, 'Fechamento', secoes('Balcão limpo?'))).rows[0].codigo;
+  const estrangeiro = (await salvar(otherStore, null, null, 'Outra filial', secoes('Balcão limpo?'))).rows[0].codigo;
+
+  await setActor(EXECUTOR);
+  await db.exec('set role authenticated');
+  assert.equal((await db.query('select private.checklist_designado($1) as ok', [STORE])).rows[0].ok, true);
+  const modelos = (await db.query('select codigo from public.checklist_modelos')).rows.map(r => r.codigo);
+  assert.deepEqual(new Set(modelos), new Set(['acougue_diario', abertura, fechamento]));
+  await expectReject(criar(STORE, estrangeiro), 'Template ativo');
+  await expectReject(salvar(STORE, null, null, 'Indevido', secoes('Pergunta?')), 'Somente o Administrador');
+  const a = (await criar(STORE, abertura)).rows[0].id;
+  const f = (await criar(STORE, fechamento)).rows[0].id;
+  assert.notEqual(a, f);
+  assert.equal((await criar(STORE, abertura)).rows[0].id, a);
+  await expectReject(ativar(STORE, a, false), 'Somente o Administrador');
+  await db.query('select public.checklist_salvar_rascunho($1,$2::jsonb,$3)', [a, JSON.stringify({ item_1_1: { resposta: 'SIM' } }), 'Observação']);
+  await db.query('select public.checklist_submeter_ronda($1)', [a]);
+  const original = (await db.query("select id,ativa,estado from public.checklist_rondas where modelo_codigo='acougue_diario'")).rows[0];
+  assert.equal(original.ativa, false);
+  assert.equal(original.estado, 'validada');
+  assert.equal((await db.query('select count(*)::int as n from public.checklist_assinaturas where ronda_id=$1', [original.id])).rows[0].n, 2);
+
+  await setActor(ADMIN);
+  await expectReject(ativar(otherStore, a, false), 'Ronda indisponível nesta filial');
+  await ativar(STORE, a, false);
+  await salvar(STORE, abertura, 1, 'Abertura revisada', secoes('Balcão e etiquetas conferidos?'));
+  await expectReject(salvar(STORE, abertura, 1, 'Edição antiga', secoes('Pergunta?')), 'O modelo mudou');
+
+  await setActor(EXECUTOR);
+  const pausada = (await db.query('select ativa,modelo_titulo,modelo_snapshot,respostas from public.checklist_rondas where id=$1', [a])).rows[0];
+  assert.equal(pausada.ativa, false);
+  assert.equal(pausada.modelo_titulo, 'Abertura');
+  assert.equal(pausada.modelo_snapshot.secoes[0].itens[0].titulo, 'Balcão abastecido?');
+  assert.equal(pausada.respostas.item_1_1.resposta, 'SIM');
+  assert.equal((await db.query('select ativa from public.checklist_rondas where id=$1', [f])).rows[0].ativa, true);
+  await expectReject(db.query("select public.checklist_salvar_rascunho($1,'{}',null)", [a]), 'Ronda inativa');
+  await expectReject(db.query('select public.checklist_submeter_ronda($1)', [a]), 'Ronda inativa');
+  const revisada = (await criar(STORE, abertura, '2026-11-16')).rows[0].id;
+  assert.equal((await db.query('select modelo_titulo from public.checklist_rondas where id=$1', [revisada])).rows[0].modelo_titulo, 'Abertura revisada');
+  await setActor(ENCARREGADO);
+  await expectReject(db.query("select public.checklist_assinar_ronda($1,'encarregado','validada',null)", [a]), 'Ronda inativa');
+  await setActor(ADMIN);
+  await ativar(STORE, a, true);
+  await setActor(ENCARREGADO);
+  const aprovado = await db.query("select public.checklist_assinar_ronda($1,'encarregado','validada',null) as estado", [a]);
+  assert.equal(aprovado.rows[0].estado, 'aguardando_segunda_assinatura');
+  const eventos = await db.query("select acao from public.checklist_eventos where ronda_id=$1 and acao in ('pausada','reativada') order by id", [a]);
+  assert.deepEqual(eventos.rows.map(r => r.acao), ['pausada', 'reativada']);
+  await db.exec('reset role');
+});

@@ -20,3 +20,12 @@
 #v-checklist .checklist-page-head,#v-checklist .checklist-round-row,#v-checklist .checklist-section,#v-checklist .checklist-round-meta,#v-checklist .checklist-observations,#v-checklist .checklist-signatures{color:var(--tx)}
 @media(max-width:640px){.checklist-page-head{align-items:flex-start;padding:15px;border-radius:17px}.checklist-brand-mark{flex-basis:46px;height:46px;border-radius:14px;font-size:25px}.checklist-page-head h2{font-size:19px}.checklist-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.checklist-kpi{padding:11px}.checklist-kpi b{font-size:20px}.checklist-intro{align-items:flex-start;flex-direction:column}.checklist-intro .btn{width:100%}.checklist-round-row{grid-template-columns:minmax(0,1fr) auto;gap:8px}.checklist-round-arrow{display:none}.checklist-state{font-size:10px;padding:5px 7px}.checklist-round-meta{grid-template-columns:repeat(2,minmax(0,1fr))}.checklist-item{grid-template-columns:1fr;gap:9px}.checklist-answer{min-width:0}.checklist-answer span{min-width:70px}.checklist-temperature{grid-template-columns:1fr}.checklist-actions,.checklist-sign-actions{display:grid;grid-template-columns:1fr}.checklist-actions .btn,.checklist-sign-actions .btn{width:100%}.checklist-form-toolbar{align-items:flex-start;flex-direction:column}.checklist-config-head{flex-direction:column}.checklist-approver-grid{grid-template-columns:1fr}.checklist-config-card .row{display:grid;grid-template-columns:1fr}.checklist-config-card .row .btn{width:100%}}
 @media(min-width:900px){#v-checklist{padding:20px 24px 38px}.checklist-items{padding:0 20px}.checklist-item{grid-template-columns:minmax(0,1fr) auto}.checklist-temperature{max-width:620px}.checklist-round-row{padding:17px 20px}.checklist-round-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#checklistStartControls{min-width:min(100%,240px)}
+#checklistStartControls .btn{width:100%;margin-top:8px}
+.checklist-admin-list{display:grid;gap:8px;margin:12px 0}
+.checklist-admin-entry{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px;border:1px solid var(--bd);border-radius:12px}
+.checklist-admin-entry b{overflow-wrap:anywhere}
+.checklist-admin-entry small{display:block;color:var(--mu)}
+#checklistModelForm{margin-top:12px}
+.checklist-model-section{margin:12px 0;padding:12px;border:1px solid var(--bd);border-radius:12px;min-width:0}
+.checklist-model-section textarea{width:100%;margin-bottom:8px}
