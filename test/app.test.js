@@ -1145,6 +1145,30 @@ tflaky('Ler Etiqueta: mostra os dados lidos e só preenche o formulário ao toca
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
 
+tflaky('Menu inferior: seis abas ficam em uma linha e Ajustes abre após rolar', { skip: pular }, async () => {
+  const a = await abrir({ opcoes: { viewport: { width: 360, height: 800 }, hasTouch: true, isMobile: true } });
+  try {
+    const menu = a.p.locator('#abas');
+    const medir = () => menu.evaluate(nav => ({
+      altura: nav.offsetHeight, largura: nav.clientWidth, conteudo: nav.scrollWidth,
+      topo: [...nav.querySelectorAll('button:not([hidden])')].map(b => b.offsetTop),
+    }));
+    const inicial = await medir();
+    assert.equal(inicial.conteudo, inicial.largura);
+    await a.p.locator('#navChecklist').evaluate(b => { b.hidden = false; });
+    const seisAbas = await medir();
+    assert.equal(seisAbas.topo.length, 6);
+    assert.equal(new Set(seisAbas.topo).size, 1);
+    assert.equal(seisAbas.altura, inicial.altura);
+    assert.ok(seisAbas.conteudo > seisAbas.largura);
+    await menu.evaluate(nav => { nav.scrollLeft = nav.scrollWidth; });
+    await menu.locator('[data-v="aj"]').click();
+    assert.equal(await a.p.isVisible('#v-aj'), true);
+    await a.p.evaluate(() => ir('home'));
+    assert.equal(await menu.evaluate(nav => nav.scrollLeft), 0);
+  } finally { await a.fechar(); }
+});
+
 tflaky('Alertas: contadores e filtros refletem os registros; o cartão abre o detalhe com aviso de vencido', { skip: pular }, async () => {
   const dia = n => { const t = new Date(); t.setDate(t.getDate() + n); return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); };
   const a = await abrir({ dados: {
