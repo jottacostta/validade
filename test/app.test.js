@@ -287,7 +287,7 @@ tflaky('OCR preenche descrição e lote (SIF) ao escanear a etiqueta', { skip: p
 tflaky('mobile: sem rolagem horizontal nas telas com tabela (360px)', { skip: pular }, async () => {
   const a = await abrir({ opcoes: { viewport: { width: 360, height: 740 } }, dados: {
     prod: { '7891000315507': { nome: 'Café Torrado e Moído Nome Bem Comprido Para Testar', lotes: [lote('x', '2031-01-01', 5, 'L1')] } },
-    pere: { itens: { '1246': { desc: 'Pernil Suíno Fracionado Descrição Grande', sif: '876-040326' } }, regs: [{ id: 'r', cod: '1246', sif: '876-040326', peso: 0.33, val: '2026-11-09' }] } } });
+    pere: { itens: { '1246': { desc: 'Pernil Suíno Fracionado Descrição Grande', sif: '876-040326' } }, regs: [{ id: 'r', cod: '1246', sif: '876-040326', peso: 0.33, val: '2031-01-01' }] } } });
   const semOverflow = async () => a.p.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
   await a.p.click('nav button[data-v="home"]'); await a.p.click('#homeRegister'); await a.p.click('#bTipoIndustrial');
   await a.p.fill('#tCodigo', '7891000315507'); await a.p.click('#bBuscar');
@@ -1926,7 +1926,12 @@ for (const [papel, chave, depois] of [['admin', 'alertas', 'sobre'], ['gerente',
   assert.strictEqual(await a.p.isVisible('#sysMenuCard'), true);
   assert.strictEqual(await a.p.isVisible('#pushCard'), false, 'o cartão de alertas não fica solto abaixo do menu');
   const ordem = await a.p.locator('#sysMenu [data-sys-open]').evaluateAll(bs => bs.map(b => b.dataset.sysOpen));
-  assert.strictEqual(ordem.indexOf(chave), ordem.indexOf(depois) - 1, 'fica logo acima de Sobre: ' + ordem.join(','));
+  if (papel === 'admin') {
+    assert.ok(ordem.indexOf(chave) < ordem.indexOf('checklist') && ordem.indexOf('checklist') < ordem.indexOf(depois),
+      'Alertas permanece antes da configuração Checklist e de Sobre: ' + ordem.join(','));
+  } else {
+    assert.strictEqual(ordem.indexOf(chave), ordem.indexOf(depois) - 1, 'fica logo acima de Sobre: ' + ordem.join(','));
+  }
   assert.ok((await a.p.textContent('#sysMenu [data-sys-open="' + chave + '"]')).includes('Alertas e Notificações'));
   await a.p.click('#sysMenu [data-sys-open="' + chave + '"]');
   assert.strictEqual(await a.p.textContent('#screenTitle'), 'Alertas e Notificações');

@@ -5,6 +5,7 @@ controla lotes, quantidades e validades, e tem uma área de **perecíveis** (có
 Cada registro informa se o lote está na **Área de Vendas** ou no **Depósito**; veja [a documentação da localização dos registros](docs/localizacao-registros.md).
 O botão **Recolher** é configurável por perfil em Ajustes → Perfis de acesso do Administrador; veja [as regras de recolhimento](docs/permissao-recolhimento.md).
 A central desktop de **Administrador e Gerente** reúne gráficos, indicadores, registros, solicitações, aprovações, relatórios e Ajustes, com filtro por filial ou todas as lojas permitidas. **Perfis de acesso** é exclusivo do Administrador; o Gerente só acessa as lojas atribuídas individualmente. O scanner permanece oculto; veja [a documentação da central de gestão](docs/ajustes-desktop-gestao.md).
+O módulo **Rondas — Checklist do Açougue** apresenta a aba somente a usuários designados pelo Administrador para a filial ativa. A ronda diária congela o modelo, permite rascunho, exige 23 respostas e duas temperaturas para envio, e só é concluída após as validações autenticadas do Encarregado e do Subgerente de Perecíveis. Veja [o modelo e o fluxo](docs/checklist-operacional-acougue.md); a migration precisa ser aplicada antes de ativar em produção.
 Na área de perecíveis também lê as etiquetas 2D (QR/DataMatrix GS1) das balanças, que já trazem peso e validade.
 E, se o OCR estiver ligado, lê por foto a **descrição** do produto e o **lote** (que vai para o SIF) do texto da etiqueta.
 
@@ -15,6 +16,8 @@ Nasceu como o modelo pronto **📅 Controle de validade** do [ApkForja](https://
 
 ```
 src/app.html         o app (HTML + CSS + JS) com marcadores de configuração
+src/checklist.css   estilos responsivos do módulo de rondas (embutidos no build)
+src/checklist.js    fluxo autenticado de configuração, preenchimento e validação
 src/leitor-ean.js    leitor de código de barras (EAN-13/8, UPC) e de etiquetas 2D GS1 (QR/DataMatrix), em JavaScript puro
 config.json          configuração da loja (nome, cor, dias de aviso, etiqueta da balança…)
 build.js             monta o app final a partir do template + config

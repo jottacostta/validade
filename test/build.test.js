@@ -33,8 +33,19 @@ test('cores derivadas', () => {
 test('APP_VALIDADE.js é o template sem configuração', () => {
   const { js } = montar({ nome: 'X' });
   const ctx = {}; require('vm').runInNewContext(js + ';this.A=APP_VALIDADE;this.L=LEITOR_EAN;', ctx);
-  assert.strictEqual(ctx.A, fs.readFileSync(path.join(raiz, 'src/app.html'), 'utf8'));
+  const expected = fs.readFileSync(path.join(raiz, 'src/app.html'), 'utf8')
+    .replace('/*CHECKLIST_CSS*/', fs.readFileSync(path.join(raiz, 'src/checklist.css'), 'utf8'))
+    .replace('/*CHECKLIST*/', fs.readFileSync(path.join(raiz, 'src/checklist.js'), 'utf8'));
+  assert.strictEqual(ctx.A, expected);
   assert.strictEqual(ctx.L, fs.readFileSync(path.join(raiz, 'src/leitor-ean.js'), 'utf8'));
+});
+
+test('Checklist CSS e JavaScript são embutidos sem dependência externa no HTML final', () => {
+  const { html } = montar({ nome: 'Loja' });
+  assert.ok(html.includes(fs.readFileSync(path.join(raiz, 'src/checklist.css'), 'utf8')));
+  assert.ok(html.includes(fs.readFileSync(path.join(raiz, 'src/checklist.js'), 'utf8')));
+  assert.ok(!html.includes('/*CHECKLIST_CSS*/') && !html.includes('/*CHECKLIST*/'));
+  assert.doesNotMatch(html, /<script[^>]+src=["'][^"']*checklist/i);
 });
 test('dist/ está em dia com src/ e config.json (rode node build.js)', () => {
   const { html, js } = montar(JSON.parse(fs.readFileSync(path.join(raiz, 'config.json'), 'utf8')));

@@ -14,7 +14,7 @@ const zap = n => { let d = soDig(n); if (d && d.length <= 11) d = '55' + d; retu
 const J = o => JSON.stringify(o).replace(/</g, '\\u003c');
 function clarear(hex, p) { const n = parseInt(hex.slice(1), 16); let r = n >> 16, g = n >> 8 & 255, b = n & 255; r = Math.round(r + (255 - r) * p); g = Math.round(g + (255 - g) * p); b = Math.round(b + (255 - b) * p); return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1); }
 
-const MARCADORES = ['/*COR*/', '/*COR2*/', '/*COR3*/', '/*CORDARK*/', '/*ACENTO*/', '/*NOME_HTML*/', '/*CFG*/', '/*LEITOR*/'];
+const MARCADORES = ['/*COR*/', '/*COR2*/', '/*COR3*/', '/*CORDARK*/', '/*ACENTO*/', '/*NOME_HTML*/', '/*CFG*/', '/*LEITOR*/', '/*CHECKLIST_CSS*/', '/*CHECKLIST*/'];
 
 /* logo: usa config.logo (URL/dataURI) ou embute src/logo.png como data URI */
 function logoDataURI() {
@@ -28,7 +28,10 @@ function logoDataURI() {
 
 /* config da loja → { html, js, cfg } (sem gravar nada) */
 function montar(c) {
-  const APP = ler('src/app.html'), LEITOR = ler('src/leitor-ean.js');
+  const APP_TEMPLATE = ler('src/app.html'), LEITOR = ler('src/leitor-ean.js');
+  const checklistCss = ler('src/checklist.css'), checklistJs = ler('src/checklist.js');
+  if (APP_TEMPLATE.split('/*CHECKLIST_CSS*/').length !== 2 || APP_TEMPLATE.split('/*CHECKLIST*/').length !== 2) throw new Error('marcadores de checklist ausentes ou duplicados');
+  const APP = APP_TEMPLATE.replace('/*CHECKLIST_CSS*/', () => checklistCss).replace('/*CHECKLIST*/', () => checklistJs);
   const cor = /^#[0-9a-fA-F]{6}$/.test(c.cor || '') ? c.cor : '#0B6E4F';
   const acento = /^#[0-9a-fA-F]{6}$/.test(c.acento || '') ? c.acento : '#FFC20E';
   const cfg = { cosmos: String(c.cosmos || '').trim(), nome: c.nome || 'Controle de Validade', slogan: String(c.slogan || '').trim(), zap: zap(c.whatsapp),
