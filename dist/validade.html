@@ -166,7 +166,7 @@ nav.abas #alertBadge{font-size:10px;line-height:16px;background:var(--da);color:
  --wa:#ffad21;--wal:#47300a;--da:#ff3b45;--dal:#471a24;color-scheme:dark
 }
 html,body{min-height:100%;background:#031321;color:var(--ink)}
-body{background:linear-gradient(180deg,#03172b 0%,#041a2b 52%,#031321 100%);padding-bottom:calc(78px + env(safe-area-inset-bottom))}
+body{background:linear-gradient(180deg,#03172b 0%,#041a2b 52%,#031321 100%);padding-bottom:calc(clamp(56px,14vw,78px) + 15px + env(safe-area-inset-bottom))}
 header{background:linear-gradient(110deg,#07346e 0%,#064a9c 52%,#0752a7 100%);border-bottom:4px solid #ffdf00;padding:calc(5px + env(safe-area-inset-top)) 12px 5px;box-shadow:0 4px 14px #0005}
 header .hdr-in{display:flex;align-items:center;gap:9px;min-height:clamp(58px,14.5vw,78px);max-width:760px;margin:0 auto}
 header .hdr-logo{display:block;flex:0 0 19%;width:19%;height:clamp(48px,12vw,72px);max-width:116px;object-fit:contain;border:0;border-radius:0;background:transparent}
@@ -225,8 +225,9 @@ main{max-width:540px;margin:0 auto;padding:clamp(12px,3.1vw,20px) clamp(13px,3.2
 #v-home .home-status.expired{background:#b52231;color:#fff}
 #v-home .home-recent-meta>b{color:#fff;font-size:clamp(26px,6.5vw,38px);font-weight:400;line-height:1}
 #v-home .vazio{padding:24px 12px;color:#c3d4e4}
-nav.abas{position:fixed;z-index:20;right:0;bottom:0;left:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;min-height:clamp(68px,17vw,92px);padding:7px 5px calc(7px + env(safe-area-inset-bottom));border-top:1px solid #294967;background:rgba(5,24,41,.98);box-shadow:0 -5px 18px #0003;backdrop-filter:blur(12px)}
-nav.abas button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;min-height:clamp(56px,14vw,78px);padding:4px 1px;border:0;border-radius:clamp(15px,3.5vw,22px);background:transparent;color:#f0f4fa;font-size:clamp(10px,3.2vw,16px);font-weight:650;line-height:1.1}
+nav.abas{position:fixed;z-index:20;right:0;bottom:0;left:0;display:flex;flex-wrap:nowrap;gap:2px;overflow-x:auto;overscroll-behavior-x:contain;scroll-padding-inline:5px;scrollbar-width:none;padding:7px 5px calc(7px + env(safe-area-inset-bottom));border-top:1px solid #294967;background:rgba(5,24,41,.98);box-shadow:0 -5px 18px #0003;backdrop-filter:blur(12px)}
+nav.abas::-webkit-scrollbar{display:none}
+nav.abas button{display:flex;flex:0 0 calc((100% - 8px) / 5);flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;min-height:clamp(56px,14vw,78px);padding:4px 1px;border:0;border-radius:clamp(15px,3.5vw,22px);background:transparent;color:#f0f4fa;font-size:clamp(10px,3.2vw,16px);font-weight:650;line-height:1.1}
 nav.abas button span{display:grid;place-items:center;height:clamp(26px,7vw,38px);font-size:0}
 nav.abas button span svg{display:block;width:clamp(25px,7vw,38px);height:clamp(25px,7vw,38px);fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 nav.abas button.on{border:2px solid #129bff;background:linear-gradient(145deg,#075fbd,#073b7c);color:#fff;box-shadow:inset 0 0 0 1px #ffffff16}
@@ -2692,6 +2693,10 @@ function ir(v){if(v==='checklist'&&!checklistTemAcessoAtual()){toast('O checklis
   atualizarSubtituloCabecalho();
   if($('operatorRolePill'))$('operatorRolePill').hidden=!interna;
   document.querySelectorAll('#abas button').forEach(function(b){b.classList.toggle('on',b.dataset.v===(v==='reg'?'home':v==='busca'?'prod':v==='catalogo'?'aj':v==='detail'||v==='edit'?areaContextual:v));});
+  var abas=$('abas'),abaAtiva=abas.querySelector('button.on:not([hidden])');
+  if(abaAtiva&&abas.clientWidth&&abas.scrollWidth>abas.clientWidth){
+    abaAtiva.scrollIntoView({block:'nearest',inline:'nearest'});
+  }
   if(v==='home')renderHome();if(v==='busca')renderBusca();if(v==='catalogo')renderCatalogo();if(v==='prod')listaProdutos();if(v==='pere')subPere(subAtual);if(v==='alertas'){renderAlertas();carregarNotificacoes();atualizarPushStatus();mostrarVisaoAlertas('alerts');}if(v==='checklist')checklistCarregar();if(v==='aj'){renderPerfilOperador();ajustes();carregarSolicitacoesExclusao();carregarSolicitacoesNome();renderPerfisAcesso(true);mostrarVistaAjustes(podeVerMenuAjustes()?'system':'settings');}window.scrollTo(0,0);}
 $('headerBack').onclick=function(){if(vistaAtual==='aj'&&ajVista==='syssection'){mostrarVistaAjustes('system');return;}if(vistaAtual==='aj'&&podeVerMenuAjustes()&&['password','about','profile'].includes(ajVista)){mostrarVistaAjustes('system');return;}if(vistaAtual==='aj'&&(ajVista==='password'||ajVista==='about')){mostrarVistaAjustes('settings');return;}ir(vistaAnterior==='reg'?'home':vistaAnterior||'home');};
 $('abas').onclick=function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.v==='pere')subPere('lista');ir(b.dataset.v);};
