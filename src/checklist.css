@@ -33,3 +33,5 @@
 .checklist-model-question .f{display:block}
 .checklist-model-temperature{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .checklist-model-temperature input{width:22px;height:22px;margin:0;flex:none;accent-color:#38bdf8}
+
+.checklist-temperature-instruction{grid-column:1/-1;margin:0;color:var(--ink);overflow-wrap:anywhere}

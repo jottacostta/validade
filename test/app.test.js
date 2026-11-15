@@ -1208,13 +1208,18 @@ tflaky('Rondas: administrador pausa uma ronda e edita o modelo padrão por filia
     await a.p.click('[data-edit-ronda-modelo="acougue_diario"]');
     assert.equal(await a.p.inputValue('#checklistModelTitle'), 'Checklist Operacional Diário — Açougue');
     assert.equal(await a.p.isChecked('[data-item-temperaturas]'), true);
+    assert.match(await a.p.inputValue('[data-item-texto-temperaturas]'), /geladeira de peixes/);
+    await a.p.uncheck('[data-item-temperaturas]');
+    assert.equal(await a.p.isVisible('[data-item-texto-temperaturas]'), false);
+    await a.p.check('[data-item-temperaturas]');
+    await a.p.fill('[data-item-texto-temperaturas]', 'Registre antes de abrir o balcão.');
     await a.p.fill('[data-item-titulo]', 'Temperatura conferida?');
     await a.p.click('#checklistModelSave');
     await a.p.waitForFunction(() => document.querySelector('#checklistAdminStatus').textContent.includes('Modelo salvo'));
     assert.deepEqual(mudancas, [
       { p_loja_id: filial, p_ronda_id: primeira, p_ativa: false },
       { p_loja_id: filial, p_codigo: 'acougue_diario', p_versao: 1, p_titulo: 'Checklist Operacional Diário — Açougue', p_secoes: [
-        { titulo: 'Balcão', itens: [{ titulo: 'Temperatura conferida?', descricao: 'Confira as duas temperaturas.', temperaturas: ['ilhas_c', 'peixes_c'] }] },
+        { titulo: 'Balcão', itens: [{ titulo: 'Temperatura conferida?', descricao: 'Confira as duas temperaturas.', temperaturas: ['ilhas_c', 'peixes_c'], texto_temperaturas: 'Registre antes de abrir o balcão.' }] },
       ] },
     ]);
     assert.deepEqual(a.erros, []);
