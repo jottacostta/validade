@@ -27,7 +27,11 @@ function checklistCarregar(){if(!checklistTemAcessoAtual()){checklistSetStatus('
     checklistRenderList();checklistRenderKpis();checklistSetStatus('checklistPageStatus','');
   }).catch(function(e){if(seq===CHECKLIST.request)checklistSetStatus('checklistPageStatus','Não foi possível consultar as rondas: '+e.message,true);});}
 function checklistConsultarModelos(loja){
-  return checklistApi('/rest/v1/checklist_modelos?select=codigo,titulo,loja_id,versao,estrutura&ativo=eq.true&or=(loja_id.is.null,loja_id.eq.'+encodeURIComponent(loja)+')&order=titulo.asc');
+  return checklistApi('/rest/v1/checklist_modelos?select=codigo,titulo,loja_id,versao,estrutura&ativo=eq.true&or=(loja_id.is.null,loja_id.eq.'+encodeURIComponent(loja)+')&order=titulo.asc').then(function(rows){
+    var modelos=new Map();
+    (rows||[]).forEach(function(m){if(m.loja_id===loja||!modelos.has(m.codigo))modelos.set(m.codigo,m);});
+    return Array.from(modelos.values());
+  });
 }
 function checklistRenderKpis(){var counts={validada:0,submetida:0,rascunho:0,devolvida:0};CHECKLIST.rounds.forEach(function(r){counts[r.estado]=(counts[r.estado]||0)+1;});var node=$('checklistKpis');if(!node)return;node.innerHTML=[['Rondas recentes',CHECKLIST.rounds.length,'total'],['Aguardando validação',counts.submetida,'pending'],['Devolvidas',counts.devolvida,'returned'],['Validadas',counts.validada,'approved']].map(function(x){return '<div class="checklist-kpi '+x[2]+'"><small>'+x[0]+'</small><b>'+x[1]+'</b></div>';}).join('');}
 function checklistRondaHoje(codigo){
@@ -132,10 +136,10 @@ function checklistAdminLoadModels(ctx){
   root.textContent='Carregando modelos…';
   return checklistConsultarModelos(ctx.loja).then(function(rows){
     if(!checklistAdminCurrent(ctx))return;
-    var modelos=(rows||[]).filter(function(m){return m.loja_id===ctx.loja;});
+    var modelos=rows||[];
     root.innerHTML=modelos.map(function(m){
-      return '<div class="checklist-admin-entry"><b>'+checklistEsc(m.titulo)+'</b><button type="button" class="btn sec" data-edit-ronda-modelo="'+checklistEsc(m.codigo)+'">Editar</button></div>';
-    }).join('')||'<p>Nenhum modelo personalizado nesta filial.</p>';
+      return '<div class="checklist-admin-entry"><div><b>'+checklistEsc(m.titulo)+'</b><small>'+(m.loja_id?'Versão desta filial':'Modelo padrão')+'</small></div><button type="button" class="btn sec" data-edit-ronda-modelo="'+checklistEsc(m.codigo)+'">Editar</button></div>';
+    }).join('')||'<p>Nenhum modelo disponível nesta filial.</p>';
     root.onclick=function(e){
       var b=e.target.closest('[data-edit-ronda-modelo]');
       if(b&&checklistAdminCurrent(ctx))checklistAdminEditModel(modelos.find(function(m){return m.codigo===b.dataset.editRondaModelo;}));
@@ -152,15 +156,28 @@ function checklistAdminLoadStore(){
   if(!$('checklistAdminDate').value)$('checklistAdminDate').value=checklistHoje();
   return Promise.all([checklistConfigLoadStore(),checklistAdminLoadModels(ctx),checklistAdminLoadRounds(ctx)]);
 }
+function checklistAdminAddQuestion(root,item){
+  if(root.children.length>=20){toast('A seção aceita até 20 perguntas.');return;}
+  var box=document.createElement('div');
+  box.className='checklist-model-question';
+  box.innerHTML='<label class="f">Pergunta<input data-item-titulo maxlength="250" required></label><label class="f">Orientação opcional<textarea data-item-descricao rows="2" maxlength="1000"></textarea></label><label class="checklist-model-temperature"><input data-item-temperaturas type="checkbox"> Exigir temperaturas das ilhas e da geladeira de peixes</label><button class="btn sec" type="button">Remover pergunta</button>';
+  box.querySelector('[data-item-titulo]').value=item?item.titulo:'';
+  box.querySelector('[data-item-descricao]').value=item&&item.descricao||'';
+  box.querySelector('[data-item-temperaturas]').checked=!!(item&&Array.isArray(item.temperaturas));
+  box.querySelector('button').onclick=function(){box.remove();};
+  root.appendChild(box);
+}
 function checklistAdminAddSection(section){
   var root=$('checklistModelSections');
   if(root.children.length>=12){toast('O modelo aceita até 12 seções.');return;}
   var fieldset=document.createElement('fieldset');
   fieldset.className='checklist-model-section';
-  fieldset.innerHTML='<legend>Seção</legend><label class="f">Nome da seção<input data-titulo-secao maxlength="100" required></label><label class="f">Perguntas, uma por linha<textarea data-itens-secao rows="4" maxlength="5020" required></textarea></label><button class="btn sec" type="button">Remover seção</button>';
+  fieldset.innerHTML='<legend>Seção</legend><label class="f">Nome da seção<input data-titulo-secao maxlength="100" required></label><div data-itens-secao></div><div class="row"><button class="btn sec" type="button" data-add-pergunta>Adicionar pergunta</button><button class="btn sec" type="button" data-remove-secao>Remover seção</button></div>';
   fieldset.querySelector('[data-titulo-secao]').value=section?section.titulo:'';
-  fieldset.querySelector('[data-itens-secao]').value=section?section.itens.map(function(i){return i.titulo;}).join('\n'):'';
-  fieldset.querySelector('button').onclick=function(){fieldset.remove();};
+  var itens=fieldset.querySelector('[data-itens-secao]');
+  (section?section.itens:[null]).forEach(function(item){checklistAdminAddQuestion(itens,item);});
+  fieldset.querySelector('[data-add-pergunta]').onclick=function(){checklistAdminAddQuestion(itens,null);};
+  fieldset.querySelector('[data-remove-secao]').onclick=function(){fieldset.remove();};
   root.appendChild(fieldset);
 }
 function checklistAdminEditModel(modelo){
@@ -179,9 +196,14 @@ function checklistAdminSaveModel(e){
   var ctx=checklistAdminContext(),form=$('checklistModelForm'),botao=$('checklistModelSave');
   if(!checklistAdminCurrent(ctx)||!checklistUuid(ctx.loja)||botao.disabled)return;
   var secoes=Array.from($('checklistModelSections').children).map(function(s){
-    return {titulo:s.querySelector('[data-titulo-secao]').value.trim(),itens:s.querySelector('[data-itens-secao]').value.split(/\r?\n/).map(function(i){return i.trim();}).filter(Boolean)};
+    var itens=Array.from(s.querySelector('[data-itens-secao]').children).map(function(box){
+      var item={titulo:box.querySelector('[data-item-titulo]').value.trim(),descricao:box.querySelector('[data-item-descricao]').value.trim()};
+      if(box.querySelector('[data-item-temperaturas]').checked)item.temperaturas=['ilhas_c','peixes_c'];
+      return item;
+    });
+    return {titulo:s.querySelector('[data-titulo-secao]').value.trim(),itens:itens};
   });
-  if(!secoes.length||secoes.some(function(s){return !s.titulo||!s.itens.length||s.itens.length>20||s.itens.some(function(i){return i.length>250;});})){
+  if(!secoes.length||secoes.some(function(s){return !s.titulo||!s.itens.length||s.itens.some(function(i){return !i.titulo;});})){
     checklistSetStatus('checklistAdminStatus','Informe pelo menos uma seção, com título e 1 a 20 perguntas de até 250 caracteres.',true);return;
   }
   botao.disabled=true;

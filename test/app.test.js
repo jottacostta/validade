@@ -1170,7 +1170,7 @@ tflaky('Menu inferior: seis abas ficam em uma linha e Ajustes abre após rolar',
   } finally { await a.fechar(); }
 });
 
-tflaky('Rondas: administrador pausa uma ronda e salva um modelo personalizado por filial', { skip: pular }, async () => {
+tflaky('Rondas: administrador pausa uma ronda e edita o modelo padrão por filial', { skip: pular }, async () => {
   const filial = '20000000-0000-4000-8000-000000000001';
   const primeira = '30000000-0000-4000-8000-000000000001';
   const segunda = '30000000-0000-4000-8000-000000000002';
@@ -1178,9 +1178,13 @@ tflaky('Rondas: administrador pausa uma ronda e salva um modelo personalizado po
   const a = await abrirLogado(async page => {
     await rotasPerm(page, 'admin', []);
     await page.route(/\/rest\/v1\/lojas\?/, r => r.fulfill({ json: [{ id: filial, nome: 'FL05' }] }));
-    for (const tabela of ['loja_membros', 'checklist_acessos', 'checklist_config_auditoria', 'checklist_modelos']) {
+    for (const tabela of ['loja_membros', 'checklist_acessos', 'checklist_config_auditoria']) {
       await page.route(new RegExp('/rest/v1/' + tabela + '[?]'), r => r.fulfill({ json: [] }));
     }
+    await page.route(/\/rest\/v1\/checklist_modelos\?/, r => r.fulfill({ json: [{
+      codigo: 'acougue_diario', versao: 1, loja_id: null, titulo: 'Checklist Operacional Diário — Açougue',
+      estrutura: { secoes: [{ titulo: 'Balcão', itens: [{ titulo: 'Temperatura', descricao: 'Confira as duas temperaturas.', temperaturas: ['ilhas_c', 'peixes_c'] }] }] },
+    }] }));
     await page.route(/\/rest\/v1\/checklist_rondas\?/, r => r.fulfill({ json: [
       { id: primeira, modelo_titulo: 'Abertura', ativa: true, estado: 'rascunho' },
       { id: segunda, modelo_titulo: 'Fechamento', ativa: true, estado: 'rascunho' },
@@ -1201,16 +1205,16 @@ tflaky('Rondas: administrador pausa uma ronda e salva um modelo personalizado po
     await a.p.locator('[data-ronda-ativa="'+primeira+'"]').uncheck();
     await a.p.waitForFunction(() => document.querySelector('#checklistAdminStatus').textContent.includes('Ronda desativada'));
     assert.equal(await a.p.locator('[data-ronda-ativa="'+segunda+'"]').isChecked(), true);
-    await a.p.click('#checklistNewModel');
-    await a.p.fill('#checklistModelTitle', 'Reposição');
-    await a.p.fill('[data-titulo-secao]', 'Balcão');
-    await a.p.fill('[data-itens-secao]', 'Exposição correta?\nProdutos precificados?');
+    await a.p.click('[data-edit-ronda-modelo="acougue_diario"]');
+    assert.equal(await a.p.inputValue('#checklistModelTitle'), 'Checklist Operacional Diário — Açougue');
+    assert.equal(await a.p.isChecked('[data-item-temperaturas]'), true);
+    await a.p.fill('[data-item-titulo]', 'Temperatura conferida?');
     await a.p.click('#checklistModelSave');
     await a.p.waitForFunction(() => document.querySelector('#checklistAdminStatus').textContent.includes('Modelo salvo'));
     assert.deepEqual(mudancas, [
       { p_loja_id: filial, p_ronda_id: primeira, p_ativa: false },
-      { p_loja_id: filial, p_codigo: null, p_versao: null, p_titulo: 'Reposição', p_secoes: [
-        { titulo: 'Balcão', itens: ['Exposição correta?', 'Produtos precificados?'] },
+      { p_loja_id: filial, p_codigo: 'acougue_diario', p_versao: 1, p_titulo: 'Checklist Operacional Diário — Açougue', p_secoes: [
+        { titulo: 'Balcão', itens: [{ titulo: 'Temperatura conferida?', descricao: 'Confira as duas temperaturas.', temperaturas: ['ilhas_c', 'peixes_c'] }] },
       ] },
     ]);
     assert.deepEqual(a.erros, []);

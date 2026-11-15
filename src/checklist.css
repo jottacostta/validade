@@ -29,3 +29,7 @@
 #checklistModelForm{margin-top:12px}
 .checklist-model-section{margin:12px 0;padding:12px;border:1px solid var(--bd);border-radius:12px;min-width:0}
 .checklist-model-section textarea{width:100%;margin-bottom:8px}
+.checklist-model-question{padding:10px 0;border-top:1px solid var(--bd)}
+.checklist-model-question .f{display:block}
+.checklist-model-temperature{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.checklist-model-temperature input{width:22px;height:22px;margin:0;flex:none;accent-color:#38bdf8}
