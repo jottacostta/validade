@@ -178,3 +178,38 @@ test('PostgreSQL: modelos por filial, revisões e pausa individual preservam his
   assert.deepEqual(eventos.rows.map(r => r.acao), ['pausada', 'reativada']);
   await db.exec('reset role');
 });
+
+test('PostgreSQL: editar o checklist padrão cria uma versão por filial e preserva o histórico assinado', async () => {
+  const otherStore = '20000000-0000-4000-8000-000000000002';
+  const migrationPath = '../supabase/migrations/20261115132300_editar_checklist_padrao.sql';
+  await db.exec(fs.readFileSync(path.join(__dirname, migrationPath), 'utf8'));
+  for (const actor of [EXECUTOR, ENCARREGADO, SUBGERENTE]) {
+    await db.query('insert into public.loja_membros(loja_id,user_id) values($1,$2)', [otherStore, actor]);
+  }
+  await setActor(ADMIN);
+  await db.query('select public.checklist_configurar_loja($1,true,array[$2::uuid],$3::uuid,$4::uuid)', [otherStore, EXECUTOR, ENCARREGADO, SUBGERENTE]);
+  const modelo = (await db.query("select estrutura from public.checklist_modelos where codigo='acougue_diario' and loja_id is null")).rows[0];
+  const secoes = modelo.estrutura.secoes;
+  secoes[0].titulo = 'Seção da filial';
+  const salvar = (loja, versao) => db.query("select public.checklist_salvar_modelo($1,'acougue_diario',$2,'Checklist da filial',$3::jsonb)", [loja, versao, JSON.stringify(secoes)]);
+  await salvar(STORE, 1);
+  await expectReject(salvar(STORE, 1), 'O modelo mudou');
+  await setActor(EXECUTOR);
+  await expectReject(salvar(otherStore, 1), 'Somente o Administrador');
+  const criar = loja => db.query("select public.checklist_criar_ronda($1,'2026-11-17') as id", [loja]);
+  const localId = (await criar(STORE)).rows[0].id;
+  const outraId = (await criar(otherStore)).rows[0].id;
+  const locais = (await db.query('select modelo_titulo,modelo_snapshot from public.checklist_rondas where id=$1', [localId])).rows;
+  const outras = (await db.query('select modelo_titulo,modelo_snapshot from public.checklist_rondas where id=$1', [outraId])).rows;
+  assert.equal(locais[0].modelo_titulo, 'Checklist da filial');
+  assert.equal(locais[0].modelo_snapshot.secoes[0].titulo, 'Seção da filial');
+  const item = locais[0].modelo_snapshot.secoes[0].itens.find(i => i.temperaturas);
+  assert.deepEqual(item.temperaturas, ['ilhas_c', 'peixes_c']);
+  assert.match(item.descricao, /geladeira de peixes/);
+  assert.notEqual(outras[0].modelo_snapshot.secoes[0].titulo, 'Seção da filial');
+  const assinada = (await db.query("select id,modelo_snapshot from public.checklist_rondas where modelo_codigo='acougue_diario' and estado='validada' and loja_id=$1", [STORE])).rows[0];
+  assert.deepEqual(assinada.modelo_snapshot, outras[0].modelo_snapshot);
+  assert.equal((await db.query('select count(*)::int as n from public.checklist_assinaturas where ronda_id=$1', [assinada.id])).rows[0].n, 2);
+  await setActor(ADMIN);
+  await salvar(otherStore, 1);
+});

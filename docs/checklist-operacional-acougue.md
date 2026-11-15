@@ -18,7 +18,7 @@ São 23 verificações; cada uma exige resposta **Sim** ou **Não**. O item Temp
 - Em **Ajustes → Configuração de Rondas**, o Administrador define, para cada filial, quem pode preencher, quem valida como **Encarregado** e quem valida como **Subgerente de Perecíveis**. As três designações precisam pertencer à filial e são mutuamente exclusivas.
 - A opção de Rondas é mostrada somente ao usuário designado para a filial selecionada. O servidor também valida o vínculo; esconder o botão não é o controle de segurança.
 - O executor escolhe um modelo e pode gerar uma ronda por filial, data e modelo. Um rascunho pode ser salvo parcialmente. O envio exige todas as respostas e, no modelo padrão do Açougue, também as duas temperaturas.
-- Em **Modelos personalizados**, o Administrador cria ou edita modelos por filial, com seções e perguntas de Sim/Não. Cada edição gera uma versão para as próximas rondas.
+- Em **Modelos de ronda**, o Administrador pode editar o checklist padrão do Açougue ou criar um modelo. As alterações são salvas para a filial selecionada e valem para as próximas rondas. O editor aceita seções, perguntas de Sim/Não, orientações e, quando selecionadas, as duas leituras de temperatura.
 - Em **Rondas geradas**, o Administrador seleciona a data e pode ativar ou desativar cada ronda. Rondas inativas ficam no histórico em modo de consulta e preservam as respostas e assinaturas. A aba continua disponível aos usuários designados mesmo sem rondas ativas.
 - Após a submissão, o conteúdo fica bloqueado. As duas pessoas designadas precisam assinar a versão submetida. O executor/autor não pode assinar a própria ronda. Uma devolução exige motivo e permite correção seguida de nova submissão.
 - A aprovação final equivale a uma assinatura eletrônica interna auditável, associada a conta autenticada, nome, etapa, versão e horário. Não é assinatura digital ICP-Brasil nem declaração de conformidade legal.
@@ -27,5 +27,5 @@ São 23 verificações; cada uma exige resposta **Sim** ou **Não**. O item Temp
 ## Operação e publicação
 
 - A consulta de designação, os rascunhos, o envio e as assinaturas dependem de conexão com o Supabase. O módulo não mantém fila offline de assinatura; isso evita indicar como validada uma ronda cuja gravação ainda não foi confirmada pelo servidor.
-- Aplique `20261115125146_rondas_personalizadas.sql` antes de publicar esta versão do PWA, em rollout autorizado. As rondas da filial que estava com o checklist desligado passam a constar como inativas. O histórico e as designações existentes são preservados.
+- Aplique `20261115125146_rondas_personalizadas.sql` antes de publicar esta versão do PWA, em rollout autorizado. Para habilitar a edição do modelo padrão, aplique também `20261115132300_editar_checklist_padrao.sql` antes de publicar o aplicativo. As rondas da filial que estava com o checklist desligado passam a constar como inativas. O histórico e as designações existentes são preservados.
 - O build embute `src/checklist.css` e `src/checklist.js` no PWA para que a nova área não dependa de arquivos externos separados.
