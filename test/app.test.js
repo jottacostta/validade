@@ -1164,7 +1164,8 @@ tflaky('Menu inferior: seis abas ficam em uma linha e Ajustes abre após rolar',
     await menu.evaluate(nav => { nav.scrollLeft = nav.scrollWidth; });
     await menu.locator('[data-v="aj"]').click();
     assert.equal(await a.p.isVisible('#v-aj'), true);
-    await a.p.evaluate(() => ir('home'));
+    await a.p.click('#headerBack');
+    assert.equal(await a.p.isVisible('#v-home'), true);
     assert.equal(await menu.evaluate(nav => nav.scrollLeft), 0);
   } finally { await a.fechar(); }
 });
