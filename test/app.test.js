@@ -1186,8 +1186,8 @@ tflaky('Rondas: administrador pausa uma ronda e edita o modelo padrão por filia
       estrutura: { secoes: [{ titulo: 'Balcão', itens: [{ titulo: 'Temperatura', descricao: 'Confira as duas temperaturas.', temperaturas: ['ilhas_c', 'peixes_c'] }] }] },
     }] }));
     await page.route(/\/rest\/v1\/checklist_rondas\?/, r => r.fulfill({ json: [
-      { id: primeira, modelo_titulo: 'Abertura', ativa: true, estado: 'rascunho' },
-      { id: segunda, modelo_titulo: 'Fechamento', ativa: true, estado: 'rascunho' },
+      { id: primeira, modelo_titulo: 'Abertura', criado_por_nome: 'Executor A', ativa: true, estado: 'rascunho' },
+      { id: segunda, modelo_titulo: 'Abertura', criado_por_nome: 'Executor B', ativa: true, estado: 'rascunho' },
     ] }));
     await page.route('**/rest/v1/rpc/checklist_definir_ronda_ativa', r => {
       mudancas.push(r.request().postDataJSON());
@@ -1203,6 +1203,7 @@ tflaky('Rondas: administrador pausa uma ronda e edita o modelo padrão por filia
     await a.p.click('nav button[data-v="aj"]');
     await a.p.click('#sysMenu [data-sys-open="checklist"]');
     await a.p.locator('[data-ronda-ativa="'+primeira+'"]').uncheck();
+    assert.match(await a.p.textContent('#checklistAdminRoundList'), /Executor A[\s\S]*Executor B/);
     await a.p.waitForFunction(() => document.querySelector('#checklistAdminStatus').textContent.includes('Ronda desativada'));
     assert.equal(await a.p.locator('[data-ronda-ativa="'+segunda+'"]').isChecked(), true);
     await a.p.click('[data-edit-ronda-modelo="acougue_diario"]');
