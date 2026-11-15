@@ -230,6 +230,8 @@ em `src/app.html`, dentro de `#preferencesArea`):
 
 ## 6. Diário (acrescente uma linha a cada mudança)
 
+- 15/11 — Codex — Sessão retorna ao login se o perfil falhar ou exceder 12 segundos. A abertura usa confirmação do servidor mesmo após renovação do token.
+
 - 15/11 — Codex — Ronda individual por executor, filial, data e modelo. A revisão continua por filial. A publicação requer `20261115213249_ronda_individual_por_usuario.sql`.
 
 - 15/11 — Codex — Texto das medições editável por pergunta e exibido nas próximas rondas. A publicação requer a migration `20261115161854_texto_temperaturas_checklist.sql`.

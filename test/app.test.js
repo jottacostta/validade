@@ -424,6 +424,7 @@ tflaky('conta: entra (usuário→e-mail interno), lista e escolhe a loja', { ski
   await a.p.route('**/auth/v1/token*', async r => { try { authBody = r.request().postDataJSON(); } catch (e) {}
     await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ access_token: 'tok', refresh_token: 'ref', expires_in: 3600, user: { id: 'u1', email: 'joao@loja.validade' } }) }); });
   await a.p.route('**/rest/v1/lojas*', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ id: 'L1', nome: 'Bangu' }, { id: 'L2', nome: 'Campo Grande' }]) }));
+  await rotasBase(a.p, 'operador');
   await a.p.waitForSelector('#conta', { state: 'visible' });
   await a.p.fill('#cUser', 'joao'); await a.p.fill('#cPass', '1234');
   await a.p.click('#bEntrar');
@@ -446,7 +447,7 @@ tflaky('conta: entra (usuário→e-mail interno), lista e escolhe a loja', { ski
 });
 
 tflaky('conta: sair invalida token e retorna à tela de login', { skip: pular }, async () => {
-  const a = await abrir({ url: URL_SUPA, chave: 'validade_sessao', dados: { access_token: 'logout-token', refresh_token: 'logout-refresh', expira: Date.now()+3600000, usuario: 'joao', uid: 'u1', lojaId: 'L1', lojaNome: 'Bangu' } });
+  const a = await abrir({ url: URL_SUPA, antes: p => rotasBase(p, 'operador'), chave: 'validade_sessao', dados: { access_token: 'logout-token', refresh_token: 'logout-refresh', expira: Date.now()+3600000, usuario: 'joao', uid: 'u1', lojaId: 'L1', lojaNome: 'Bangu' } });
   let logoutAuthorization = '';
   await a.p.route('**/auth/v1/logout', async r => { logoutAuthorization = r.request().headers().authorization || ''; await r.fulfill({ status: 204, body: '' }); });
   await a.p.evaluate(() => document.getElementById('bLogoutHdr').click());
@@ -461,6 +462,27 @@ tflaky('conta: sair invalida token e retorna à tela de login', { skip: pular },
   assert.strictEqual(await a.p.evaluate(() => localStorage.getItem('validade_sessao')), null);
   assert.deepStrictEqual(a.erros, []);
   await a.fechar();
+});
+
+tflaky('conta: perfil indisponível encerra só a sessão atual e mostra o login', { skip: pular }, async () => {
+  let registrouLogout;
+  const logout = new Promise(resolve => { registrouLogout = resolve; });
+  const a = await abrirLogado(async p => {
+    await p.route(R_PERFIL, r => r.fulfill({ status: 503, json: { message: 'indisponível' } }));
+    await p.route(/\/auth\/v1\/logout\?scope=local$/, r => {
+      registrouLogout(r.request().url());
+      return r.fulfill({ status: 204 });
+    });
+  });
+  try {
+    await a.p.waitForSelector('#conta-login', { state: 'visible' });
+    assert.match(await a.p.textContent('#cErro'), /Não foi possível confirmar seu perfil/);
+    assert.equal(await a.p.evaluate(() => localStorage.getItem('validade_sessao')), null);
+    assert.equal(new URL(await logout).searchParams.get('scope'), 'local');
+    await a.p.reload();
+    assert.equal(await a.p.isVisible('#conta-login'), true);
+    assert.deepEqual(a.erros, []);
+  } finally { await a.fechar(); }
 });
 
 tflaky('conta: senha errada mostra mensagem de erro', { skip: pular }, async () => {
@@ -490,6 +512,7 @@ async function abrirLogado(setupRotas, dados, sessaoExtra) {
   const a = await abrir({ url: URL_SUPA, opcoes: { viewport: { width: 390, height: 844 } } });
   await a.p.route(/\/rest\/v1\/notificacoes(?:\?|$)/, r => r.request().method() === 'GET'
     ? r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }) : r.fulfill({ status: 204, body: '' }));
+  await a.p.route(R_PERFIL, r => r.fulfill({ json: [{ papel: sessaoExtra?.papel || 'operador', nome: sessaoExtra?.nome }] }));
   if (setupRotas) await setupRotas(a.p);
   await a.p.evaluate(([d, extra]) => { localStorage.setItem('validade_sessao', JSON.stringify(Object.assign({ access_token: 'tok', refresh_token: 'ref', expira: Date.now() + 3600000, usuario: 'teste', email: 'teste@loja.validade', uid: 'u1', lojaId: 'L1', lojaNome: 'Loja Teste' }, extra || {}))); if (d) localStorage.setItem('validade_dados', JSON.stringify(d)); }, [dados, sessaoExtra]);
   await a.p.reload();
@@ -502,6 +525,7 @@ async function abrirRegistro(setupRotas, dados, antes) {
   const a = await abrir({ url: URL_SUPA, antes, opcoes: { viewport: { width: 390, height: 844 } } });
   await a.p.route(/\/rest\/v1\/notificacoes(?:\?|$)/, r => r.request().method() === 'GET'
     ? r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }) : r.fulfill({ status: 204, body: '' }));
+  await a.p.route(R_PERFIL, r => r.fulfill({ json: [{ papel: 'operador', nome: 'Teste' }] }));
   if (setupRotas) await setupRotas(a.p);
   await a.p.evaluate((d) => {
     localStorage.setItem('validade_sessao', JSON.stringify({ access_token: 'tok', refresh_token: 'ref', expira: Date.now() + 3600000, usuario: 'teste', email: 'teste@loja.validade', uid: 'u1', papel: 'operador', nome: 'Teste', lojaId: 'L1', lojaNome: 'Loja Teste' }));
@@ -541,6 +565,7 @@ tflaky('sessão: renova token expirado antes de sincronizar produtos e lotes', {
     await p.route('**/rest/v1/**', async r => {
       autorizacoes.push(r.request().headers().authorization || '');
       const url = new URL(r.request().url());
+      if (url.pathname === '/rest/v1/perfis') return r.fallback();
       let rows = [];
       if (r.request().method() === 'GET' && url.pathname === '/rest/v1/catalogo') rows = [{ ean: '7891234567890', nome: 'Produto compartilhado', marca: '', img: '', updated_at: '2026-11-07T20:00:00Z' }];
       if (r.request().method() === 'GET' && url.pathname === '/rest/v1/produtos') rows = [{ ean: '7891234567890', updated_at: '2026-11-07T20:00:00Z', deleted_at: null }];
@@ -581,6 +606,7 @@ tflaky('sessão: renova e repete uma chamada ao receber 401', { skip: pular }, a
         liberarRetry();
         return;
       }
+      if (url.pathname === '/rest/v1/perfis') return r.fallback();
       if (url.hostname === 'test.supabase.co') return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
       return r.continue();
     });

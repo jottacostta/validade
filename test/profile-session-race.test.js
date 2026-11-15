@@ -69,6 +69,8 @@ const roleFunctions = [
 function makeHarness(initial, { supabase = true, online = true } = {}) {
   const storage = new Map();
   const pending = [];
+  const timers = new Map();
+  let timerId = 0;
   const context = {
     console,
     Promise,
@@ -86,6 +88,8 @@ function makeHarness(initial, { supabase = true, online = true } = {}) {
       removeItem(key) { storage.delete(key); },
     },
     pending,
+    setTimeout(callback, ms) { const id = ++timerId; timers.set(id, { callback, ms }); return id; },
+    clearTimeout(id) { timers.delete(id); },
     window: { matchMedia: () => ({ matches: true }) },
     document: { documentElement: { classList: { contains() { return false; }, toggle() {} } } },
   };
@@ -93,7 +97,7 @@ function makeHarness(initial, { supabase = true, online = true } = {}) {
     var SESS = ${JSON.stringify(initial)};
     var PAPEIS = { operador: 'Operador', promotor: 'Promotor', assistente: 'Assistente', analista: 'Analista', gerente: 'Gerente', admin: 'Administrador' };
     var ORDEM_PAPEIS = Object.keys(PAPEIS);
-    var uiUpdates = 0, modeUpdates = 0, saved = null;
+    var uiUpdates = 0, modeUpdates = 0, saved = null, saidas = [];
     function sbOn() { return ${supabase ? 'true' : 'false'}; }
     function logado() { return !!(SESS && SESS.access_token); }
     function salvarSess() { saved = SESS ? JSON.parse(JSON.stringify(SESS)) : null; }
@@ -103,6 +107,7 @@ function makeHarness(initial, { supabase = true, online = true } = {}) {
     function atualizarModoDesktopAdmin() { modeUpdates += 1; }
     function atualizarInterfacePapel() { uiUpdates += 1; }
     function temPermissao() { return true; }
+    function sairParaLogin(motivo) { saidas.push(motivo); SESS=null; papelCarregando=false; salvarSess(); }
     function sbReq(path) { return new Promise(function(resolve, reject) { pending.push({ path: path, resolve: resolve, reject: reject }); }); }
     ${roleState}
     ${roleFunctions}
@@ -123,7 +128,7 @@ function makeHarness(initial, { supabase = true, online = true } = {}) {
       uiUpdates: function() { return uiUpdates; },
       modeUpdates: function() { return modeUpdates; },
       saved: function() { return saved; },
-      cache: function() { return JSON.parse(localStorage.getItem('perfil_papel_cache') || '{}'); },
+      saidas: function() { return saidas; },
     };
   `;
   vm.runInNewContext(source, context, { filename: 'profile-role-harness.js' });
@@ -131,6 +136,7 @@ function makeHarness(initial, { supabase = true, online = true } = {}) {
   return {
     api: context.__api,
     begin() { return context.__api.begin(); },
+    expirar() { for (const timer of timers.values()) timer.callback(); },
     flush() { return new Promise(resolve => setImmediate(resolve)); },
   };
 }
@@ -154,7 +160,7 @@ test('ignora resposta antiga ao trocar do usuário A para B enquanto o GET está
   assert.equal(h.api.role(), 'operador');
   assert.equal(h.api.confirmed(), false);
   assert.equal(h.api.uiUpdates(), 0, 'callback antigo não pode atualizar a UI');
-  assert.deepEqual(h.api.cache(), {}, 'callback antigo não pode gravar cache de papel');
+  assert.equal(h.api.saidas().length, 0);
 
   h.api.resolve(1, { ok: true, dados: [{ papel: 'operador', nome: 'Operador B' }] });
   await b;
@@ -173,21 +179,23 @@ test('logout sem resposta impede qualquer mutação tardia do callback', async (
   await request;
   assert.equal(h.api.getSession(), null);
   assert.equal(h.api.uiUpdates(), 0);
-  assert.deepEqual(h.api.cache(), {});
+  assert.equal(h.api.saidas().length, 0);
 });
 
-test('erro HTTP do perfil atual limpa papel local e falha fechado', async () => {
+test('erro HTTP do perfil atual encerra a sessão e volta ao login', async () => {
   const h = makeHarness(session('u-a', 'tok-a', 'admin', 'Administrador A'));
   const request = h.begin();
   await h.flush();
   h.api.resolve(0, { ok: false, status: 401, dados: { message: 'unauthorized' } });
   await request;
-  assert.equal(h.api.getSession().papel, null);
+  assert.equal(h.api.getSession(), null);
+  assert.equal(h.api.saved(), null);
+  assert.match(h.api.saidas()[0], /confirmar seu perfil/);
   assert.equal(h.api.role(), 'operador');
   assert.equal(h.api.can('admin'), false);
   assert.equal(h.api.confirmed(), false);
   assert.equal(h.api.desktop(), false);
-  assert.equal(h.api.uiUpdates(), 1);
+  assert.equal(h.api.uiUpdates(), 0);
 });
 
 test('resposta antiga do mesmo UID fica obsoleta quando o token é renovado', async () => {
@@ -229,32 +237,39 @@ test('aceita cada papel somente quando o perfil atual responde com papel válido
   assert.equal(h.api.can('admin'), true);
 });
 
-test('não usa cache de outro UID na falha, mas conserva o cache do próprio UID offline', async () => {
-  const h = makeHarness(session('u-a', 'tok-a'));
-  const first = h.begin();
-  await h.flush();
-  h.api.resolve(0, { ok: true, dados: [{ papel: 'admin', nome: 'Administrador A' }] });
-  await first;
-  assert.equal(h.api.cache()['u-a'].papel, 'admin');
+test('falha de rede durante a confirmação encerra a sessão, inclusive offline', async () => {
+  const h = makeHarness(session('u-a', 'tok-a', 'admin'), { online: false });
+  const request = h.begin();
+  h.api.reject(0);
+  await request;
+  assert.equal(h.api.getSession(), null);
+  assert.equal(h.api.saidas().length, 1);
+});
 
-  h.api.setSession(session('u-b', 'tok-b'));
-  h.api.setOnline(false);
-  const other = h.begin();
+test('expiração encerra a sessão e ignora a resposta tardia do perfil', async () => {
+  const h = makeHarness(session('u-a', 'tok-a', 'admin'));
+  const request = h.begin();
+  h.expirar();
+  await request;
+  h.api.resolve(0, { ok: true, dados: [{ papel: 'admin' }] });
   await h.flush();
-  h.api.reject(1);
-  await other;
-  assert.equal(h.api.role(), 'operador', 'cache de A não pode autorizar B');
-  assert.equal(h.api.getSession().papel, null);
-  assert.equal(h.api.confirmed(), false);
+  assert.equal(h.api.getSession(), null);
+  assert.equal(h.api.saidas().length, 1);
+  assert.equal(h.api.uiUpdates(), 0);
+});
 
-  h.api.setSession(session('u-a', 'tok-a-2'));
-  const same = h.begin();
+test('renovação durante a consulta confirma o perfil com o token atual', async () => {
+  const h = makeHarness(session('u-a', 'tok-antigo'));
+  const request = h.begin();
+  h.api.getSession().access_token = 'tok-renovado';
+  h.api.resolve(0, { ok: true, dados: [{ papel: 'admin' }] });
   await h.flush();
-  h.api.reject(2);
-  await same;
-  assert.equal(h.api.role(), 'admin', 'cache por UID mantém compatibilidade offline do próprio usuário');
+  assert.equal(h.api.pendingCount(), 2);
+  h.api.resolve(1, { ok: true, dados: [{ papel: 'operador' }] });
+  await request;
+  assert.equal(h.api.role(), 'operador');
   assert.equal(h.api.confirmed(), true);
-  assert.equal(h.api.desktop(), true);
+  assert.equal(h.api.saidas().length, 0);
 });
 
 test('mantém o papel manual do modo sem Supabase', () => {

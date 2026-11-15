@@ -1828,7 +1828,7 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
     </div>
   </div>
 </section>
-<div id="adminDesktopLoading" role="status" aria-live="polite">Confirmando perfil e permissões…</div>
+<div id="adminDesktopLoading" role="status" aria-live="polite">Carregando sessão…</div>
 <main id="appMain">
 
 <!-- ═════════ REGISTRAR ═════════ -->
@@ -2510,7 +2510,7 @@ function renderCatalogo(){if(!$('listaCatalogo'))return;var q=$('qCatalogo').val
     return '<article class="operator-record catalog-card"><span class="operator-record-thumb"'+atributoFoto(x.ean)+'>'+miniatura(x.img,'lote')+'</span><span class="operator-record-copy"><strong>'+esc(x.nome)+'</strong><small>EAN: '+esc(x.ean)+(x.marca?'<br>Marca: '+esc(x.marca):'')+'<br>'+(x.n?x.n+' registro'+(x.n>1?'s':'')+' nesta loja':'Sem registros nesta loja')+'</small></span><span class="chip '+(x.inativo?'da':x.n?'ok':'wa')+'">'+(x.inativo?'Inativo global':x.n?'Com registro':'Sem registro')+'</span><span class="operator-record-actions">'+(x.inativo?'':'<button type="button" data-register-ean="'+esc(x.ean)+'" aria-label="Registrar lote de '+esc(x.nome)+'">'+ic('plus')+'</button>')+acao+'</span></article>';}).join('')
     ||'<div class="operator-empty">'+(q||catFiltro!=='all'?'Nenhum produto encontrado com este filtro.':'O catálogo ainda está vazio.')+'</div>';}
 function rotuloPerfilAtual(){
-  if(sbOn()&&logado()&&!SESS.papel)return papelCarregando?'Confirmando perfil':'Perfil não confirmado';
+  if(sbOn()&&logado()&&!SESS.papel)return papelCarregando?'Carregando sessão…':'Perfil indisponível';
   return PAPEIS[papelAtual()];
 }
 function subtituloPapelAtual(){
@@ -5954,11 +5954,13 @@ var refreshSessaoEmAndamento=null;
 function sbRefreshSess(){
   if(!logado()||!SESS.refresh_token)return Promise.resolve(false);
   if(refreshSessaoEmAndamento)return refreshSessaoEmAndamento;
-  refreshSessaoEmAndamento=fetch(CFG.supaUrl+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:CFG.supaKey,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:SESS.refresh_token})})
-    .then(function(r){return r.text().then(function(t){var j=null;try{j=t?JSON.parse(t):null;}catch(e){}if(!r.ok||!j||!j.access_token)throw new Error((j&&(j.message||j.error_description||j.msg))||'Falha ao renovar sessão');var u=j.user||{};SESS.access_token=j.access_token;SESS.refresh_token=j.refresh_token||SESS.refresh_token;SESS.expira=Date.now()+((j.expires_in||3600)*1000);if(u.id)SESS.uid=u.id;salvarSess();return true;});})
+  var sessao=SESS,uid=sessao.uid;
+  var renovacao=fetch(CFG.supaUrl+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:CFG.supaKey,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:sessao.refresh_token})})
+    .then(function(r){return r.text().then(function(t){var j=null;try{j=t?JSON.parse(t):null;}catch(e){}if(SESS!==sessao)return false;if(!r.ok||!j||!j.access_token)throw new Error((j&&(j.message||j.error_description||j.msg))||'Falha ao renovar sessão');var u=j.user||{};if(uid&&u.id&&u.id!==uid)throw new Error('Identidade alterada ao renovar sessão');sessao.access_token=j.access_token;sessao.refresh_token=j.refresh_token||sessao.refresh_token;sessao.expira=Date.now()+((j.expires_in||3600)*1000);if(u.id)sessao.uid=u.id;salvarSess();return true;});})
     .catch(function(e){console.warn('Não foi possível renovar a sessão Supabase:',e);return false;})
-    .then(function(ok){refreshSessaoEmAndamento=null;return ok;},function(e){refreshSessaoEmAndamento=null;throw e;});
-  return refreshSessaoEmAndamento;
+    .finally(function(){if(refreshSessaoEmAndamento===renovacao)refreshSessaoEmAndamento=null;});
+  refreshSessaoEmAndamento=renovacao;
+  return renovacao;
 }
 function sbReq(path,opt){opt=opt||{};
   function executar(retry){
@@ -5975,8 +5977,8 @@ function sbReq(path,opt){opt=opt||{};
 function sbLogin(user,pass){return sbReq('/auth/v1/token?grant_type=password',{method:'POST',auth:false,body:{email:user+'@'+DOM_LOGIN,password:pass}})
   .then(function(r){if(!r.ok||!r.dados||!r.dados.access_token)throw new Error((r.dados&&(r.dados.error_description||r.dados.msg||r.dados.error))||'Usuário ou senha inválidos');
     var u=r.dados.user||{},meta=u.app_metadata||{};SESS={access_token:r.dados.access_token,refresh_token:r.dados.refresh_token,expira:Date.now()+((r.dados.expires_in||3600)*1000),usuario:user,email:u.email,uid:u.id,loginEm:Date.now(),lojaId:null,lojaNome:null,forcePasswordChange:meta.force_password_change===true};salvarSess();return SESS;});}
-function sbLogout(){var token=SESS&&SESS.access_token;SESS=null;sessaoFoto();abrirFotoDetalhe(null);papelConfirmado=false;atualizarModoDesktopAdmin();salvarSess();refreshSessaoEmAndamento=null;try{localStorage.removeItem('validade_ultima_loja');}catch(e){}if(token&&sbOn()){return fetch(CFG.supaUrl+'/auth/v1/logout',{method:'POST',headers:{apikey:CFG.supaKey,Authorization:'Bearer '+token}}).catch(function(e){console.warn('Falha ao invalidar sessão remota (sessão local já encerrada):',e);});}return Promise.resolve();}
-function sairParaLogin(){if(typeof checklistLimparAcesso==='function')checklistLimparAcesso();notificacoesCache=[];notificacoesConsultadasEm=0;notificacoesEscopoCache='';atualizarBannerAlertaSistema();sbLogout();try{history.replaceState({loggedOut:true},'',location.href.split('#')[0]);}catch(e){}var modal=$('conta');if(modal)modal.classList.add('on');mostrarLoginForm();contaCard();atualizarBotaoLogout();atualizarGate();toast('Você saiu');}
+function sbLogout(escopo){var token=SESS&&SESS.access_token;SESS=null;sessaoFoto();abrirFotoDetalhe(null);papelConfirmado=false;papelConfirmadoUid=null;papelConfirmadoToken=null;papelCarregando=false;papelConsultaSeq++;atualizarModoDesktopAdmin();salvarSess();refreshSessaoEmAndamento=null;try{localStorage.removeItem('validade_ultima_loja');}catch(e){}if(token&&sbOn()){return fetch(CFG.supaUrl+'/auth/v1/logout'+(escopo==='local'?'?scope=local':''),{method:'POST',headers:{apikey:CFG.supaKey,Authorization:'Bearer '+token}}).catch(function(e){console.warn('Falha ao invalidar sessão remota (sessão local já encerrada):',e);});}return Promise.resolve();}
+function sairParaLogin(motivo){var erro=typeof motivo==='string'?motivo:'';if(typeof checklistLimparAcesso==='function')checklistLimparAcesso();notificacoesCache=[];notificacoesConsultadasEm=0;notificacoesEscopoCache='';atualizarBannerAlertaSistema();sbLogout(erro?'local':undefined);try{history.replaceState({loggedOut:true},'',location.href.split('#')[0]);}catch(e){}var modal=$('conta');if(modal)modal.classList.add('on');mostrarLoginForm();contaCard();atualizarBotaoLogout();atualizarGate();if(erro)captchaErro(erro);else toast('Você saiu');}
 function sbLojas(){return sbReq('/rest/v1/lojas?select=id,nome&order=nome.asc').then(function(r){if(!r.ok)throw new Error('falha');return Array.isArray(r.dados)?r.dados:[];});}
 /* ───── catálogo compartilhado (EAN → nome), entre todas as lojas ───── */
 var SYNC={};try{SYNC=JSON.parse(localStorage.getItem('validade_sync')||'{}')||{};}catch(e){}
@@ -6162,8 +6164,7 @@ function tetoPapelApp(){var p=papelAtual();if(p==='admin')return 5;if(p!=='assis
 function papeisAtribuiveisApp(){var t=tetoPapelApp();return ORDEM_PAPEIS.filter(function(x){return NIVEL_PAPEL[x]<=t;});}
 function podeAdministrarPapelApp(papelAlvo){return !!NIVEL_PAPEL[papelAlvo]&&NIVEL_PAPEL[papelAlvo]<=tetoPapelApp();}
 function papelAtual(){if(!sbOn())return 'admin';if(!SESS||!SESS.access_token)return 'operador';var uid=String(SESS.uid||'');return papelConfirmado&&papelConfirmadoUid===uid&&papelConfirmadoToken===SESS.access_token&&ORDEM_PAPEIS.includes(SESS.papel)?SESS.papel:'operador';}
-var papelConfirmado=false,papelConfirmadoUid=null,papelConfirmadoToken=null,papelCarregando=false,adminDesktopVista='dashboard',papelConsultaSeq=0,papelCachePorUid={};
-try{papelCachePorUid=JSON.parse(localStorage.getItem('perfil_papel_cache')||'{}')||{};if(!papelCachePorUid||typeof papelCachePorUid!=='object'||Array.isArray(papelCachePorUid))papelCachePorUid={};}catch(e){papelCachePorUid={};}
+var papelConfirmado=false,papelConfirmadoUid=null,papelConfirmadoToken=null,papelCarregando=false,adminDesktopVista='dashboard',papelConsultaSeq=0;
 function adminDesktopAtivo(){return !!(window.matchMedia&&window.matchMedia('(min-width: 1024px)').matches&&sbOn()&&logado()&&SESS&&!SESS.forcePasswordChange&&SESS.lojaId&&papelConfirmado&&['admin','gerente'].includes(papelAtual()));}
 var painelMobileAberto=false;
 function podeAbrirPainelMobile(){return sbOn()&&logado()&&SESS&&SESS.lojaId&&!SESS.forcePasswordChange&&papelConfirmado&&(papelAtual()==='admin'||(papelAtual()==='gerente'&&sessaoPermissoesConfirmadas&&sessaoPermissoesConfirmadas.sessao===SESS&&sessaoPermissoesConfirmadas.token===SESS.access_token&&temPermissao('relatorios')));}
@@ -6199,26 +6200,32 @@ function aplicarPapel(){var reg=pode('registrar'),ed=pode('editar'),aj=pode('aju
   var ac=$('aCosmos');if(ac)ac.disabled=false;/* token do Cosmos é pessoal: todo usuário edita o seu */
   if(!reg){var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='reg')ir('prod');}}
 function carregarPapel(){if(!sbOn()||!logado())return Promise.resolve();
-  var sessao=SESS,uid=String(sessao.uid||''),token=sessao.access_token,seq=++papelConsultaSeq;
-  var atual=function(){return seq===papelConsultaSeq&&SESS===sessao&&String(SESS.uid||'')===uid&&SESS.access_token===token;};
+  var sessao=SESS,uid=String(sessao.uid||''),seq=++papelConsultaSeq,timer;
+  var atual=function(){return seq===papelConsultaSeq&&SESS===sessao;};
   carregarPrefs();carregarRegrasAlertas();carregarPermissoes();
   SESS.papel=null;SESS.empresa=null;SESS.setor=null;papelConfirmado=false;papelConfirmadoUid=null;papelConfirmadoToken=null;papelCarregando=true;salvarSess();atualizarModoDesktopAdmin();
-  /* Filtra pelo próprio id: admin/analista/gerente enxergam vários perfis (RLS),
-     então sem o filtro o limit=1 traria o papel de OUTRO usuário. */
-  var alvo='/rest/v1/perfis?select=',filtro=(uid?'&id=eq.'+encodeURIComponent(uid):'')+'&limit=1';
-  function buscar(campos){return sbReq(alvo+campos+filtro);}
-  function concluir(papel,nome,confirmado,empresa,setor){if(!atual())return false;SESS.papel=confirmado?papel:null;SESS.empresa=confirmado&&papel==='promotor'?empresa||null:null;SESS.setor=confirmado?setor||null:null;if(confirmado&&nome!=null)SESS.nome=nome;
-    papelCarregando=false;papelConfirmado=!!confirmado;papelConfirmadoUid=confirmado?uid:null;papelConfirmadoToken=confirmado?token:null;salvarSess();atualizarInterfacePapel();return true;}
-  function falhar(){if(!atual())return null;var c=papelCachePorUid[uid],offline=typeof navigator!=='undefined'&&navigator.onLine===false;
-    if(offline&&uid&&c&&ORDEM_PAPEIS.includes(c.papel)){concluir(c.papel,c.nome,true,c.empresa,c.setor);return c;}concluir(null,null,false);return null;}
-  var requisicao;try{requisicao=buscar('papel,nome,empresa,setor');}catch(e){return Promise.reject(e).catch(function(){return falhar();});}
-  return Promise.resolve(requisicao).then(function(r){
-    if(atual()&&r&&!r.ok&&r.dados&&r.dados.code==='42703')return buscar('papel,nome');
-    return r;
-  }).then(function(r){if(!atual())return null;var d=r&&r.ok&&Array.isArray(r.dados)&&r.dados[0],valido=!!(uid&&d&&ORDEM_PAPEIS.includes(d.papel));
-    if(!valido){concluir(null,null,false);return null;}
-    papelCachePorUid[uid]={papel:d.papel,nome:d.nome==null?'':d.nome,empresa:d.papel==='promotor'?d.empresa||null:null,setor:d.setor||null};try{localStorage.setItem('perfil_papel_cache',JSON.stringify(papelCachePorUid));}catch(e){}
-    concluir(d.papel,d.nome,true,d.empresa,d.setor);return d;},function(){return falhar();});}
+  async function consultar(campos){
+    if(!atual()||!uid)return Promise.resolve(null);
+    var token=sessao.access_token;
+    return sbReq('/rest/v1/perfis?select='+campos+'&id=eq.'+encodeURIComponent(uid)+'&limit=1',{sessao:sessao}).then(function(r){
+      if(!atual()||String(sessao.uid||'')!==uid)return null;
+      if(sessao.access_token!==token)return consultar(campos);
+      if(!r.ok&&r.dados&&r.dados.code==='42703'&&campos!=='papel,nome')return consultar('papel,nome');
+      return {resposta:r,token:token};
+    });
+  }
+  var prazo=new Promise(function(resolve){timer=setTimeout(function(){resolve(null);},12000);});
+  return Promise.race([consultar('papel,nome,empresa,setor'),prazo]).catch(function(){return null;}).then(function(resultado){
+    if(!atual())return null;
+    var r=resultado&&resultado.resposta,d=r&&r.ok&&Array.isArray(r.dados)&&r.dados[0];
+    if(!d||!ORDEM_PAPEIS.includes(d.papel)||resultado.token!==sessao.access_token){
+      sairParaLogin('Não foi possível confirmar seu perfil. Entre novamente com sua conta.');return null;
+    }
+    SESS.papel=d.papel;SESS.empresa=d.papel==='promotor'?d.empresa||null:null;SESS.setor=d.setor||null;
+    if(d.nome!=null)SESS.nome=d.nome;
+    papelCarregando=false;papelConfirmado=true;papelConfirmadoUid=uid;papelConfirmadoToken=resultado.token;
+    salvarSess();atualizarInterfacePapel();return d;
+  }).finally(function(){clearTimeout(timer);});}
 function atualizarInterfacePapel(){
   atualizarModoDesktopAdmin();aplicarPapel();atualizarSubtituloCabecalho();atualizarBotaoLogout();atualizarContextoLoja();checklistAtualizarAcesso();
   if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();
