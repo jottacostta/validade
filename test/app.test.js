@@ -1170,6 +1170,53 @@ tflaky('Menu inferior: seis abas ficam em uma linha e Ajustes abre após rolar',
   } finally { await a.fechar(); }
 });
 
+tflaky('Rondas: administrador pausa uma ronda e salva um modelo personalizado por filial', { skip: pular }, async () => {
+  const filial = '20000000-0000-4000-8000-000000000001';
+  const primeira = '30000000-0000-4000-8000-000000000001';
+  const segunda = '30000000-0000-4000-8000-000000000002';
+  const mudancas = [];
+  const a = await abrirLogado(async page => {
+    await rotasPerm(page, 'admin', []);
+    await page.route(/\/rest\/v1\/lojas\?/, r => r.fulfill({ json: [{ id: filial, nome: 'FL05' }] }));
+    for (const tabela of ['loja_membros', 'checklist_acessos', 'checklist_config_auditoria', 'checklist_modelos']) {
+      await page.route(new RegExp('/rest/v1/' + tabela + '[?]'), r => r.fulfill({ json: [] }));
+    }
+    await page.route(/\/rest\/v1\/checklist_rondas\?/, r => r.fulfill({ json: [
+      { id: primeira, modelo_titulo: 'Abertura', ativa: true, estado: 'rascunho' },
+      { id: segunda, modelo_titulo: 'Fechamento', ativa: true, estado: 'rascunho' },
+    ] }));
+    await page.route('**/rest/v1/rpc/checklist_definir_ronda_ativa', r => {
+      mudancas.push(r.request().postDataJSON());
+      return r.fulfill({ status: 204 });
+    });
+    await page.route('**/rest/v1/rpc/checklist_salvar_modelo', r => {
+      mudancas.push(r.request().postDataJSON());
+      return r.fulfill({ json: 'modelo-teste' });
+    });
+  }, null, { papel: 'admin', lojaId: filial, lojaNome: 'FL05' });
+  try {
+    await permsCarregadas(a.p);
+    await a.p.click('nav button[data-v="aj"]');
+    await a.p.click('#sysMenu [data-sys-open="checklist"]');
+    await a.p.locator('[data-ronda-ativa="'+primeira+'"]').uncheck();
+    await a.p.waitForFunction(() => document.querySelector('#checklistAdminStatus').textContent.includes('Ronda desativada'));
+    assert.equal(await a.p.locator('[data-ronda-ativa="'+segunda+'"]').isChecked(), true);
+    await a.p.click('#checklistNewModel');
+    await a.p.fill('#checklistModelTitle', 'Reposição');
+    await a.p.fill('[data-titulo-secao]', 'Balcão');
+    await a.p.fill('[data-itens-secao]', 'Exposição correta?\nProdutos precificados?');
+    await a.p.click('#checklistModelSave');
+    await a.p.waitForFunction(() => document.querySelector('#checklistAdminStatus').textContent.includes('Modelo salvo'));
+    assert.deepEqual(mudancas, [
+      { p_loja_id: filial, p_ronda_id: primeira, p_ativa: false },
+      { p_loja_id: filial, p_codigo: null, p_versao: null, p_titulo: 'Reposição', p_secoes: [
+        { titulo: 'Balcão', itens: ['Exposição correta?', 'Produtos precificados?'] },
+      ] },
+    ]);
+    assert.deepEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
 tflaky('Alertas: contadores e filtros refletem os registros; o cartão abre o detalhe com aviso de vencido', { skip: pular }, async () => {
   const dia = n => { const t = new Date(); t.setDate(t.getDate() + n); return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); };
   const a = await abrir({ dados: {

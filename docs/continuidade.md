@@ -230,6 +230,8 @@ em `src/app.html`, dentro de `#preferencesArea`):
 
 ## 6. Diário (acrescente uma linha a cada mudança)
 
+- 15/11 — Codex — Modelos de ronda por filial com versionamento, uma ronda por data/modelo e ativação individual. Validação em PostgreSQL de teste. Rollout depende da migration `20261115125146_rondas_personalizadas.sql` antes da publicação do PWA.
+
 - 15/11 — Codex — Menu inferior em uma linha com rolagem horizontal. A aba Rondas continua condicionada à designação na filial.
 
 - 14/11 — Codex — Push de validade próxima passa a exibir o nome resumido no título e a data em formato brasileiro. A publicação depende do deploy da Edge Function `alertas`.

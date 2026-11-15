@@ -1501,7 +1501,7 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 <button type="button" data-admin-settings="lojas"><span class="admin-nav-icon" aria-hidden="true">◇</span><span>Lojas</span></button>
 <button type="button" data-admin-settings="catalogo"><span class="admin-nav-icon" aria-hidden="true">◇</span><span>Catálogo global</span></button>
 <button type="button" data-admin-settings="alertas"><span class="admin-nav-icon" aria-hidden="true">◇</span><span>Alertas e avisos</span></button>
-<button type="button" data-admin-settings="checklist"><span class="admin-nav-icon" aria-hidden="true">✓</span><span>Checklist do açougue</span></button>
+<button type="button" data-admin-settings="checklist"><span class="admin-nav-icon" aria-hidden="true">✓</span><span>Configuração de Rondas</span></button>
 <button type="button" data-admin-settings="auditoria"><span class="admin-nav-icon" aria-hidden="true">▤</span><span>Auditoria</span></button>
 <button type="button" data-admin-settings="dados"><span class="admin-nav-icon" aria-hidden="true">◇</span><span>Dados e manutenção</span></button>
     </nav>
@@ -2059,15 +2059,17 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 
 <!-- ═════════ AJUSTES ═════════ -->
 <section class="vista" id="v-checklist" aria-label="Rondas operacionais">
-  <div class="checklist-page-head"><div class="checklist-brand-mark" aria-hidden="true">✓</div><div><p class="checklist-eyebrow">ROTINA OPERACIONAL</p><h2>Rondas do açougue</h2><p>Checklist diário, desvios e validações da liderança.</p></div></div>
+  <div class="checklist-page-head"><div class="checklist-brand-mark" aria-hidden="true">✓</div><div><p class="checklist-eyebrow">ROTINA OPERACIONAL</p><h2>Rondas operacionais</h2><p>Checklists e validações da liderança.</p></div></div>
   <div class="checklist-kpis" id="checklistKpis" aria-label="Resumo de rondas"></div>
   <div id="checklistHomePanel">
-    <section class="card checklist-intro"><div><h3 id="checklistStoreTitle">Filial atual</h3><p id="checklistDateLabel">Ronda diária</p></div><button class="btn" id="checklistStart" type="button">Iniciar ronda de hoje</button></section>
+    <section class="card checklist-intro"><div><h3 id="checklistStoreTitle">Filial atual</h3><p id="checklistDateLabel"></p></div><div id="checklistStartControls" hidden><label class="f" for="checklistModelSelect">Modelo da ronda</label><select id="checklistModelSelect"></select><button class="btn" id="checklistStart" type="button" disabled>Iniciar ronda de hoje</button></div></section>
     <p id="checklistPageStatus" class="checklist-status" role="status" aria-live="polite">Carregando dados…</p>
-    <section class="checklist-round-section"><div class="checklist-section-heading"><div><h3>Histórico recente</h3><p>Rondas da filial disponíveis para os usuários designados.</p></div><button class="btn sec" id="checklistRefresh" type="button">Atualizar</button></div><div id="checklistRoundList" class="checklist-round-list"></div></section>
+    <section class="checklist-round-section"><div class="checklist-section-heading"><div><h3>Rondas ativas</h3></div><button class="btn sec" id="checklistRefresh" type="button">Atualizar</button></div><div id="checklistRoundList" class="checklist-round-list"></div></section>
+    <section class="checklist-round-section"><h3>Histórico recente</h3><div id="checklistRoundHistory" class="checklist-round-list"></div></section>
   </div>
   <div id="checklistFormPanel" hidden>
     <div class="checklist-form-toolbar"><button class="btn sec" id="checklistBack" type="button">Voltar às rondas</button><span id="checklistRoundStatus" class="checklist-state"></span></div>
+    <h3 id="checklistRoundTitle"></h3>
     <section class="card checklist-round-meta"><div><small>Data da ronda</small><b id="checklistRoundDate">—</b></div><div><small>Responsável</small><b id="checklistRoundOwner">—</b></div><div><small>Progresso</small><b id="checklistProgressText">0 de 0 itens</b></div><div class="checklist-progress-track"><i id="checklistProgressBar"></i></div></section>
     <div id="checklistReadOnlyNotice" class="checklist-notice" hidden></div>
     <div id="checklistSections"></div>
@@ -2124,9 +2126,8 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
   <div id="sysSectionView" style="display:none">
     <div id="sysChecklistConfigPanel" style="display:none">
       <section class="card checklist-config-card" aria-labelledby="checklistConfigTitle">
-        <div class="checklist-config-head"><div><h3 id="checklistConfigTitle">Acesso às rondas do açougue</h3><p>Defina, para a filial selecionada, quem pode preencher e quais pessoas assinam a validação.</p></div><span class="checklist-lock-badge">Somente designados</span></div>
+        <div class="checklist-config-head"><div><h3 id="checklistConfigTitle">Acesso às rondas</h3><p>Defina, para a filial selecionada, quem pode preencher e quais pessoas assinam a validação.</p></div><span class="checklist-lock-badge">Somente designados</span></div>
         <label class="f" for="checklistConfigStoreSelect">Filial</label><select id="checklistConfigStoreSelect"><option value="">Carregando filiais…</option></select><p class="checklist-config-store" id="checklistConfigStore">Selecione uma filial para configurar os acessos.</p>
-        <label class="checklist-toggle"><input id="checklistConfigActive" type="checkbox"><span><b>Checklist diário ativo</b><small>Quando desligado, a opção Rondas fica oculta para todos desta filial.</small></span></label>
         <label class="f" for="checklistConfigExecutors">Usuários autorizados a preencher</label><select id="checklistConfigExecutors" multiple size="5" aria-describedby="checklistConfigHint"></select>
         <p class="checklist-hint" id="checklistConfigHint">Selecione um ou mais usuários vinculados à filial. A pessoa que preenche uma ronda não pode assiná-la.</p>
         <div class="checklist-approver-grid"><label class="f" for="checklistConfigEncarregado">Encarregado responsável pela validação</label><select id="checklistConfigEncarregado"><option value="">Selecione um usuário</option></select><label class="f" for="checklistConfigSubgerente">Subgerente de Perecíveis responsável pela validação</label><select id="checklistConfigSubgerente"><option value="">Selecione um usuário</option></select></div>
@@ -2134,6 +2135,22 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
         <p id="checklistConfigStatus" class="checklist-status" role="status" aria-live="polite"></p>
         <div class="checklist-config-history"><h4>Histórico de alterações de acesso</h4><div id="checklistConfigAudit"></div></div>
       </section>
+      <section id="checklistAdminRounds" class="card checklist-config-card" hidden>
+        <h3>Rondas geradas</h3>
+        <label class="f" for="checklistAdminDate">Data da ronda</label><input type="date" id="checklistAdminDate">
+        <div id="checklistAdminRoundList" class="checklist-admin-list"></div>
+      </section>
+      <section id="checklistAdminModels" class="card checklist-config-card" hidden>
+        <h3>Modelos personalizados</h3>
+        <div id="checklistAdminModelList" class="checklist-admin-list"></div>
+        <button type="button" id="checklistNewModel" class="btn sec">Novo modelo</button>
+        <form id="checklistModelForm" hidden>
+          <label class="f" for="checklistModelTitle">Nome do modelo</label><input id="checklistModelTitle" maxlength="100" required>
+          <div id="checklistModelSections"></div>
+          <div class="row"><button type="button" id="checklistModelAddSection" class="btn sec">Adicionar seção</button><button type="button" id="checklistModelCancel" class="btn sec">Cancelar</button><button type="submit" id="checklistModelSave" class="btn">Salvar modelo</button></div>
+        </form>
+      </section>
+      <p id="checklistAdminStatus" class="checklist-status" role="status"></p>
     </div>
     <div id="sysReportsPanel" style="display:none">
       <h3>Relatórios disponíveis</h3>
@@ -2421,7 +2438,7 @@ var SYS_SECOES=[
  {id:'config',titulo:'Configuração Geral',sub:'Parâmetros e integrações',roles:['assistente','gerente','admin'],icon:'<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="18" r="2"/>'},
  {id:'dados',titulo:'Dados e Manutenção',sub:'Backup, restauração e sincronização',roles:['admin'],icon:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/>'},
  {id:'alertas',titulo:'Alertas e Notificações',sub:'Avisos de validade, push e agenda',roles:['assistente','analista','gerente','admin'],icon:'<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20h4"/>'},
- {id:'checklist',titulo:'Checklist do Açougue',sub:'Filiais, executores e validação em duas etapas',roles:['admin'],icon:'<path d="M8 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3M8 4a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2 2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2ZM7 12l2 2 4-4M7 18h10"/>'},
+ {id:'checklist',titulo:'Configuração de Rondas',sub:'Modelos, rondas geradas e designações por filial',roles:['admin'],icon:'<path d="M8 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3M8 4a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2 2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2ZM7 12l2 2 4-4M7 18h10"/>'},
  {id:'sobre',titulo:'Sobre o Sistema',sub:'Versão, ambiente, documentação e suporte',roles:['assistente','analista','gerente','admin'],icon:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v.2"/>'}
 ];
 var OPERADOR_SECOES=[
