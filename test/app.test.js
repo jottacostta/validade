@@ -1111,6 +1111,106 @@ tflaky('Registrar: o cubo abre a câmera e salva a foto depois do lote', { skip:
   }finally{await a.fechar();}
 });
 
+tflaky('Registrar perecível: o quadro da foto abre a câmera e salva a foto depois do registro', { skip: pular }, async () => {
+  const cap = {}, fotos = [];
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aG9sAAAAASUVORK5CYII=', 'base64');
+  const a = await abrirRegistro(async p => {
+    await rotasRegistro(p, cap);
+    await p.route('**/rest/v1/rpc/buscar_foto_perecivel', r => r.fulfill({status:200,body:'null',contentType:'application/json'}));
+    await p.route('**/rest/v1/rpc/salvar_foto_perecivel', r => {
+      fotos.push({payload:r.request().postDataJSON(),registros:cap.rpc_perecivel?.length||0});
+      return r.fulfill({status:200,json:'10000000-0000-4000-8000-000000000006'});
+    });
+  }, {prod:{},cat:{},pere:{itens:{},regs:[]}}, p => p.addInitScript(() => {
+    window.cameraPe=0;
+    document.addEventListener('click', e => {if(e.target.id==='peFotoCamera'){e.preventDefault();window.cameraPe++;}});
+  }));
+  try {
+    await a.p.click('#bTipoPerecivel');
+    await a.p.fill('#tCodBal','6019'); await a.p.click('#bBuscarBal');
+    await a.p.waitForSelector('#cardPe',{state:'visible'});
+    assert.equal(await a.p.getAttribute('#peFotoCamera','capture'),'environment');
+    assert.equal(await a.p.getAttribute('#bFotoPe','class'),await a.p.getAttribute('#bFotoCadastro','class'),'mesmo quadro de foto do industrializado');
+    assert.equal(await a.p.locator('#bFotoPe').getAttribute('aria-label'),'Abrir câmera para tirar foto do produto');
+    await a.p.fill('#peDesc','Pernil'); await a.p.fill('#peSif','SIF-1'); await a.p.fill('#pePeso','0.650'); await a.p.fill('#peVal','2099-02-01'); await a.p.selectOption('#peSetor','Açougue');
+    await a.p.locator('#bFotoPe #peFotoAcao').click();
+    assert.equal(await a.p.evaluate(()=>window.cameraPe),1);
+    await a.p.setInputFiles('#peFotoCamera',{name:'pernil.png',mimeType:'image/png',buffer:png});
+    await a.p.waitForFunction(()=>document.querySelector('#peFotoStatus').textContent.includes('Foto pronta'));
+    assert.equal(await a.p.isVisible('#peImg'),true);
+    assert.equal(await a.p.inputValue('#peDesc'),'Pernil');
+    assert.equal(await a.p.inputValue('#peVal'),'2099-02-01');
+    assert.equal(fotos.length,0,'a foto só sobe depois do registro');
+    await a.p.click('#bSalvarPe');
+    await a.p.waitForSelector('#regSucesso',{state:'visible'});
+    assert.equal(fotos.length,1);
+    assert.equal(fotos[0].registros,1,'a foto é enviada depois da RPC do perecível');
+    assert.equal(fotos[0].payload.p_cod,'6019');
+    assert.equal(fotos[0].payload.p_loja_id,'L1');
+    assert.equal(fotos[0].payload.p_revisao,null);
+    assert.match(fotos[0].payload.p_img,/^data:image\/jpeg;base64,/);
+    assert.match(await a.p.textContent('#regSucessoResumo'),/Foto salva/);
+    assert.ok(!(await a.p.evaluate(()=>localStorage.getItem('validade_dados')||'')).includes('data:image/jpeg'),'foto não vai para o localStorage');
+    await a.p.click('#bVerRegistros');
+    await a.p.waitForFunction(()=>!!document.querySelector('[data-foto-cod="6019"] img'));
+    assert.deepEqual(a.erros,[]);
+  }finally{await a.fechar();}
+});
+
+tflaky('Registrar perecível: PLU com foto mostra a foto e não deixa o operador trocar', { skip: pular }, async () => {
+  const fotos = [];
+  const jpeg = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
+  const a = await abrirRegistro(async p => {
+    await rotasRegistro(p);
+    await p.route('**/rest/v1/rpc/buscar_foto_perecivel', r => r.fulfill({status:200,json:{img:jpeg,revisao:'10000000-0000-4000-8000-000000000007'}}));
+    await p.route('**/rest/v1/rpc/salvar_foto_perecivel', r => {fotos.push(1);return r.fulfill({status:200,json:'x'});});
+  }, {prod:{},cat:{},pere:{itens:{'6019':{desc:'Pernil',sif:'SIF-1'}},regs:[]}});
+  try {
+    await a.p.click('#bTipoPerecivel');
+    await a.p.fill('#tCodBal','6019'); await a.p.click('#bBuscarBal');
+    await a.p.waitForFunction(()=>!document.querySelector('#peImg').hidden);
+    assert.equal(await a.p.getAttribute('#peImg','src'),jpeg);
+    assert.equal(await a.p.isDisabled('#bFotoPe'),true);
+    await a.p.fill('#pePeso','0.5'); await a.p.fill('#peVal','2099-02-01'); await a.p.selectOption('#peSetor','Açougue');
+    await a.p.click('#bSalvarPe');
+    await a.p.waitForSelector('#regSucesso',{state:'visible'});
+    assert.equal(fotos.length,0);
+    assert.deepEqual(a.erros,[]);
+  }finally{await a.fechar();}
+});
+
+tflaky('Foto de perecível no detalhe: gerente troca a foto do PLU', { skip: pular }, async () => {
+  const revisao='10000000-0000-4000-8000-000000000008', gravacoes=[];
+  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aG9sAAAAASUVORK5CYII=', 'base64');
+  let foto={img:'data:image/jpeg;base64,/9j/2wBDAAEB/9k=',revisao};
+  const a=await abrirLogado(async p => {
+    await rotasPerm(p,'gerente',[]);
+    await p.route('**/rest/v1/rpc/buscar_foto_perecivel',r=>r.fulfill({status:200,json:foto}));
+    await p.route('**/rest/v1/rpc/salvar_foto_perecivel',r=>{
+      const payload=r.request().postDataJSON();gravacoes.push(payload);
+      foto={img:payload.p_img,revisao:'10000000-0000-4000-8000-000000000009'};
+      return r.fulfill({status:200,json:foto.revisao});
+    });
+  }, {prod:{},cat:{},pere:{itens:{'6019':{desc:'Pernil',sif:'S1'}},regs:[{id:'pe-foto',cod:'6019',sif:'S1',peso:1,val:'2099-01-01',setor:'Açougue',criado:Date.now(),rpcConfirmado:true}]}}, {papel:'gerente',lojaId:'FL05'});
+  try {
+    await a.p.click('nav button[data-v="pere"]');
+    await a.p.click('[data-detail-pere="pe-foto"]');
+    await a.p.waitForSelector('#bFotoCamera',{state:'visible'});
+    assert.equal(await a.p.textContent('#bFotoCamera'),'Trocar foto');
+    await a.p.setInputFiles('#produtoFotoGaleria',{name:'pernil.png',mimeType:'image/png',buffer:png});
+    await a.p.waitForSelector('#photoPreview',{state:'visible'});
+    await a.p.click('#bFotoSalvar');
+    await a.p.waitForFunction(()=>document.querySelector('#detailPhotoStatus').textContent==='Foto salva.');
+    assert.equal(gravacoes.length,1);
+    assert.equal(gravacoes[0].p_cod,'6019');
+    assert.equal(gravacoes[0].p_loja_id,'FL05');
+    assert.equal(gravacoes[0].p_revisao,revisao);
+    assert.match(gravacoes[0].p_img,/^data:image\/jpeg;base64,/);
+    assert.equal(await a.p.getAttribute('#detailThumb img','src'),gravacoes[0].p_img);
+    assert.deepEqual(a.erros,[]);
+  }finally{await a.fechar();}
+});
+
 tflaky('Registrar: confirmação só aparece depois da resposta do Supabase e oferece as duas saídas', { skip: pular }, async () => {
   let liberar; const espera = new Promise(r => { liberar = r; });
   const a = await abrirRegistro(async p => {
