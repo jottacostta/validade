@@ -1893,8 +1893,8 @@ tflaky('armazenamento cheio: a sincronização conclui, atualiza a tela e não r
 tflaky('alertas pessoais: regras multi-horário validam, cacheiam por UID e não dependem do Push', { skip: pular }, async () => {
   const a = await abrirLogado(async p => {
     await p.addInitScript(() => Object.defineProperty(navigator, 'onLine', { configurable: true, value: false }));
-    await p.route(/\/rest\/v1\/perfis/, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ papel: 'operador', nome: 'Teste' }]) }));
     await p.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.route(/\/rest\/v1\/perfis/, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ papel: 'operador', nome: 'Teste' }]) }));
   }, null, { papel: 'operador' });
   await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="op-alertas"]');
   await a.p.fill('#alertaRegraDias', '0'); await a.p.fill('#alertaRegraHora', '08:00'); await a.p.click('#bAlertaRegraAdicionar');
