@@ -426,7 +426,8 @@ test('perfis de acesso: permissões por papel gravadas e validadas no banco', ()
   assert.match(m, /private\.tem_permissao\('nome_solicitar'\)/);
   // a lista de permissões do app e a do banco são a mesma
   const noApp = [...app.matchAll(/\{id:'([a-z_]+)',grupo:'(?:basica|especial)'/g)].map(x => x[1]).sort();
-  const m3 = fs.readFileSync(path.join(root, 'supabase/migrations/20261112080000_recolhimento_configuravel_por_perfil.sql'), 'utf8');
+  // Lista vigente desde 16/11/2026: "avisos de todas as lojas" saiu (só o Administrador é global).
+  const m3 = fs.readFileSync(path.join(root, 'supabase/migrations/20261116180000_escopo_lojas_atribuidas.sql'), 'utf8');
   const noBanco = [...m3.slice(m3.indexOf('function private.permissao_padrao'), m3.indexOf('definir_permissao_papel')).matchAll(/\('([a-z_]+)',\s*array\[/g)].map(x => x[1]).sort();
   assert.ok(noApp.length >= 10); assert.deepEqual(noApp, noBanco);
   assert.match(app, /rpc\/definir_permissao_papel/);
@@ -454,8 +455,8 @@ test('perfis de acesso etapa 3: áreas administrativas obedecem às permissões 
   assert.match(fn, /revoke all on function public\.papel_tem_permissao\(text,text\) from public, anon/);
   assert.equal([...m.matchAll(/não encontrad[oa]/g)].length, 4, 'falha inteira se alguma função mudou');
   const lista = app.slice(app.indexOf('var PERMISSOES=['), app.indexOf('function permissaoDef'));
-  assert.equal([...lista.matchAll(/\{id:'/g)].length, 18);
-  assert.equal([...lista.matchAll(/teto:TODOS4,servidor:true\}/g)].length, 18, 'todas as permissões podem ser concedidas a qualquer perfil');
+  assert.equal([...lista.matchAll(/\{id:'/g)].length, 17);
+  assert.equal([...lista.matchAll(/teto:TODOS4,servidor:true\}/g)].length, 17, 'todas as permissões podem ser concedidas a qualquer perfil');
   const gerir = fs.readFileSync(path.join(root, 'supabase/functions/gerir-usuarios/index.ts'), 'utf8');
   assert.match(gerir, /rpc\("papel_tem_permissao", \{ p_papel: papelCaller, p_permissao: "usuarios_gerenciar" \}\)/);
   assert.match(gerir, /if \(permErr\) return json\(/, 'falha ao consultar permissão nega o acesso');
