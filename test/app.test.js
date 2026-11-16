@@ -423,6 +423,7 @@ tflaky('conta: entra (usuário→e-mail interno), lista e escolhe a loja', { ski
   let authBody = null;
   await a.p.route('**/auth/v1/token*', async r => { try { authBody = r.request().postDataJSON(); } catch (e) {}
     await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ access_token: 'tok', refresh_token: 'ref', expires_in: 3600, user: { id: 'u1', email: 'joao@loja.validade' } }) }); });
+  await a.p.route(R_PERFIL, r => r.fulfill({ json: [{ papel: 'operador', nome: 'João' }] }));
   await a.p.route('**/rest/v1/lojas*', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ id: 'L1', nome: 'Bangu' }, { id: 'L2', nome: 'Campo Grande' }]) }));
   await a.p.waitForSelector('#conta', { state: 'visible' });
   await a.p.fill('#cUser', 'joao'); await a.p.fill('#cPass', '1234');
@@ -446,7 +447,7 @@ tflaky('conta: entra (usuário→e-mail interno), lista e escolhe a loja', { ski
 });
 
 tflaky('conta: sair invalida token e retorna à tela de login', { skip: pular }, async () => {
-  const a = await abrir({ url: URL_SUPA, chave: 'validade_sessao', dados: { access_token: 'logout-token', refresh_token: 'logout-refresh', expira: Date.now()+3600000, usuario: 'joao', uid: 'u1', lojaId: 'L1', lojaNome: 'Bangu' } });
+  const a = await abrir({ url: URL_SUPA, chave: 'validade_sessao', antes: p => p.route(R_PERFIL, r => r.fulfill({ json: [{ papel: 'operador' }] })), dados: { access_token: 'logout-token', refresh_token: 'logout-refresh', expira: Date.now()+3600000, usuario: 'joao', uid: 'u1', lojaId: 'L1', lojaNome: 'Bangu' } });
   let logoutAuthorization = '';
   await a.p.route('**/auth/v1/logout', async r => { logoutAuthorization = r.request().headers().authorization || ''; await r.fulfill({ status: 204, body: '' }); });
   await a.p.evaluate(() => document.getElementById('bLogoutHdr').click());
@@ -490,6 +491,7 @@ async function abrirLogado(setupRotas, dados, sessaoExtra) {
   const a = await abrir({ url: URL_SUPA, opcoes: { viewport: { width: 390, height: 844 } } });
   await a.p.route(/\/rest\/v1\/notificacoes(?:\?|$)/, r => r.request().method() === 'GET'
     ? r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }) : r.fulfill({ status: 204, body: '' }));
+  await a.p.route(R_PERFIL, r => r.fulfill({ json: [{ papel: sessaoExtra?.papel || 'operador', nome: 'Teste' }] }));
   if (setupRotas) await setupRotas(a.p);
   await a.p.evaluate(([d, extra]) => { localStorage.setItem('validade_sessao', JSON.stringify(Object.assign({ access_token: 'tok', refresh_token: 'ref', expira: Date.now() + 3600000, usuario: 'teste', email: 'teste@loja.validade', uid: 'u1', lojaId: 'L1', lojaNome: 'Loja Teste' }, extra || {}))); if (d) localStorage.setItem('validade_dados', JSON.stringify(d)); }, [dados, sessaoExtra]);
   await a.p.reload();
@@ -541,6 +543,7 @@ tflaky('sessão: renova token expirado antes de sincronizar produtos e lotes', {
     await p.route('**/rest/v1/**', async r => {
       autorizacoes.push(r.request().headers().authorization || '');
       const url = new URL(r.request().url());
+      if (url.pathname === '/rest/v1/perfis') return r.fulfill({ json: [{ papel: 'operador' }] });
       let rows = [];
       if (r.request().method() === 'GET' && url.pathname === '/rest/v1/catalogo') rows = [{ ean: '7891234567890', nome: 'Produto compartilhado', marca: '', img: '', updated_at: '2026-11-07T20:00:00Z' }];
       if (r.request().method() === 'GET' && url.pathname === '/rest/v1/produtos') rows = [{ ean: '7891234567890', updated_at: '2026-11-07T20:00:00Z', deleted_at: null }];
@@ -574,6 +577,7 @@ tflaky('sessão: renova e repete uma chamada ao receber 401', { skip: pular }, a
         renovacoes++;
         return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ access_token: 'token-novo', refresh_token: 'ref-novo', expires_in: 3600, user: { id: 'u1' } }) });
       }
+      if (url.pathname === '/rest/v1/perfis') return r.fulfill({ json: [{ papel: 'operador' }] });
       if (url.hostname === 'test.supabase.co' && url.pathname === '/rest/v1/catalogo' && url.searchParams.has('updated_at')) {
         tentativasCatalogo++;
         if (tentativasCatalogo === 1) return r.fulfill({ status: 401, contentType: 'application/json', body: '{"message":"JWT expired"}' });
@@ -873,6 +877,27 @@ tflaky('Promotor vê a empresa em Meu Perfil e Conta e usa a área operacional',
     assert.equal(await a.p.isVisible('#profileCompanyRow'), true);
     assert.equal(await a.p.textContent('#profileCompany'), 'Empresa Exemplo');
     assert.equal(await a.p.textContent('#profileSector'), 'Mercearia');
+    assert.deepEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
+tflaky('perfil sem confirmação encerra a sessão e reabre o login', { skip: pular }, async () => {
+  let registrarSaida;
+  const saiu = new Promise(resolve => { registrarSaida = resolve; });
+  const a = await abrirLogado(async p => {
+    await rotasBase(p, 'admin');
+    await p.route(R_PERFIL, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.route(/\/auth\/v1\/logout/, r => { registrarSaida(new URL(r.request().url()).searchParams.get('scope')); return r.fulfill({ status: 204 }); });
+  });
+  try {
+    await a.p.waitForFunction(() => document.querySelector('#cErro').textContent.includes('Não foi possível confirmar seu perfil'));
+    assert.equal(await a.p.isVisible('#conta-login'), true);
+    assert.equal(await a.p.isVisible('#cErro'), true);
+    assert.equal(await a.p.evaluate(() => localStorage.getItem('validade_sessao')), null);
+    const escopo = await Promise.race([saiu, a.p.waitForTimeout(3000).then(() => null)]);
+    assert.equal(escopo, 'local');
+    await a.p.reload();
+    assert.equal(await a.p.isVisible('#conta-login'), true);
     assert.deepEqual(a.erros, []);
   } finally { await a.fechar(); }
 });
@@ -1868,8 +1893,8 @@ tflaky('armazenamento cheio: a sincronização conclui, atualiza a tela e não r
 tflaky('alertas pessoais: regras multi-horário validam, cacheiam por UID e não dependem do Push', { skip: pular }, async () => {
   const a = await abrirLogado(async p => {
     await p.addInitScript(() => Object.defineProperty(navigator, 'onLine', { configurable: true, value: false }));
-    await p.route(/\/rest\/v1\/perfis/, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ papel: 'operador', nome: 'Teste' }]) }));
     await p.route(/\/rest\/v1\//, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await p.route(/\/rest\/v1\/perfis/, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ papel: 'operador', nome: 'Teste' }]) }));
   }, null, { papel: 'operador' });
   await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="op-alertas"]');
   await a.p.fill('#alertaRegraDias', '0'); await a.p.fill('#alertaRegraHora', '08:00'); await a.p.click('#bAlertaRegraAdicionar');
