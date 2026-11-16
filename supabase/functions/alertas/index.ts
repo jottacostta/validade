@@ -35,9 +35,9 @@ async function authenticatedUser(req: Request) {
   return error ? null : data.user;
 }
 function papelTemEscopoGlobal(papel: string): boolean {
-  // O Gerente pode receber avisos de todas as suas lojas atribuídas, nunca da
-  // rede inteira, mesmo quando `avisos_todas_lojas` foi habilitado no papel.
-  return papel === "admin" || papel === "analista";
+  // Só o Administrador recebe avisos da rede inteira (decisão de 16/11/2026).
+  // Assistente, Analista e Gerente recebem apenas das lojas atribuídas.
+  return papel === "admin";
 }
 
 async function escopoLojasDoUsuario(userId: string): Promise<{ global: boolean; ids: Set<string> } | null> {

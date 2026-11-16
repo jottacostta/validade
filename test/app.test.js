@@ -2252,7 +2252,7 @@ tflaky('Perfis de acesso etapa 3: nenhuma permissão fica travada para o adminis
   await a.p.click('nav button[data-v="aj"]'); await a.p.click('#sysMenu [data-sys-open="usuarios"]');
   for (const papel of ['operador', 'assistente', 'analista', 'gerente']) {
     await a.p.selectOption('#permPapel', papel);
-    assert.strictEqual(await a.p.locator('#cardPerfisAcesso [data-perm]').count(), 18);
+    assert.strictEqual(await a.p.locator('#cardPerfisAcesso [data-perm]').count(), 17);
     assert.strictEqual(await a.p.locator('#cardPerfisAcesso [data-perm]:disabled').count(), 0, papel + ': nada desabilitado');
   }
   assert.ok(!(await a.p.textContent('#cardPerfisAcesso')).includes('Regra fixa'));
@@ -2864,7 +2864,7 @@ tflaky('Central desktop: operador em PC não recebe a central administrativa nem
 });
 
 
-tflaky('Central desktop: Ajustes abre Usuários, conserva 18 permissões por papel e alterna as telas sem scanner móvel', { skip: pular }, async () => {
+tflaky('Central desktop: Ajustes abre Usuários, conserva 17 permissões por papel e alterna as telas sem scanner móvel', { skip: pular }, async () => {
   const a = await abrirLogado(p => rotasPerm(p, 'admin', []), { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'admin', nome: 'Admin' });
   const assertEstruturaUnica = async () => {
     const r = await a.p.evaluate(() => {
@@ -2897,8 +2897,8 @@ tflaky('Central desktop: Ajustes abre Usuários, conserva 18 permissões por pap
     await a.p.waitForSelector('#cardPerfisAcesso', { state: 'visible' });
     for (const papel of ['operador', 'assistente', 'analista', 'gerente']) {
       await a.p.selectOption('#permPapel', papel);
-      assert.strictEqual(await a.p.locator('#cardPerfisAcesso input[type="checkbox"]').count(), 18, papel + ': 18 checkboxes');
-      assert.strictEqual(await a.p.locator('#cardPerfisAcesso [data-perm]').count(), 18, papel + ': 18 permissões');
+      assert.strictEqual(await a.p.locator('#cardPerfisAcesso input[type="checkbox"]').count(), 17, papel + ': 17 checkboxes');
+      assert.strictEqual(await a.p.locator('#cardPerfisAcesso [data-perm]').count(), 17, papel + ': 17 permissões');
       assert.strictEqual(await a.p.isChecked('#permBasicas [data-perm="registros_recolher"]'), true, papel + ': Recolher habilitado por padrão');
       await assertEstruturaUnica();
     }

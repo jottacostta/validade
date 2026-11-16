@@ -478,7 +478,7 @@ test('helper/API e contrato: escopo global pertence a papel mais permissões nã
   assert.match(migration, /private\.tem_permissao\('usuarios_gerenciar'\)[\s\S]*public\.loja_membros/);
   assert.doesNotMatch(migration, /p\.papel in \('analista','gerente','admin'\)/);
   assert.doesNotMatch(migration, /pf\.papel in \('analista','gerente','admin'\)/);
-  assert.match(usersEdge, /const escopoTotal = ehAdmin \|\| ehAnalista/);
+  assert.match(usersEdge, /const escopoTotal = ehAdmin;/);
   assert.match(usersEdge, /const podeCriar = !ehOperador && \(ehAdmin \|\| gerenciaUsuarios/);
   assert.match(usersEdge, /if \(error\) throw error/);
   assert.match(alertsEdge, /papelTemEscopoGlobal/);

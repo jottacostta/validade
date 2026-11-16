@@ -120,10 +120,9 @@ Deno.serve(async (req) => {
     if (permErr) return json({ error: "Não foi possível verificar as permissões do perfil." }, 500);
     gerenciaUsuarios = perm === true;
   }
-  const ehAnalista = papelCaller === "analista";
-  // O papel legado de Analista e o Administrador são globais. A permissão de
-  // gestão, inclusive para Gerente, não concede acesso a lojas não atribuídas.
-  const escopoTotal = ehAdmin || ehAnalista;
+  // Só o Administrador é global (decisão de 16/11/2026). Assistente, Analista e
+  // Gerente ficam nas lojas atribuídas, mesmo com a permissão de gestão.
+  const escopoTotal = ehAdmin;
   // Operador e Promotor só executam o operacional: nunca cria, edita ou lista usuários, mesmo com a permissão marcada.
   const ehOperador = papelCaller === "operador" || papelCaller === "promotor";
   const podeCriar = !ehOperador && (ehAdmin || gerenciaUsuarios || papelCaller === "assistente");
@@ -157,11 +156,10 @@ Deno.serve(async (req) => {
     if (error) throw error;
     return new Set((data || []).map((m: { loja_id: string }) => m.loja_id));
   };
-  // A listagem/criação conserva `escopoTotal` histórico (inclusive a permissão
-  // global do Analista). A edição de vínculos do Gerente, porém, é limitada aos
-  // memberships do ator; a RPC repete essa defesa e preserva vínculos ocultos.
+  // A edição de vínculos fora do Administrador é limitada aos memberships do
+  // ator; a RPC repete essa defesa e preserva vínculos ocultos.
   const lojasPermitidasEdicao = async (): Promise<{ permitidas: Set<string>; error: unknown }> => {
-    if (ehAdmin || papelCaller === "analista") {
+    if (ehAdmin) {
       const { data, error } = await admin.from("lojas").select("id");
       return { permitidas: new Set((data || []).map((l: { id: string }) => l.id)), error };
     }
