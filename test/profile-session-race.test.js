@@ -66,11 +66,13 @@ const roleFunctions = [
   'carregarPapel',
 ].map(name => extractFunction(app, name)).join('\n');
 
-function makeHarness(initial, { supabase = true, online = true } = {}) {
+function makeHarness(initial, { supabase = true, online = true, prazo = null } = {}) {
   const storage = new Map();
   const pending = [];
   const context = {
     console,
+    setTimeout: prazo === null ? setTimeout : (callback, ms) => setTimeout(callback, prazo),
+    clearTimeout,
     Promise,
     JSON,
     encodeURIComponent,
@@ -93,10 +95,11 @@ function makeHarness(initial, { supabase = true, online = true } = {}) {
     var SESS = ${JSON.stringify(initial)};
     var PAPEIS = { operador: 'Operador', promotor: 'Promotor', assistente: 'Assistente', analista: 'Analista', gerente: 'Gerente', admin: 'Administrador' };
     var ORDEM_PAPEIS = Object.keys(PAPEIS);
-    var uiUpdates = 0, modeUpdates = 0, saved = null;
+    var uiUpdates = 0, modeUpdates = 0, saved = null, saidas = [];
     function sbOn() { return ${supabase ? 'true' : 'false'}; }
     function logado() { return !!(SESS && SESS.access_token); }
     function salvarSess() { saved = SESS ? JSON.parse(JSON.stringify(SESS)) : null; }
+    function sairParaLogin(motivo) { saidas.push(motivo); SESS = null; salvarSess(); }
     function carregarPrefs() {}
     function carregarRegrasAlertas() {}
     function carregarPermissoes() {}
@@ -120,6 +123,7 @@ function makeHarness(initial, { supabase = true, online = true } = {}) {
       can: function(action) { return pode(action); },
       desktop: function() { return adminDesktopAtivo(); },
       confirmed: function() { return papelConfirmado; },
+      saidas: function() { return saidas; },
       uiUpdates: function() { return uiUpdates; },
       modeUpdates: function() { return modeUpdates; },
       saved: function() { return saved; },
@@ -176,18 +180,17 @@ test('logout sem resposta impede qualquer mutação tardia do callback', async (
   assert.deepEqual(h.api.cache(), {});
 });
 
-test('erro HTTP do perfil atual limpa papel local e falha fechado', async () => {
+test('erro HTTP do perfil atual encerra a sessão e pede novo login', async () => {
   const h = makeHarness(session('u-a', 'tok-a', 'admin', 'Administrador A'));
   const request = h.begin();
   await h.flush();
   h.api.resolve(0, { ok: false, status: 401, dados: { message: 'unauthorized' } });
   await request;
-  assert.equal(h.api.getSession().papel, null);
-  assert.equal(h.api.role(), 'operador');
-  assert.equal(h.api.can('admin'), false);
+  assert.equal(h.api.getSession(), null);
+  assert.equal(h.api.saved(), null);
   assert.equal(h.api.confirmed(), false);
   assert.equal(h.api.desktop(), false);
-  assert.equal(h.api.uiUpdates(), 1);
+  assert.equal(h.api.saidas().length, 1);
 });
 
 test('resposta antiga do mesmo UID fica obsoleta quando o token é renovado', async () => {
@@ -244,7 +247,7 @@ test('não usa cache de outro UID na falha, mas conserva o cache do próprio UID
   h.api.reject(1);
   await other;
   assert.equal(h.api.role(), 'operador', 'cache de A não pode autorizar B');
-  assert.equal(h.api.getSession().papel, null);
+  assert.equal(h.api.getSession(), null);
   assert.equal(h.api.confirmed(), false);
 
   h.api.setSession(session('u-a', 'tok-a-2'));
@@ -288,4 +291,29 @@ test('setor acompanha apenas o perfil confirmado da conta atual', async () => {
   h.api.resolve(1, { ok: true, dados: [{ papel: 'operador' }] });
   await second;
   assert.equal(h.api.getSession().setor, null);
+});
+
+test('consulta de perfil sem resposta encerra a sessão e ignora resposta tardia', async () => {
+  const h = makeHarness(session('u-a', 'tok-a', 'admin'), { prazo: 10 });
+  await h.begin();
+  assert.equal(h.api.getSession(), null);
+  assert.equal(h.api.saidas().length, 1);
+  h.api.resolve(0, { ok: true, dados: [{ papel: 'admin' }] });
+  await h.flush();
+  assert.equal(h.api.saved(), null);
+  assert.deepEqual(h.api.cache(), {});
+});
+
+test('resposta antiga com erro não encerra a sessão de outra conta', async () => {
+  const h = makeHarness(session('u-a', 'tok-a'));
+  const antiga = h.begin();
+  h.api.setSession(session('u-b', 'tok-b'));
+  const nova = h.begin();
+  h.api.resolve(0, { ok: false, status: 401 });
+  await antiga;
+  assert.equal(h.api.getSession().uid, 'u-b');
+  assert.equal(h.api.saidas().length, 0);
+  h.api.resolve(1, { ok: true, dados: [{ papel: 'operador' }] });
+  await nova;
+  assert.equal(h.api.confirmed(), true);
 });

@@ -6150,11 +6150,12 @@ var refreshSessaoEmAndamento=null;
 function sbRefreshSess(){
   if(!logado()||!SESS.refresh_token)return Promise.resolve(false);
   if(refreshSessaoEmAndamento)return refreshSessaoEmAndamento;
-  refreshSessaoEmAndamento=fetch(CFG.supaUrl+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:CFG.supaKey,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:SESS.refresh_token})})
-    .then(function(r){return r.text().then(function(t){var j=null;try{j=t?JSON.parse(t):null;}catch(e){}if(!r.ok||!j||!j.access_token)throw new Error((j&&(j.message||j.error_description||j.msg))||'Falha ao renovar sessão');var u=j.user||{};SESS.access_token=j.access_token;SESS.refresh_token=j.refresh_token||SESS.refresh_token;SESS.expira=Date.now()+((j.expires_in||3600)*1000);if(u.id)SESS.uid=u.id;salvarSess();return true;});})
+  var sessao=SESS;
+  var renovacao=fetch(CFG.supaUrl+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:CFG.supaKey,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:SESS.refresh_token})})
+    .then(function(r){return r.text().then(function(t){var j=null;try{j=t?JSON.parse(t):null;}catch(e){}if(!r.ok||!j||!j.access_token)throw new Error((j&&(j.message||j.error_description||j.msg))||'Falha ao renovar sessão');if(SESS!==sessao)return false;var u=j.user||{};SESS.access_token=j.access_token;SESS.refresh_token=j.refresh_token||SESS.refresh_token;SESS.expira=Date.now()+((j.expires_in||3600)*1000);if(u.id)SESS.uid=u.id;salvarSess();return true;});})
     .catch(function(e){console.warn('Não foi possível renovar a sessão Supabase:',e);return false;})
-    .then(function(ok){refreshSessaoEmAndamento=null;return ok;},function(e){refreshSessaoEmAndamento=null;throw e;});
-  return refreshSessaoEmAndamento;
+    .finally(function(){if(refreshSessaoEmAndamento===renovacao)refreshSessaoEmAndamento=null;});
+  refreshSessaoEmAndamento=renovacao;return renovacao;
 }
 function sbReq(path,opt){opt=opt||{};
   function executar(retry){
@@ -6162,6 +6163,7 @@ function sbReq(path,opt){opt=opt||{};
     var h={apikey:CFG.supaKey,'Content-Type':'application/json'};
     if(opt.auth!==false&&logado())h.Authorization='Bearer '+SESS.access_token;
     if(opt.headers)for(var k in opt.headers)h[k]=opt.headers[k];
+    if(opt.aoEnviar)opt.aoEnviar();
     var ctl=window.AbortController?new AbortController():null,tm=setTimeout(function(){ctl&&ctl.abort();},12000);
     return fetch(CFG.supaUrl+path,{method:opt.method||'GET',headers:h,body:opt.body?JSON.stringify(opt.body):undefined,signal:ctl?ctl.signal:undefined})
       .then(function(r){clearTimeout(tm);return r.text().then(function(t){var j=null;try{j=t?JSON.parse(t):null;}catch(e){}var out={status:r.status,ok:r.ok,dados:j};if(r.status===401&&retry&&opt.auth!==false&&(!opt.sessao||opt.sessao===SESS)&&logado()&&SESS.refresh_token)return sbRefreshSess().then(function(ok){return ok?executar(false):out;});return out;});},function(e){clearTimeout(tm);throw e;});}
@@ -6172,7 +6174,7 @@ function sbLogin(user,pass){return sbReq('/auth/v1/token?grant_type=password',{m
   .then(function(r){if(!r.ok||!r.dados||!r.dados.access_token)throw new Error((r.dados&&(r.dados.error_description||r.dados.msg||r.dados.error))||'Usuário ou senha inválidos');
     var u=r.dados.user||{},meta=u.app_metadata||{};SESS={access_token:r.dados.access_token,refresh_token:r.dados.refresh_token,expira:Date.now()+((r.dados.expires_in||3600)*1000),usuario:user,email:u.email,uid:u.id,loginEm:Date.now(),lojaId:null,lojaNome:null,forcePasswordChange:meta.force_password_change===true};salvarSess();return SESS;});}
 function sbLogout(){var token=SESS&&SESS.access_token;SESS=null;sessaoFoto();abrirFotoDetalhe(null);papelConfirmado=false;atualizarModoDesktopAdmin();salvarSess();refreshSessaoEmAndamento=null;try{localStorage.removeItem('validade_ultima_loja');}catch(e){}if(token&&sbOn()){return fetch(CFG.supaUrl+'/auth/v1/logout',{method:'POST',headers:{apikey:CFG.supaKey,Authorization:'Bearer '+token}}).catch(function(e){console.warn('Falha ao invalidar sessão remota (sessão local já encerrada):',e);});}return Promise.resolve();}
-function sairParaLogin(){if(typeof checklistLimparAcesso==='function')checklistLimparAcesso();notificacoesCache=[];notificacoesConsultadasEm=0;notificacoesEscopoCache='';atualizarBannerAlertaSistema();sbLogout();try{history.replaceState({loggedOut:true},'',location.href.split('#')[0]);}catch(e){}var modal=$('conta');if(modal)modal.classList.add('on');mostrarLoginForm();contaCard();atualizarBotaoLogout();atualizarGate();toast('Você saiu');}
+function sairParaLogin(motivo){if(typeof checklistLimparAcesso==='function')checklistLimparAcesso();notificacoesCache=[];notificacoesConsultadasEm=0;notificacoesEscopoCache='';atualizarBannerAlertaSistema();sbLogout();try{history.replaceState({loggedOut:true},'',location.href.split('#')[0]);}catch(e){}var modal=$('conta');if(modal)modal.classList.add('on');mostrarLoginForm();contaCard();atualizarBotaoLogout();atualizarGate();if(typeof motivo==='string'){$('cErro').textContent=motivo;$('cErro').style.display='';}else toast('Você saiu');}
 function sbLojas(){return sbReq('/rest/v1/lojas?select=id,nome&order=nome.asc').then(function(r){if(!r.ok)throw new Error('falha');return Array.isArray(r.dados)?r.dados:[];});}
 /* ───── catálogo compartilhado (EAN → nome), entre todas as lojas ───── */
 var SYNC={};try{SYNC=JSON.parse(localStorage.getItem('validade_sync')||'{}')||{};}catch(e){}
@@ -6396,25 +6398,38 @@ function aplicarPapel(){var reg=pode('registrar'),ed=pode('editar'),aj=pode('aju
   if(!reg){var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='reg')ir('prod');}}
 function carregarPapel(){if(!sbOn()||!logado())return Promise.resolve();
   var sessao=SESS,uid=String(sessao.uid||''),token=sessao.access_token,seq=++papelConsultaSeq;
-  var atual=function(){return seq===papelConsultaSeq&&SESS===sessao&&String(SESS.uid||'')===uid&&SESS.access_token===token;};
+  function mesmaConsulta(){return seq===papelConsultaSeq&&SESS===sessao&&String(SESS.uid||'')===uid;}
+  function atual(){return mesmaConsulta()&&SESS.access_token===token;}
   carregarPrefs();carregarRegrasAlertas();carregarPermissoes();
   SESS.papel=null;SESS.empresa=null;SESS.setor=null;papelConfirmado=false;papelConfirmadoUid=null;papelConfirmadoToken=null;papelCarregando=true;salvarSess();atualizarModoDesktopAdmin();
-  /* Filtra pelo próprio id: admin/analista/gerente enxergam vários perfis (RLS),
-     então sem o filtro o limit=1 traria o papel de OUTRO usuário. */
-  var alvo='/rest/v1/perfis?select=',filtro=(uid?'&id=eq.'+encodeURIComponent(uid):'')+'&limit=1';
-  function buscar(campos){return sbReq(alvo+campos+filtro);}
-  function concluir(papel,nome,confirmado,empresa,setor){if(!atual())return false;SESS.papel=confirmado?papel:null;SESS.empresa=confirmado&&papel==='promotor'?empresa||null:null;SESS.setor=confirmado?setor||null:null;if(confirmado&&nome!=null)SESS.nome=nome;
-    papelCarregando=false;papelConfirmado=!!confirmado;papelConfirmadoUid=confirmado?uid:null;papelConfirmadoToken=confirmado?token:null;salvarSess();atualizarInterfacePapel();return true;}
-  function falhar(){if(!atual())return null;var c=papelCachePorUid[uid],offline=typeof navigator!=='undefined'&&navigator.onLine===false;
-    if(offline&&uid&&c&&ORDEM_PAPEIS.includes(c.papel)){concluir(c.papel,c.nome,true,c.empresa,c.setor);return c;}concluir(null,null,false);return null;}
-  var requisicao;try{requisicao=buscar('papel,nome,empresa,setor');}catch(e){return Promise.reject(e).catch(function(){return falhar();});}
-  return Promise.resolve(requisicao).then(function(r){
-    if(atual()&&r&&!r.ok&&r.dados&&r.dados.code==='42703')return buscar('papel,nome');
+  var alvo='/rest/v1/perfis?select=',filtro='&id=eq.'+encodeURIComponent(uid)+'&limit=1';
+  function buscar(campos){return sbReq(alvo+campos+filtro,{sessao:sessao,aoEnviar:function(){token=sessao.access_token;}});}
+  function confirmar(d){SESS.papel=d.papel;SESS.empresa=d.papel==='promotor'?d.empresa||null:null;SESS.setor=d.setor||null;if(d.nome!=null)SESS.nome=d.nome;
+    papelCarregando=false;papelConfirmado=true;papelConfirmadoUid=uid;papelConfirmadoToken=token;salvarSess();atualizarInterfacePapel();return d;}
+  function falhar(usarCache){if(!mesmaConsulta())return null;
+    var c=papelCachePorUid[uid],offline=typeof navigator!=='undefined'&&navigator.onLine===false;
+    if(usarCache&&atual()&&offline&&uid&&c&&ORDEM_PAPEIS.includes(c.papel))return confirmar(c);
+    delete papelCachePorUid[uid];salvarCache();
+    papelCarregando=false;sairParaLogin('Não foi possível confirmar seu perfil. Entre novamente.');return null;}
+  function salvarCache(){try{localStorage.setItem('perfil_papel_cache',JSON.stringify(papelCachePorUid));}catch(e){}}
+  if(!uid)return Promise.resolve(falhar(false));
+  var prazo,encerrada=false;
+  var limite=new Promise(function(resolve){prazo=setTimeout(function(){resolve(null);},15000);});
+  var requisicao;try{requisicao=buscar('papel,nome,empresa,setor');}catch(e){requisicao=Promise.reject(e);}
+  var consulta=Promise.resolve(requisicao).then(function(r){
+    if(!encerrada&&atual()&&r&&!r.ok&&r.dados&&r.dados.code==='42703')return buscar('papel,nome');
     return r;
-  }).then(function(r){if(!atual())return null;var d=r&&r.ok&&Array.isArray(r.dados)&&r.dados[0],valido=!!(uid&&d&&ORDEM_PAPEIS.includes(d.papel));
-    if(!valido){concluir(null,null,false);return null;}
-    papelCachePorUid[uid]={papel:d.papel,nome:d.nome==null?'':d.nome,empresa:d.papel==='promotor'?d.empresa||null:null,setor:d.setor||null};try{localStorage.setItem('perfil_papel_cache',JSON.stringify(papelCachePorUid));}catch(e){}
-    concluir(d.papel,d.nome,true,d.empresa,d.setor);return d;},function(){return falhar();});}
+  });
+  return Promise.race([consulta,limite]).then(function(r){
+    if(!r)return falhar(true);
+    if(!mesmaConsulta())return null;
+    if(!atual())return carregarPapel();
+    var d=r.ok&&Array.isArray(r.dados)&&r.dados[0];
+    if(!d||!ORDEM_PAPEIS.includes(d.papel))return falhar(false);
+    papelCachePorUid[uid]={papel:d.papel,nome:d.nome==null?'':d.nome,empresa:d.papel==='promotor'?d.empresa||null:null,setor:d.setor||null};salvarCache();
+    return confirmar(d);
+  },function(){return falhar(true);}).finally(function(){encerrada=true;clearTimeout(prazo);});}
+
 function atualizarInterfacePapel(){
   atualizarModoDesktopAdmin();aplicarPapel();atualizarSubtituloCabecalho();atualizarBotaoLogout();atualizarContextoLoja();checklistAtualizarAcesso();
   if(window.__initGestaoUsuarios)window.__initGestaoUsuarios();
