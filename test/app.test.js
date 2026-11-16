@@ -886,14 +886,14 @@ tflaky('perfil sem confirmação encerra a sessão e reabre o login', { skip: pu
   const a = await abrirLogado(async p => {
     await rotasBase(p, 'admin');
     await p.route(R_PERFIL, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
-    await p.route(/\/auth\/v1\/logout/, r => { registrarSaida(); return r.fulfill({ status: 204 }); });
+    await p.route(/\/auth\/v1\/logout/, r => { registrarSaida(new URL(r.request().url()).searchParams.get('scope')); return r.fulfill({ status: 204 }); });
   });
   try {
     await a.p.waitForFunction(() => document.querySelector('#cErro').textContent.includes('Não foi possível confirmar seu perfil'));
     assert.equal(await a.p.isVisible('#conta-login'), true);
     assert.equal(await a.p.isVisible('#cErro'), true);
     assert.equal(await a.p.evaluate(() => localStorage.getItem('validade_sessao')), null);
-    await saiu;
+    assert.equal(await saiu, 'local');
     await a.p.reload();
     assert.equal(await a.p.isVisible('#conta-login'), true);
     assert.deepEqual(a.erros, []);
