@@ -423,6 +423,7 @@ tflaky('conta: entra (usuário→e-mail interno), lista e escolhe a loja', { ski
   let authBody = null;
   await a.p.route('**/auth/v1/token*', async r => { try { authBody = r.request().postDataJSON(); } catch (e) {}
     await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ access_token: 'tok', refresh_token: 'ref', expires_in: 3600, user: { id: 'u1', email: 'joao@loja.validade' } }) }); });
+  await a.p.route(R_PERFIL, r => r.fulfill({ json: [{ papel: 'operador', nome: 'João' }] }));
   await a.p.route('**/rest/v1/lojas*', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ id: 'L1', nome: 'Bangu' }, { id: 'L2', nome: 'Campo Grande' }]) }));
   await a.p.waitForSelector('#conta', { state: 'visible' });
   await a.p.fill('#cUser', 'joao'); await a.p.fill('#cPass', '1234');
@@ -446,7 +447,7 @@ tflaky('conta: entra (usuário→e-mail interno), lista e escolhe a loja', { ski
 });
 
 tflaky('conta: sair invalida token e retorna à tela de login', { skip: pular }, async () => {
-  const a = await abrir({ url: URL_SUPA, chave: 'validade_sessao', dados: { access_token: 'logout-token', refresh_token: 'logout-refresh', expira: Date.now()+3600000, usuario: 'joao', uid: 'u1', lojaId: 'L1', lojaNome: 'Bangu' } });
+  const a = await abrir({ url: URL_SUPA, chave: 'validade_sessao', antes: p => p.route(R_PERFIL, r => r.fulfill({ json: [{ papel: 'operador' }] })), dados: { access_token: 'logout-token', refresh_token: 'logout-refresh', expira: Date.now()+3600000, usuario: 'joao', uid: 'u1', lojaId: 'L1', lojaNome: 'Bangu' } });
   let logoutAuthorization = '';
   await a.p.route('**/auth/v1/logout', async r => { logoutAuthorization = r.request().headers().authorization || ''; await r.fulfill({ status: 204, body: '' }); });
   await a.p.evaluate(() => document.getElementById('bLogoutHdr').click());
@@ -893,7 +894,8 @@ tflaky('perfil sem confirmação encerra a sessão e reabre o login', { skip: pu
     assert.equal(await a.p.isVisible('#conta-login'), true);
     assert.equal(await a.p.isVisible('#cErro'), true);
     assert.equal(await a.p.evaluate(() => localStorage.getItem('validade_sessao')), null);
-    assert.equal(await saiu, 'local');
+    const escopo = await Promise.race([saiu, a.p.waitForTimeout(3000).then(() => null)]);
+    assert.equal(escopo, 'local');
     await a.p.reload();
     assert.equal(await a.p.isVisible('#conta-login'), true);
     assert.deepEqual(a.erros, []);
