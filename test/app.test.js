@@ -3366,6 +3366,60 @@ tflaky('Alertas: recolhe lote e perecível sem abrir o detalhe e atualiza os con
   } finally { await a.fechar(); }
 });
 
+tflaky('recolhimento desaparece para outra conta sem recarregar, inclusive após a primeira página', { skip: pular }, async () => {
+  const ean = '7891000315507', id = 'lote-compartilhado';
+  const dados = { prod: { [ean]: { lotes: [lote(id, offsetValidade(2), 1, 'L-COMPARTILHADO')] } },
+    cat: { [ean]: { nome: 'Produto compartilhado' } }, pere: { itens: {}, regs: [] } };
+  let recolhidoEm = null;
+  const recolhedor = await abrirLogado(async p => {
+    await rotasPerm(p, 'assistente', []);
+    await p.route('**/rest/v1/rpc/marcar_registro_recolhido', r => {
+      assert.equal(r.request().postDataJSON().p_loja_id, 'L1');
+      recolhidoEm = new Date().toISOString();
+      return r.fulfill({ json: { recolhido_em: recolhidoEm, recolhido_por: 'recolhedor' } });
+    });
+  }, dados, { uid: 'recolhedor', papel: 'assistente' });
+  let colega;
+  try {
+    colega = await abrirLogado(async p => {
+      await rotasPerm(p, 'operador', []);
+      await p.route(/\/rest\/v1\/(produtos|pere_itens|pere_regs)\?loja_id=/, r => r.fulfill({ json: [] }));
+      await p.route(/\/rest\/v1\/lotes\?loja_id=/, r => {
+        const u = new URL(r.request().url());
+        const rows = u.searchParams.get('offset') === '500'
+          ? [{ id, ean, lote: 'L-COMPARTILHADO', qtd: 1, val: offsetValidade(2), recolhido_em: recolhidoEm }]
+          : Array.from({ length: 500 }, (_, n) => ({ id: 'apagado-' + n, ean, deleted_at: '2026-11-01' }));
+        return r.fulfill({ json: rows });
+      });
+      await p.route(/\/rest\/v1\/notificacoes\?/, r => r.fulfill({ json: [{
+        id: 'aviso-do-lote', tipo: 'validade_proxima', titulo: 'Validade próxima',
+        payload: { fonte: 'lote', registro_id: id }
+      }] }));
+    }, dados, { uid: 'colega', papel: 'operador' });
+    await permsCarregadas(colega.p);
+    await colega.p.click('nav button[data-v="alertas"]');
+    await colega.p.locator('#listaAlertasValidade [data-detail-lote="' + id + '"]').waitFor();
+    await colega.p.click('#alertViewTabs [data-alert-view="notifications"]');
+    await colega.p.locator('#listaNotificacoes [data-notif="aviso-do-lote"]').waitFor();
+    await permsCarregadas(recolhedor.p);
+    await recolhedor.p.click('nav button[data-v="prod"]');
+    await recolhedor.p.locator('#listaProd [data-recolher-id="' + id + '"]').click();
+    await recolhedor.p.locator('#listaProd [data-recolher-id="' + id + '"]').waitFor({ state: 'detached' });
+
+    await colega.p.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await colega.p.locator('#listaNotificacoes [data-notif="aviso-do-lote"]').waitFor({ state: 'detached' });
+    await colega.p.click('#alertViewTabs [data-alert-view="alerts"]');
+    assert.equal(await colega.p.locator('#listaAlertasValidade [data-detail-lote="' + id + '"]').count(), 0);
+    assert.equal(await colega.p.textContent('#alertBadge'), '0');
+    await colega.p.click('nav button[data-v="prod"]');
+    assert.equal(await colega.p.locator('#listaProd [data-detail-lote="' + id + '"]').count(), 0);
+    assert.deepEqual(colega.erros, []);
+  } finally {
+    if (colega) await colega.fechar();
+    await recolhedor.fechar();
+  }
+});
+
 tflaky('recolhimento: mantém o registro visível se o servidor recusar a ação', { skip: pular }, async () => {
   const dados = dadoRetencao();
   dados.prod['7891000315507'].lotes = [lote('lote-negado', offsetValidade(-2), 1, 'L-NEGADO')];
@@ -3622,6 +3676,8 @@ tflaky('Painel de gestão: ordena por cadastro ou produto e combina usuário e l
     assert.match(await locations.nth(1).innerText(), /Depósito[\s\S]*2 registros ativos[\s\S]*2 un\.[\s\S]*1,25/);
     await a.p.click('#adminDesktopNav [data-admin-view="records"]');
     const ids = () => a.p.locator('#adminRecordsRows [data-record-row]').evaluateAll(rows => rows.map(row => row.dataset.recordRow));
+    assert.deepEqual(await ids(), ['pere-fl15', 'lote-fl15-same', 'lote-fl15-only']);
+    await a.p.selectOption('#adminRecordsStatusFilter', 'all');
     assert.deepEqual(await ids(), ['pere-fl15', 'lote-fl15-col', 'lote-fl15-same', 'lote-fl15-only']);
     await a.p.selectOption('#adminRecordsOrder', 'oldest');
     assert.deepEqual(await ids(), ['lote-fl15-same', 'lote-fl15-col', 'pere-fl15', 'lote-fl15-only']);
@@ -3670,6 +3726,8 @@ for (const [papel, permitido] of [['admin', true], ['gerente', true], ['gerente'
       assert.equal(await a.p.textContent('#adminKpiRecords'), '3');
       assert.equal(await a.p.isVisible('#adminDesktopNav'), false);
       await a.p.click('.admin-mobile-tabs [data-admin-view="records"]');
+      assert.equal(await a.p.locator('#adminRecordsRows [data-record-row]').count(), 3);
+      await a.p.selectOption('#adminRecordsStatusFilter', 'all');
       assert.equal(await a.p.locator('#adminRecordsRows [data-record-row]').count(), 4);
       await a.p.selectOption('#adminRecordsAuthorFilter', { label: 'Ana' });
       assert.equal(await a.p.locator('#adminRecordsRows [data-record-row]').count(), 1);
@@ -3696,6 +3754,8 @@ tflaky('Central desktop: Gerente sem edição de terceiros ou recolhimento não 
     assert.equal(await a.p.locator('#adminDesktopRecords [data-record-action="edit"]').count(), 0);
     assert.equal(await a.p.locator('#adminDesktopRecords [data-record-action="collect"]').count(), 0);
     assert.equal(await a.p.locator('#adminDesktopRecords [data-record-action="delete"]').count(), 0);
+    assert.equal(await a.p.locator('#adminDesktopRecords [data-record-action="restore"]').count(), 0);
+    await a.p.selectOption('#adminRecordsStatusFilter', 'recolhido');
     assert.equal(await a.p.locator('#adminDesktopRecords [data-record-action="restore"]').count(), 1);
     assert.deepStrictEqual(a.erros, []);
   } finally { await a.fechar(); }
