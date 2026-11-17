@@ -3676,6 +3676,8 @@ tflaky('Painel de gestão: ordena por cadastro ou produto e combina usuário e l
     assert.match(await locations.nth(1).innerText(), /Depósito[\s\S]*2 registros ativos[\s\S]*2 un\.[\s\S]*1,25/);
     await a.p.click('#adminDesktopNav [data-admin-view="records"]');
     const ids = () => a.p.locator('#adminRecordsRows [data-record-row]').evaluateAll(rows => rows.map(row => row.dataset.recordRow));
+    assert.deepEqual(await ids(), ['pere-fl15', 'lote-fl15-same', 'lote-fl15-only']);
+    await a.p.selectOption('#adminRecordsStatusFilter', 'all');
     assert.deepEqual(await ids(), ['pere-fl15', 'lote-fl15-col', 'lote-fl15-same', 'lote-fl15-only']);
     await a.p.selectOption('#adminRecordsOrder', 'oldest');
     assert.deepEqual(await ids(), ['lote-fl15-same', 'lote-fl15-col', 'pere-fl15', 'lote-fl15-only']);
