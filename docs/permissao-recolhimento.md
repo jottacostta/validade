@@ -4,7 +4,7 @@ O botão **Recolher** é controlado como uma permissão por perfil no painel **A
 
 Por padrão, todos os quatro perfis de loja podem recolher qualquer lote ou registro perecível elegível da loja a que estejam vinculados, ainda que outra pessoa tenha feito o cadastro. A permissão se aplica apenas à ação de recolher — não concede acesso à edição dos dados do registro nem permite apagar registros.
 
-O botão aparece em todos os registros ativos, independentemente da data de validade. A migration `20261113121825_recolhimento_sem_janela.sql` aplica a mesma regra no servidor. Depois de recolhido, o registro fica oculto para os usuários da loja. A reativação permanece restrita a Assistente, Analista, Gerente e Administrador, conforme o comportamento existente.
+O botão aparece em todos os registros ativos, independentemente da data de validade. A migration `20261113121825_recolhimento_sem_janela.sql` aplica a mesma regra no servidor. Após a confirmação no servidor, o registro sai das listas operacionais, dos alertas e das notificações vinculadas. Os demais aparelhos da filial recebem a mudança na sincronização automática, que roda a cada 20 segundos com o app em primeiro plano, ou ao voltar ao app e ao reconectar. Em Registros e edições, use o filtro Recolhido para consultar o histórico. A reativação permanece restrita a Assistente, Analista, Gerente e Administrador, conforme o comportamento existente.
 
 A mesma permissão é verificada no frontend e na RPC `marcar_registro_recolhido`; a RPC também exige autenticação e valida o vínculo ou escopo da loja. As alterações feitas pelo Administrador no painel são persistidas via `definir_permissao_papel` e registradas na auditoria de permissões.
 
