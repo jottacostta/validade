@@ -3064,7 +3064,7 @@ for (const papel of ['operador', 'assistente', 'analista']) tflaky('Central desk
       await a.p.waitForSelector('#adminDesktopDashboard', { state: 'visible' });
       assert.deepStrictEqual(await a.p.locator('#adminDesktopNav [data-admin-view]:visible').evaluateAll(buttons => buttons.map(b => b.dataset.adminView)), ['dashboard']);
       assert.strictEqual(await a.p.locator('#adminDesktopNav [data-admin-settings]:visible').count(), 0);
-      await a.p.evaluate(() => adminDesktopView('records'));
+      await a.p.locator('#adminDesktopNav [data-admin-view="records"]').dispatchEvent('click');
       assert.strictEqual(await a.p.isVisible('#adminDesktopDashboard'), true);
       assert.strictEqual(await a.p.isVisible('#adminDesktopRecords'), false);
     }
