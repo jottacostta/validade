@@ -1575,13 +1575,17 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
           <article class="admin-kpi ok"><small>Dentro da validade</small><b id="adminKpiValid">0</b></article>
         </div>
         <section class="admin-desktop-card" id="expiryFocus">
-          <h2>Produtos com vencimento em até 5 dias</h2>
-          <label>Produto, código ou lote <input type="search" id="expirySearch"></label>
+          <h2>Conferência de vencimentos</h2>
+          <button type="button" id="expiryExpired">Vencidos aguardando recolhimento</button>
+          <label>Tipo de registro <select id="expiryType"><option value="">Todos</option><option value="Lote">Lotes</option><option value="Perecível">Perecíveis</option></select></label>
+          <label>Produto, código ou lote/SIF <input type="search" id="expirySearch"></label>
           <label>Setor <select id="expirySector"></select></label>
           <label>Local <select id="expiryLocation"></select></label>
-          <label>Prazo <select id="expiryDay"><option value="">Até 5 dias</option><option value="0">Hoje</option><option value="1">D+1</option><option value="2">D+2</option><option value="3">D+3</option><option value="4">D+4</option><option value="5">D+5</option></select></label>
-          <div class="admin-desktop-grid"><div><h3>Lotes por dia</h3><div id="expiryDaily"></div></div><div><h3>Lotes por setor</h3><div id="expiryBySector"></div></div></div>
-          <div class="admin-desktop-table-wrap"><table class="admin-desktop-table"><thead><tr><th>Produto / código</th><th>Filial / setor</th><th>Local</th><th>Lote</th><th>Validade</th></tr></thead><tbody id="expiryRows"></tbody></table></div>
+          <label>Prazo <select id="expiryDay"><option value="">Até 5 dias</option><option value="0">Hoje</option><option value="1">D+1</option><option value="2">D+2</option><option value="3">D+3</option><option value="4">D+4</option><option value="5">D+5</option><option value="expired">Vencidos ativos</option></select></label>
+          <button type="button" id="expiryClear">Limpar filtros</button> <button type="button" id="expiryPrint">Imprimir conferência</button>
+          <p id="expiryTotals" aria-live="polite"></p>
+          <div class="admin-desktop-grid"><div><h3>Registros por dia</h3><div id="expiryDaily"></div></div><div><h3>Registros por setor</h3><div id="expiryBySector"></div></div></div>
+          <div class="admin-desktop-table-wrap"><table class="admin-desktop-table"><thead><tr><th>Produto / código</th><th>Filial / setor</th><th>Local</th><th>Lote / SIF</th><th>Validade</th><th>Quantidade / peso</th></tr></thead><tbody id="expiryRows"></tbody></table></div>
         </section>
         <div id="adminInsightLocations" class="admin-location-grid" aria-label="Registros ativos por localização"></div>
         <div class="admin-desktop-grid">
@@ -6162,33 +6166,79 @@ function selecionarVistaDesktop(v){var admin=papelAtual()==='admin',relatorios=t
 function adminDesktopView(v){if(!painelGestaoAtivo()||(!adminDesktopAtivo()&&!['dashboard','records'].includes(v)))return;if(v==='permissions'&&!ehAdmin()){toast('Configurar perfis de acesso é exclusivo do Administrador.');return;}if(v==='reports'&&!temPermissao('relatorios')){toast('Seu perfil não pode acessar relatórios.');return;}if(v==='requests'&&!temPermissao('nome_editar')&&!temPermissao('exclusoes_aprovar')){toast('Seu perfil não pode revisar solicitações.');return;}selecionarVistaDesktop(v);
   if(adminDesktopVista==='settings'||adminDesktopVista==='permissions'){ir('aj');if(adminDesktopVista==='permissions'){abrirSecaoSistema('usuarios');$('cardPerfisAcesso').scrollIntoView({block:'start'});}}
   if(adminDesktopVista==='requests')adminRequestsCarregar(false);$('adminDesktopContent').scrollTop=0;adminDesktopRender();}
-function renderExpiryFocus(activeRows) {
-  var due = activeRows.filter(r => Number.isInteger(r.dias) && r.dias >= 0 && r.dias <= 5);
-  function options(id, field) {
+function expirySelection(activeRows) {
+  var expired = $('expiryDay').value === 'expired';
+  var candidates = activeRows.filter(r => Number.isInteger(r.dias) && (expired ? r.dias < 0 : r.dias >= 0 && r.dias <= 5));
+  var sectorName = r => r.setor || 'Sem setor';
+  function options(id, values) {
     var select = $(id), previous = select.value;
-    var values = Array.from(new Set(due.map(r => r[field]).filter(Boolean))).sort();
+    values = Array.from(new Set(values.filter(Boolean))).sort();
     select.innerHTML = '<option value="">Todos</option>' + values.map(v => '<option>'+esc(v)+'</option>').join('');
     select.value = values.includes(previous) ? previous : '';
     return select.value;
   }
-  var sector = options('expirySector','setor'), location = options('expiryLocation','localizacao');
-  var day = $('expiryDay').value, search = $('expirySearch').value.trim().toLocaleLowerCase('pt-BR');
-  var rows = due.filter(r => (!sector || sector === r.setor) && (!location || location === r.localizacao)
-    && (day === '' || Number(day) === r.dias)
+  var sector = options('expirySector', candidates.map(sectorName));
+  var location = options('expiryLocation', candidates.map(r => r.localizacao));
+  var day = $('expiryDay').value, type = $('expiryType').value;
+  var search = $('expirySearch').value.trim().toLocaleLowerCase('pt-BR');
+  return candidates.filter(r => (!sector || sector === sectorName(r)) && (!location || location === r.localizacao)
+    && (!type || type === r.tipo) && (expired || day === '' || Number(day) === r.dias)
     && [r.nome,r.codigo,r.lote].some(v => String(v || '').toLocaleLowerCase('pt-BR').includes(search)))
     .sort((a,b) => a.dias-b.dias || String(a.nome).localeCompare(String(b.nome),'pt-BR'));
-  function chart(id, entries) {
-    var max = entries.reduce((m,e) => Math.max(m,e[1]),1);
-    $(id).innerHTML = entries.map(([label,count]) => '<div class="admin-status-row"><span>'+esc(label)+'</span><span class="admin-status-track"><span class="admin-status-fill wa" style="width:'+100*count/max+'%"></span></span><b>'+count+'</b></div>').join('') || 'Nenhum lote.';
+}
+function expiryRow(r) {
+  var amount = r.tipo === 'Perecível' ? kg(r.peso)+' kg' : Number(r.quantidade||0).toLocaleString('pt-BR')+' un';
+  return '<tr><td><strong>'+esc(r.nome)+'</strong><small>'+esc(r.codigo)+'</small></td><td>'+esc(r.lojaNome||'—')+'<small>'+esc(r.setor||'Sem setor')+'</small></td><td>'+esc(r.localizacao||'—')+'</td><td>'+esc(r.lote||'—')+'</td><td>'+esc(fdata(r.validade))+'</td><td>'+amount+'</td></tr>';
+}
+function renderExpiryFocus(activeRows) {
+  var rows = expirySelection(activeRows), expired = $('expiryDay').value === 'expired';
+  var units = 0, weight = 0, daily = [0,0,0,0,0,0], sectors = new Map();
+  rows.forEach(r => {
+    if (r.tipo === 'Perecível') weight += Number(r.peso)||0;
+    else units += Number(r.quantidade)||0;
+    if (!expired) daily[r.dias]++;
+    var sector = r.setor || 'Sem setor';
+    sectors.set(sector,(sectors.get(sector)||0)+1);
+  });
+  $('expiryTotals').textContent = rows.length+' registros · '+units.toLocaleString('pt-BR')+' un · '+kg(weight)+' kg';
+  function chart(id, field, entries) {
+    var max = entries.reduce((m,e) => Math.max(m,e[2]),1);
+    $(id).innerHTML = entries.map(([label,value,count]) => '<button type="button" class="admin-status-row" data-expiry-field="'+field+'" value="'+esc(String(value))+'"><span>'+esc(label)+'</span><span class="admin-status-track"><span class="admin-status-fill wa" style="width:'+100*count/max+'%"></span></span><b>'+count+'</b></button>').join('') || 'Nenhum registro.';
   }
-  var daily = [0,0,0,0,0,0], sectors = new Map();
-  rows.forEach(r => { daily[r.dias]++; var name=r.setor || 'Sem setor'; sectors.set(name,(sectors.get(name)||0)+1); });
-  chart('expiryDaily',daily.map((n,i) => [i ? 'D+'+i : 'Hoje',n]));
-  chart('expiryBySector',Array.from(sectors).sort((a,b) => b[1]-a[1]));
-  $('expiryRows').innerHTML = rows.map(r => '<tr><td><strong>'+esc(r.nome)+'</strong><small>'+esc(r.codigo)+'</small></td><td>'+esc(r.lojaNome||'—')+'<small>'+esc(r.setor||'—')+'</small></td><td>'+esc(r.localizacao||'—')+'</td><td>'+esc(r.lote||'—')+'</td><td>'+esc(fdata(r.validade))+'</td></tr>').join('')
-    || '<tr><td colspan="5">Nenhum lote encontrado.</td></tr>';
+  $('expiryDaily').parentElement.hidden = expired;
+  chart('expiryDaily','expiryDay',daily.map((n,i) => [i ? 'D+'+i : 'Hoje',i,n]));
+  chart('expiryBySector','expirySector',Array.from(sectors).sort((a,b) => b[1]-a[1]).map(([s,n]) => [s,s,n]));
+  $('expiryRows').innerHTML = rows.map(expiryRow).join('') || '<tr><td colspan="6">Nenhum registro encontrado.</td></tr>';
+  $('expiryPrint').disabled = !rows.length;
+}
+function printExpirySelection(rows) {
+  if (!rows.length) return;
+  var report = window.open('','_blank');
+  if (!report) { toast('Permita abrir a janela de impressão.'); return; }
+  var groups = new Map();
+  rows.forEach(r => {
+    var label = [r.lojaNome,r.setor||'Sem setor',r.localizacao].filter(Boolean).join(' / ');
+    if (!groups.has(label)) groups.set(label,[]);
+    groups.get(label).push(r);
+  });
+  var sections = Array.from(groups.keys()).sort((a,b) => a.localeCompare(b,'pt-BR')).map(label =>
+    '<h2>'+esc(label)+'</h2><table>'+$('expiryRows').parentElement.tHead.outerHTML+'<tbody>'+groups.get(label).map(expiryRow).join('')+'</tbody></table>');
+  report.document.write('<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Conferência de validade</title><style>body{font:14px Arial}table{border-collapse:collapse;width:100%}td,th{padding:5px;border:1px solid #999;text-align:left}small{display:block}h2{break-after:avoid}tr{break-inside:avoid}</style><h1>Conferência de validade</h1><p>'+esc($('expiryTotals').textContent)+'</p>'+sections.join('')+'</html>');
+  report.document.close(); report.focus(); report.print();
 }
 $('expiryFocus').oninput = function(){ renderExpiryFocus(adminDesktopData().activeRows); };
+$('expiryFocus').onclick = function(e) {
+  var button = e.target.closest('button');
+  if (!button) return;
+  if (button.id === 'expiryClear') {
+    ['expirySearch','expiryType','expiryDay','expirySector','expiryLocation'].forEach(id => $(id).value = '');
+  } else if (button.id === 'expiryExpired') $('expiryDay').value = 'expired';
+  else if (button.id === 'expiryPrint') {
+    printExpirySelection(expirySelection(adminDesktopData().activeRows)); return;
+  } else if (button.dataset.expiryField) $(button.dataset.expiryField).value = button.value;
+  else return;
+  renderExpiryFocus(adminDesktopData().activeRows);
+};
 function adminDesktopRender(){atualizarGraficoUsuariosRelatorios();if(!$('adminDesktop')||!painelGestaoAtivo())return;var d=adminDesktopData(),den=Math.max(1,d.activeRows.length),nome=SESS&&(SESS.nome||SESS.usuario||SESS.email)||'Administrador',loja=adminScopeRotulo();
   renderExpiryFocus(d.activeRows);
   adminDashboardInsightsRender(d);if(adminDesktopVista==='records')adminRecordsRender(d);if(adminDesktopAtivo()&&ADMIN_SCOPE.lojasCarregadas&&!ADMIN_SCOPE.loading)adminRequestsCarregar(false);adminScopeAtualizarStatus();adminDesktopSet('adminDesktopUser',nome);adminDesktopSet('adminDesktopRole',PAPEIS[SESS.papel]||'Usuário');adminDesktopSet('adminDesktopStore',loja);adminDesktopSet('adminKpiRecords',d.activeRows.length);adminDesktopSet('adminKpiProducts',d.products);adminDesktopSet('adminKpiExpired',d.expired);adminDesktopSet('adminKpiSoon',d.soon);adminDesktopSet('adminKpiValid',d.valid);adminDesktopSet('adminKpiUnits',d.units.toLocaleString('pt-BR'));adminDesktopSet('adminKpiWeight',kg(d.weight));adminDesktopSet('adminKpiPending',d.pending);
