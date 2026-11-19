@@ -1574,6 +1574,15 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
           <article class="admin-kpi wa"><small>A vencer</small><b id="adminKpiSoon">0</b></article>
           <article class="admin-kpi ok"><small>Dentro da validade</small><b id="adminKpiValid">0</b></article>
         </div>
+        <section class="admin-desktop-card" id="expiryFocus">
+          <h2>Produtos com vencimento em até 5 dias</h2>
+          <label>Produto, código ou lote <input type="search" id="expirySearch"></label>
+          <label>Setor <select id="expirySector"></select></label>
+          <label>Local <select id="expiryLocation"></select></label>
+          <label>Prazo <select id="expiryDay"><option value="">Até 5 dias</option><option value="0">Hoje</option><option value="1">D+1</option><option value="2">D+2</option><option value="3">D+3</option><option value="4">D+4</option><option value="5">D+5</option></select></label>
+          <div class="admin-desktop-grid"><div><h3>Lotes por dia</h3><div id="expiryDaily"></div></div><div><h3>Lotes por setor</h3><div id="expiryBySector"></div></div></div>
+          <div class="admin-desktop-table-wrap"><table class="admin-desktop-table"><thead><tr><th>Produto / código</th><th>Filial / setor</th><th>Local</th><th>Lote</th><th>Validade</th></tr></thead><tbody id="expiryRows"></tbody></table></div>
+        </section>
         <div id="adminInsightLocations" class="admin-location-grid" aria-label="Registros ativos por localização"></div>
         <div class="admin-desktop-grid">
           <section class="admin-desktop-card"><h2>Situação das validades</h2><p>Registros ativos no escopo selecionado.</p>
@@ -6153,7 +6162,35 @@ function selecionarVistaDesktop(v){var admin=papelAtual()==='admin',relatorios=t
 function adminDesktopView(v){if(!painelGestaoAtivo()||(!adminDesktopAtivo()&&!['dashboard','records'].includes(v)))return;if(v==='permissions'&&!ehAdmin()){toast('Configurar perfis de acesso é exclusivo do Administrador.');return;}if(v==='reports'&&!temPermissao('relatorios')){toast('Seu perfil não pode acessar relatórios.');return;}if(v==='requests'&&!temPermissao('nome_editar')&&!temPermissao('exclusoes_aprovar')){toast('Seu perfil não pode revisar solicitações.');return;}selecionarVistaDesktop(v);
   if(adminDesktopVista==='settings'||adminDesktopVista==='permissions'){ir('aj');if(adminDesktopVista==='permissions'){abrirSecaoSistema('usuarios');$('cardPerfisAcesso').scrollIntoView({block:'start'});}}
   if(adminDesktopVista==='requests')adminRequestsCarregar(false);$('adminDesktopContent').scrollTop=0;adminDesktopRender();}
+function renderExpiryFocus(activeRows) {
+  var due = activeRows.filter(r => Number.isInteger(r.dias) && r.dias >= 0 && r.dias <= 5);
+  function options(id, field) {
+    var select = $(id), previous = select.value;
+    var values = Array.from(new Set(due.map(r => r[field]).filter(Boolean))).sort();
+    select.innerHTML = '<option value="">Todos</option>' + values.map(v => '<option>'+esc(v)+'</option>').join('');
+    select.value = values.includes(previous) ? previous : '';
+    return select.value;
+  }
+  var sector = options('expirySector','setor'), location = options('expiryLocation','localizacao');
+  var day = $('expiryDay').value, search = $('expirySearch').value.trim().toLocaleLowerCase('pt-BR');
+  var rows = due.filter(r => (!sector || sector === r.setor) && (!location || location === r.localizacao)
+    && (day === '' || Number(day) === r.dias)
+    && [r.nome,r.codigo,r.lote].some(v => String(v || '').toLocaleLowerCase('pt-BR').includes(search)))
+    .sort((a,b) => a.dias-b.dias || String(a.nome).localeCompare(String(b.nome),'pt-BR'));
+  function chart(id, entries) {
+    var max = entries.reduce((m,e) => Math.max(m,e[1]),1);
+    $(id).innerHTML = entries.map(([label,count]) => '<div class="admin-status-row"><span>'+esc(label)+'</span><span class="admin-status-track"><span class="admin-status-fill wa" style="width:'+100*count/max+'%"></span></span><b>'+count+'</b></div>').join('') || 'Nenhum lote.';
+  }
+  var daily = [0,0,0,0,0,0], sectors = new Map();
+  rows.forEach(r => { daily[r.dias]++; var name=r.setor || 'Sem setor'; sectors.set(name,(sectors.get(name)||0)+1); });
+  chart('expiryDaily',daily.map((n,i) => [i ? 'D+'+i : 'Hoje',n]));
+  chart('expiryBySector',Array.from(sectors).sort((a,b) => b[1]-a[1]));
+  $('expiryRows').innerHTML = rows.map(r => '<tr><td><strong>'+esc(r.nome)+'</strong><small>'+esc(r.codigo)+'</small></td><td>'+esc(r.lojaNome||'—')+'<small>'+esc(r.setor||'—')+'</small></td><td>'+esc(r.localizacao||'—')+'</td><td>'+esc(r.lote||'—')+'</td><td>'+esc(fdata(r.validade))+'</td></tr>').join('')
+    || '<tr><td colspan="5">Nenhum lote encontrado.</td></tr>';
+}
+$('expiryFocus').oninput = function(){ renderExpiryFocus(adminDesktopData().activeRows); };
 function adminDesktopRender(){atualizarGraficoUsuariosRelatorios();if(!$('adminDesktop')||!painelGestaoAtivo())return;var d=adminDesktopData(),den=Math.max(1,d.activeRows.length),nome=SESS&&(SESS.nome||SESS.usuario||SESS.email)||'Administrador',loja=adminScopeRotulo();
+  renderExpiryFocus(d.activeRows);
   adminDashboardInsightsRender(d);if(adminDesktopVista==='records')adminRecordsRender(d);if(adminDesktopAtivo()&&ADMIN_SCOPE.lojasCarregadas&&!ADMIN_SCOPE.loading)adminRequestsCarregar(false);adminScopeAtualizarStatus();adminDesktopSet('adminDesktopUser',nome);adminDesktopSet('adminDesktopRole',PAPEIS[SESS.papel]||'Usuário');adminDesktopSet('adminDesktopStore',loja);adminDesktopSet('adminKpiRecords',d.activeRows.length);adminDesktopSet('adminKpiProducts',d.products);adminDesktopSet('adminKpiExpired',d.expired);adminDesktopSet('adminKpiSoon',d.soon);adminDesktopSet('adminKpiValid',d.valid);adminDesktopSet('adminKpiUnits',d.units.toLocaleString('pt-BR'));adminDesktopSet('adminKpiWeight',kg(d.weight));adminDesktopSet('adminKpiPending',d.pending);
   [['adminBarExpired',d.expired,'adminBarExpiredCount'],['adminBarSoon',d.soon,'adminBarSoonCount'],['adminBarValid',d.valid,'adminBarValidCount']].forEach(function(x){var bar=$(x[0]);if(bar)bar.style.width=(100*({adminBarExpired:d.expired,adminBarSoon:d.soon,adminBarValid:d.valid}[x[0]])/den)+'%';adminDesktopSet(x[2],x[0]==='adminBarExpired'?d.expired:x[0]==='adminBarSoon'?d.soon:d.valid);});
   var recent=AdminRecords.orderRows(d.activeRows,'recent').slice(0,6);
