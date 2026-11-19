@@ -1477,6 +1477,10 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 #detailPhotoStatus{margin:6px 0;color:#c1d0df;font-size:13px}
 
 /*CHECKLIST_CSS*/
+.desktop-overview-only #adminDesktopNav [data-admin-view]:not([data-admin-view="dashboard"]),
+.desktop-overview-only #adminDesktopNav [data-admin-settings],
+.desktop-overview-only #adminDesktopNav .admin-nav-label,
+.desktop-overview-only .admin-request-overview { display:none !important; }
 </style>
 </head>
 <body>
@@ -3588,7 +3592,7 @@ var ADMIN_SCOPE_LIMIT = 500;
 var ADMIN_SCOPE_MAX_ROWS = 25000;
 var ADMIN_SCOPE_CATALOGO_BATCH = 100;
 var ADMIN_SCOPE_CATALOGO_MAX_BATCHES = 2;
-var ADMIN_SCOPE_ROLE_RE = /^(admin|gerente)$/i;
+var ADMIN_SCOPE_ROLE_RE = /^(admin|gerente|assistente|analista)$/i;
 
 function adminScopeEl(id) {
   try {
@@ -5958,7 +5962,7 @@ function deduplicarConsultaAuditoria(tipo,forcar,base,periodo){var chave=tipo+'|
 carregarAuditoriaRecolhimento=function(forcar){return deduplicarConsultaAuditoria('recolhimento',forcar,carregarAuditoriaRecolhimentoBase,auditoriaPeriodoAtual().chave);};
 carregarProdutosMaisReativados=function(forcar){return deduplicarConsultaAuditoria('reativados',forcar,carregarProdutosMaisReativadosBase,periodoProdutosReativados().chave);};
 
-function selecionarVistaDesktop(v){var admin=papelAtual()==='admin',relatorios=temPermissao('relatorios'),revisao=temPermissao('nome_editar')||temPermissao('exclusoes_aprovar');$('adminDesktopPermissionsNav').hidden=!admin;$('adminDesktopReportsNav').hidden=!relatorios;$('adminDesktopRequestsNav').hidden=!revisao;
+function selecionarVistaDesktop(v){if(adminDesktopAtivo()&&desktopSomenteVisaoGeral())v='dashboard';var admin=papelAtual()==='admin',relatorios=temPermissao('relatorios'),revisao=temPermissao('nome_editar')||temPermissao('exclusoes_aprovar');$('adminDesktopPermissionsNav').hidden=!admin;$('adminDesktopReportsNav').hidden=!relatorios;$('adminDesktopRequestsNav').hidden=!revisao;
   document.querySelectorAll('#adminDesktopNav [data-admin-settings]').forEach(function(b){var item=SYS_SECOES.find(function(x){return x.id===b.dataset.adminSettings;});b.hidden=!secaoPermitida(item);});
   if(v==='permissions'&&!admin)v='settings';if(v==='reports'&&!relatorios)v='dashboard';if(v==='requests'&&!revisao)v='dashboard';adminDesktopVista=['dashboard','records','requests','reports','settings','permissions'].includes(v)?v:'dashboard';var ajustes=adminDesktopVista==='settings'||adminDesktopVista==='permissions';
   $('adminDesktopDashboard').hidden=adminDesktopVista!=='dashboard';$('adminDesktopReports').hidden=adminDesktopVista!=='reports';$('adminDesktopSettings').hidden=!ajustes;$('adminDesktopRequests').hidden=adminDesktopVista!=='requests';adminRecordsSetVisible(adminDesktopVista==='records');
@@ -5967,7 +5971,7 @@ function selecionarVistaDesktop(v){var admin=papelAtual()==='admin',relatorios=t
   $('adminDesktopSubtitle').textContent=ajustes?'Configurações e ações permitidas ao seu perfil. Os dados operacionais seguem o escopo selecionado.':adminDesktopVista==='requests'?'Correções e exclusões pendentes da filial ou das lojas autorizadas.':adminDesktopVista==='records'?'Edição e tratamento de registros com identificação explícita da filial.':'Indicadores e relatórios do escopo selecionado. Fonte: Supabase.';
   document.querySelectorAll('#adminDesktopNav [data-admin-view]').forEach(function(b){var on=b.dataset.adminView===adminDesktopVista;b.classList.toggle('on',on);if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});}
 
-function adminDesktopView(v){if(!painelGestaoAtivo()||(!adminDesktopAtivo()&&!['dashboard','records'].includes(v)))return;if(v==='permissions'&&!ehAdmin()){toast('Configurar perfis de acesso é exclusivo do Administrador.');return;}if(v==='reports'&&!temPermissao('relatorios')){toast('Seu perfil não pode acessar relatórios.');return;}if(v==='requests'&&!temPermissao('nome_editar')&&!temPermissao('exclusoes_aprovar')){toast('Seu perfil não pode revisar solicitações.');return;}selecionarVistaDesktop(v);
+function adminDesktopView(v){if(adminDesktopAtivo()&&desktopSomenteVisaoGeral()&&v!=='dashboard')return;if(!painelGestaoAtivo()||(!adminDesktopAtivo()&&!['dashboard','records'].includes(v)))return;if(v==='permissions'&&!ehAdmin()){toast('Configurar perfis de acesso é exclusivo do Administrador.');return;}if(v==='reports'&&!temPermissao('relatorios')){toast('Seu perfil não pode acessar relatórios.');return;}if(v==='requests'&&!temPermissao('nome_editar')&&!temPermissao('exclusoes_aprovar')){toast('Seu perfil não pode revisar solicitações.');return;}selecionarVistaDesktop(v);
   if(adminDesktopVista==='settings'||adminDesktopVista==='permissions'){ir('aj');if(adminDesktopVista==='permissions'){abrirSecaoSistema('usuarios');$('cardPerfisAcesso').scrollIntoView({block:'start'});}}
   if(adminDesktopVista==='requests')adminRequestsCarregar(false);$('adminDesktopContent').scrollTop=0;adminDesktopRender();}
 function expirySelection(activeRows) {
@@ -6045,14 +6049,14 @@ $('expiryFocus').onclick = function(e) {
 };
 function adminDesktopRender(){atualizarGraficoUsuariosRelatorios();if(!$('adminDesktop')||!painelGestaoAtivo())return;var d=adminDesktopData(),den=Math.max(1,d.activeRows.length),nome=SESS&&(SESS.nome||SESS.usuario||SESS.email)||'Administrador',loja=adminScopeRotulo();
   renderExpiryFocus(d.activeRows);
-  adminDashboardInsightsRender(d);if(adminDesktopVista==='records')adminRecordsRender(d);if(adminDesktopAtivo()&&ADMIN_SCOPE.lojasCarregadas&&!ADMIN_SCOPE.loading)adminRequestsCarregar(false);adminScopeAtualizarStatus();adminDesktopSet('adminDesktopUser',nome);adminDesktopSet('adminDesktopRole',PAPEIS[SESS.papel]||'Usuário');adminDesktopSet('adminDesktopStore',loja);adminDesktopSet('adminKpiRecords',d.activeRows.length);adminDesktopSet('adminKpiProducts',d.products);adminDesktopSet('adminKpiExpired',d.expired);adminDesktopSet('adminKpiSoon',d.soon);adminDesktopSet('adminKpiValid',d.valid);adminDesktopSet('adminKpiUnits',d.units.toLocaleString('pt-BR'));adminDesktopSet('adminKpiWeight',kg(d.weight));adminDesktopSet('adminKpiPending',d.pending);
+  adminDashboardInsightsRender(d);if(adminDesktopVista==='records')adminRecordsRender(d);if(adminDesktopAtivo()&&!desktopSomenteVisaoGeral()&&ADMIN_SCOPE.lojasCarregadas&&!ADMIN_SCOPE.loading)adminRequestsCarregar(false);adminScopeAtualizarStatus();adminDesktopSet('adminDesktopUser',nome);adminDesktopSet('adminDesktopRole',PAPEIS[SESS.papel]||'Usuário');adminDesktopSet('adminDesktopStore',loja);adminDesktopSet('adminKpiRecords',d.activeRows.length);adminDesktopSet('adminKpiProducts',d.products);adminDesktopSet('adminKpiExpired',d.expired);adminDesktopSet('adminKpiSoon',d.soon);adminDesktopSet('adminKpiValid',d.valid);adminDesktopSet('adminKpiUnits',d.units.toLocaleString('pt-BR'));adminDesktopSet('adminKpiWeight',kg(d.weight));adminDesktopSet('adminKpiPending',d.pending);
   [['adminBarExpired',d.expired,'adminBarExpiredCount'],['adminBarSoon',d.soon,'adminBarSoonCount'],['adminBarValid',d.valid,'adminBarValidCount']].forEach(function(x){var bar=$(x[0]);if(bar)bar.style.width=(100*({adminBarExpired:d.expired,adminBarSoon:d.soon,adminBarValid:d.valid}[x[0]])/den)+'%';adminDesktopSet(x[2],x[0]==='adminBarExpired'?d.expired:x[0]==='adminBarSoon'?d.soon:d.valid);});
   var recent=AdminRecords.orderRows(d.activeRows,'recent').slice(0,6);
   $('adminRecentRows').innerHTML=recent.map(function(r){
     return '<tr><td><strong>'+esc(r.nome)+'</strong><small>'+esc(r.lojaNome||'—')+'</small></td><td>'+esc(r.localizacao||'—')+'</td><td>'+esc(r.informante||'—')+'</td><td>'+esc(AdminRecords.formatCreated(r))+'</td><td>'+esc(fdata(r.validade))+'<small>'+esc(adminStatusValidade(r.dias,r.alertaDias))+'</small></td></tr>';
   }).join('')||'<tr><td colspan="5" class="admin-desktop-empty">Nenhum registro encontrado.</td></tr>';
   adminDesktopSet('adminReportLots',d.rows.filter(function(r){return r.tipo==='Lote';}).length);adminDesktopSet('adminReportPereciveis',d.rows.filter(function(r){return r.tipo==='Perecível';}).length);adminDesktopSet('adminReportAlerts',d.activeRows.filter(function(r){return r.dias!==null&&r.dias<=(r.alertaDias==null?D.aj.dias:r.alertaDias)||r.pendente;}).length);}
-$('adminDesktopNav').onclick=function(e){var link=e.target.closest('[data-admin-settings]');if(link){adminDesktopView('settings');abrirSecaoSistema(link.dataset.adminSettings);return;}var b=e.target.closest('[data-admin-view]');if(b)adminDesktopView(b.dataset.adminView);};
+$('adminDesktopNav').onclick=function(e){if(desktopSomenteVisaoGeral()){adminDesktopView('dashboard');return;}var link=e.target.closest('[data-admin-settings]');if(link){adminDesktopView('settings');abrirSecaoSistema(link.dataset.adminSettings);return;}var b=e.target.closest('[data-admin-view]');if(b)adminDesktopView(b.dataset.adminView);};
 document.querySelectorAll('#adminDesktopDashboard [data-admin-view],.admin-mobile-tabs [data-admin-view]').forEach(function(b){b.onclick=function(){adminDesktopView(this.dataset.adminView);};});
 $('adminDesktopSettingsBack').onclick=function(){adminDesktopView('settings');};
 $('adminDesktopChangeStore').onclick=function(){abrirConta();};$('adminDesktopLogout').onclick=function(){$('bLogoutHdr').click();};
@@ -6371,7 +6375,8 @@ function podeAdministrarPapelApp(papelAlvo){return !!NIVEL_PAPEL[papelAlvo]&&NIV
 function papelAtual(){if(!sbOn())return 'admin';if(!SESS||!SESS.access_token)return 'operador';var uid=String(SESS.uid||'');return papelConfirmado&&papelConfirmadoUid===uid&&papelConfirmadoToken===SESS.access_token&&ORDEM_PAPEIS.includes(SESS.papel)?SESS.papel:'operador';}
 var papelConfirmado=false,papelConfirmadoUid=null,papelConfirmadoToken=null,papelCarregando=false,adminDesktopVista='dashboard',papelConsultaSeq=0,papelCachePorUid={};
 try{papelCachePorUid=JSON.parse(localStorage.getItem('perfil_papel_cache')||'{}')||{};if(!papelCachePorUid||typeof papelCachePorUid!=='object'||Array.isArray(papelCachePorUid))papelCachePorUid={};}catch(e){papelCachePorUid={};}
-function adminDesktopAtivo(){return !!(window.matchMedia&&window.matchMedia('(min-width: 1024px)').matches&&sbOn()&&logado()&&SESS&&!SESS.forcePasswordChange&&SESS.lojaId&&papelConfirmado&&['admin','gerente'].includes(papelAtual()));}
+function desktopSomenteVisaoGeral(){return ['assistente','analista'].includes(papelAtual());}
+function adminDesktopAtivo(){return !!(window.matchMedia&&window.matchMedia('(min-width: 1024px)').matches&&sbOn()&&logado()&&SESS&&!SESS.forcePasswordChange&&SESS.lojaId&&papelConfirmado&&(['admin','gerente'].includes(papelAtual())||desktopSomenteVisaoGeral()));}
 var painelMobileAberto=false;
 function podeAbrirPainelMobile(){return sbOn()&&logado()&&SESS&&SESS.lojaId&&!SESS.forcePasswordChange&&papelConfirmado&&(papelAtual()==='admin'||(papelAtual()==='gerente'&&sessaoPermissoesConfirmadas&&sessaoPermissoesConfirmadas.sessao===SESS&&sessaoPermissoesConfirmadas.token===SESS.access_token&&temPermissao('relatorios')));}
 function painelGestaoAtivo(){return adminDesktopAtivo()||(painelMobileAberto&&podeAbrirPainelMobile());}
@@ -6386,7 +6391,7 @@ function alternarPainelMobile(abrir){
 function atualizarModoDesktopAdmin(){var eraAtivo=document.documentElement.classList.contains('desktop-admin'),ativo=adminDesktopAtivo(),pendente=!!(window.matchMedia&&window.matchMedia('(min-width: 1024px)').matches&&sbOn()&&logado()&&SESS&&!SESS.forcePasswordChange&&SESS.lojaId&&papelCarregando);
   if(ativo||!podeAbrirPainelMobile())painelMobileAberto=false;
   document.documentElement.classList.toggle('mobile-admin-panel',painelMobileAberto);
-  document.documentElement.classList.toggle('desktop-admin',ativo);document.documentElement.classList.toggle('desktop-admin-pending',pendente);atualizarHostAjustesDesktop(ativo);if(painelGestaoAtivo())adminScopeIniciar();else{adminScopeLimpar();if(typeof adminRequestsLimpar==='function')adminRequestsLimpar();if(typeof adminRecordsLimpar==='function')adminRecordsLimpar();}
+  document.documentElement.classList.toggle('desktop-overview-only',ativo&&desktopSomenteVisaoGeral());document.documentElement.classList.toggle('desktop-admin',ativo);document.documentElement.classList.toggle('desktop-admin-pending',pendente);atualizarHostAjustesDesktop(ativo);if(painelGestaoAtivo())adminScopeIniciar();else{adminScopeLimpar();if(typeof adminRequestsLimpar==='function')adminRequestsLimpar();if(typeof adminRecordsLimpar==='function')adminRecordsLimpar();}
   if(ativo&&$('scanner')&&$('scanner').classList.contains('on'))fecharScanner();if(!logado())selecionarVistaDesktop('dashboard');
   if(ativo){selecionarVistaDesktop(adminDesktopVista);if(!eraAtivo&&['settings','permissions'].includes(adminDesktopVista)&&!['aj','catalogo'].includes(vistaAtual))adminDesktopView(adminDesktopVista);else adminDesktopRender();}
   else if(painelMobileAberto)adminDesktopRender();
@@ -6789,7 +6794,7 @@ function iniciarGestaoUsuarios(){
   function excluir(id){var u=cache.users.find(function(x){return x.id===id;});if(!u||!confirm('Excluir definitivamente o usuário '+u.usuario+'? Esta ação não pode ser desfeita.'))return;callGestao({acao:'excluir',id:id}).then(function(){toast('Usuário excluído.');carregar();}).catch(function(e){toast(e.message);});}
   $('bUsuarioCriar').onclick=criar;$('bUsuarioRefresh').onclick=carregar;carregar();
 }
-document.addEventListener('admin-scope-change',function(){adminRequestsLimpar();adminRecordsLimpar();if(adminDesktopAtivo()&&ADMIN_SCOPE.lojasCarregadas)adminRequestsCarregar(true);usuariosEscopoSeq++;auditoriaDetalhadaSeq++;var audKey=escopoConsultaAuditoria()+'|';if(!auditoriaRecolhimentoCache.chave||auditoriaRecolhimentoCache.chave.indexOf(audKey)!==0){auditoriaRecolhimentoSeq++;auditoriaRecolhimentoCache={itens:[],carregadoEm:0};}if(!produtosMaisReativadosCache.chave||produtosMaisReativadosCache.chave.indexOf(audKey)!==0){produtosMaisReativadosSeq++;produtosMaisReativadosCache={itens:[],carregadoEm:0};}renderAuditoriaRecolhimento();renderProdutosMaisReativados();$('modalEditarUsuario').classList.remove('on');iniciarGestaoUsuarios();carregarAjustesAlertasLoja();carregarLojasAdmin();if(temPermissao('auditoria_ver')){auditoriaCard();carregarAuditoriaRecolhimento(false);carregarProdutosMaisReativados(false);}});
+document.addEventListener('admin-scope-change',function(){adminRequestsLimpar();adminRecordsLimpar();if(adminDesktopAtivo()&&!desktopSomenteVisaoGeral()&&ADMIN_SCOPE.lojasCarregadas)adminRequestsCarregar(true);usuariosEscopoSeq++;auditoriaDetalhadaSeq++;var audKey=escopoConsultaAuditoria()+'|';if(!auditoriaRecolhimentoCache.chave||auditoriaRecolhimentoCache.chave.indexOf(audKey)!==0){auditoriaRecolhimentoSeq++;auditoriaRecolhimentoCache={itens:[],carregadoEm:0};}if(!produtosMaisReativadosCache.chave||produtosMaisReativadosCache.chave.indexOf(audKey)!==0){produtosMaisReativadosSeq++;produtosMaisReativadosCache={itens:[],carregadoEm:0};}renderAuditoriaRecolhimento();renderProdutosMaisReativados();$('modalEditarUsuario').classList.remove('on');iniciarGestaoUsuarios();carregarAjustesAlertasLoja();carregarLojasAdmin();if(temPermissao('auditoria_ver')){auditoriaCard();carregarAuditoriaRecolhimento(false);carregarProdutosMaisReativados(false);}});
 window.__initGestaoUsuarios=iniciarGestaoUsuarios;
 iniciarGestaoUsuarios();
 
