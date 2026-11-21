@@ -1480,7 +1480,8 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 .desktop-overview-only #adminDesktopNav [data-admin-view]:not([data-admin-view="dashboard"]),
 .desktop-overview-only #adminDesktopNav [data-admin-settings],
 .desktop-overview-only #adminDesktopNav .admin-nav-label,
-.desktop-overview-only .admin-request-overview { display:none !important; }
+.desktop-overview-only .admin-request-overview,
+.desktop-overview-only .admin-mobile-tabs [data-admin-view]:not([data-admin-view="dashboard"]) { display:none !important; }
 </style>
 </head>
 <body>
@@ -5962,7 +5963,7 @@ function deduplicarConsultaAuditoria(tipo,forcar,base,periodo){var chave=tipo+'|
 carregarAuditoriaRecolhimento=function(forcar){return deduplicarConsultaAuditoria('recolhimento',forcar,carregarAuditoriaRecolhimentoBase,auditoriaPeriodoAtual().chave);};
 carregarProdutosMaisReativados=function(forcar){return deduplicarConsultaAuditoria('reativados',forcar,carregarProdutosMaisReativadosBase,periodoProdutosReativados().chave);};
 
-function selecionarVistaDesktop(v){if(adminDesktopAtivo()&&desktopSomenteVisaoGeral())v='dashboard';var admin=papelAtual()==='admin',relatorios=temPermissao('relatorios'),revisao=temPermissao('nome_editar')||temPermissao('exclusoes_aprovar');$('adminDesktopPermissionsNav').hidden=!admin;$('adminDesktopReportsNav').hidden=!relatorios;$('adminDesktopRequestsNav').hidden=!revisao;
+function selecionarVistaDesktop(v){if(painelGestaoAtivo()&&desktopSomenteVisaoGeral())v='dashboard';var admin=papelAtual()==='admin',relatorios=temPermissao('relatorios'),revisao=temPermissao('nome_editar')||temPermissao('exclusoes_aprovar');$('adminDesktopPermissionsNav').hidden=!admin;$('adminDesktopReportsNav').hidden=!relatorios;$('adminDesktopRequestsNav').hidden=!revisao;
   document.querySelectorAll('#adminDesktopNav [data-admin-settings]').forEach(function(b){var item=SYS_SECOES.find(function(x){return x.id===b.dataset.adminSettings;});b.hidden=!secaoPermitida(item);});
   if(v==='permissions'&&!admin)v='settings';if(v==='reports'&&!relatorios)v='dashboard';if(v==='requests'&&!revisao)v='dashboard';adminDesktopVista=['dashboard','records','requests','reports','settings','permissions'].includes(v)?v:'dashboard';var ajustes=adminDesktopVista==='settings'||adminDesktopVista==='permissions';
   $('adminDesktopDashboard').hidden=adminDesktopVista!=='dashboard';$('adminDesktopReports').hidden=adminDesktopVista!=='reports';$('adminDesktopSettings').hidden=!ajustes;$('adminDesktopRequests').hidden=adminDesktopVista!=='requests';adminRecordsSetVisible(adminDesktopVista==='records');
@@ -5971,7 +5972,7 @@ function selecionarVistaDesktop(v){if(adminDesktopAtivo()&&desktopSomenteVisaoGe
   $('adminDesktopSubtitle').textContent=ajustes?'Configurações e ações permitidas ao seu perfil. Os dados operacionais seguem o escopo selecionado.':adminDesktopVista==='requests'?'Correções e exclusões pendentes da filial ou das lojas autorizadas.':adminDesktopVista==='records'?'Edição e tratamento de registros com identificação explícita da filial.':'Indicadores e relatórios do escopo selecionado. Fonte: Supabase.';
   document.querySelectorAll('#adminDesktopNav [data-admin-view]').forEach(function(b){var on=b.dataset.adminView===adminDesktopVista;b.classList.toggle('on',on);if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});}
 
-function adminDesktopView(v){if(adminDesktopAtivo()&&desktopSomenteVisaoGeral()&&v!=='dashboard')return;if(!painelGestaoAtivo()||(!adminDesktopAtivo()&&!['dashboard','records'].includes(v)))return;if(v==='permissions'&&!ehAdmin()){toast('Configurar perfis de acesso é exclusivo do Administrador.');return;}if(v==='reports'&&!temPermissao('relatorios')){toast('Seu perfil não pode acessar relatórios.');return;}if(v==='requests'&&!temPermissao('nome_editar')&&!temPermissao('exclusoes_aprovar')){toast('Seu perfil não pode revisar solicitações.');return;}selecionarVistaDesktop(v);
+function adminDesktopView(v){if(painelGestaoAtivo()&&desktopSomenteVisaoGeral()&&v!=='dashboard')return;if(!painelGestaoAtivo()||(!adminDesktopAtivo()&&!['dashboard','records'].includes(v)))return;if(v==='permissions'&&!ehAdmin()){toast('Configurar perfis de acesso é exclusivo do Administrador.');return;}if(v==='reports'&&!temPermissao('relatorios')){toast('Seu perfil não pode acessar relatórios.');return;}if(v==='requests'&&!temPermissao('nome_editar')&&!temPermissao('exclusoes_aprovar')){toast('Seu perfil não pode revisar solicitações.');return;}selecionarVistaDesktop(v);
   if(adminDesktopVista==='settings'||adminDesktopVista==='permissions'){ir('aj');if(adminDesktopVista==='permissions'){abrirSecaoSistema('usuarios');$('cardPerfisAcesso').scrollIntoView({block:'start'});}}
   if(adminDesktopVista==='requests')adminRequestsCarregar(false);$('adminDesktopContent').scrollTop=0;adminDesktopRender();}
 function expirySelection(activeRows) {
@@ -6378,7 +6379,7 @@ try{papelCachePorUid=JSON.parse(localStorage.getItem('perfil_papel_cache')||'{}'
 function desktopSomenteVisaoGeral(){return ['assistente','analista'].includes(papelAtual());}
 function adminDesktopAtivo(){return !!(window.matchMedia&&window.matchMedia('(min-width: 1024px)').matches&&sbOn()&&logado()&&SESS&&!SESS.forcePasswordChange&&SESS.lojaId&&papelConfirmado&&(['admin','gerente'].includes(papelAtual())||desktopSomenteVisaoGeral()));}
 var painelMobileAberto=false;
-function podeAbrirPainelMobile(){return sbOn()&&logado()&&SESS&&SESS.lojaId&&!SESS.forcePasswordChange&&papelConfirmado&&(papelAtual()==='admin'||(papelAtual()==='gerente'&&sessaoPermissoesConfirmadas&&sessaoPermissoesConfirmadas.sessao===SESS&&sessaoPermissoesConfirmadas.token===SESS.access_token&&temPermissao('relatorios')));}
+function podeAbrirPainelMobile(){return sbOn()&&logado()&&SESS&&SESS.lojaId&&!SESS.forcePasswordChange&&papelConfirmado&&(papelAtual()==='admin'||desktopSomenteVisaoGeral()||(papelAtual()==='gerente'&&sessaoPermissoesConfirmadas&&sessaoPermissoesConfirmadas.sessao===SESS&&sessaoPermissoesConfirmadas.token===SESS.access_token&&temPermissao('relatorios')));}
 function painelGestaoAtivo(){return adminDesktopAtivo()||(painelMobileAberto&&podeAbrirPainelMobile());}
 function alternarPainelMobile(abrir){
   if(abrir&&(adminDesktopAtivo()||!podeAbrirPainelMobile()))return;
@@ -6391,7 +6392,7 @@ function alternarPainelMobile(abrir){
 function atualizarModoDesktopAdmin(){var eraAtivo=document.documentElement.classList.contains('desktop-admin'),ativo=adminDesktopAtivo(),pendente=!!(window.matchMedia&&window.matchMedia('(min-width: 1024px)').matches&&sbOn()&&logado()&&SESS&&!SESS.forcePasswordChange&&SESS.lojaId&&papelCarregando);
   if(ativo||!podeAbrirPainelMobile())painelMobileAberto=false;
   document.documentElement.classList.toggle('mobile-admin-panel',painelMobileAberto);
-  document.documentElement.classList.toggle('desktop-overview-only',ativo&&desktopSomenteVisaoGeral());document.documentElement.classList.toggle('desktop-admin',ativo);document.documentElement.classList.toggle('desktop-admin-pending',pendente);atualizarHostAjustesDesktop(ativo);if(painelGestaoAtivo())adminScopeIniciar();else{adminScopeLimpar();if(typeof adminRequestsLimpar==='function')adminRequestsLimpar();if(typeof adminRecordsLimpar==='function')adminRecordsLimpar();}
+  document.documentElement.classList.toggle('desktop-overview-only',(ativo||painelMobileAberto)&&desktopSomenteVisaoGeral());document.documentElement.classList.toggle('desktop-admin',ativo);document.documentElement.classList.toggle('desktop-admin-pending',pendente);atualizarHostAjustesDesktop(ativo);if(painelGestaoAtivo())adminScopeIniciar();else{adminScopeLimpar();if(typeof adminRequestsLimpar==='function')adminRequestsLimpar();if(typeof adminRecordsLimpar==='function')adminRecordsLimpar();}
   if(ativo&&$('scanner')&&$('scanner').classList.contains('on'))fecharScanner();if(!logado())selecionarVistaDesktop('dashboard');
   if(ativo){selecionarVistaDesktop(adminDesktopVista);if(!eraAtivo&&['settings','permissions'].includes(adminDesktopVista)&&!['aj','catalogo'].includes(vistaAtual))adminDesktopView(adminDesktopVista);else adminDesktopRender();}
   else if(painelMobileAberto)adminDesktopRender();

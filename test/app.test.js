@@ -863,6 +863,33 @@ tflaky('papel operador: Registrar visível; códigos (cadastro) escondido', { sk
   await a.fechar();
 });
 
+tflaky('Painel de gestão: assistente e analista abrem no celular, somente visão geral', { skip: pular }, async () => {
+  for (const papel of ['assistente', 'analista']) {
+    const a = await abrirLogado(p => rotasBase(p, papel), undefined, { papel });
+    await a.p.waitForFunction((pp) => { try { return JSON.parse(localStorage.getItem('validade_sessao')).papel === pp; } catch (e) { return false; } }, papel);
+    await a.p.click('nav button[data-v="aj"]').catch(() => {});
+    // o card "Painel de gestão" aparece na área deles
+    await a.p.waitForSelector('[data-sys-open="painel"]', { state: 'visible' });
+    await a.p.click('[data-sys-open="painel"]');
+    // abre o painel no modo somente visão geral (dashboard de indicadores)
+    await a.p.waitForFunction(() => document.documentElement.classList.contains('mobile-admin-panel'));
+    assert.strictEqual(await a.p.evaluate(() => document.documentElement.classList.contains('desktop-overview-only')), true, papel + ': modo somente visão geral ativo');
+    assert.strictEqual(await a.p.isVisible('#adminDesktopDashboard'), true, papel + ': dashboard visível');
+    // as outras abas (Registros/Solicitações/Relatórios) ficam escondidas no celular
+    assert.strictEqual(await a.p.isVisible('.admin-mobile-tabs [data-admin-view="records"]'), false, papel + ': aba Registros escondida');
+    await a.fechar();
+  }
+});
+
+tflaky('Painel de gestão: operador não vê o card', { skip: pular }, async () => {
+  const a = await abrirLogado(p => rotasBase(p, 'operador'), undefined, { papel: 'operador' });
+  await a.p.waitForFunction(() => { try { return JSON.parse(localStorage.getItem('validade_sessao')).papel === 'operador'; } catch (e) { return false; } });
+  await a.p.click('nav button[data-v="aj"]').catch(() => {});
+  await a.p.waitForTimeout(300);
+  assert.strictEqual(await a.p.$('[data-sys-open="painel"]'), null, 'operador não tem o card de Painel de gestão');
+  await a.fechar();
+});
+
 tflaky('Promotor vê a empresa em Meu Perfil e Conta e usa a área operacional', { skip: pular }, async () => {
   const a = await abrirLogado(async p => {
     await rotasBase(p, 'promotor');
@@ -1933,7 +1960,7 @@ tflaky('Perfil de Assistente: menu de cartões e atalhos seguem o perfil confirm
     assert.equal(await a.p.textContent('#sysMenuTitle'), 'Ajustes do Sistema');
     assert.equal(await a.p.isVisible('#settingsTabs'), false);
     const atalhos = await a.p.locator('#sysMenu .sys-menu-item').evaluateAll(botoes => botoes.map(b => b.dataset.sysOpen));
-    assert.deepEqual(atalhos, ['perfil', 'usuarios', 'pereciveis', 'config', 'alertas', 'sobre']);
+    assert.deepEqual(atalhos, ['painel', 'perfil', 'usuarios', 'pereciveis', 'config', 'alertas', 'sobre']);
     await a.p.click('#sysMenu [data-sys-open="perfil"]');
     assert.equal(await a.p.textContent('#screenTitle'), 'Perfil e Conta');
     assert.equal(await a.p.textContent('#slogan'), 'Área de Assistente');
