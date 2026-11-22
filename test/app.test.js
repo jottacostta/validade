@@ -487,13 +487,13 @@ tflaky('sem Supabase configurado: card de conta fica oculto', { skip: pular }, a
 
 /* abre o app já logado (sessão posta via evaluate + reload, como os demais testes);
    setupRotas registra as rotas ANTES do reload, para o pull inicial ser interceptado */
-async function abrirLogado(setupRotas, dados, sessaoExtra) {
+async function abrirLogado(setupRotas, dados, sessaoExtra, syncExtra) {
   const a = await abrir({ url: URL_SUPA, opcoes: { viewport: { width: 390, height: 844 } } });
   await a.p.route(/\/rest\/v1\/notificacoes(?:\?|$)/, r => r.request().method() === 'GET'
     ? r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }) : r.fulfill({ status: 204, body: '' }));
   await a.p.route(R_PERFIL, r => r.fulfill({ json: [{ papel: sessaoExtra?.papel || 'operador', nome: 'Teste' }] }));
   if (setupRotas) await setupRotas(a.p);
-  await a.p.evaluate(([d, extra]) => { localStorage.setItem('validade_sessao', JSON.stringify(Object.assign({ access_token: 'tok', refresh_token: 'ref', expira: Date.now() + 3600000, usuario: 'teste', email: 'teste@loja.validade', uid: 'u1', lojaId: 'L1', lojaNome: 'Loja Teste' }, extra || {}))); if (d) localStorage.setItem('validade_dados', JSON.stringify(d)); }, [dados, sessaoExtra]);
+  await a.p.evaluate(([d, extra, sync]) => { localStorage.setItem('validade_sessao', JSON.stringify(Object.assign({ access_token: 'tok', refresh_token: 'ref', expira: Date.now() + 3600000, usuario: 'teste', email: 'teste@loja.validade', uid: 'u1', lojaId: 'L1', lojaNome: 'Loja Teste' }, extra || {}))); if (d) localStorage.setItem('validade_dados', JSON.stringify(d)); if(sync) localStorage.setItem('validade_sync',JSON.stringify(sync)); }, [dados, sessaoExtra, syncExtra]);
   await a.p.reload();
   return a;
 }
@@ -2590,6 +2590,49 @@ function adminDesktopScopeFixture() {
     ]
   };
 }
+
+tflaky('home: últimos registros não mistura a loja anterior após sincronizar outra filial', { skip: pular }, async () => {
+  const agora = Date.now(), fixture = {
+    stores: [{ id: 'FL05', nome: 'Filial 05' }, { id: 'FL19', nome: 'Filial 19' }],
+    catalogo: [{ ean: '7890000000017', nome: 'Produto exclusivo FL19', marca: '' }],
+    lotes: [{ id: 'lote-fl19', loja_id: 'FL19', ean: '7890000000017', lote: 'L19', qtd: 1, val: '2099-12-31', criado: agora, rpcConfirmado: true }],
+    pere_itens: [], pere_regs: [], solicitacoes_nome: [], solicitacoes_exclusao: []
+  };
+  const dados = { prod: { '7890000000024': { lotes: [{ id: 'lote-fl05', lote: 'L05', qtd: 1, val: '2099-12-31', criado: agora + 10000, rpcConfirmado: true }] } }, cat: { '7890000000024': { nome: 'Registro antigo FL05' } }, pere: { itens: {}, regs: [] } };
+  const a = await abrirLogado(async p => { await rotasAdminDesktopRemoto(p, fixture); await p.route(/\/rest\/v1\/produtos(?:\?|$)/, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' })); }, dados,
+    { papel: 'admin', nome: 'Admin', lojaId: 'FL19', lojaNome: 'Filial 19' }, { loja: 'FL05' });
+  try {
+    await a.p.waitForFunction(() => JSON.parse(localStorage.getItem('validade_sync') || '{}').loja === 'FL19');
+    await a.p.waitForFunction(() => document.getElementById('homeRecentList').textContent.includes('Produto exclusivo FL19'));
+    const recentes = await a.p.textContent('#homeRecentList');
+    assert.match(recentes, /Produto exclusivo FL19/);
+    assert.doesNotMatch(recentes, /Registro antigo FL05/);
+    const cache = await a.p.evaluate(() => JSON.parse(localStorage.getItem('validade_dados')));
+    assert.equal(cache.prod['7890000000024'].lotes[0].loja_id, 'FL05', 'a linha legada recebe a filial anterior em vez da selecionada');
+    assert.equal(cache.prod['7890000000017'].lotes[0].loja_id, 'FL19', 'a linha baixada recebe a filial consultada');
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
+
+tflaky('home: ao selecionar FL05, últimos registros exclui o cache anterior de FL19', { skip: pular }, async () => {
+  const agora = Date.now(), fixture = {
+    stores: [{ id: 'FL19', nome: 'Filial 19' }, { id: 'FL05', nome: 'Filial 05' }],
+    catalogo: [{ ean: '7890000000017', nome: 'Produto exclusivo FL05', marca: '' }],
+    lotes: [{ id: 'lote-fl05-selecionada', loja_id: 'FL05', ean: '7890000000017', lote: 'L05', qtd: 1, val: '2099-12-31', criado: agora, rpcConfirmado: true }],
+    pere_itens: [], pere_regs: [], solicitacoes_nome: [], solicitacoes_exclusao: []
+  };
+  const dados = { prod: { '7890000000024': { lotes: [{ id: 'lote-fl19-anterior', lote: 'L19', qtd: 1, val: '2099-12-31', criado: agora + 10000, rpcConfirmado: true }] } }, cat: { '7890000000024': { nome: 'Registro antigo FL19' } }, pere: { itens: {}, regs: [] } };
+  const a = await abrirLogado(async p => { await rotasAdminDesktopRemoto(p, fixture); await p.route(/\/rest\/v1\/produtos(?:\?|$)/, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' })); }, dados,
+    { papel: 'admin', nome: 'Admin', lojaId: 'FL05', lojaNome: 'Filial 05' }, { loja: 'FL19' });
+  try {
+    await a.p.waitForFunction(() => JSON.parse(localStorage.getItem('validade_sync') || '{}').loja === 'FL05');
+    await a.p.waitForFunction(() => document.getElementById('homeRecentList').textContent.includes('Produto exclusivo FL05'));
+    const recentes = await a.p.textContent('#homeRecentList');
+    assert.match(recentes, /Produto exclusivo FL05/);
+    assert.doesNotMatch(recentes, /Registro antigo FL19/);
+    assert.deepStrictEqual(a.erros, []);
+  } finally { await a.fechar(); }
+});
 
 tflaky('Central desktop: admin aguarda confirmação do perfil, usa indicadores da loja ativa e exporta XLSX válido', { skip: pular }, async () => {
   let liberarPerfil;
