@@ -4031,6 +4031,14 @@ tflaky('Rede administrativa: FL01 e FL05 mantêm registros e ações separados n
     await a.p.selectOption('#selectLoja','rede-admin');await a.p.click('#bSelecionarLoja');
     const painel=a.p.locator('#redePainel');
     assert.equal(await painel.locator('button').filter({hasText:/escanear/i}).count(),0);
+    await painel.locator('.rede-card').first().waitFor();
+    assert.deepEqual(await painel.locator('.rede-resumo dd').allTextContents(),['2','2','0']);
+    for(const width of [360,1280]){
+      await a.p.setViewportSize({width,height:800});
+      assert.ok(await painel.evaluate(el=>el.scrollWidth<=el.clientWidth),'Painel deve caber na largura disponível');
+      const cards=await painel.locator('.rede-card').evaluateAll(nodes=>nodes.map(el=>el.getBoundingClientRect().top));
+      assert.equal(cards[0]===cards[1],width===1280);
+    }
     for(const [i,loja] of lojas.entries()){
       await painel.locator('[data-rede="abrir"]').nth(i).click();
       await painel.getByText('Produto '+loja.id,{exact:true}).waitFor();
