@@ -4039,6 +4039,14 @@ tflaky('Rede administrativa: FL01 e FL05 mantêm registros e ações separados n
       const cards=await painel.locator('.rede-card').evaluateAll(nodes=>nodes.map(el=>el.getBoundingClientRect().top));
       assert.equal(cards[0]===cards[1],width===1280);
     }
+    assert.equal(await painel.locator('.rede-barra').count(),2);
+    await painel.locator('#redeBusca').fill('inexistente');
+    await painel.locator('#redeSemResultado').waitFor();
+    await painel.locator('#redeBusca').fill('fl05');
+    assert.equal(await painel.locator('.rede-card:visible').count(),1);
+    await painel.getByRole('button',{name:'Consultar filial FL05'}).click();
+    await painel.getByText('Produto L5',{exact:true}).waitFor();
+    await painel.locator('#redeVoltar').click();
     for(const [i,loja] of lojas.entries()){
       await painel.locator('[data-rede="abrir"]').nth(i).click();
       await painel.getByText('Produto '+loja.id,{exact:true}).waitFor();
