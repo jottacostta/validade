@@ -2113,6 +2113,11 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
     <p id="apStatus" class="perm-status" aria-live="polite"></p>
     <button class="btn" id="bApEnviar" type="button">Enviar alerta</button>
   </div>
+  <div class="card" data-sec="alertas"><details id="apRelatorio" hidden><summary>Confirmações de leitura da filial atual</summary>
+      <button type="button" class="btn sec" id="apAtualizar">Atualizar relatório</button>
+      <div id="apResultado" aria-live="polite"></div>
+      <button type="button" id="apAnterior" hidden>Anterior</button> <button type="button" id="apProxima" hidden>Próxima</button>
+    </details></div>
   <div class="card" data-sec="alertas" id="pushCard">
     <h2>Alertas pessoais e Push</h2>
     <p style="margin:0 0 12px;font-size:13px;color:var(--mu)">Defina quando deseja receber avisos pessoais de antecipação. Essas regras são da sua conta e não alteram os alertas internos compartilhados pela loja.</p>
@@ -2500,6 +2505,7 @@ function mostrarVistaAjustes(v){if(!AJ_TITULOS[v])v='settings';ajVista=v;var men
   /* Alertas e Notificações é uma seção do menu; fora dele (perfis sem menu) continua em Configurações */
   var naSecaoAlertas=v==='syssection'&&(sysSecAtual==='alertas'||sysSecAtual==='op-alertas'),mostrarAlertas=naSecaoAlertas||(v==='settings'&&!menu);
   $('pushCard').style.display=mostrarAlertas?'':'none';
+  $('apRelatorio').parentElement.hidden=!(mostrarAlertas&&logado()&&ehAdmin());$('apRelatorio').hidden=$('apRelatorio').parentElement.hidden;
   var podeEnviarAlerta=mostrarAlertas&&sbOn()&&logado()&&temPermissao('alertas_enviar');$('cardAlertaPersonalizado').style.display=podeEnviarAlerta?'':'none';if(podeEnviarAlerta)carregarLojasAlerta();
   $('settingsTabs').style.display=(v==='settings'||v==='profile')&&!menu?'':'none';
   document.querySelectorAll('#settingsTabs [data-settings-view]').forEach(function(b){var on=b.dataset.settingsView===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
@@ -3160,9 +3166,40 @@ var notificacoesCache=[],filtroNotificacoes='all',notificacoesConsultadasEm=0,no
 function atualizarBannerAlertaSistema(){var box=$('systemAlertBanner');if(!box)return;var escopo=SESS&&SESS.uid&&SESS.lojaId?String(SESS.uid)+':'+String(SESS.lojaId):'',n=notificacoesCache.find(function(x){return String(x.tipo||'').toLowerCase()==='sistema_personalizado'&&!x.lida_em;});
   if(!sbOn()||!logado()||!SESS||!SESS.uid||!SESS.lojaId||notificacoesEscopoCache!==escopo||!n){box.hidden=true;delete box.dataset.notifId;return;}
   box.dataset.notifId=String(n.id);$('systemAlertTitle').textContent=String(n.titulo||'Aviso do sistema');$('systemAlertMessage').textContent=String(n.mensagem||'');box.hidden=false;}
+var paginaAvisos=0, consultaAvisos=0;
+function limparRelatorioAvisos(){
+  consultaAvisos++; paginaAvisos=0;
+  $('apRelatorio').open=false;
+  $('apResultado').textContent='';
+  $('apAnterior').hidden=$('apProxima').hidden=true;
+}
+async function consultarConfirmacoes(pagina){
+  if (!SESS || !SESS.lojaId || !ehAdmin() || !$('apRelatorio').open) return;
+  var chave=++consultaAvisos, loja=SESS.lojaId, usuario=SESS.uid;
+  $('apResultado').textContent='Consultando…';
+  $('apAnterior').hidden=$('apProxima').hidden=true;
+  try {
+    var r=await sbReq('/rest/v1/rpc/relatorio_confirmacoes_aviso',{method:'POST',body:{p_loja:loja,p_pagina:pagina}});
+    if(chave!==consultaAvisos || !SESS || SESS.uid!==usuario || SESS.lojaId!==loja || !ehAdmin())return;
+    if(!r.ok || !Array.isArray(r.dados))throw new Error();
+    paginaAvisos=pagina;
+    var grupo=null;
+    $('apResultado').innerHTML=r.dados.slice(0,50).map(function(n){
+      var cab=grupo!==n.envio?'<h4>'+esc(n.titulo)+' · '+esc(new Date(n.enviado_em).toLocaleString('pt-BR'))+'</h4>':'';
+      grupo=n.envio;
+      var status=n.confirmado_em?'Confirmou em '+new Date(n.confirmado_em).toLocaleString('pt-BR'):n.lida_em?'Marcado como lido, sem confirmação individual registrada':'Pendente de confirmação';
+      return cab+'<p><b>'+esc(n.destinatario)+'</b> · '+esc(status)+'</p>';
+    }).join('')||'Nenhum destinatário encontrado nesta filial.';
+    $('apAnterior').hidden=pagina===0; $('apProxima').hidden=r.dados.length<=50;
+  } catch(e){if(chave===consultaAvisos)$('apResultado').textContent='Falha ao consultar as confirmações. Tente atualizar o relatório.';}
+}
+$('apRelatorio').ontoggle=function(){if(this.open)consultarConfirmacoes(0);else limparRelatorioAvisos();};
+$('apAtualizar').onclick=function(){consultarConfirmacoes(0);};
+$('apAnterior').onclick=function(){consultarConfirmacoes(Math.max(0,paginaAvisos-1));};
+$('apProxima').onclick=function(){consultarConfirmacoes(paginaAvisos+1);};
 function confirmarAvisoSistema(){var box=$('systemAlertBanner'),id=box&&box.dataset.notifId;if(!id||!SESS||!SESS.lojaId)return;var escopo=String(SESS.uid||'')+':'+String(SESS.lojaId);if(navigator.onLine===false){toast('Conecte-se à internet para confirmar o aviso.');return;}
   var b=$('bSystemAlertOk');if(b.disabled)return;b.disabled=true;var quando=new Date().toISOString();
-  sbReq('/rest/v1/notificacoes?loja_id=eq.'+encodeURIComponent(SESS.lojaId)+'&id=eq.'+encodeURIComponent(id),{method:'PATCH',body:{lida_em:quando}})
+  sbReq('/rest/v1/rpc/confirmar_aviso_ok',{method:'POST',body:{p_id:id}})
     .then(function(r){if(!SESS||escopo!==String(SESS.uid||'')+':'+String(SESS.lojaId||''))return;if(!r.ok)throw erroSQL(r,'confirmar aviso do sistema');var n=notificacoesCache.find(function(x){return String(x.id)===String(id);});if(n)n.lida_em=quando;renderListaNotificacoes();atualizarBannerAlertaSistema();atualizarBadgeAlertas();toast('Aviso confirmado');return carregarNotificacoes(true,true);})
     .catch(function(e){toast('Não foi possível confirmar o aviso: '+(e.message||'erro'));})
     .then(function(){b.disabled=false;});}
@@ -3429,7 +3466,7 @@ function carregarNotificacoes(silencioso,forcar){if(!sbOn()||!logado()||!SESS.lo
     renderListaNotificacoes();atualizarBannerAlertaSistema();
     atualizarBadgeAlertas();return notificacoesCache;
   }).catch(function(e){if(!silencioso&&SESS&&notificacoesEscopoCache===escopo&&escopo===String(SESS.uid||'')+':'+String(SESS.lojaId||''))$('listaNotificacoes').innerHTML='<div class="aviso wa">As notificações do servidor ainda não estão disponíveis. Os alertas visuais sincronizados continuam ativos. ('+esc(e.message||'erro')+')</div>';return [];});}
-$('bLerNotificacoes').onclick=function(){var ids=notificacoesCache.filter(function(n){return !n.lida_em;}).map(function(n){return n.id;});if(!ids.length){toast('Não há notificações novas');return;}
+$('bLerNotificacoes').onclick=function(){var ids=notificacoesCache.filter(function(n){return !n.lida_em&&n.tipo!=='sistema_personalizado';}).map(function(n){return n.id;});if(!ids.length){toast('Não há notificações novas');return;}
   var f='id=in.('+ids.map(encodeURIComponent).join(',')+')';sbReq('/rest/v1/notificacoes?'+f,{method:'PATCH',body:{lida_em:new Date().toISOString()}}).then(function(r){if(!r.ok)throw erroSQL(r,'marcar notificações');toast('Notificações marcadas como lidas');carregarNotificacoes();}).catch(function(e){toast('Não foi possível atualizar: '+e.message);});};
 $('bLimparNotificacoes').onclick=function(){var ids=notificacoesCache.map(function(n){return n.id;});if(!ids.length){toast('Não há notificações para limpar');return;}if(!confirm('Limpar todas as suas notificações desta loja?'))return;
   sbReq('/rest/v1/notificacoes?id=in.('+ids.map(encodeURIComponent).join(',')+')',{method:'PATCH',body:{removida_em:new Date().toISOString()}}).then(function(r){if(!r.ok)throw erroSQL(r,'limpar notificações');toast('Notificações limpas');return carregarNotificacoes();}).catch(function(e){toast('Não foi possível limpar: '+e.message);});};
@@ -6153,7 +6190,7 @@ function sbReq(path,opt){opt=opt||{};
 function sbLogin(user,pass){return sbReq('/auth/v1/token?grant_type=password',{method:'POST',auth:false,body:{email:user+'@'+DOM_LOGIN,password:pass}})
   .then(function(r){if(!r.ok||!r.dados||!r.dados.access_token)throw new Error((r.dados&&(r.dados.error_description||r.dados.msg||r.dados.error))||'Usuário ou senha inválidos');
     var u=r.dados.user||{},meta=u.app_metadata||{};SESS={access_token:r.dados.access_token,refresh_token:r.dados.refresh_token,expira:Date.now()+((r.dados.expires_in||3600)*1000),usuario:user,email:u.email,uid:u.id,loginEm:Date.now(),lojaId:null,lojaNome:null,forcePasswordChange:meta.force_password_change===true};salvarSess();return SESS;});}
-function sbLogout(escopo){var token=SESS&&SESS.access_token;SESS=null;sessaoFoto();abrirFotoDetalhe(null);papelConfirmado=false;atualizarModoDesktopAdmin();salvarSess();refreshSessaoEmAndamento=null;try{localStorage.removeItem('validade_ultima_loja');}catch(e){}if(token&&sbOn()){return fetch(CFG.supaUrl+'/auth/v1/logout'+(escopo==='local'?'?scope=local':''),{method:'POST',headers:{apikey:CFG.supaKey,Authorization:'Bearer '+token}}).catch(function(e){console.warn('Falha ao invalidar sessão remota (sessão local já encerrada):',e);});}return Promise.resolve();}
+function sbLogout(escopo){limparRelatorioAvisos();var token=SESS&&SESS.access_token;SESS=null;sessaoFoto();abrirFotoDetalhe(null);papelConfirmado=false;atualizarModoDesktopAdmin();salvarSess();refreshSessaoEmAndamento=null;try{localStorage.removeItem('validade_ultima_loja');}catch(e){}if(token&&sbOn()){return fetch(CFG.supaUrl+'/auth/v1/logout'+(escopo==='local'?'?scope=local':''),{method:'POST',headers:{apikey:CFG.supaKey,Authorization:'Bearer '+token}}).catch(function(e){console.warn('Falha ao invalidar sessão remota (sessão local já encerrada):',e);});}return Promise.resolve();}
 function sairParaLogin(motivo){if(typeof checklistLimparAcesso==='function')checklistLimparAcesso();notificacoesCache=[];notificacoesConsultadasEm=0;notificacoesEscopoCache='';atualizarBannerAlertaSistema();sbLogout(typeof motivo==='string'?'local':undefined);try{history.replaceState({loggedOut:true},'',location.href.split('#')[0]);}catch(e){}var modal=$('conta');if(modal)modal.classList.add('on');mostrarLoginForm();contaCard();atualizarBotaoLogout();atualizarGate();if(typeof motivo==='string'){$('cErro').textContent=motivo;$('cErro').style.display='';}else toast('Você saiu');}
 function sbLojas(){return sbReq('/rest/v1/lojas?select=id,nome&order=nome.asc').then(function(r){if(!r.ok)throw new Error('falha');return Array.isArray(r.dados)?r.dados:[];});}
 /* ───── catálogo compartilhado (EAN → nome), entre todas as lojas ───── */
@@ -6293,7 +6330,7 @@ function mostrarLojas(){if(SESS&&SESS.forcePasswordChange){mostrarTrocaSenhaPrim
     sel.disabled=false;btn.disabled=!sel.value;
   },function(){sel.innerHTML='<option value="">Falha ao carregar lojas</option>';});
   sel.onchange=function(){btn.disabled=!sel.value;};}
-function entrarLojaSelecionada(){var sel=$('selectLoja'),id=sel.value,l=sel.options[sel.selectedIndex];if(!id||!l||!SESS)return;SESS.lojaId=id;SESS.lojaNome=l.textContent;notificacoesCache=[];notificacoesConsultadasEm=0;notificacoesEscopoCache='';atualizarBannerAlertaSistema();salvarSess();salvarUltimaLoja();carregarPapel();fecharConta();toast('Loja: '+SESS.lojaNome);catalogoPull().then(function(n){if(n)toast('Catálogo: +'+n+' produto'+(n>1?'s':''));return sincronizarLoja();}).then(function(n){if(n>0)toast('Dados compartilhados atualizados');backupNuvem();});agendarSincronizacaoPeriodica();auditar('entrou_na_loja');renderHome();carregarNotificacoes(true,true);var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='aj')contaCard();}
+function entrarLojaSelecionada(){limparRelatorioAvisos();var sel=$('selectLoja'),id=sel.value,l=sel.options[sel.selectedIndex];if(!id||!l||!SESS)return;SESS.lojaId=id;SESS.lojaNome=l.textContent;notificacoesCache=[];notificacoesConsultadasEm=0;notificacoesEscopoCache='';atualizarBannerAlertaSistema();salvarSess();salvarUltimaLoja();carregarPapel();fecharConta();toast('Loja: '+SESS.lojaNome);catalogoPull().then(function(n){if(n)toast('Catálogo: +'+n+' produto'+(n>1?'s':''));return sincronizarLoja();}).then(function(n){if(n>0)toast('Dados compartilhados atualizados');backupNuvem();});agendarSincronizacaoPeriodica();auditar('entrou_na_loja');renderHome();carregarNotificacoes(true,true);var on=document.querySelector('#abas button.on');if(on&&on.dataset.v==='aj')contaCard();}
 $('bSelecionarLoja').onclick=entrarLojaSelecionada;
 $('conta').addEventListener('click',function(e){if(e.target===$('conta'))fecharConta();});
 $('bEntrar').onclick=function(){var u=$('cUser').value.trim(),pw=$('cPass').value;if(!u||!pw){captchaErro('Preencha usuário e senha.');return;}
