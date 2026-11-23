@@ -2451,17 +2451,13 @@ tflaky('Aviso do sistema: banner global exibe texto literal e marca somente o pe
   ];
   const a = await abrirLogado(async p => {
     await rotasBase(p, 'operador');
-    await p.route(/\/rest\/v1\/notificacoes(?:\?|$)/, r => {
-      const req = r.request(), u = new URL(req.url());
-      if (req.method() === 'GET') return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(linhas) });
-      if (req.method() === 'PATCH') {
-        let body = null; try { body = req.postDataJSON(); } catch (e) {}
-        const filtroId = u.searchParams.get('id') || '', registro = linhas.find(x => filtroId === 'eq.' + x.id);
-        if (registro && body && body.lida_em) registro.lida_em = body.lida_em;
-        patches.push({ url: u.pathname + u.search, body });
-        return r.fulfill({ status: 204, body: '' });
-      }
-      return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    await p.route(/\/rest\/v1\/notificacoes(?:\?|$)/, r => r.fulfill({json:linhas}));
+    await p.route('**/rest/v1/rpc/confirmar_aviso_ok', r => {
+      const body = r.request().postDataJSON();
+      patches.push(body);
+      const registro = linhas.find(n => n.id === body.p_id);
+      registro.lida_em = new Date().toISOString();
+      return r.fulfill({json:registro.lida_em});
     });
   }, { prod: {}, cat: {}, pere: { itens: {}, regs: [] } }, { papel: 'operador', nome: 'Teste' });
 
@@ -2481,10 +2477,7 @@ tflaky('Aviso do sistema: banner global exibe texto literal e marca somente o pe
     await a.p.waitForFunction(() => document.querySelector('#systemAlertBanner')?.hidden || getComputedStyle(document.querySelector('#systemAlertBanner')).display === 'none');
     // Aguarda callbacks iniciais/duplicados da carga terminarem antes de validar a chamada de atualização.
     await a.p.waitForTimeout(150);
-    assert.strictEqual(patches.length, 1, 'um único PATCH marca o aviso como lido');
-    assert.strictEqual(patches[0].url, `/rest/v1/notificacoes?loja_id=eq.${loja}&id=eq.${avisoId}`);
-    assert.deepStrictEqual(patches[0].body, { lida_em: patches[0].body.lida_em });
-    assert.ok(typeof patches[0].body.lida_em === 'string' && !Number.isNaN(Date.parse(patches[0].body.lida_em)), 'lida_em deve ser ISO');
+    assert.deepStrictEqual(patches, [{p_id: avisoId}]);
     assert.deepStrictEqual(a.erros, []);
   } finally { await a.fechar(); }
 });
