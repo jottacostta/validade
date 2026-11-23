@@ -1519,7 +1519,56 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 .desktop-overview-only #adminDesktopNav .admin-nav-label,
 .desktop-overview-only .admin-request-overview,
 .desktop-overview-only .admin-mobile-tabs [data-admin-view]:not([data-admin-view="dashboard"]) { display:none !important; }
-#redePainel{box-sizing:border-box;width:min(1120px,96vw);height:90vh;max-height:94dvh;padding:clamp(14px,3vw,34px);border:1px solid #b8cbe3;border-radius:18px;color:#17304c;background:#f4f7fb;overflow:auto}#redePainel::backdrop{background:#061832e8}#redePainel header,#redePainel .rede-acoes{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}#redePainel h2,#redePainel h3{margin:.35em 0;color:#14365a}#redePainel button{background:#164977;color:white;border:0;border-radius:8px;padding:9px 14px;cursor:pointer}#redePainel button:disabled{opacity:.55}#redePainel article,#redePainel form,#redePainel details{background:white;border:1px solid #cedaea;border-radius:12px;padding:14px;margin:10px 0}#redePainel .rede-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(205px,100%),1fr));gap:10px}#redePainel input,#redePainel textarea{display:block;width:100%;box-sizing:border-box;margin:6px 0 12px;padding:10px;color:#152f48;background:white}#redePainel [hidden]{display:none!important}#redePainel .rede-acoes{justify-content:flex-start}#redePainel small{color:#43627f}
+#redePainel{box-sizing:border-box;width:min(1080px,96vw);height:92vh;height:92dvh;max-height:100dvh;padding:0;border:1px solid #b9cce0;border-radius:18px;background:#f2f6fa;color:#132f4b;overflow:auto}
+#redePainel::backdrop{background:#071a32dd}
+#redePainel header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:22px clamp(16px,3vw,32px);background:#103963;border-bottom:3px solid #ffcf35;box-shadow:none}
+#redePainel header small{color:#d2e6fa;font-size:11px;letter-spacing:.09em;font-weight:700}
+#redePainel h2{margin:4px 0 0;color:white;font-size:clamp(23px,4vw,31px);line-height:1.12}
+#redeCorpo{padding:clamp(14px,3vw,30px)}
+#redeStatus{margin:0;padding:0 18px 16px}#redeStatus:empty{display:none}
+#redePainel h3{margin:0 0 10px;color:#193b5e}
+#redePainel button{min-height:44px;background:#174e80;color:white;border:0;border-radius:8px;padding:8px 14px;cursor:pointer;font:inherit;font-weight:600}
+#redePainel button:focus-visible,#redePainel summary:focus-visible{outline:3px solid #edb710;outline-offset:2px}
+#redePainel #redeVoltar{background:transparent;border:1px solid #9ebbd5}
+#redePainel button:disabled{opacity:.55}
+#redePainel article,#redePainel form,#redePainel details{background:white;border:1px solid #cbd8e4;border-radius:12px;padding:16px;margin:10px 0}
+#redePainel summary{cursor:pointer;font-weight:650}
+#redePainel input,#redePainel textarea{display:block;width:100%;box-sizing:border-box;margin:6px 0 12px;padding:10px;color:#152f48;background:white}
+#redePainel [hidden]{display:none!important}
+#redePainel .rede-acoes{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+#redePainel [data-rede="excluir"]{background:#fff1ef;color:#8a302e}
+#redePainel .rede-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(245px,100%),1fr));gap:12px}
+#redePainel .rede-card{margin:0;padding:14px 16px 0;overflow:hidden;box-shadow:0 2px 6px #2039550a}
+#redePainel .rede-card h3{font-size:18px;margin:0}
+#redePainel .rede-numeros{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0;font-variant-numeric:tabular-nums}
+#redePainel .rede-numeros div{display:flex;flex-direction:column-reverse}
+#redePainel .rede-numeros dt{font-size:12px;color:#48617a}
+#redePainel .rede-numeros dd{margin:0;font-size:20px;font-weight:700;color:#153d61}
+#redePainel .rede-cab{display:block;background:linear-gradient(110deg,#081e42,#0a3468);padding-inline:clamp(18px,4vw,36px)}
+#redePainel .rede-marca{display:flex;align-items:center;gap:12px;color:#eaf2ff;font-size:14px}
+#redePainel .rede-marca img{width:74px;height:40px;object-fit:contain;margin-left:auto}
+#redePainel #redeVoltar{border:0;border-right:1px solid #8296b1;border-radius:0;padding:0 12px 0 0;font-size:24px}
+#redePainel .rede-cab h2{margin:12px 0 4px;font-size:clamp(28px,5vw,40px)}
+#redePainel .rede-resumo dd{color:#fff;font-size:clamp(24px,4vw,34px)}
+#redePainel .rede-resumo dt{color:#e7effb}
+#redePainel .rede-resumo .rede-numeros{margin-bottom:0}
+#redePainel .rede-grafico{background:white;border:1px solid #d4dfe9;border-radius:14px;padding:16px;margin:0 0 20px}
+#redePainel .rede-barra{display:grid;grid-template-columns:minmax(52px,1fr) 3fr auto;align-items:center;gap:8px;margin:8px 0;font-size:14px;font-variant-numeric:tabular-nums}
+#redePainel .rede-barra i{display:block;height:12px;background:#e9f1fb;border-radius:3px;overflow:hidden}
+#redePainel .rede-barra b{display:block;height:100%;background:#1468bb}
+#redePainel .rede-grafico p{margin:12px 0 0;color:#53677c;font-size:13px}
+#redePainel #redeBusca{min-height:44px;border:1px solid #bccbda;border-radius:10px;font:inherit;margin-bottom:14px}
+#redePainel .rede-card{position:relative;padding:14px 16px 4px}
+#redePainel .rede-card h3{display:flex;align-items:center;gap:10px}
+#redePainel .rede-card h3::before{content:"";width:32px;height:32px;border-radius:8px;background:#dfedfb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23143d68' stroke-width='1.8'%3E%3Cpath d='M4 10v10h16V10M3 10l2-6h14l2 6q-2 3-5 0-2 3-4 0-2 3-4 0-3 3-5 0zM9 20v-6h6v6'/%3E%3C/svg%3E") center/20px no-repeat}
+#redePainel .rede-card h3::after{content:"›";margin-left:auto;color:#566d85;font-size:24px}
+#redePainel .rede-card button{position:absolute;inset:0;width:100%;height:100%;background:transparent;border-radius:12px}
+#redePainel .rede-card button:focus-visible{outline-offset:-3px}
+#redePainel .rede-card:hover{border-color:#88a9cc}
+#redePainel .rede-card .rede-numeros div{text-align:center;border-inline-start:1px solid #dce5ef}
+#redePainel .rede-card .rede-numeros div:first-child{border:0}
+#redePainel .rede-card .rede-numeros div:nth-child(2) dd{color:#865000;background:#fff1d6;border-radius:6px;align-self:center;padding:0 10px}
+@media(max-width:600px){#redePainel{width:100%;max-width:100%;height:100dvh;max-height:100dvh;border:0;border-radius:0}#redePainel header{padding-top:calc(16px + env(safe-area-inset-top));padding-bottom:14px}#redeCorpo{padding-bottom:calc(16px + env(safe-area-inset-bottom))}}
 </style>
 </head>
 <body>
@@ -2378,7 +2427,7 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
   </div>
   </div>
 </div></div>
-<dialog id="redePainel" aria-labelledby="redeTitulo"><header><div><small>CONTROLE DE VALIDADE</small><h2 id="redeTitulo">Todas as lojas</h2></div><button type="button" id="redeVoltar">Voltar</button></header><div id="redeCorpo"></div><p id="redeStatus" role="status"></p></dialog>
+<dialog id="redePainel" aria-labelledby="redeTitulo"><header class="rede-cab"><div class="rede-marca"><button type="button" id="redeVoltar" aria-label="Voltar">←</button><span>Controle de Validade</span><img id="redeLogo" alt="" hidden></div><h2 id="redeTitulo">Todas as lojas</h2><section class="rede-resumo" aria-label="Resumo da rede" hidden></section></header><div id="redeCorpo"></div><p id="redeStatus" role="status"></p></dialog>
 <div class="toast" id="toast"></div>
 <canvas id="cv" style="display:none"></canvas>
 
@@ -2550,7 +2599,7 @@ var CFG={"cosmos":"","nome":"Controle de Validade","slogan":"Área do Operador",
 var SETORES=['Açougue','Laticínios','Padaria','Salgados','FLV','Mercearia'];
 var $=function(id){return document.getElementById(id);};
 if(CFG.slogan)$('slogan').textContent=CFG.slogan;
-if(CFG.logo){var hl=$('hdrLogo');if(hl){hl.src=CFG.logo;hl.style.display='';}var gl=$('gateLogo');if(gl){gl.src=CFG.logo;gl.style.display='';}}
+if(CFG.logo){$('redeLogo').src=CFG.logo;$('redeLogo').hidden=false;var hl=$('hdrLogo');if(hl){hl.src=CFG.logo;hl.style.display='';}var gl=$('gateLogo');if(gl){gl.src=CFG.logo;gl.style.display='';}}
 /* chave fixa: trocar o nome da loja não perde os dados (versões antigas usavam 'validade_'+nome) */
 var K='validade_dados', D={};
 try{var s=localStorage.getItem(K);
@@ -6532,9 +6581,14 @@ async function redeRpc(nome,body){
   if(!r.ok)throw new Error(r.dados&&r.dados.message||'Falha na consulta.');return r.dados;
 }
 function redeBotao(acao,texto,extra){return '<button type="button" data-rede="'+acao+'" '+(extra||'')+'>'+texto+'</button>';}
+function redeIndicador(rotulo,valor){
+  return '<div><dt>'+rotulo+'</dt><dd>'+Number(valor).toLocaleString('pt-BR')+'</dd></div>';
+}
 async function carregarRede(){
   if(!redeSessao||redeSessao!==SESS)return;
   var seq=++redeSeq,loja=redeLoja;
+  var resumoRede=$('redePainel').querySelector('.rede-resumo');
+  resumoRede.hidden=true;
   $('redeTitulo').textContent=loja?loja.nome:'Todas as lojas';
   $('redeCorpo').replaceChildren();$('redeStatus').textContent='Carregando…';
   try{
@@ -6542,7 +6596,27 @@ async function carregarRede(){
     if(seq!==redeSeq||redeSessao!==SESS)return;
     if(!loja){
       redeLojas=d;
-      $('redeCorpo').innerHTML='<div class="rede-grid">'+d.map((l,i)=>'<article><h3>'+esc(l.nome)+'</h3><p>'+l.registros+' registros · '+l.recolhidos+' recolhidos</p><p>'+l.usuarios+' usuários vinculados</p>'+redeBotao('abrir','Consultar filial','data-indice="'+i+'"')+'</article>').join('')+'</div>';
+      var totalRegistros=d.reduce((soma,l)=>soma+Number(l.registros),0);
+      var totalRecolhidos=d.reduce((soma,l)=>soma+Number(l.recolhidos),0);
+      resumoRede.innerHTML='<dl class="rede-numeros">'+redeIndicador('Unidades',d.length)+redeIndicador('Registros',totalRegistros)+redeIndicador('Recolhidos',totalRecolhidos)+'</dl>';
+      resumoRede.hidden=false;
+      var ordenadas=d.map((l,i)=>({loja:l,indice:i})).sort((a,b)=>b.loja.registros-a.loja.registros);
+      var ativas=ordenadas.filter(item=>Number(item.loja.registros)>0);
+      var barras=ativas.slice(0,5).map(({loja:l})=>'<div class="rede-barra"><span>'+esc(l.nome)+'</span><i aria-hidden="true"><b style="width:'+100*l.registros/ativas[0].loja.registros+'%"></b></i><strong>'+Number(l.registros).toLocaleString('pt-BR')+'</strong></div>');
+      var sem=d.length-ativas.length;
+      var grafico='<section class="rede-grafico"><h3>Registros por unidade</h3>'+(ativas.length>5?'<p>5 unidades com mais registros</p>':'')+barras.join('')+(sem?'<p>'+sem+(sem===1?' unidade sem registros':' unidades sem registros')+'</p>':'')+'</section>';
+      var cards=ordenadas.map(({loja:l,indice:i})=>'<article class="rede-card"><h3>'+esc(l.nome)+'</h3><dl class="rede-numeros">'+
+        redeIndicador('Registros',l.registros)+redeIndicador('Recolhidos',l.recolhidos)+redeIndicador('Usuários',l.usuarios)+'</dl>'+
+        redeBotao('abrir','','data-indice="'+i+'" aria-label="Consultar filial '+esc(l.nome)+'"')+'</article>');
+      $('redeCorpo').innerHTML=(d.length?grafico:'')+'<h3>Unidades</h3>'+(cards.length?'<input type="search" id="redeBusca" placeholder="Buscar unidade" aria-label="Buscar unidade"><div class="rede-grid">'+cards.join('')+'</div><p id="redeSemResultado" role="status" hidden>Nenhuma unidade encontrada.</p>':'<p>Nenhuma unidade disponível.</p>');
+      if(cards.length)$('redeBusca').oninput=function(){
+        var termo=this.value.trim().toLocaleLowerCase('pt-BR'),visiveis=0;
+        $('redeCorpo').querySelectorAll('.rede-card').forEach(function(card){
+          card.hidden=!card.querySelector('h3').textContent.toLocaleLowerCase('pt-BR').includes(termo);
+          if(!card.hidden)visiveis++;
+        });
+        $('redeSemResultado').hidden=visiveis>0;
+      };
     }else{
       var lista=d.registros.slice(0,50).filter(r=>redeOcultos||!r.oculto);
       var html='<details><summary>Usuários vinculados ('+d.usuarios.length+')</summary>'+d.usuarios.map(u=>'<p>'+esc(u.nome)+' · '+esc(PAPEIS[u.perfil]||u.perfil)+'</p>').join('')+'</details>'+
