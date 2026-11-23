@@ -249,8 +249,8 @@ test('Aviso do sistema: banner global só exibe personalizados não lidos e conf
   assert.match(html, /String\(x\.tipo\|\|''\)\.toLowerCase\(\)==='sistema_personalizado'&&!x\.lida_em/);
   assert.match(html, /\$\('systemAlertTitle'\)\.textContent=String\(n\.titulo/);
   assert.match(html, /\$\('systemAlertMessage'\)\.textContent=String\(n\.mensagem/);
-  assert.match(html, /notificacoes\?loja_id=eq\.'\+encodeURIComponent\(SESS\.lojaId\)\+'&id=eq\.'\+encodeURIComponent\(id\)/);
-  assert.match(html, /method:'PATCH',body:\{lida_em:quando\}/);
+  assert.ok(html.includes('/rest/v1/rpc/confirmar_aviso_ok'));
+  assert.ok(html.includes("method:'POST',body:{p_id:id}"));
   assert.match(html, /Date\.now\(\)-notificacoesConsultadasEm<60000/);
   assert.match(html, /notificacoesEscopoCache!==escopo/);
 });
