@@ -1531,6 +1531,34 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 #redePainel .rede-card .rede-numeros div{text-align:center;border-inline-start:1px solid #dce5ef}
 #redePainel .rede-card .rede-numeros div:first-child{border:0}
 #redePainel .rede-card .rede-numeros div:nth-child(2) dd{color:#865000;background:#fff1d6;border-radius:6px;align-self:center;padding:0 10px}
+#redeSubtitulo{font-size:16px;color:#fff;margin:0}
+#redePainel .filial-equipe{margin:0 0 12px;padding:0 14px}
+#redePainel .filial-equipe summary{display:flex;align-items:center;gap:10px;min-height:48px}
+#redePainel .filial-equipe b{background:#e6effa;color:#123c69;border-radius:20px;padding:2px 10px}
+#redePainel .filial-equipe summary::after{content:"›";margin-left:auto;font-size:24px}
+#redePainel .filial-equipe[open] summary::after{transform:rotate(90deg)}
+#redePainel .filial-atalhos,#redePainel .filial-comandos{display:flex;gap:8px}
+#redePainel .filial-atalhos{margin-bottom:20px}
+#redePainel .filial-atalhos button{flex:1;display:flex;justify-content:center;align-items:center;gap:8px;padding:10px 8px}
+#redePainel .filial-atalhos svg{flex:none}
+#redePainel [data-rede="ocultos"]{display:flex;align-items:center;justify-content:space-between;width:100%;background:white;border:1px solid #cbd8e4;color:#193b5e;margin-bottom:12px}
+#redePainel [role="switch"]::after{content:"";width:34px;height:20px;border-radius:16px;background:radial-gradient(circle at 10px 50%,white 6px,transparent 7px),#8190a0}
+#redePainel [role="switch"][aria-checked="true"]::after{background:radial-gradient(circle at 24px 50%,white 6px,transparent 7px),#1468bb}
+#redePainel .filial-lista{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(330px,100%),1fr));align-items:start;gap:12px}
+#redePainel .filial-registro{margin:0;min-width:0;overflow-wrap:anywhere;box-shadow:0 2px 5px #1639570a}
+#redePainel .filial-registro h3{margin:8px 0 10px;text-transform:uppercase;font-size:17px}
+#redePainel .filial-status{display:inline-block;font-size:12px;font-weight:700;color:#185436;background:#dcf3e5;border-radius:6px;padding:3px 8px}
+#redePainel .filial-status.recolhido{background:#fff0cc;color:#794d0a}
+#redePainel .filial-status.oculto{background:#ebeff4;color:#445469}
+#redePainel .filial-dados{display:grid;grid-template-columns:1.4fr 1fr 1fr;border-block:1px solid #dee6ee;margin:0;padding:10px 0;font-variant-numeric:tabular-nums}
+#redePainel .filial-dados div+div{border-left:1px solid #dee6ee;padding-left:8px}
+#redePainel .filial-dados dt,#redePainel .filial-autor{color:#4b6077;font-size:13px}
+#redePainel .filial-dados dd{margin:3px 0 0;font-weight:700}
+#redePainel .filial-dados div:first-child dd{font-size:clamp(16px,4vw,20px)}
+#redePainel .filial-comandos>*{flex:1;align-self:start}
+#redePainel .filial-mais{margin:0;padding:0;border:1px solid #b9c9da;border-radius:8px;text-align:center}
+#redePainel .filial-mais summary{padding:12px 4px;min-height:44px;box-sizing:border-box}
+#redePainel .filial-mais button{display:block;width:100%;margin:4px 0 0}
 @media(max-width:600px){#redePainel{width:100%;max-width:100%;height:100dvh;max-height:100dvh;border:0;border-radius:0}#redePainel header{padding-top:calc(16px + env(safe-area-inset-top));padding-bottom:14px}#redeCorpo{padding-bottom:calc(16px + env(safe-area-inset-bottom))}}
 </style>
 </head>
@@ -2390,7 +2418,7 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
   </div>
   </div>
 </div></div>
-<dialog id="redePainel" aria-labelledby="redeTitulo"><header class="rede-cab"><div class="rede-marca"><button type="button" id="redeVoltar" aria-label="Voltar">←</button><span>Controle de Validade</span><img id="redeLogo" alt="" hidden></div><h2 id="redeTitulo">Todas as lojas</h2><section class="rede-resumo" aria-label="Resumo da rede" hidden></section></header><div id="redeCorpo"></div><p id="redeStatus" role="status"></p></dialog>
+<dialog id="redePainel" aria-labelledby="redeTitulo"><header class="rede-cab"><div class="rede-marca"><button type="button" id="redeVoltar" aria-label="Voltar">←</button><span id="redeCaminho">Controle de Validade</span><img id="redeLogo" alt="" hidden></div><h2 id="redeTitulo">Todas as lojas</h2><p id="redeSubtitulo" hidden>Controle de Validade</p><section class="rede-resumo" aria-label="Resumo da rede" hidden></section></header><div id="redeCorpo"></div><p id="redeStatus" role="status"></p></dialog>
 <div class="toast" id="toast"></div>
 <canvas id="cv" style="display:none"></canvas>
 
@@ -6388,12 +6416,36 @@ function redeBotao(acao,texto,extra){return '<button type="button" data-rede="'+
 function redeIndicador(rotulo,valor){
   return '<div><dt>'+rotulo+'</dt><dd>'+Number(valor).toLocaleString('pt-BR')+'</dd></div>';
 }
+function redeIcone(nome){
+  var formas={
+    pessoas:'<circle cx="9" cy="8" r="3"/><path d="M2 20v-2a7 7 0 0 1 14 0v2M16 5a3 3 0 0 1 0 6m2 3a5 5 0 0 1 4 5"/>',
+    aviso:'<path d="M4 17h16c-2-2-2-4-2-7a6 6 0 0 0-12 0c0 3 0 5-2 7zm6 3a2 2 0 0 0 4 0"/>',
+    ronda:'<rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M8 11h8m-8 4h6"/>'
+  };
+  return '<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">'+formas[nome]+'</svg>';
+}
+function redeRegistro(r){
+  var lote=r.tipo==='lote';
+  var situacao=r.recolhido_em?'Recolhido':'Ativo';
+  return '<article class="filial-registro" data-id="'+esc(r.id)+'" data-tipo="'+esc(r.tipo)+'">'+
+    '<span class="filial-status '+(r.recolhido_em?'recolhido':'')+'">'+situacao+'</span>'+(r.oculto?' <span class="filial-status oculto">Oculto</span>':'')+
+    '<h3>'+esc(r.nome)+'</h3><dl class="filial-dados"><div><dt>Validade</dt><dd>'+esc(fdata(r.val))+'</dd></div>'+
+    '<div><dt>'+(lote?'Lote':'SIF')+'</dt><dd>'+esc(r.referencia||'—')+'</dd></div>'+
+    '<div><dt>Quantidade</dt><dd>'+esc(r.quantidade)+' '+(lote?'un':'kg')+'</dd></div></dl>'+
+    '<p class="filial-autor">'+esc(r.autor||'Autor não informado')+(r.criado?' · '+esc(new Date(Number(r.criado)).toLocaleString('pt-BR')):'')+'</p>'+
+    (r.recolhido_em?'<p class="filial-autor">Recolhido em '+esc(new Date(r.recolhido_em).toLocaleString('pt-BR'))+'</p>':'')+
+    '<div class="filial-comandos">'+(r.recolhido_em?'':redeBotao('recolher','Recolher'))+
+    '<details class="filial-mais"><summary>Mais ações</summary>'+redeBotao(r.oculto?'mostrar':'ocultar',r.oculto?'Mostrar no painel':'Ocultar do painel')+redeBotao('excluir','Excluir')+'</details></div></article>';
+}
 async function carregarRede(){
   if(!redeSessao||redeSessao!==SESS)return;
   var seq=++redeSeq,loja=redeLoja;
   var resumoRede=$('redePainel').querySelector('.rede-resumo');
   resumoRede.hidden=true;
-  $('redeTitulo').textContent=loja?loja.nome:'Todas as lojas';
+  $('redeTitulo').textContent=loja?loja.nome.replace(/^FL(\d+)$/i,'Filial $1'):'Todas as lojas';
+  $('redeSubtitulo').hidden=!loja;
+  $('redeCaminho').textContent=loja?'Todas as lojas':'Controle de Validade';
+  $('redeVoltar').setAttribute('aria-label',loja?'Voltar para todas as lojas':'Voltar');
   $('redeCorpo').replaceChildren();$('redeStatus').textContent='Carregando…';
   try{
     var d=await redeRpc('rede_consultar',{p_loja:loja?loja.id:null,p_pagina:redePagina});
@@ -6423,9 +6475,11 @@ async function carregarRede(){
       };
     }else{
       var lista=d.registros.slice(0,50).filter(r=>redeOcultos||!r.oculto);
-      var html='<details><summary>Usuários vinculados ('+d.usuarios.length+')</summary>'+d.usuarios.map(u=>'<p>'+esc(u.nome)+' · '+esc(PAPEIS[u.perfil]||u.perfil)+'</p>').join('')+'</details>'+
-      '<div class="rede-acoes">'+redeBotao('aviso','Enviar notificação')+redeBotao('ronda','Criar ronda personalizada')+redeBotao('ocultos',redeOcultos?'Esconder ocultos':'Incluir ocultos')+'</div><div id="redeForm"></div><h3>Registros da filial</h3>';
-      html+=lista.map(r=>'<article data-id="'+esc(r.id)+'" data-tipo="'+esc(r.tipo)+'"><h3>'+esc(r.nome)+'</h3><p>'+esc(r.referencia||'—')+' · '+esc(r.quantidade)+' '+(r.tipo==='lote'?'un':'kg')+' · Validade '+esc(fdata(r.val))+'</p><p>'+esc(r.autor||'Autor não informado')+(r.criado?' · '+esc(new Date(Number(r.criado)).toLocaleString('pt-BR')):'')+'</p><p>'+(r.recolhido_em?'Recolhido em '+esc(new Date(r.recolhido_em).toLocaleString('pt-BR')):'Ativo')+(r.oculto?' · Oculto no painel':'')+'</p><div class="rede-acoes">'+(r.recolhido_em?'':redeBotao('recolher','Recolher'))+redeBotao(r.oculto?'mostrar':'ocultar',r.oculto?'Mostrar no painel':'Ocultar do painel')+redeBotao('excluir','Excluir')+'</div></article>').join('')||'<p>Nenhum registro visível nesta página.</p>';
+      var html='<details class="filial-equipe"><summary>'+redeIcone('pessoas')+'Usuários vinculados <b>'+d.usuarios.length+'</b></summary>'+
+        d.usuarios.map(u=>'<p>'+esc(u.nome)+' · '+esc(PAPEIS[u.perfil]||u.perfil)+'</p>').join('')+'</details>'+
+        '<div class="filial-atalhos">'+redeBotao('aviso',redeIcone('aviso')+'Enviar notificação')+redeBotao('ronda',redeIcone('ronda')+'Criar ronda')+'</div><div id="redeForm"></div>'+
+        '<h3>Registros da filial</h3>'+redeBotao('ocultos','Incluir ocultos','role="switch" aria-checked="'+redeOcultos+'"')+
+        (lista.length?'<div class="filial-lista">'+lista.map(redeRegistro).join('')+'</div>':'<p>Nenhum registro visível nesta página.</p>');
       $('redeCorpo').innerHTML=html+'<div class="rede-acoes">'+(redePagina?redeBotao('anterior','Anterior'):'')+(d.registros.length>50?redeBotao('proxima','Próxima'):'')+'</div>';
     }
     $('redeStatus').textContent='';
