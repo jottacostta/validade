@@ -4051,9 +4051,16 @@ tflaky('Rede administrativa: FL01 e FL05 mantêm registros e ações separados n
       await painel.locator('[data-rede="abrir"]').nth(i).click();
       await painel.getByText('Produto '+loja.id,{exact:true}).waitFor();
       assert.equal(await painel.getByText('Produto '+lojas[1-i].id,{exact:true}).count(),0);
-      await painel.locator('summary').click();
+      await painel.locator('.filial-equipe summary').click();
       assert.match(await painel.innerText(),new RegExp('Pessoa '+loja.id));
+      await a.p.setViewportSize({width:360,height:800});
+      assert.equal(await painel.locator('#redeTitulo').innerText(),loja.nome.replace('FL','Filial '));
+      assert.ok(await painel.evaluate(el=>el.scrollWidth<=el.clientWidth));
+      assert.equal(await painel.locator('[data-rede="excluir"]').isVisible(),false);
+      await painel.getByRole('switch',{name:'Incluir ocultos'}).click();
+      await painel.locator('[role="switch"][aria-checked="true"]').waitFor();
       for(const action of ['recolher','ocultar','excluir']){
+        if(action!=='recolher')await painel.locator('.filial-mais summary').click();
         await painel.locator('[data-rede="'+action+'"]').click();
         await painel.getByText('Produto '+loja.id,{exact:true}).waitFor();
         assert.ok(calls.some(c=>c.body.p_id==='item'+loja.id && (action==='recolher'?c.name==='marcar_registro_recolhido'&&c.body.p_loja_id===loja.id:c.body.p_acao===action&&c.body.p_loja===loja.id)));
