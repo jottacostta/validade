@@ -4020,3 +4020,46 @@ tflaky('Perfis de acesso: Promotor aparece como opção e grava com p_papel="pro
   assert.deepStrictEqual(cap, [{ p_papel: 'promotor', p_permissao: 'nome_editar', p_permitido: true }]);
   assert.deepStrictEqual(a.erros, []); await a.fechar();
 });
+
+tflaky('Rede administrativa: FL01 e FL05 mantêm registros e ações separados no seletor de login', {skip:pular}, async () => {
+  const a = await abrir({url:URL_SUPA,chave:'validade_sessao',dados:null});
+  const lojas=[{id:'L1',nome:'FL01'},{id:'L5',nome:'FL05'}], calls=[];
+  try {
+    await a.p.route('**/auth/v1/token*', r=>r.fulfill({json:{access_token:'tok',refresh_token:'ref',expires_in:3600,user:{id:'u1'}}}));
+    await a.p.route(R_PERFIL,r=>r.fulfill({json:[{papel:'admin'}]}));
+    await a.p.route('**/rest/v1/lojas*',r=>r.fulfill({json:lojas}));
+    await a.p.route('**/rest/v1/rpc/*',r=>{
+      const name=new URL(r.request().url()).pathname.split('/').pop(), body=r.request().postDataJSON();
+      calls.push({name,body});
+      if(name==='rede_consultar')return r.fulfill({json:body.p_loja?{usuarios:[{nome:'Pessoa '+body.p_loja,perfil:'operador'}],registros:[{id:'item'+body.p_loja,tipo:'lote',nome:'Produto '+body.p_loja,quantidade:2,val:'2027-01-01'}]}:lojas.map(l=>({...l,usuarios:1,registros:1,recolhidos:0}))});
+      return r.fulfill({json:{}});
+    });
+    await a.p.fill('#cUser','admin');await a.p.fill('#cPass','1234');await a.p.click('#bEntrar');
+    await a.p.selectOption('#selectLoja','rede-admin');await a.p.click('#bSelecionarLoja');
+    const painel=a.p.locator('#redePainel');
+    assert.equal(await painel.locator('button').filter({hasText:/escanear/i}).count(),0);
+    for(const [i,loja] of lojas.entries()){
+      await painel.locator('[data-rede="abrir"]').nth(i).click();
+      await painel.getByText('Produto '+loja.id,{exact:true}).waitFor();
+      assert.equal(await painel.getByText('Produto '+lojas[1-i].id,{exact:true}).count(),0);
+      await painel.locator('summary').click();
+      assert.match(await painel.innerText(),new RegExp('Pessoa '+loja.id));
+      for(const action of ['recolher','ocultar','excluir']){
+        a.p.once('dialog',d=>d.accept());await painel.locator('[data-rede="'+action+'"]').click();
+        await painel.getByText('Produto '+loja.id,{exact:true}).waitFor();
+        assert.ok(calls.some(c=>c.body.p_id==='item'+loja.id && (action==='recolher'?c.name==='marcar_registro_recolhido'&&c.body.p_loja_id===loja.id:c.body.p_acao===action&&c.body.p_loja===loja.id)));
+      }
+      for(const action of ['ronda','aviso']){
+        await painel.locator('[data-rede="'+action+'"]').click();
+        await painel.locator('[name=titulo]').fill('Conferência');
+        await painel.locator('[name=texto]').fill('Verificar validade');
+        await painel.locator('form button').click();
+        await painel.locator('form').waitFor({state:'detached'});
+        assert.ok(calls.some(c=>c.name===(action==='aviso'?'enviar_alerta_personalizado':'checklist_salvar_modelo')&&c.body.p_loja_id===loja.id));
+      }
+      await painel.locator('#redeVoltar').click();
+    }
+    assert.equal(await a.p.evaluate(()=>JSON.parse(localStorage.getItem('validade_sessao')).lojaId),null);
+    assert.deepEqual(a.erros,[]);
+  } finally {await a.fechar();}
+});
