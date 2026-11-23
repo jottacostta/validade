@@ -4045,7 +4045,7 @@ tflaky('Rede administrativa: FL01 e FL05 mantêm registros e ações separados n
       await painel.locator('summary').click();
       assert.match(await painel.innerText(),new RegExp('Pessoa '+loja.id));
       for(const action of ['recolher','ocultar','excluir']){
-        a.p.once('dialog',d=>d.accept());await painel.locator('[data-rede="'+action+'"]').click();
+        await painel.locator('[data-rede="'+action+'"]').click();
         await painel.getByText('Produto '+loja.id,{exact:true}).waitFor();
         assert.ok(calls.some(c=>c.body.p_id==='item'+loja.id && (action==='recolher'?c.name==='marcar_registro_recolhido'&&c.body.p_loja_id===loja.id:c.body.p_acao===action&&c.body.p_loja===loja.id)));
       }
