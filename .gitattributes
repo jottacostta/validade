@@ -1,0 +1,17 @@
+# Normaliza finais de linha: tudo que for texto fica LF no repositório e na
+# árvore de trabalho, em qualquer sistema. Evita que o Windows (autocrlf) grave
+# CRLF e quebre testes/diffs (ex.: \r\n embutido no dist e no teste do Leitor).
+* text=auto eol=lf
+
+# Arquivos binários não são normalizados.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
