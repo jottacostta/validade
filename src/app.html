@@ -1559,6 +1559,8 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 #redePainel .filial-status{display:inline-block;font-size:12px;font-weight:700;color:#185436;background:#dcf3e5;border-radius:6px;padding:3px 8px}
 #redePainel .filial-status.recolhido{background:#fff0cc;color:#794d0a}
 #redePainel .filial-status.oculto{background:#ebeff4;color:#445469}
+#redePainel .filial-status.avencer{background:#fff1d6;color:#865000}
+#redePainel .filial-status.vencido{background:#fde4e1;color:#8a302e}
 #redePainel .filial-dados{display:grid;grid-template-columns:1.4fr 1fr 1fr;border-block:1px solid #dee6ee;margin:0;padding:10px 0;font-variant-numeric:tabular-nums}
 #redePainel .filial-dados div+div{border-left:1px solid #dee6ee;padding-left:8px}
 #redePainel .filial-dados dt,#redePainel .filial-autor{color:#4b6077;font-size:13px}
@@ -6436,8 +6438,8 @@ function redeIcone(nome){
 function redeRegistro(r){
   var lote=r.tipo==='lote';
   var situacao=r.recolhido_em?'Recolhido':'Ativo';
-  return '<article class="filial-registro" data-id="'+esc(r.id)+'" data-tipo="'+esc(r.tipo)+'">'+
-    '<span class="filial-status '+(r.recolhido_em?'recolhido':'')+'">'+situacao+'</span>'+(r.oculto?' <span class="filial-status oculto">Oculto</span>':'')+
+  return '<article class="filial-registro" data-id="'+esc(r.id)+'" data-tipo="'+esc(r.tipo)+'" data-situacao="'+(r.vencido?'vencido':r.a_vencer?'avencer':'ok')+'">'+
+    '<span class="filial-status '+(r.recolhido_em?'recolhido':'')+'">'+situacao+'</span>'+(r.oculto?' <span class="filial-status oculto">Oculto</span>':'')+(r.vencido?' <span class="filial-status vencido">Vencido</span>':r.a_vencer?' <span class="filial-status avencer">A vencer</span>':'')+
     '<h3>'+esc(r.nome)+'</h3><dl class="filial-dados"><div><dt>Validade</dt><dd>'+esc(fdata(r.val))+'</dd></div>'+
     '<div><dt>'+(lote?'Lote':'SIF')+'</dt><dd>'+esc(r.referencia||'—')+'</dd></div>'+
     '<div><dt>Quantidade</dt><dd>'+esc(r.quantidade)+' '+(lote?'un':'kg')+'</dd></div></dl>'+
@@ -6504,12 +6506,32 @@ async function carregarRede(){
       }
     }else{
       var lista=d.registros.slice(0,50).filter(r=>redeOcultos||!r.oculto);
+      var filtrosReg=lista.length?'<div class="rede-filtros" role="group" aria-label="Filtrar registros por validade"><button type="button" data-rfiltroreg="todos" aria-pressed="true">Todos</button><button type="button" data-rfiltroreg="avencer" aria-pressed="false">A vencer</button><button type="button" data-rfiltroreg="vencidos" aria-pressed="false">Vencidos</button></div>':'';
       var html='<details class="filial-equipe"><summary>'+redeIcone('pessoas')+'Usuários vinculados <b>'+d.usuarios.length+'</b></summary>'+
         d.usuarios.map(u=>'<p>'+esc(u.nome)+' · '+esc(PAPEIS[u.perfil]||u.perfil)+'</p>').join('')+'</details>'+
         '<div class="filial-atalhos">'+redeBotao('aviso',redeIcone('aviso')+'Enviar notificação')+redeBotao('ronda',redeIcone('ronda')+'Criar ronda')+'</div><div id="redeForm"></div>'+
-        '<h3>Registros da filial</h3>'+redeBotao('ocultos','Incluir ocultos','role="switch" aria-checked="'+redeOcultos+'"')+
-        (lista.length?'<div class="filial-lista">'+lista.map(redeRegistro).join('')+'</div>':'<p>Nenhum registro visível nesta página.</p>');
+        '<h3>Registros da filial</h3>'+redeBotao('ocultos','Incluir ocultos','role="switch" aria-checked="'+redeOcultos+'"')+filtrosReg+
+        (lista.length?'<div class="filial-lista">'+lista.map(redeRegistro).join('')+'</div><p id="redeRegSemResultado" role="status" hidden>Nenhum registro nesta situação.</p>':'<p>Nenhum registro visível nesta página.</p>');
       $('redeCorpo').innerHTML=html+'<div class="rede-acoes">'+(redePagina?redeBotao('anterior','Anterior'):'')+(d.registros.length>50?redeBotao('proxima','Próxima'):'')+'</div>';
+      if(lista.length){
+        var redeRegFiltro='todos';
+        var aplicarFiltroReg=function(){
+          var visiveis=0;
+          $('redeCorpo').querySelectorAll('.filial-registro').forEach(function(card){
+            var s=card.dataset.situacao;
+            var ok=redeRegFiltro==='todos'||(redeRegFiltro==='avencer'&&s==='avencer')||(redeRegFiltro==='vencidos'&&s==='vencido');
+            card.hidden=!ok;if(ok)visiveis++;
+          });
+          $('redeRegSemResultado').hidden=visiveis>0;
+        };
+        $('redeCorpo').querySelectorAll('.rede-filtros button').forEach(function(btn){
+          btn.onclick=function(){
+            redeRegFiltro=btn.dataset.rfiltroreg;
+            $('redeCorpo').querySelectorAll('.rede-filtros button').forEach(function(b){b.setAttribute('aria-pressed',String(b===btn));});
+            aplicarFiltroReg();
+          };
+        });
+      }
     }
     $('redeStatus').textContent='';
   }catch(err){if(seq===redeSeq){$('redeStatus').textContent=err.message;$('redeCorpo').innerHTML=redeBotao('atualizar','Tentar novamente');}}
