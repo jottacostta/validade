@@ -182,6 +182,18 @@ tflaky('slogan da configuração aparece no cabeçalho', { skip: pular }, async 
   await a.fechar();
 });
 
+tflaky('logo do Guanabara no painel administrativo (no lugar do "CV")', { skip: pular }, async () => {
+  const a = await abrir({ url: URL_APP });
+  const r = await a.p.evaluate(() => {
+    const img = document.getElementById('adminDesktopLogo'), mark = document.getElementById('adminDesktopMark');
+    return { temSrc: !!(img && img.src && img.src.length > 100), imgShown: !!(img && getComputedStyle(img).display !== 'none'), markHidden: !!(mark && getComputedStyle(mark).display === 'none') };
+  });
+  assert.ok(r.temSrc, 'logo do painel tem imagem (CFG.logo)');
+  assert.ok(r.imgShown, 'logo do painel visível');
+  assert.ok(r.markHidden, 'marca "CV" escondida quando há logo');
+  await a.fechar();
+});
+
 tflaky('lê etiqueta GS1 (DataMatrix) e preenche os perecíveis', { skip: pular }, async () => {
   // simula o leitor nativo devolvendo o conteúdo do DataMatrix da etiqueta (peso 0,576 kg, validade 08/11/26)
   const cap = {};

@@ -654,6 +654,7 @@ nav.abas #alertBadge{position:absolute;top:-5px;left:55%;margin:0;min-width:20px
 #adminDesktop .admin-desktop-sidebar{background:#061b30;border-right:1px solid #254562;color:#edf5fc;padding:26px 18px;display:flex;flex-direction:column;gap:22px;min-width:0}
 #adminDesktop .admin-desktop-brand{display:flex;align-items:center;gap:12px;padding:0 7px 20px;border-bottom:1px solid #24415c}
 #adminDesktop .admin-desktop-mark{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:linear-gradient(145deg,#0878e8,#0b3d79);color:#ffdf00;font-weight:900;font-size:19px}
+#adminDesktop .admin-desktop-logo{width:46px;height:46px;border-radius:14px;object-fit:cover;flex:none}
 #adminDesktop .admin-desktop-brand b{display:block;font-size:14px;line-height:1.2}
 #adminDesktop .admin-desktop-brand small{display:block;color:#a9bed1;margin-top:4px;font-size:11px}
 #adminDesktop .admin-desktop-nav{display:grid;gap:8px}
@@ -1582,7 +1583,7 @@ th,.user-record-kpis small,.user-record-breakdown,.recall-audit-kpis small,
 </div>
 <section id="adminDesktop" aria-label="Central administrativa desktop">
   <aside class="admin-desktop-sidebar">
-    <div class="admin-desktop-brand"><span class="admin-desktop-mark" aria-hidden="true">CV</span><span><b>Controle de Validade</b><small>Central Administrativa</small></span></div>
+    <div class="admin-desktop-brand"><img id="adminDesktopLogo" class="admin-desktop-logo" alt="Supermercados Guanabara" style="display:none"><span class="admin-desktop-mark" id="adminDesktopMark" aria-hidden="true">CV</span><span><b>Controle de Validade</b><small>Central Administrativa</small></span></div>
     <nav class="admin-desktop-nav" id="adminDesktopNav" aria-label="Navegação administrativa">
       <button class="on" type="button" data-admin-view="dashboard" aria-current="page"><span class="admin-nav-icon" aria-hidden="true">⌂</span><span>Visão geral</span></button>
       <button type="button" data-admin-view="records"><span class="admin-nav-icon" aria-hidden="true">▦</span><span>Registros e edições</span></button>
@@ -2442,7 +2443,7 @@ var CFG=/*CFG*/;
 var SETORES=['Açougue','Laticínios','Padaria','Salgados','FLV','Mercearia'];
 var $=function(id){return document.getElementById(id);};
 if(CFG.slogan)$('slogan').textContent=CFG.slogan;
-if(CFG.logo){$('redeLogo').src=CFG.logo;$('redeLogo').hidden=false;var hl=$('hdrLogo');if(hl){hl.src=CFG.logo;hl.style.display='';}var gl=$('gateLogo');if(gl){gl.src=CFG.logo;gl.style.display='';}}
+if(CFG.logo){$('redeLogo').src=CFG.logo;$('redeLogo').hidden=false;var hl=$('hdrLogo');if(hl){hl.src=CFG.logo;hl.style.display='';}var gl=$('gateLogo');if(gl){gl.src=CFG.logo;gl.style.display='';}var al=$('adminDesktopLogo');if(al){al.src=CFG.logo;al.style.display='';var am=$('adminDesktopMark');if(am)am.style.display='none';}}
 /* chave fixa: trocar o nome da loja não perde os dados (versões antigas usavam 'validade_'+nome) */
 var K='validade_dados', D={};
 try{var s=localStorage.getItem(K);
